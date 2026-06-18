@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
-import RoomDetail from './components/RoomDetail';
 import PlaceholderView from './components/PlaceholderView';
 
 // ── Lazy-load těžkých modulů (nejsou výchozí pohled) → menší úvodní bundle,
@@ -15,6 +14,7 @@ const ModuleLoader = () => (
     <div className="w-7 h-7 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" />
   </div>
 );
+const RoomDetail = dynamic(() => import('./components/RoomDetail'), { ssr: false, loading: ModuleLoader });
 const TimelineModule = dynamic(() => import('./components/TimelineModule'), { ssr: false, loading: ModuleLoader });
 const StatisticsModule = dynamic(() => import('./components/StatisticsModule'), { ssr: false, loading: ModuleLoader });
 const StaffManager = dynamic(() => import('./components/StaffManager'), { ssr: false, loading: ModuleLoader });
