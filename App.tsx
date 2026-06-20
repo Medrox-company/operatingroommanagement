@@ -24,6 +24,7 @@ import AnimatedCounter from './components/AnimatedCounter';
 import LiveClock from './components/LiveClock';
 import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AppToaster } from './components/ui/toast';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield, AlertTriangle, Lock } from 'lucide-react';
@@ -737,6 +738,7 @@ const App: React.FC = () => {
   <AuthProvider>
   <WorkflowStatusesProvider>
   <DeviceRegistration />
+  <AppToaster />
   <AppContent />
   </WorkflowStatusesProvider>
   </AuthProvider>
