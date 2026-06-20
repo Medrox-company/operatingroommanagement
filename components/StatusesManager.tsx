@@ -133,21 +133,28 @@ const StatusesManager: React.FC = () => {
         />
       </div>
 
-      <div className="space-y-8 relative" style={{ zIndex: 1 }}>
-      {/* Header */}
-      <header className="mb-8">
-        <div className="mb-4">
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-            SPRÁVA <span className="text-white/20">STATUSŮ</span>
+      <div className="max-w-[2400px] mx-auto w-full relative" style={{ zIndex: 1 }}>
+      {/* Header — sjednocený s dashboardem (stejná pozice i velikost) */}
+      <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
+        <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
+          <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
+            <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-[#A78BFA]" />
+            <p className="text-[9px] sm:text-[10px] font-bold text-[#A78BFA] tracking-[0.3em] sm:tracking-[0.4em] uppercase">KONFIGURACE WORKFLOW STATUSŮ</p>
+          </div>
+          <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-center lg:justify-start">
+            <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0">
+              <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#A78BFA' }} />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ background: '#A78BFA', boxShadow: '0 0 10px #A78BFA88' }} />
+            </span>
+            <span>SPRÁVA <span className="text-white/20">STATUSŮ</span></span>
           </h1>
         </div>
-        <p className="text-white/40 text-sm max-w-xl">
-          Správa workflow statusů operačních výkonů. Můžete upravovat názvy, barvy, časy a nastavení statistik.
-        </p>
       </header>
 
+      <div className="space-y-6 md:space-y-8">
+
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
           <div className="flex items-start gap-3">
             <X className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-red-300/90">{error}</div>
@@ -155,39 +162,32 @@ const StatusesManager: React.FC = () => {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-          <div className="flex items-center gap-3">
-            <Activity className="w-5 h-5 text-cyan-400" />
-            <div>
-              <p className="text-white/50 text-sm">Aktivní Statusy</p>
-              <p className="text-2xl font-bold text-white">
-                {mainStatuses.filter(s => s.is_active).length} / {mainStatuses.length}
-              </p>
+      {/* Stats Cards — sjednocený glass design s dashboardem */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5 md:gap-6">
+        {[
+          { icon: Activity, color: '#22D3EE', label: 'Aktivní Statusy', value: `${mainStatuses.filter(s => s.is_active).length} / ${mainStatuses.length}` },
+          { icon: BarChart3, color: '#FBBF24', label: 'Ve Statistikách', value: `${mainStatuses.filter(s => s.include_in_statistics).length}` },
+          { icon: CheckCircle2, color: '#34D399', label: 'Celkem Statusů', value: `${mainStatuses.length}` },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="group relative rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] p-5 sm:p-6 transition-all duration-500 hover:bg-white/[0.06] hover:border-white/10 overflow-hidden"
+          >
+            <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+            <div className="flex items-center gap-4">
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+                style={{ background: `${card.color}1f`, border: `1px solid ${card.color}33` }}
+              >
+                <card.icon className="w-5 h-5" style={{ color: card.color }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-white/45 text-[11px] font-semibold uppercase tracking-[0.15em]">{card.label}</p>
+                <p className="text-3xl font-bold text-white tabular-nums leading-tight mt-0.5">{card.value}</p>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-          <div className="flex items-center gap-3">
-            <BarChart3 className="w-5 h-5 text-amber-400" />
-            <div>
-              <p className="text-white/50 text-sm">Ve Statistikách</p>
-              <p className="text-2xl font-bold text-white">
-                {mainStatuses.filter(s => s.include_in_statistics).length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            <div>
-              <p className="text-white/50 text-sm">Celkem Statusů</p>
-              <p className="text-2xl font-bold text-white">{mainStatuses.length}</p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Status List */}
@@ -573,7 +573,7 @@ const StatusesManager: React.FC = () => {
       )}
 
       {/* Info Box */}
-      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+      <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">
         <div className="flex items-start gap-3">
           <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-300/90">
@@ -585,6 +585,7 @@ const StatusesManager: React.FC = () => {
             </p>
           </div>
         </div>
+      </div>
       </div>
       </div>
     </>
