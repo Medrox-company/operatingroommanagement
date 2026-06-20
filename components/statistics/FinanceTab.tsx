@@ -9,6 +9,7 @@ import {
   Card, KPIBlock, MetricTile, CategoryBarList, StackedBar,
   C, formatNumber,
 } from './shared';
+import { toast } from '@/components/ui/toast';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   LineChart, Line, ComposedChart, Area,
@@ -197,7 +198,7 @@ export function FinanceTab({
     } else {
       const n = Number(trimmed.replace(',', '.'));
       if (!Number.isFinite(n) || n < 0) {
-        alert('Zadejte platnou nezápornou hodnotu nebo nechte pole prázdné pro zrušení sazby.');
+        toast.error('Zadejte platnou nezápornou hodnotu nebo nechte pole prázdné pro zrušení sazby.');
         return;
       }
       parsed = Math.round(n * 100) / 100;
@@ -206,13 +207,14 @@ export function FinanceTab({
     try {
       const ok = await updateRoomHourlyOperatingCost(roomId, parsed);
       if (!ok) {
-        alert('Uložení selhalo. Zkuste to prosím znovu.');
+        toast.error('Uložení selhalo. Zkuste to prosím znovu.');
         return;
       }
       // Optimisticky aktualizujeme lokální mapu — sazba je nyní uložena v DB
       setHourlyCostOverride(prev => ({ ...prev, [roomId]: parsed }));
       setEditingRoomId(null);
       setEditingValue('');
+      toast.success(parsed === null ? 'Sazba zrušena' : 'Sazba uložena');
     } finally {
       setSavingRoomId(null);
     }
