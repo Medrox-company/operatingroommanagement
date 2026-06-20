@@ -7,6 +7,7 @@ import {
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel } from '../types';
 import MobileStaffView from './mobile/MobileStaffView';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 // Types from database
 interface StaffMember {
@@ -295,6 +296,7 @@ function DetailEditModal({
 }
 
 export default function StaffManager() {
+  const confirm = useConfirm();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
@@ -394,8 +396,14 @@ export default function StaffManager() {
 
   // Delete staff
   const handleDeleteStaff = async (id: string) => {
-    if (!supabase || !confirm('Opravdu chcete smazat tohoto zaměstnance?')) return;
-    
+    if (!supabase) return;
+    if (!(await confirm({
+      title: 'Smazat zaměstnance?',
+      description: 'Tato akce je nevratná.',
+      confirmLabel: 'Smazat',
+      danger: true,
+    }))) return;
+
     try {
       const { error } = await supabase.from('staff').delete().eq('id', id);
       if (error) throw error;

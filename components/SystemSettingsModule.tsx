@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
 import { usePWAInstall } from './PWAInstaller';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 interface FacilityInfo {
   facility_name?: string | null;
@@ -1773,6 +1774,7 @@ function getDeviceTypeIcon(deviceType: string) {
 }
 
 const DevicesSettingsPanel: React.FC = () => {
+  const confirm = useConfirm();
   const [devices, setDevices] = React.useState<DeviceInfo[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -1858,7 +1860,12 @@ const DevicesSettingsPanel: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Opravdu chcete toto zařízení smazat?')) return;
+    if (!(await confirm({
+      title: 'Smazat zařízení?',
+      description: 'Tato akce je nevratná.',
+      confirmLabel: 'Smazat',
+      danger: true,
+    }))) return;
     try {
       const response = await fetch(`/api/devices?id=${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete device');

@@ -25,6 +25,7 @@ import LiveClock from './components/LiveClock';
 import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppToaster } from './components/ui/toast';
+import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield, AlertTriangle, Lock } from 'lucide-react';
@@ -737,9 +738,11 @@ const App: React.FC = () => {
   <ErrorBoundary>
   <AuthProvider>
   <WorkflowStatusesProvider>
+  <ConfirmProvider>
   <DeviceRegistration />
   <AppToaster />
   <AppContent />
+  </ConfirmProvider>
   </WorkflowStatusesProvider>
   </AuthProvider>
   </ErrorBoundary>

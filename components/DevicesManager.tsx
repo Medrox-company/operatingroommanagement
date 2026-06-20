@@ -22,6 +22,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 interface DeviceInfo {
   id: string;
@@ -76,6 +77,7 @@ function getDeviceTypeIcon(deviceType: string) {
 }
 
 const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
+  const confirm = useConfirm();
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -159,7 +161,12 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Opravdu chcete toto zařízení smazat?')) return;
+    if (!(await confirm({
+      title: 'Smazat zařízení?',
+      description: 'Tato akce je nevratná.',
+      confirmLabel: 'Smazat',
+      danger: true,
+    }))) return;
     try {
       const response = await fetch(`/api/devices?id=${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete device');
