@@ -209,26 +209,34 @@ const RoomCard: React.FC<{
   // Get today's schedule
   const todayKey = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1].key as keyof WeeklySchedule;
   const todaySchedule = schedule[todayKey];
-  
+  const accent = getDeptColor(room.department);
+
   return (
     <div
-      className="relative group overflow-hidden rounded-xl transition-transform duration-200 hover:scale-[1.01]"
+      className="relative group rounded-3xl transition-all duration-300 hover:-translate-y-1.5"
     >
-      {/* Card Content */}
-      <div 
-        className="relative rounded-xl border backdrop-blur-sm overflow-hidden transition-all duration-300"
-        style={{ 
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
-          borderColor: 'rgba(255,255,255,0.08)'
-        }}
-      >
+      {/* Card Content — sklovitý kontejner jako na dashboardu */}
+      <div className="relative rounded-3xl border border-white/5 bg-white/[0.03] backdrop-blur-[60px] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-500 group-hover:bg-white/[0.06] group-hover:border-white/10 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]">
+        {/* akcentní linka v barvě oddělení */}
+        <div
+          className="absolute inset-x-10 top-0 h-[2px] rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
+          style={{ background: `linear-gradient(to right, transparent, ${accent}, transparent)` }}
+        />
         {/* Content */}
-        <div className="p-6 flex flex-col h-full">
+        <div className="relative p-6 flex flex-col h-full">
           {/* Top Row: Name and Status */}
           <div className="flex items-start justify-between mb-5 pb-5 border-b border-white/5">
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-white/40 uppercase tracking-wide mb-1">{room.department}</p>
-              <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${accent}1f`, border: `1px solid ${accent}40` }}
+              >
+                <Building2 className="w-5 h-5" style={{ color: accent }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wide mb-0.5 truncate" style={{ color: accent }}>{room.department}</p>
+                <h3 className="text-lg font-bold text-white truncate">{room.name}</h3>
+              </div>
             </div>
             
             {/* Status Badge */}
@@ -625,16 +633,20 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   };
 
   return (
-    <div className="w-full">
-      {/* Header */}
-      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
-        <div className="text-center lg:text-left">
-          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-            <Building2 className="w-4 h-4 text-[#FBBF24]" />
-            <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">OPERAČNÍ SÁLY MANAGEMENT</p>
+    <div className="max-w-[2400px] mx-auto w-full">
+      {/* Header — sjednocený s dashboardem */}
+      <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-10 lg:mb-12">
+        <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
+          <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
+            <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-[#22D3EE]" />
+            <p className="text-[9px] sm:text-[10px] font-bold text-[#22D3EE] tracking-[0.3em] sm:tracking-[0.4em] uppercase">SPRÁVA OPERAČNÍCH SÁLŮ</p>
           </div>
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-            OPERAČNÍ <span className="text-white/20">SÁLY</span>
+          <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-center lg:justify-start">
+            <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0">
+              <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#22D3EE' }} />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ background: '#22D3EE', boxShadow: '0 0 10px #22D3EE88' }} />
+            </span>
+            <span>OPERAČNÍ <span className="text-white/20">SÁLY</span></span>
           </h1>
         </div>
       </header>
