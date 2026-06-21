@@ -7,6 +7,7 @@ import {
   GripVertical, Plus, Trash2, ToggleLeft, ToggleRight, Loader2
 } from 'lucide-react';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
+import * as RadixDialog from '@radix-ui/react-dialog';
 
 interface EditingStatus {
   id: string;
@@ -177,116 +178,11 @@ const StatusesManager: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: idx * 0.04 }}
-                className={`group relative w-full transition-all duration-300 ${
-                  isEditing
-                    ? 'col-span-full rounded-[1.75rem] sm:rounded-[2.5rem] bg-white/[0.06] border border-cyan-500/40 backdrop-blur-[60px] p-5 overflow-hidden'
-                    : status.is_active
-                      ? 'h-[260px] sm:h-[340px] hover:-translate-y-1.5'
-                      : 'h-[260px] sm:h-[340px] opacity-50 hover:opacity-80'
-                }`}
+                className={`group relative w-full h-[260px] sm:h-[340px] rounded-[1.75rem] sm:rounded-[2.5rem] transition-all duration-300 ${
+                  status.is_active ? 'hover:-translate-y-1.5' : 'opacity-50 hover:opacity-80'
+                } ${isEditing ? 'ring-2 ring-cyan-400/60' : ''}`}
               >
-                {isEditing && editingData ? (
-                  /* Edit Mode */
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-cyan-400">Úprava statusu</h3>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleCancel}
-                          className="px-3 py-1.5 text-sm rounded-lg bg-white/10 hover:bg-white/20 text-white/70 transition-colors"
-                        >
-                          Zrušit
-                        </button>
-                        <button
-                          onClick={handleSave}
-                          disabled={saving}
-                          className="px-3 py-1.5 text-sm rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                          Uložit
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Name */}
-                      <div>
-                        <label className="block text-sm text-white/50 mb-1">Název</label>
-                        <input
-                          type="text"
-                          value={editingData.name}
-                          onChange={(e) => setEditingData({ ...editingData, name: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:border-cyan-500"
-                        />
-                      </div>
-                      
-                      {/* Color */}
-                      <div>
-                        <label className="block text-sm text-white/50 mb-1">Barva</label>
-                        <div className="flex gap-2">
-                          <input
-                            type="color"
-                            value={editingData.accent_color}
-                            onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
-                            className="w-12 h-10 rounded-lg cursor-pointer bg-transparent"
-                          />
-                          <input
-                            type="text"
-                            value={editingData.accent_color}
-                            onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
-                            className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white font-mono text-sm focus:outline-none focus:border-cyan-500"
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* Duration */}
-                      <div>
-                        <label className="block text-sm text-white/50 mb-1">Trvání (minuty)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={editingData.default_duration_minutes}
-                          onChange={(e) => setEditingData({ ...editingData, default_duration_minutes: parseInt(e.target.value) || 0 })}
-                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:border-cyan-500"
-                        />
-                      </div>
-                      
-                      {/* Description */}
-                      <div>
-                        <label className="block text-sm text-white/50 mb-1">Popis</label>
-                        <input
-                          type="text"
-                          value={editingData.description}
-                          onChange={(e) => setEditingData({ ...editingData, description: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:border-cyan-500"
-                          placeholder="Volitelný popis..."
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Toggles */}
-                    <div className="flex gap-6 pt-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={editingData.is_active}
-                          onChange={(e) => setEditingData({ ...editingData, is_active: e.target.checked })}
-                          className="w-4 h-4 rounded bg-white/10 border-white/20 text-cyan-500 focus:ring-cyan-500"
-                        />
-                        <span className="text-sm text-white/70">Aktivní</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={editingData.include_in_statistics}
-                          onChange={(e) => setEditingData({ ...editingData, include_in_statistics: e.target.checked })}
-                          className="w-4 h-4 rounded bg-white/10 border-white/20 text-cyan-500 focus:ring-cyan-500"
-                        />
-                        <span className="text-sm text-white/70">Započítat do statistik</span>
-                      </label>
-                    </div>
-                  </div>
-                ) : (
+                {(
                   /* View Mode — stejné jako karty na dashboardu */
                   <>
                     {/* Hlavní kontejner karty */}
@@ -411,92 +307,11 @@ const StatusesManager: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ delay: idx * 0.04 }}
-                  className={`group relative w-full transition-all duration-300 ${
-                    isEditing
-                      ? 'col-span-full rounded-[1.75rem] sm:rounded-[2.5rem] bg-white/[0.06] border border-amber-500/40 backdrop-blur-[60px] p-5 overflow-hidden'
-                      : status.is_active
-                        ? 'h-[260px] sm:h-[340px] hover:-translate-y-1.5'
-                        : 'h-[260px] sm:h-[340px] opacity-50 hover:opacity-80'
-                  }`}
+                  className={`group relative w-full h-[260px] sm:h-[340px] rounded-[1.75rem] sm:rounded-[2.5rem] transition-all duration-300 ${
+                    status.is_active ? 'hover:-translate-y-1.5' : 'opacity-50 hover:opacity-80'
+                  } ${isEditing ? 'ring-2 ring-amber-400/60' : ''}`}
                 >
-                  {isEditing && editingData ? (
-                    /* Edit Mode for special statuses */
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-amber-400">Úprava speciálního statusu</h3>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleCancel}
-                            className="px-3 py-1.5 text-sm rounded-lg bg-white/10 hover:bg-white/20 text-white/70 transition-colors"
-                          >
-                            Zrušit
-                          </button>
-                          <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="px-3 py-1.5 text-sm rounded-lg bg-amber-500 hover:bg-amber-400 text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
-                          >
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            Uložit
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Name */}
-                        <div>
-                          <label className="block text-sm text-white/50 mb-1">Název</label>
-                          <input
-                            type="text"
-                            value={editingData.name}
-                            onChange={(e) => setEditingData({ ...editingData, name: e.target.value })}
-                            className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-                        
-                        {/* Color */}
-                        <div>
-                          <label className="block text-sm text-white/50 mb-1">Barva</label>
-                          <div className="flex gap-2">
-                            <input
-                              type="color"
-                              value={editingData.accent_color}
-                              onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
-                              className="w-12 h-10 rounded-lg cursor-pointer bg-transparent"
-                            />
-                            <input
-                              type="text"
-                              value={editingData.accent_color}
-                              onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
-                              className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white font-mono text-sm focus:outline-none focus:border-amber-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Toggles */}
-                      <div className="flex gap-6 pt-2">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={editingData.is_active}
-                            onChange={(e) => setEditingData({ ...editingData, is_active: e.target.checked })}
-                            className="w-4 h-4 rounded bg-white/10 border-white/20 text-amber-500 focus:ring-amber-500"
-                          />
-                          <span className="text-sm text-white/70">Aktivní</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={editingData.include_in_statistics}
-                            onChange={(e) => setEditingData({ ...editingData, include_in_statistics: e.target.checked })}
-                            className="w-4 h-4 rounded bg-white/10 border-white/20 text-amber-500 focus:ring-amber-500"
-                          />
-                          <span className="text-sm text-white/70">Započítat do statistik</span>
-                        </label>
-                      </div>
-                    </div>
-                  ) : (
+                  {(
                     /* View Mode for special statuses — stejné jako karty na dashboardu */
                     <>
                       {/* Hlavní kontejner karty */}
@@ -601,6 +416,166 @@ const StatusesManager: React.FC = () => {
 
       </div>
       </div>
+
+      {/* Popup pro úpravu statusu — design sjednocený s modulem */}
+      <RadixDialog.Root open={!!editingData} onOpenChange={(o) => { if (!o) handleCancel(); }}>
+        <RadixDialog.Portal>
+          <RadixDialog.Overlay className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm" />
+          <RadixDialog.Content
+            className="fixed left-1/2 top-1/2 z-[201] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-white/10 p-6 outline-none overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+            style={{ background: 'rgba(13,19,32,0.98)', backdropFilter: 'blur(40px)' }}
+          >
+            {editingData && (() => {
+              const editingStatus = statuses.find(s => s.id === editingData.id);
+              const isSpecialEdit = !!editingStatus?.is_special;
+              const accent = editingData.accent_color || '#22D3EE';
+              return (
+                <>
+                  {/* horní akcentní linka v barvě statusu */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-x-10 top-0 h-[2px] rounded-full"
+                    style={{ background: `linear-gradient(to right, transparent, ${accent}, transparent)` }}
+                  />
+                  {/* jemné zazáření */}
+                  <div
+                    aria-hidden
+                    className="absolute -top-16 left-1/2 -translate-x-1/2 w-56 h-56 rounded-full blur-[90px] pointer-events-none"
+                    style={{ backgroundColor: accent, opacity: 0.14 }}
+                  />
+
+                  <div className="relative flex items-start justify-between gap-3 mb-5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="relative w-11 h-11 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
+                        style={{ background: `linear-gradient(135deg, ${accent} 0%, ${accent}aa 100%)`, boxShadow: `0 6px 16px -4px ${accent}99` }}
+                      >
+                        <div aria-hidden className="absolute inset-0 rounded-full bg-gradient-to-b from-white/40 to-transparent opacity-50" />
+                        <Edit3 className="relative w-4 h-4 text-white drop-shadow" />
+                      </div>
+                      <div className="min-w-0">
+                        <RadixDialog.Title className="text-lg font-bold text-white truncate">
+                          {isSpecialEdit ? 'Úprava speciálního statusu' : 'Úprava statusu'}
+                        </RadixDialog.Title>
+                        <RadixDialog.Description className="text-xs text-white/40 mt-0.5">
+                          Změňte název, barvu{isSpecialEdit ? '' : ', dobu trvání'} a nastavení.
+                        </RadixDialog.Description>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleCancel}
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0"
+                      title="Zavřít"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="relative space-y-4">
+                    {/* Název */}
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Název</label>
+                      <input
+                        type="text"
+                        value={editingData.name}
+                        onChange={(e) => setEditingData({ ...editingData, name: e.target.value })}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                      />
+                    </div>
+
+                    {/* Barva */}
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Barva</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={editingData.accent_color}
+                          onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
+                          className="w-12 h-10 rounded-lg cursor-pointer bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={editingData.accent_color}
+                          onChange={(e) => setEditingData({ ...editingData, accent_color: e.target.value })}
+                          className="flex-1 px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-white/30 transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    {!isSpecialEdit && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Trvání (minuty)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={editingData.default_duration_minutes}
+                            onChange={(e) => setEditingData({ ...editingData, default_duration_minutes: parseInt(e.target.value) || 0 })}
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white focus:outline-none focus:border-white/30 transition-colors"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Popis</label>
+                          <input
+                            type="text"
+                            value={editingData.description}
+                            onChange={(e) => setEditingData({ ...editingData, description: e.target.value })}
+                            placeholder="Volitelný popis..."
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Přepínače */}
+                    <div className="flex flex-wrap gap-x-6 gap-y-3 pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editingData.is_active}
+                          onChange={(e) => setEditingData({ ...editingData, is_active: e.target.checked })}
+                          className="w-4 h-4 rounded bg-white/10 border-white/20"
+                          style={{ accentColor: accent }}
+                        />
+                        <span className="text-sm text-white/70">Aktivní</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editingData.include_in_statistics}
+                          onChange={(e) => setEditingData({ ...editingData, include_in_statistics: e.target.checked })}
+                          className="w-4 h-4 rounded bg-white/10 border-white/20"
+                          style={{ accentColor: accent }}
+                        />
+                        <span className="text-sm text-white/70">Započítat do statistik</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Patička */}
+                  <div className="relative mt-6 flex justify-end gap-2.5">
+                    <button
+                      onClick={handleCancel}
+                      className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white/80 transition-colors"
+                    >
+                      Zrušit
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="px-5 py-2.5 text-sm font-bold rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                      style={{ background: accent, boxShadow: `0 8px 20px -6px ${accent}88` }}
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      Uložit
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </RadixDialog.Content>
+        </RadixDialog.Portal>
+      </RadixDialog.Root>
     </>
   );
 };
