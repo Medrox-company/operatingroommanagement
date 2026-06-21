@@ -24,6 +24,7 @@ import AnimatedCounter from './components/AnimatedCounter';
 import LiveClock from './components/LiveClock';
 import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import AnimatedBackground from './components/AnimatedBackground';
 import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { MOCK_ROOMS } from './constants';
@@ -100,19 +101,6 @@ const AppContent: React.FC = () => {
   }, []);
 
   // Generate CSS gradient from settings - memoized
-  const backgroundStyle = useMemo(() => {
-    const colors = bgSettings.colors || [];
-    if (bgSettings.type === 'solid' || colors.length <= 1) {
-      return colors[0]?.color || '#0a0a12';
-    }
-    const sortedColors = [...colors].sort((a, b) => a.position - b.position);
-    const colorStops = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
-    if (bgSettings.type === 'radial') {
-      return `radial-gradient(circle at center, ${colorStops})`;
-    }
-    return `linear-gradient(${bgSettings.direction || 'to bottom'}, ${colorStops})`;
-  }, [bgSettings]);
-
   // Emergency alert sound — siréna při aktivaci stavu nouze (isEmergency=true).
   useEmergencyAlert(rooms);
 
@@ -541,15 +529,9 @@ const AppContent: React.FC = () => {
           />
         )}
         
-        {/* Color/Gradient Overlay */}
-        <div
-          className="absolute inset-0 transition-all duration-500"
-          style={{
-            background: backgroundStyle,
-            opacity: (bgSettings.opacity ?? 100) / 100,
-          }}
-        />
-        
+        {/* Color/Gradient Overlay + animovaný efekt */}
+        <AnimatedBackground settings={bgSettings} />
+
       </div>
 
 <Sidebar 

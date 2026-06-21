@@ -1234,6 +1234,8 @@ export async function fetchSchedules(
 
 // ============= BACKGROUND SETTINGS =============
 
+export type BackgroundAnimation = 'none' | 'gradient-shift' | 'aurora' | 'particles' | 'pulse';
+
 export interface BackgroundSettings {
   type: 'solid' | 'linear' | 'radial';
   colors: { color: string; position: number }[];
@@ -1242,6 +1244,10 @@ export interface BackgroundSettings {
   imageUrl: string;
   imageOpacity: number;
   imageBlur: number;
+  /** Animovaný efekt pozadí (CSS, lehké). */
+  animation?: BackgroundAnimation;
+  /** Rychlost animace 1 (pomalu) – 5 (rychle). Výchozí 3. */
+  animationSpeed?: number;
 }
 
 // Fetch background settings for all users
@@ -1271,6 +1277,8 @@ export async function fetchBackgroundSettings(): Promise<BackgroundSettings | nu
       imageUrl: data.background_image_url || '',
       imageOpacity: data.background_image_opacity ?? 15,
       imageBlur: data.background_image_blur ?? 0,
+      animation: (data.background_animation as BackgroundAnimation) ?? 'none',
+      animationSpeed: data.background_animation_speed ?? 3,
     };
   } catch (error) {
     console.error('[DB] Failed to fetch background settings:', error);
@@ -1286,7 +1294,7 @@ export async function saveBackgroundSettings(settings: BackgroundSettings): Prom
 
   try {
     // Map BackgroundSettings to database columns
-    const dbData = {
+    const dbData: Record<string, unknown> = {
       id: 'global',
       background_type: settings.type,
       background_colors: settings.colors,
@@ -1295,13 +1303,23 @@ export async function saveBackgroundSettings(settings: BackgroundSettings): Prom
       background_image_url: settings.imageUrl,
       background_image_opacity: settings.imageOpacity,
       background_image_blur: settings.imageBlur,
+      background_animation: settings.animation ?? 'none',
+      background_animation_speed: settings.animationSpeed ?? 3,
       updated_at: new Date().toISOString(),
     };
 
     // Upsert - insert or update
-    const { error } = await supabase
+    let { error } = await supabase
       .from('app_settings')
       .upsert(dbData, { onConflict: 'id' });
+
+    // Resilience: pokud DB ještě nemá sloupce pro animaci (42703),
+    // ulož zbytek bez nich (animace pak funguje lokálně do migrace).
+    if (error && (error.code === '42703' || /column .* does not exist/i.test(error.message))) {
+      delete dbData.background_animation;
+      delete dbData.background_animation_speed;
+      ({ error } = await supabase.from('app_settings').upsert(dbData, { onConflict: 'id' }));
+    }
 
     if (error) throw error;
     return true;

@@ -2,12 +2,22 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Palette, Image as ImageIcon, RotateCcw, Plus, Trash2, 
-  ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, ArrowDownRight, 
-  ArrowUpLeft, ArrowDownLeft, Eye, EyeOff, Loader
+import {
+  Palette, Image as ImageIcon, RotateCcw, Plus, Trash2,
+  ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, ArrowDownRight,
+  ArrowUpLeft, ArrowDownLeft, Eye, EyeOff, Loader,
+  Sparkles, Waves, Wind, Sparkle, Activity, Ban
 } from 'lucide-react';
-import { saveBackgroundSettings, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
+import { saveBackgroundSettings, fetchBackgroundSettings, BackgroundSettings, BackgroundAnimation } from '../lib/db';
+import AnimatedBackground from './AnimatedBackground';
+
+const ANIMATION_OPTIONS: { value: BackgroundAnimation; label: string; desc: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { value: 'none', label: 'Žádná', desc: 'Statické pozadí', icon: Ban },
+  { value: 'gradient-shift', label: 'Posun gradientu', desc: 'Plynulé přelévání barev', icon: Waves },
+  { value: 'aurora', label: 'Aurora', desc: 'Plující světelné vlny', icon: Sparkles },
+  { value: 'particles', label: 'Částice', desc: 'Plovoucí světelné body', icon: Sparkle },
+  { value: 'pulse', label: 'Dýchání', desc: 'Jemný pulz jasu', icon: Activity },
+];
 
 const GRADIENT_DIRECTIONS = [
   { value: 'to top', label: 'Nahoru', icon: ArrowUp },
@@ -74,13 +84,15 @@ const DEFAULT_SETTINGS: BackgroundSettings = {
   imageUrl: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000',
   imageOpacity: 15,
   imageBlur: 0,
+  animation: 'none',
+  animationSpeed: 3,
 };
 
 const BackgroundManager: React.FC = () => {
   const [settings, setSettings] = useState<BackgroundSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'color' | 'image'>('color');
+  const [activeTab, setActiveTab] = useState<'color' | 'image' | 'animation'>('color');
   const [showPreview, setShowPreview] = useState(true);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [hasChanges, setHasChanges] = useState(false);
@@ -191,63 +203,66 @@ const BackgroundManager: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="mb-4">
-            <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-              NASTAVENÍ <span className="text-white/20">POZADÍ</span>
-            </h1>
+    <div className="max-w-[2400px] mx-auto w-full">
+      {/* Header — sjednocený s ostatními moduly */}
+      <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
+        <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
+          <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
+            <Palette className="w-3 h-3 sm:w-4 sm:h-4 text-[#8B5CF6]" />
+            <p className="text-[9px] sm:text-[10px] font-bold text-[#8B5CF6] tracking-[0.3em] sm:tracking-[0.4em] uppercase">VZHLED APLIKACE</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
-              disabled={saving}
-            >
-              {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              Náhled
-            </button>
-            <button
-              onClick={resetToDefaults}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
-              disabled={saving}
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset
-            </button>
-            <button
-              onClick={applyChanges}
-              disabled={saving || !hasChanges}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                hasChanges
-                  ? 'bg-violet-500 text-white hover:bg-violet-400 shadow-lg shadow-violet-500/25'
-                  : 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed'
-              }`}
-            >
-              {saving ? (
-                <>
-                  <Loader className="w-4 h-4 animate-spin" />
-                  Ukládám...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Aplikovat změny
-                </>
-              )}
-            </button>
-          </div>
+          <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-center lg:justify-start">
+            <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0">
+              <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#8B5CF6' }} />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ background: '#8B5CF6', boxShadow: '0 0 10px #8B5CF688' }} />
+            </span>
+            <span>NASTAVENÍ <span className="text-white/20">POZADÍ</span></span>
+          </h1>
         </div>
-        <p className="text-white/40 text-sm max-w-xl">
-          Nastavte barevné pozadí, přechody a obrázky. Změny se uloží pro všechny uživatele.
-        </p>
+        <div className="flex items-center gap-2 md:gap-3">
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
+            disabled={saving}
+          >
+            {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            Náhled
+          </button>
+          <button
+            onClick={resetToDefaults}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all text-sm"
+            disabled={saving}
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset
+          </button>
+          <button
+            onClick={applyChanges}
+            disabled={saving || !hasChanges}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              hasChanges
+                ? 'bg-violet-500 text-white hover:bg-violet-400 shadow-lg shadow-violet-500/25'
+                : 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed'
+            }`}
+          >
+            {saving ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                Ukládám...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Aplikovat změny
+              </>
+            )}
+          </button>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl">
         {/* Controls */}
         <div className="lg:col-span-2 space-y-6">
           {/* Tab Switcher */}
@@ -267,14 +282,26 @@ const BackgroundManager: React.FC = () => {
             <button
               onClick={() => setActiveTab('image')}
               className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === 'image' 
-                  ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' 
+                activeTab === 'image'
+                  ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
                   : 'text-white/40 hover:text-white/60'
               }`}
               disabled={saving}
             >
               <ImageIcon className="w-4 h-4" />
               Obrázek
+            </button>
+            <button
+              onClick={() => setActiveTab('animation')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === 'animation'
+                  ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                  : 'text-white/40 hover:text-white/60'
+              }`}
+              disabled={saving}
+            >
+              <Sparkles className="w-4 h-4" />
+              Animace
             </button>
           </div>
 
@@ -490,7 +517,7 @@ const BackgroundManager: React.FC = () => {
                   </>
                 )}
               </motion.div>
-            ) : (
+            ) : activeTab === 'image' ? (
               <motion.div
                 key="image"
                 initial={{ opacity: 0, y: 10 }}
@@ -583,6 +610,86 @@ const BackgroundManager: React.FC = () => {
                   />
                 </div>
               </motion.div>
+            ) : (
+              <motion.div
+                key="animation"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
+              >
+                {/* Výběr efektu */}
+                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Animace pozadí</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {ANIMATION_OPTIONS.map((opt) => {
+                      const OptIcon = opt.icon;
+                      const active = (settings.animation ?? 'none') === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => updateSettings({ animation: opt.value })}
+                          disabled={saving}
+                          className={`relative flex flex-col items-start gap-2 p-4 rounded-2xl border text-left transition-all ${
+                            active
+                              ? 'bg-violet-500/15 border-violet-500/40'
+                              : 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
+                          }`}
+                        >
+                          <div
+                            className={`flex items-center justify-center w-9 h-9 rounded-xl ${active ? 'text-violet-300' : 'text-white/50'}`}
+                            style={{ background: active ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.05)' }}
+                          >
+                            <OptIcon className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className={`text-sm font-semibold ${active ? 'text-white' : 'text-white/70'}`}>{opt.label}</p>
+                            <p className="text-[11px] text-white/40 leading-tight mt-0.5">{opt.desc}</p>
+                          </div>
+                          {active && (
+                            <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-violet-400" style={{ boxShadow: '0 0 8px #A78BFA' }} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Rychlost */}
+                <div
+                  className={`p-5 rounded-2xl transition-opacity ${(settings.animation ?? 'none') === 'none' ? 'opacity-40 pointer-events-none' : ''}`}
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Rychlost animace</p>
+                    <span className="text-sm font-bold text-white/60">
+                      {['Velmi pomalu', 'Pomalu', 'Normální', 'Rychle', 'Velmi rychle'][(settings.animationSpeed ?? 3) - 1]}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={settings.animationSpeed ?? 3}
+                    onChange={(e) => updateSettings({ animationSpeed: parseInt(e.target.value) })}
+                    className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-violet-500"
+                    disabled={saving}
+                  />
+                  <div className="flex justify-between mt-2 text-[10px] text-white/30">
+                    <span>Pomalu</span>
+                    <span>Rychle</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-4 rounded-2xl bg-violet-500/[0.07] border border-violet-500/20">
+                  <Wind className="w-4 h-4 text-violet-300 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-white/50 leading-relaxed">
+                    Animace jsou lehké (čisté CSS) a respektují systémové nastavení „omezit pohyb".
+                    Efekt používá barvy z vašeho gradientu — zkombinujte s barvami pro vlastní vzhled.
+                  </p>
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -609,14 +716,8 @@ const BackgroundManager: React.FC = () => {
                 />
               )}
 
-              {/* Color/Gradient Overlay */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: getGradientCSS(),
-                  opacity: settings.opacity / 100,
-                }}
-              />
+              {/* Color/Gradient Overlay + živá animace */}
+              <AnimatedBackground settings={settings} />
 
               {/* Vignette */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_20%,_rgba(0,0,0,0.6)_100%)]" />
