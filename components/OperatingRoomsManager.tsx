@@ -212,127 +212,95 @@ const RoomCard: React.FC<{
   const accent = getDeptColor(room.department);
   const pad = (n: number) => n.toString().padStart(2, '0');
   const isFree = room.status === RoomStatus.FREE;
+  const circumference = 2 * Math.PI * 48;
+  const dashoffset = circumference * (1 - activeDays / 7);
 
   return (
-    <div className="relative group rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden border border-white/[0.08] bg-white/[0.03] backdrop-blur-[60px] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]">
-      {/* Dekorativní teplé záření vpravo nahoře (barva oddělení) */}
-      <div
-        aria-hidden
-        className="absolute -top-20 -right-12 w-72 h-72 rounded-full blur-[80px] pointer-events-none opacity-40 transition-opacity duration-500 group-hover:opacity-60"
-        style={{ background: `radial-gradient(circle, ${accent} 0%, transparent 70%)` }}
-      />
-      <div
-        aria-hidden
-        className="absolute -top-4 right-6 w-44 h-44 rounded-full pointer-events-none opacity-20"
-        style={{ border: `1px solid ${accent}`, maskImage: 'radial-gradient(circle, #000 35%, transparent 72%)', WebkitMaskImage: 'radial-gradient(circle, #000 35%, transparent 72%)' }}
-      />
-      {/* horní světelný proužek */}
-      <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+    <div className="relative group h-[260px] sm:h-[340px] rounded-[1.75rem] sm:rounded-[2.5rem] transition-all duration-300 hover:-translate-y-1.5">
+      {/* Hlavní kontejner — stejný jako dashboard */}
+      <div className="absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border border-white/5 shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] group-hover:bg-white/[0.06] group-hover:border-white/10 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]">
+        <div
+          className="absolute inset-x-10 top-0 h-[2px] rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
+          style={{ background: `linear-gradient(to right, transparent, ${accent}, transparent)` }}
+        />
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none"
+          style={{ backgroundColor: accent, opacity: 0.15 }}
+        />
+      </div>
 
-      <div className="relative p-5 flex flex-col">
-        {/* Top: ikona + stav */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${accent}1f`, border: `1px solid ${accent}40` }}>
-            <Building2 className="w-5 h-5" style={{ color: accent }} />
+      {/* Obsah */}
+      <div className="relative h-full w-full z-10 p-4 sm:p-6 flex flex-col">
+        {/* Header — vystředěný */}
+        <div className="w-full flex flex-col items-center text-center shrink-0">
+          <div className="flex items-center justify-center gap-1.5 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: isFree ? '#34D399' : '#F87171', boxShadow: isFree ? '0 0 6px #34D39988' : '0 0 6px #F8717188' }} />
+            <p className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase leading-none truncate max-w-full" style={{ color: accent }}>
+              {room.department}
+            </p>
           </div>
-          <div
-            className="px-3 py-1 rounded-full text-[11px] font-semibold"
-            style={{
-              background: isFree ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-              color: isFree ? '#4ADE80' : '#F87171',
-              border: `1px solid ${isFree ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-            }}
+          <h3 className="text-base sm:text-xl font-bold tracking-tight uppercase leading-none truncate max-w-full text-white/90 group-hover:text-white transition-colors">
+            {room.name}
+          </h3>
+        </div>
+
+        {/* Střed — kruhový indikátor aktivních dnů */}
+        <div className="flex-1 flex items-center justify-center min-h-0">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute rounded-full blur-[40px]" style={{ width: 80, height: 80, backgroundColor: accent, opacity: 0.25 }} />
+            <svg viewBox="0 0 112 112" className="w-20 h-20 sm:w-28 sm:h-28 overflow-visible select-none" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="56" cy="56" r="48" fill="none" stroke="white" strokeWidth="1.5" className="opacity-[0.05]" />
+              <circle
+                cx="56" cy="56" r="48" fill="none"
+                stroke={accent} strokeWidth="5" strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashoffset}
+                style={{ filter: `drop-shadow(0 0 6px ${accent}99)`, transition: 'stroke-dashoffset 0.5s ease' }}
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center">
+              <span className="text-3xl sm:text-4xl font-bold text-white leading-none" style={{ letterSpacing: '-0.04em' }}>{activeDays}</span>
+              <span className="text-[9px] sm:text-[10px] text-white/40 uppercase tracking-wide mt-0.5">/ 7 dní</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Spodní info — dnešní hodiny + akce */}
+        <div className="w-full space-y-2 sm:space-y-2.5 shrink-0">
+          <p
+            className="text-[9px] sm:text-[10px] font-bold tracking-[0.12em] uppercase truncate py-1.5 px-3 rounded-full border block w-full text-center"
+            style={todaySchedule.enabled
+              ? { backgroundColor: `${accent}1a`, borderColor: `${accent}40`, color: '#fff' }
+              : { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}
           >
-            {isFree ? 'Volný' : 'Obsazeno'}
-          </div>
-        </div>
+            {todaySchedule.enabled
+              ? `Dnes ${pad(todaySchedule.startHour)}:${pad(todaySchedule.startMinute)} – ${pad(todaySchedule.endHour)}:${pad(todaySchedule.endMinute)}`
+              : 'Dnes zavřeno'}
+          </p>
 
-        {/* Title + popis */}
-        <h3 className="text-xl font-bold text-white tracking-tight truncate">{room.name}</h3>
-        <p className="text-[13px] text-white/45 mt-1.5 leading-relaxed">Oddělení {room.department} · operační sál</p>
-
-        {/* Výrazné číslo */}
-        <div className="flex items-baseline gap-2 mt-4">
-          <span className="text-3xl font-bold text-white tabular-nums leading-none">{activeDays}</span>
-          <span className="text-white/40 text-sm">/ 7 dní v provozu</span>
-        </div>
-
-        <div className="h-px bg-white/[0.08] my-4" />
-
-        {/* Týdenní rozvrh — jemná mřížka dnů + konec pracovní doby */}
-        <div className="flex items-center justify-between mb-2.5">
-          <p className="text-[13px] font-semibold text-white">Týdenní rozvrh</p>
-          <span className="text-[10px] text-white/30 uppercase tracking-wide">konec doby</span>
-        </div>
-        <div className="rounded-xl border border-white/[0.08] overflow-hidden" style={{ background: 'rgba(255,255,255,0.015)' }}>
-          {/* Řada zkratek dnů */}
-          <div className="grid grid-cols-7 divide-x divide-white/[0.06]">
-            {DAYS.map((day) => {
-              const d = schedule[day.key as keyof WeeklySchedule];
-              const isToday = (day.key as keyof WeeklySchedule) === todayKey;
-              return (
-                <div
-                  key={day.key}
-                  className="relative py-2 text-center text-xs sm:text-sm font-bold uppercase tracking-wide transition-colors"
-                  style={{
-                    color: d.enabled ? accent : 'rgba(255,255,255,0.25)',
-                    background: d.enabled ? (isToday ? `${accent}2e` : `${accent}14`) : 'transparent',
-                    boxShadow: d.enabled ? `inset 0 2px 0 ${accent}` : undefined,
-                  }}
-                >
-                  {day.short.toUpperCase()}
-                  {isToday && (
-                    <span
-                      aria-hidden
-                      className="absolute left-1/2 -translate-x-1/2 bottom-1 w-1 h-1 rounded-full"
-                      style={{ background: accent, boxShadow: `0 0 5px ${accent}` }}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {/* Řada konce pracovní doby */}
-          <div className="grid grid-cols-7 divide-x divide-white/[0.06] border-t border-white/[0.06]">
-            {DAYS.map((day) => {
-              const d = schedule[day.key as keyof WeeklySchedule];
-              const isToday = (day.key as keyof WeeklySchedule) === todayKey;
-              return (
-                <div
-                  key={day.key}
-                  className="py-2 text-center text-[11px] sm:text-xs font-mono tabular-nums transition-colors"
-                  style={{
-                    color: d.enabled ? (isToday ? '#fff' : 'rgba(255,255,255,0.75)') : 'rgba(255,255,255,0.18)',
-                    background: isToday && d.enabled ? `${accent}10` : 'transparent',
-                    fontWeight: isToday ? 700 : 400,
-                  }}
-                >
-                  {d.enabled ? `${pad(d.endHour)}:${pad(d.endMinute)}` : '—'}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="h-px bg-white/[0.08] my-4" />
-
-        {/* Footer: odkazy + primární tlačítko */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
-            <button onClick={onEdit} className="flex items-center gap-1.5 text-sm text-white/55 hover:text-white transition-colors">
-              <Edit2 className="w-3.5 h-3.5" /> Upravit
+          <div className="flex items-center gap-1.5 pt-2 sm:pt-2.5 border-t border-white/5">
+            <button
+              onClick={onScheduleEdit}
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+            >
+              <Calendar className="w-3.5 h-3.5" /> Rozvrh
             </button>
-            <button onClick={onDelete} className="flex items-center gap-1.5 text-sm text-red-400/70 hover:text-red-400 transition-colors">
-              <Trash2 className="w-3.5 h-3.5" /> Smazat
+            <button
+              onClick={onEdit}
+              title="Upravit"
+              className="p-2 rounded-xl text-white/60 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onDelete}
+              title="Smazat"
+              className="p-2 rounded-xl text-red-400/70 hover:text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
-          <button
-            onClick={onScheduleEdit}
-            className="px-5 py-2.5 rounded-full font-semibold text-white text-sm transition-all hover:opacity-90 flex items-center gap-2 shrink-0"
-            style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)`, boxShadow: `0 8px 20px -6px ${accent}88` }}
-          >
-            <Calendar className="w-4 h-4" /> Rozvrh
-          </button>
         </div>
       </div>
     </div>
@@ -740,7 +708,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
           items={roomsList.map(r => r.id)}
           strategy={rectSortingStrategy}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
             {roomsList.map((room, idx) => (
               <SortableRoomCard
                 key={room.id}
