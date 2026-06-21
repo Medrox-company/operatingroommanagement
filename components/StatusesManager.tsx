@@ -162,55 +162,27 @@ const StatusesManager: React.FC = () => {
         </div>
       )}
 
-      {/* Stats Cards — sjednocený glass design s dashboardem */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5 md:gap-6">
-        {[
-          { icon: Activity, color: '#22D3EE', label: 'Aktivní Statusy', value: `${mainStatuses.filter(s => s.is_active).length} / ${mainStatuses.length}` },
-          { icon: BarChart3, color: '#FBBF24', label: 'Ve Statistikách', value: `${mainStatuses.filter(s => s.include_in_statistics).length}` },
-          { icon: CheckCircle2, color: '#34D399', label: 'Celkem Statusů', value: `${mainStatuses.length}` },
-        ].map((card) => (
-          <div
-            key={card.label}
-            className="group relative rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-[60px] shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] p-5 sm:p-6 transition-all duration-500 hover:bg-white/[0.06] hover:border-white/10 overflow-hidden"
-          >
-            <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
-            <div className="flex items-center gap-4">
-              <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-                style={{ background: `${card.color}1f`, border: `1px solid ${card.color}33` }}
-              >
-                <card.icon className="w-5 h-5" style={{ color: card.color }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-white/45 text-[11px] font-semibold uppercase tracking-[0.15em]">{card.label}</p>
-                <p className="text-3xl font-bold text-white tabular-nums leading-tight mt-0.5">{card.value}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Status List */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-white/80">Workflow Statusy</h2>
-        
+      {/* Status List — boxy v mřížce */}
+      <div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
         <AnimatePresence>
           {mainStatuses.map((status, idx) => {
             const isEditing = editingId === status.id;
-            
+            const accent = status.accent_color || '#22D3EE';
+
             return (
               <motion.div
                 key={status.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: idx * 0.05 }}
-                className={`rounded-lg border p-4 transition-colors ${
-                  isEditing 
-                    ? 'bg-white/10 border-cyan-500/50' 
-                    : status.is_active 
-                      ? 'bg-white/5 border-white/10 hover:bg-white/[0.08]'
-                      : 'bg-white/[0.02] border-white/5 opacity-50'
+                transition={{ delay: idx * 0.04 }}
+                className={`group relative w-full transition-all duration-300 ${
+                  isEditing
+                    ? 'col-span-full rounded-[1.75rem] sm:rounded-[2.5rem] bg-white/[0.06] border border-cyan-500/40 backdrop-blur-[60px] p-5 overflow-hidden'
+                    : status.is_active
+                      ? 'h-[260px] sm:h-[340px] hover:-translate-y-1.5'
+                      : 'h-[260px] sm:h-[340px] opacity-50 hover:opacity-80'
                 }`}
               >
                 {isEditing && editingData ? (
@@ -315,107 +287,136 @@ const StatusesManager: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  /* View Mode */
-                  <div className="flex items-center gap-4">
-                    {/* Sort Order */}
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                      <span className="text-xs font-bold text-white/60">{status.sort_order + 1}</span>
+                  /* View Mode — stejné jako karty na dashboardu */
+                  <>
+                    {/* Hlavní kontejner karty */}
+                    <div className="absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border border-white/5 shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] group-hover:bg-white/[0.06] group-hover:border-white/10 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]">
+                      <div
+                        className="absolute inset-x-10 top-0 h-[2px] rounded-full transition-opacity duration-500 opacity-60 group-hover:opacity-100"
+                        style={{ background: `linear-gradient(to right, transparent, ${accent}, transparent)` }}
+                      />
+                      <div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none"
+                        style={{ backgroundColor: accent, opacity: 0.15 }}
+                      />
                     </div>
 
-                    {/* Color Preview */}
-                    <div 
-                      className="flex-shrink-0 w-10 h-10 rounded-lg shadow-lg"
-                      style={{ backgroundColor: status.accent_color }}
-                    />
+                    {/* Obsah */}
+                    <div className="relative h-full w-full z-10 p-3 sm:p-6 flex flex-col">
+                      {/* Header — vystředěný */}
+                      <div className="w-full flex flex-col items-center text-center shrink-0">
+                        <p className="text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full text-white/30">
+                          {status.default_duration_minutes || 0} MIN
+                        </p>
+                        <h3 className="text-sm sm:text-xl font-bold tracking-tight uppercase leading-none truncate max-w-full text-white/90 group-hover:text-white transition-colors">
+                          {status.name}
+                        </h3>
+                      </div>
 
-                    {/* Name & Description */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-white/90">{status.name}</h3>
-                      <p className="text-sm text-white/50 truncate">
-                        {status.description || 'Bez popisu'}
-                      </p>
+                      {/* Střed — kruhový indikátor s pořadím */}
+                      <div className="flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden">
+                        <div className="relative flex items-center justify-center">
+                          <div className="absolute rounded-full blur-[40px]" style={{ width: 80, height: 80, backgroundColor: accent, opacity: 0.25 }} />
+                          <svg viewBox="0 0 112 112" className="w-20 h-20 sm:w-28 sm:h-28 overflow-visible select-none flex-shrink-0">
+                            <circle cx="56" cy="56" r="48" fill="none" stroke="white" strokeWidth="1.5" className="opacity-[0.03]" />
+                            <circle cx="56" cy="56" r="48" fill="none" stroke={accent} strokeWidth="4" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 6px ${accent}99)` }} />
+                          </svg>
+                          <span className="absolute text-3xl sm:text-4xl font-bold text-white/90" style={{ letterSpacing: '-0.05em' }}>
+                            {status.sort_order + 1}
+                          </span>
+                        </div>
+                        {status.description && (
+                          <p className="mt-2 text-[10px] sm:text-xs text-white/40 text-center line-clamp-2 px-2">
+                            {status.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Spodní info */}
+                      <div className="w-full space-y-2 sm:space-y-3 shrink-0">
+                        <div className="w-full text-center">
+                          <p
+                            className="text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border inline-block w-full text-white"
+                            style={{ backgroundColor: `${accent}1a`, borderColor: `${accent}40` }}
+                          >
+                            {status.is_active ? 'AKTIVNÍ' : 'NEAKTIVNÍ'}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-white/5 gap-1.5">
+                          <button
+                            onClick={() => handleToggleStatistics(status)}
+                            disabled={saving}
+                            className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-tight transition-colors ${
+                              status.include_in_statistics
+                                ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                                : 'bg-white/5 text-white/40 hover:bg-white/10'
+                            }`}
+                            title={status.include_in_statistics ? 'Započítáno do statistik' : 'Nezapočítáno do statistik'}
+                          >
+                            <BarChart3 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Stat</span>
+                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleToggleActive(status)}
+                              disabled={saving}
+                              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                                status.is_active
+                                  ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                                  : 'bg-white/5 text-white/40 hover:bg-white/10'
+                              }`}
+                              title={status.is_active ? 'Aktivní' : 'Neaktivní'}
+                            >
+                              {status.is_active ? <ToggleRight className="w-4 h-4 sm:w-5 sm:h-5" /> : <ToggleLeft className="w-4 h-4 sm:w-5 sm:h-5" />}
+                            </button>
+                            <button
+                              onClick={() => handleEdit(status)}
+                              className="p-1.5 sm:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                              title="Upravit"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-
-                    {/* Duration */}
-                    <div className="flex items-center gap-2 flex-shrink-0 min-w-[80px]">
-                      <Clock className="w-4 h-4 text-white/40" />
-                      <span className="text-white/90 text-sm font-medium">
-                        {status.default_duration_minutes || 0} min
-                      </span>
-                    </div>
-
-                    {/* Statistics Toggle */}
-                    <button
-                      onClick={() => handleToggleStatistics(status)}
-                      disabled={saving}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                        status.include_in_statistics
-                          ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                          : 'bg-white/5 text-white/40 hover:bg-white/10'
-                      }`}
-                      title={status.include_in_statistics ? 'Započítáno do statistik' : 'Nezapočítáno do statistik'}
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                      {status.include_in_statistics ? 'Statistiky' : 'Bez stat.'}
-                    </button>
-
-                    {/* Active Toggle */}
-                    <button
-                      onClick={() => handleToggleActive(status)}
-                      disabled={saving}
-                      className={`p-2 rounded-lg transition-colors ${
-                        status.is_active
-                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                          : 'bg-white/5 text-white/40 hover:bg-white/10'
-                      }`}
-                      title={status.is_active ? 'Aktivní' : 'Neaktivní'}
-                    >
-                      {status.is_active ? (
-                        <ToggleRight className="w-5 h-5" />
-                      ) : (
-                        <ToggleLeft className="w-5 h-5" />
-                      )}
-                    </button>
-
-                    {/* Edit Button */}
-                    <button
-                      onClick={() => handleEdit(status)}
-                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                      title="Upravit"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  </>
                 )}
               </motion.div>
             );
           })}
         </AnimatePresence>
+        </div>
       </div>
 
       {/* Special Statuses (Button-activated) */}
       {specialStatuses.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-white/80">Speciální Statusy (Tlačítka)</h2>
-          <p className="text-sm text-white/50">Tyto statusy se aktivují pomocí tlačítek v detailu sálu</p>
-          
+        <div>
+          <div className="mb-1 flex items-center gap-2.5">
+            <h2 className="text-lg font-semibold text-white/80">Speciální Statusy (Tlačítka)</h2>
+            <span className="text-xs font-semibold text-white/35 tabular-nums px-2 py-0.5 rounded-full bg-white/5">{specialStatuses.length}</span>
+          </div>
+          <p className="text-sm text-white/50 mb-4">Tyto statusy se aktivují pomocí tlačítek v detailu sálu</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
           <AnimatePresence>
             {specialStatuses.map((status, idx) => {
               const isEditing = editingId === status.id;
-              
+              const accent = status.accent_color || '#FBBF24';
+
               return (
                 <motion.div
                   key={status.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`rounded-lg border p-4 transition-colors ${
-                    isEditing 
-                      ? 'bg-white/10 border-cyan-500/50' 
-                      : status.is_active 
-                        ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
-                        : 'bg-white/[0.02] border-white/5 opacity-50'
+                  transition={{ delay: idx * 0.04 }}
+                  className={`group relative w-full transition-all duration-300 ${
+                    isEditing
+                      ? 'col-span-full rounded-[1.75rem] sm:rounded-[2.5rem] bg-white/[0.06] border border-amber-500/40 backdrop-blur-[60px] p-5 overflow-hidden'
+                      : status.is_active
+                        ? 'h-[260px] sm:h-[340px] hover:-translate-y-1.5'
+                        : 'h-[260px] sm:h-[340px] opacity-50 hover:opacity-80'
                   }`}
                 >
                   {isEditing && editingData ? (
@@ -496,96 +497,108 @@ const StatusesManager: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    /* View Mode for special statuses */
-                    <div className="flex items-center gap-4">
-                      {/* Color Preview */}
-                      <div 
-                        className="flex-shrink-0 w-10 h-10 rounded-lg shadow-lg"
-                        style={{ backgroundColor: status.accent_color }}
-                      />
-
-                      {/* Status Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className={`font-medium truncate ${status.is_active ? 'text-white' : 'text-white/50'}`}>
-                            {status.name}
-                          </h3>
-                          {!status.is_active && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-white/10 text-white/40">Neaktivní</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-white/40 truncate">
-                          {status.special_type === 'pause' && 'Tlačítko Pauza'}
-                          {status.special_type === 'hygiene' && 'Tlačítko Hygiena'}
-                          {status.special_type === 'patient_called' && 'Tlačítko Volání'}
-                          {status.special_type === 'patient_arrived_tract' && 'Tlačítko Příjezd'}
-                        </p>
+                    /* View Mode for special statuses — stejné jako karty na dashboardu */
+                    <>
+                      {/* Hlavní kontejner karty */}
+                      <div className="absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border border-white/5 shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 bg-white/[0.03] group-hover:bg-white/[0.06] group-hover:border-white/10 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]">
+                        <div
+                          className="absolute inset-x-10 top-0 h-[2px] rounded-full transition-opacity duration-500 opacity-60 group-hover:opacity-100"
+                          style={{ background: `linear-gradient(to right, transparent, ${accent}, transparent)` }}
+                        />
+                        <div
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none"
+                          style={{ backgroundColor: accent, opacity: 0.15 }}
+                        />
                       </div>
 
-                      {/* Statistics Toggle */}
-                      <button
-                        onClick={() => handleToggleStatistics(status)}
-                        disabled={saving}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                          status.include_in_statistics
-                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                            : 'bg-white/5 text-white/40 hover:bg-white/10'
-                        }`}
-                        title={status.include_in_statistics ? 'Započítáno do statistik' : 'Nezapočítáno do statistik'}
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                        {status.include_in_statistics ? 'Statistiky' : 'Bez stat.'}
-                      </button>
+                      {/* Obsah */}
+                      <div className="relative h-full w-full z-10 p-3 sm:p-6 flex flex-col">
+                        {/* Header — vystředěný */}
+                        <div className="w-full flex flex-col items-center text-center shrink-0">
+                          <p className="text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full text-white/30">
+                            TLAČÍTKO
+                          </p>
+                          <h3 className={`text-sm sm:text-xl font-bold tracking-tight uppercase leading-none truncate max-w-full transition-colors ${status.is_active ? 'text-white/90 group-hover:text-white' : 'text-white/50'}`}>
+                            {status.name}
+                          </h3>
+                        </div>
 
-                      {/* Active Toggle */}
-                      <button
-                        onClick={() => handleToggleActive(status)}
-                        disabled={saving}
-                        className={`p-2 rounded-lg transition-colors ${
-                          status.is_active
-                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                            : 'bg-white/5 text-white/40 hover:bg-white/10'
-                        }`}
-                        title={status.is_active ? 'Aktivní' : 'Neaktivní'}
-                      >
-                        {status.is_active ? (
-                          <ToggleRight className="w-5 h-5" />
-                        ) : (
-                          <ToggleLeft className="w-5 h-5" />
-                        )}
-                      </button>
+                        {/* Střed — kruhový indikátor s ikonou */}
+                        <div className="flex-1 flex flex-col items-center justify-center min-h-0 overflow-hidden">
+                          <div className="relative flex items-center justify-center">
+                            <div className="absolute rounded-full blur-[40px]" style={{ width: 80, height: 80, backgroundColor: accent, opacity: 0.25 }} />
+                            <svg viewBox="0 0 112 112" className="w-20 h-20 sm:w-28 sm:h-28 overflow-visible select-none flex-shrink-0">
+                              <circle cx="56" cy="56" r="48" fill="none" stroke="white" strokeWidth="1.5" className="opacity-[0.03]" />
+                              <circle cx="56" cy="56" r="48" fill="none" stroke={accent} strokeWidth="4" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 6px ${accent}99)` }} />
+                            </svg>
+                            <Activity className="absolute w-8 h-8 sm:w-10 sm:h-10" style={{ color: accent }} />
+                          </div>
+                          <p className="mt-2 text-[10px] sm:text-xs text-white/40 text-center px-2">
+                            {status.special_type === 'pause' && 'Pauza'}
+                            {status.special_type === 'hygiene' && 'Hygiena'}
+                            {status.special_type === 'patient_called' && 'Volání'}
+                            {status.special_type === 'patient_arrived_tract' && 'Příjezd'}
+                          </p>
+                        </div>
 
-                      {/* Edit Button */}
-                      <button
-                        onClick={() => handleEdit(status)}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-                        title="Upravit"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                    </div>
+                        {/* Spodní info */}
+                        <div className="w-full space-y-2 sm:space-y-3 shrink-0">
+                          <div className="w-full text-center">
+                            <p
+                              className="text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border inline-block w-full text-white"
+                              style={{ backgroundColor: `${accent}1a`, borderColor: `${accent}40` }}
+                            >
+                              {status.is_active ? 'AKTIVNÍ' : 'NEAKTIVNÍ'}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-white/5 gap-1.5">
+                            <button
+                              onClick={() => handleToggleStatistics(status)}
+                              disabled={saving}
+                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-tight transition-colors ${
+                                status.include_in_statistics
+                                  ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                                  : 'bg-white/5 text-white/40 hover:bg-white/10'
+                              }`}
+                              title={status.include_in_statistics ? 'Započítáno do statistik' : 'Nezapočítáno do statistik'}
+                            >
+                              <BarChart3 className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Stat</span>
+                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleToggleActive(status)}
+                                disabled={saving}
+                                className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                                  status.is_active
+                                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                                    : 'bg-white/5 text-white/40 hover:bg-white/10'
+                                }`}
+                                title={status.is_active ? 'Aktivní' : 'Neaktivní'}
+                              >
+                                {status.is_active ? <ToggleRight className="w-4 h-4 sm:w-5 sm:h-5" /> : <ToggleLeft className="w-4 h-4 sm:w-5 sm:h-5" />}
+                              </button>
+                              <button
+                                onClick={() => handleEdit(status)}
+                                className="p-1.5 sm:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                                title="Upravit"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </motion.div>
               );
             })}
           </AnimatePresence>
+          </div>
         </div>
       )}
 
-      {/* Info Box */}
-      <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-300/90">
-            <p className="font-semibold mb-1">Tip:</p>
-            <p className="text-xs">
-              Klikněte na ikonu tužky pro úpravu statusu. Můžete měnit název, barvu, dobu trvání a nastavení statistik.
-              Přepínač statistik určuje, zda se daný status započítává do přehledů a grafů.
-              Neaktivní statusy jsou zobrazeny se sníženou průhledností a lze je znovu aktivovat.
-            </p>
-          </div>
-        </div>
-      </div>
       </div>
       </div>
     </>
