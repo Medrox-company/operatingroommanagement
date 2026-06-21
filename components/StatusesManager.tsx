@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Clock, BarChart3, Info, CheckCircle2, Edit3, Save, X, 
   GripVertical, Plus, Trash2, ToggleLeft, ToggleRight, Loader2
@@ -166,18 +165,13 @@ const StatusesManager: React.FC = () => {
       {/* Status List — boxy v mřížce */}
       <div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
-        <AnimatePresence>
-          {mainStatuses.map((status, idx) => {
+          {mainStatuses.map((status) => {
             const isEditing = editingId === status.id;
             const accent = status.accent_color || '#22D3EE';
 
             return (
-              <motion.div
+              <div
                 key={status.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: idx * 0.04 }}
                 className={`group relative w-full h-[260px] sm:h-[340px] rounded-[1.75rem] sm:rounded-[2.5rem] transition-all duration-300 ${
                   status.is_active ? 'hover:-translate-y-1.5' : 'opacity-50 hover:opacity-80'
                 } ${isEditing ? 'ring-2 ring-cyan-400/60' : ''}`}
@@ -278,10 +272,9 @@ const StatusesManager: React.FC = () => {
                     </div>
                   </>
                 )}
-              </motion.div>
+              </div>
             );
           })}
-        </AnimatePresence>
         </div>
       </div>
 
@@ -295,18 +288,13 @@ const StatusesManager: React.FC = () => {
           <p className="text-sm text-white/50 mb-4">Tyto statusy se aktivují pomocí tlačítek v detailu sálu</p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
-          <AnimatePresence>
-            {specialStatuses.map((status, idx) => {
+            {specialStatuses.map((status) => {
               const isEditing = editingId === status.id;
               const accent = status.accent_color || '#FBBF24';
 
               return (
-                <motion.div
+                <div
                   key={status.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: idx * 0.04 }}
                   className={`group relative w-full h-[260px] sm:h-[340px] rounded-[1.75rem] sm:rounded-[2.5rem] transition-all duration-300 ${
                     status.is_active ? 'hover:-translate-y-1.5' : 'opacity-50 hover:opacity-80'
                   } ${isEditing ? 'ring-2 ring-amber-400/60' : ''}`}
@@ -406,10 +394,9 @@ const StatusesManager: React.FC = () => {
                       </div>
                     </>
                   )}
-                </motion.div>
+                </div>
               );
             })}
-          </AnimatePresence>
           </div>
         </div>
       )}
