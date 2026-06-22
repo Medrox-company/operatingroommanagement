@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
@@ -1059,28 +1059,22 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         {/* Doctor Button */}
         <button
           onClick={() => { setStaffPickerRole('doctor'); setStaffPickerOpen(true); }}
-          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95 h-full"
+          className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md flex flex-col items-center justify-center gap-2 px-1 h-24 w-24 hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-95"
         >
-          <div className="flex items-center gap-2">
-            <Stethoscope className="w-5 h-5 text-violet-400" />
-            <span className="text-sm font-bold text-violet-300">{room?.staff?.doctor?.name || 'Vybrat lékaře'}</span>
-          </div>
-          <p className="text-[9px] text-white/25 uppercase tracking-wider text-left">
-            {room?.staff?.doctor?.name ? 'Kliknout pro správu' : 'Kliknout pro přiřazení'}
-          </p>
+          <Stethoscope className="w-8 h-8 text-white/70" strokeWidth={2} />
+          <span className={`text-[10px] font-bold uppercase tracking-widest leading-tight text-center line-clamp-2 ${room?.staff?.doctor?.name ? 'text-violet-300' : 'text-white/70'}`}>
+            {room?.staff?.doctor?.name || 'Lékař'}
+          </span>
         </button>
         {/* Nurse Button */}
         <button
           onClick={() => { setStaffPickerRole('nurse'); setStaffPickerOpen(true); }}
-          className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer active:scale-95 h-full"
+          className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md flex flex-col items-center justify-center gap-2 px-1 h-24 w-24 hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-95"
         >
-          <div className="flex items-center gap-2">
-            <Heart className="w-5 h-5 text-emerald-400" />
-            <span className="text-sm font-bold text-emerald-300">{room?.staff?.nurse?.name || 'Vybrat sestru'}</span>
-          </div>
-          <p className="text-[9px] text-white/25 uppercase tracking-wider text-left">
-            {room?.staff?.nurse?.name ? 'Kliknout pro správu' : 'Kliknout pro přiřazení'}
-          </p>
+          <Syringe className="w-8 h-8 text-white/70" strokeWidth={2} />
+          <span className={`text-[10px] font-bold uppercase tracking-widest leading-tight text-center line-clamp-2 ${room?.staff?.nurse?.name ? 'text-emerald-300' : 'text-white/70'}`}>
+            {room?.staff?.nurse?.name || 'Sestra'}
+          </span>
         </button>
       </div>
 
