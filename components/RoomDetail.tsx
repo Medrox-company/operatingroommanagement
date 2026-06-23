@@ -391,9 +391,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       if (Date.now() - startMs >= THRESHOLD_MS) {
         cleaningWarningRef.current.handled = true;
         setShowCleaningWarning(true);
+        // Upozornění zmizí po 10 s; samotné přepnutí statusu řeší globální
+        // watcher v App (funguje i bez otevřeného detailu) → žádné dvojí přepnutí.
         cleaningTimeoutRef.current = window.setTimeout(() => {
           setShowCleaningWarning(false);
-          changeStep(nextStepIndex);
         }, 10000);
       }
     };

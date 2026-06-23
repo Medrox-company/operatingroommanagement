@@ -33,7 +33,7 @@ import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield, AlertTriangle, Lock } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { WorkflowStatusesProvider } from './contexts/WorkflowStatusesContext';
+import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 
@@ -53,6 +53,7 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules, user } = useAuth();
+  const { workflowStatuses } = useWorkflowStatusesContext();
   // Začínáme prázdní — mock data se NEzobrazují (zabrání probliknutí špatných
   // názvů/statusů). Mock zůstává jen jako záloha při selhání načtení (offline/demo).
   const [rooms, setRooms] = useState<OperatingRoom[]>([]);
@@ -347,6 +348,51 @@ const AppContent: React.FC = () => {
       );
     }
   }, [isDbConnected]);
+
+  // ── Globální auto-ukončení úklidu (běží i bez otevřeného detailu sálu) ──
+  // Pokud status „úklid" trvá > 30 min (+10s po upozornění), přepne sál na další
+  // status. Logika je optimistická → na dalším ticku už sál není v úklidu.
+  const roomsRef = useRef<OperatingRoom[]>(rooms);
+  useEffect(() => { roomsRef.current = rooms; }, [rooms]);
+
+  useEffect(() => {
+    const statuses = workflowStatuses || [];
+    if (statuses.length === 0) return;
+    const CLEAN_MS = 30 * 60 * 1000 + 10 * 1000; // 30 min + 10 s
+    const recentlyAdvanced = new Map<string, number>();
+
+    const tick = () => {
+      const now = Date.now();
+      roomsRef.current.forEach((room) => {
+        if (room.isPaused || room.isLocked) return;
+        const idx = Math.min(Math.max(0, room.currentStepIndex || 0), statuses.length - 1);
+        const step = statuses[idx];
+        const name = (step?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (!name.includes('uklid')) return;
+
+        const seg = room.statusHistory && room.statusHistory.length > 0
+          ? room.statusHistory[room.statusHistory.length - 1]
+          : null;
+        const startMs = seg && seg.stepIndex === idx
+          ? new Date(seg.startedAt).getTime()
+          : (room.phaseStartedAt ? new Date(room.phaseStartedAt).getTime() : NaN);
+        if (isNaN(startMs)) return;
+
+        if (now - startMs >= CLEAN_MS) {
+          const last = recentlyAdvanced.get(room.id) || 0;
+          if (now - last < 30000) return; // anti-duplicita
+          recentlyAdvanced.set(room.id, now);
+          const nextIndex = (idx + 1) % statuses.length;
+          const nextColor = statuses[nextIndex]?.accent_color || statuses[nextIndex]?.color || '#6B7280';
+          updateRoomStep(room.id, nextIndex, nextColor);
+        }
+      });
+    };
+
+    tick();
+    const id = setInterval(tick, 10000);
+    return () => clearInterval(id);
+  }, [workflowStatuses, updateRoomStep]);
 
   const toggleEmergency = useCallback(async (roomId: string) => {
     const currentRoom = rooms.find(r => r.id === roomId);
