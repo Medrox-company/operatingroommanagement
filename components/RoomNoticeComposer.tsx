@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Megaphone, X, Send, Loader2 } from 'lucide-react';
+import { Megaphone, X, Send, Loader2, Check } from 'lucide-react';
 import { OperatingRoom } from '../types';
 
 const ACCENT = '#22D3EE';
@@ -11,22 +11,35 @@ interface Props {
   rooms: OperatingRoom[];
   defaultRoomId?: string;
   onClose: () => void;
-  onSend: (roomId: string, message: string) => Promise<void> | void;
+  onSend: (roomIds: string[], message: string) => Promise<void> | void;
 }
 
 const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, onSend }) => {
   const sorted = [...rooms].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-  const [roomId, setRoomId] = useState<string>(defaultRoomId || sorted[0]?.id || '');
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(defaultRoomId ? [defaultRoomId] : []));
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
-  const canSend = !!roomId && message.trim().length > 0 && !sending;
+  const allSelected = sorted.length > 0 && selected.size === sorted.length;
+  const canSend = selected.size > 0 && message.trim().length > 0 && !sending;
+
+  const toggleRoom = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    setSelected((prev) => (prev.size === sorted.length ? new Set() : new Set(sorted.map((r) => r.id))));
+  };
 
   const handleSend = async () => {
     if (!canSend) return;
     setSending(true);
     try {
-      await onSend(roomId, message.trim());
+      await onSend([...selected], message.trim());
       onClose();
     } finally {
       setSending(false);
@@ -64,7 +77,7 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
             </div>
             <div className="min-w-0">
               <h2 className="text-lg font-bold text-white truncate">Zpráva na sál</h2>
-              <p className="text-xs text-white/40 mt-0.5">Zobrazí se jako popup v detailu vybraného sálu</p>
+              <p className="text-xs text-white/40 mt-0.5">Zobrazí se jako popup v detailu vybraných sálů</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0">
@@ -73,20 +86,43 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
         </div>
 
         <div className="relative space-y-4">
-          {/* Výběr sálu */}
+          {/* Výběr sálů (více možností) */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Operační sál</label>
-            <select
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white focus:outline-none focus:border-white/30 transition-colors appearance-none"
-            >
-              {sorted.map((r) => (
-                <option key={r.id} value={r.id} className="bg-[#0d1320] text-white">
-                  {r.name} · {r.department}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-white/50">
+                Operační sály {selected.size > 0 && <span style={{ color: ACCENT }}>· {selected.size}</span>}
+              </label>
+              <button
+                onClick={toggleAll}
+                className="text-[11px] font-semibold text-white/50 hover:text-white transition-colors"
+              >
+                {allSelected ? 'Zrušit výběr' : 'Vybrat vše'}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 p-0.5">
+              {sorted.map((r) => {
+                const on = selected.has(r.id);
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => toggleRoom(r.id)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-colors"
+                    style={{
+                      background: on ? `${ACCENT}1f` : 'rgba(255,255,255,0.04)',
+                      borderColor: on ? `${ACCENT}55` : 'rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    <span
+                      className="w-4 h-4 rounded-md flex items-center justify-center shrink-0"
+                      style={{ background: on ? ACCENT : 'transparent', border: on ? 'none' : '1px solid rgba(255,255,255,0.25)' }}
+                    >
+                      {on && <Check className="w-3 h-3 text-[#06121c]" strokeWidth={3} />}
+                    </span>
+                    <span className={`text-sm font-medium leading-tight break-words ${on ? 'text-white' : 'text-white/70'}`}>{r.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Zpráva */}
