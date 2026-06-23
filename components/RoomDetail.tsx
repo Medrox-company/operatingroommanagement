@@ -58,6 +58,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
+  // Auto-ukončení úklidu po 30 min + 10s upozornění v kruhové grafice
+  const [showCleaningWarning, setShowCleaningWarning] = useState(false);
+  const cleaningWarningRef = useRef<{ stepIndex: number; handled: boolean }>({ stepIndex: -1, handled: false });
+  const cleaningTimeoutRef = useRef<number | null>(null);
 
   // Simple local state for estimated end time - initialized from props
   const [localEndTime, setLocalEndTime] = useState<Date | null>(() => 
@@ -72,6 +76,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       if (updateTimeoutRef.current) clearTimeout(updateTimeoutRef.current);
       if (endTimeTimeoutRef.current) clearTimeout(endTimeTimeoutRef.current);
       if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
+      if (cleaningTimeoutRef.current) clearTimeout(cleaningTimeoutRef.current);
     };
   }, []);
   
@@ -234,6 +239,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   // Normalize string to remove diacritics for comparison
   const statusName = (currentStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const isReadyStatus = statusName.includes('priprav');
+  const isCleaningStatus = statusName.includes('uklid');
   const shouldShowTime = !isReadyStatus;
 
   // Dynamic theme color based on status
@@ -338,18 +344,57 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
   const handleNextStep = () => {
     if (isInteractionBlocked) return;
-    
+
     let nextIndex = safeStepIndex + 1;
     if (nextIndex >= validStepCount) {
       nextIndex = 0;
     }
-    
+
     // Prevent loop back if locked
     if (room.isLocked && nextIndex === 0) return;
 
     // Show confirmation overlay instead of immediately changing
     setPendingStepIndex(nextIndex);
   };
+
+  // Auto-ukončení úklidu sálu: pokud úklid trvá > 30 min, zobraz 10s upozornění
+  // v kruhové grafice a poté automaticky přepni na další status.
+  useEffect(() => {
+    // Při změně statusu vynuluj příznak a případné upozornění
+    if (cleaningWarningRef.current.stepIndex !== safeStepIndex) {
+      cleaningWarningRef.current = { stepIndex: safeStepIndex, handled: false };
+      setShowCleaningWarning(false);
+      if (cleaningTimeoutRef.current) { clearTimeout(cleaningTimeoutRef.current); cleaningTimeoutRef.current = null; }
+    }
+
+    if (!isCleaningStatus || isPaused || cleaningWarningRef.current.handled) return;
+
+    const THRESHOLD_MS = 30 * 60 * 1000;
+    // Skutečný začátek úklidu z historie statusů (fallback na lokální časovač fáze)
+    const seg = room.statusHistory && room.statusHistory.length > 0
+      ? room.statusHistory[room.statusHistory.length - 1]
+      : null;
+    const startMs = seg && seg.stepIndex === safeStepIndex
+      ? new Date(seg.startedAt).getTime()
+      : phaseStartTime.getTime();
+
+    const check = () => {
+      if (cleaningWarningRef.current.handled) return;
+      if (Date.now() - startMs >= THRESHOLD_MS) {
+        cleaningWarningRef.current.handled = true;
+        setShowCleaningWarning(true);
+        cleaningTimeoutRef.current = window.setTimeout(() => {
+          setShowCleaningWarning(false);
+          changeStep(nextStepIndex);
+        }, 10000);
+      }
+    };
+
+    check();
+    const id = window.setInterval(check, 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCleaningStatus, isPaused, safeStepIndex, nextStepIndex, room.statusHistory, phaseStartTime]);
 
   const confirmStepChange = () => {
     if (pendingStepIndex === null) return;
@@ -1381,7 +1426,38 @@ const prevStep = activeDbStatuses.length > 0
             {/* Center Content */}
             <div className="text-center relative z-20 pointer-events-none px-8">
               <AnimatePresence mode="wait">
-                {room.isLocked && isFinalStep ? (
+                {showCleaningWarning ? (
+                  <motion.div
+                    key="cleaning-warning"
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-col items-center text-center gap-[clamp(0.75rem,2vw,1.5rem)] px-4"
+                  >
+                    <p className="text-[clamp(8px,0.8vw,10px)] font-semibold tracking-[0.3em] uppercase text-white/30">
+                      Upozornění
+                    </p>
+                    <motion.div
+                      animate={{ scale: [1, 1.12, 1] }}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{ color: '#FBBF24' }}
+                    >
+                      <AlertTriangle style={{ width: 'clamp(2.5rem,4vw,5rem)', height: 'clamp(2.5rem,4vw,5rem)' }} strokeWidth={1.5} />
+                    </motion.div>
+                    <motion.h2
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-[clamp(1.5rem,4vw,3rem)] font-bold tracking-tight leading-tight text-center text-white"
+                    >
+                      Úklid sálu<br />přesahuje<br />30 minut
+                    </motion.h2>
+                    <p className="text-[clamp(0.8rem,1.6vw,1.125rem)] text-white/60 leading-snug max-w-[85%] text-center">
+                      Tento krok bude automaticky ukončen.
+                    </p>
+                  </motion.div>
+                ) : room.isLocked && isFinalStep ? (
                   <motion.div
                     key="locked-text"
                     initial={{ opacity: 0, scale: 0.8 }}
