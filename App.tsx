@@ -506,12 +506,14 @@ const AppContent: React.FC = () => {
     if (selectedRoomId) handlePatientStatusChange(selectedRoomId, calledAt, arrivedAt);
   }, [selectedRoomId, handlePatientStatusChange]);
 
-  // Admin → odeslat informační zprávu na konkrétní sál (popup v detailu sálu)
-  const handleSendRoomNotice = useCallback(async (roomId: string, message: string) => {
+  // Admin → odeslat informační zprávu na jeden či více sálů (popup v detailu sálu)
+  const handleSendRoomNotice = useCallback(async (roomIds: string[], message: string) => {
+    if (roomIds.length === 0) return;
     const at = new Date().toISOString();
     const sender = user?.name || user?.email || 'Administrátor';
-    setRooms(prev => prev.map(r => r.id === roomId ? { ...r, noticeMessage: message, noticeAt: at, noticeSender: sender } : r));
-    await updateOperatingRoom(roomId, { notice_message: message, notice_at: at, notice_sender: sender });
+    const idSet = new Set(roomIds);
+    setRooms(prev => prev.map(r => idSet.has(r.id) ? { ...r, noticeMessage: message, noticeAt: at, noticeSender: sender } : r));
+    await Promise.all(roomIds.map(id => updateOperatingRoom(id, { notice_message: message, notice_at: at, notice_sender: sender })));
   }, [user]);
 
   // Zavření zprávy na sále (z detailu) — smaže zprávu z DB i lokálně

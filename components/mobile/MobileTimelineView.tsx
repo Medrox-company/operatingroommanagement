@@ -414,18 +414,91 @@ const AxisView: React.FC<{
   nowPercent,
   onSelectRoom,
 }) => {
-  const hours = Array.from({ length: TIMELINE_HOURS + 1 }, (_, i) => i);
-
   // Živé barvy statusů z DB (stejně jako desktop Timeline)
   const stepColorMap: Record<number, string> = {};
   activeStatuses.forEach((s) => {
     stepColorMap[s.order_index] = s.accent_color || s.color || '#6b7280';
   });
-  const windowEndMs = windowStart.getTime() + TIMELINE_HOURS * 60 * 60 * 1000;
+  const LABEL_W = 76; // px — šířka levého sloupce s názvem sálu
+  const anchorStartMs = windowStart.getTime();
+  const anchorEndMs = anchorStartMs + TIMELINE_HOURS * 60 * 60 * 1000;
+  const nowMs = currentTime.getTime();
+
+  // --- Chytrý zoom: najdi skutečné aktivní okno dne, ať jsou segmenty velké ---
+  let activityStart = Infinity;
+  let activityEnd = -Infinity;
+  rooms.forEach((room) => {
+    const history = room.statusHistory || [];
+    if (history.length > 0) {
+      const first = new Date(history[0].startedAt).getTime();
+      const last = new Date(history[history.length - 1].startedAt).getTime();
+      activityStart = Math.min(activityStart, first);
+      activityEnd = Math.max(activityEnd, Math.max(last, nowMs));
+    } else {
+      const range = getRoomRange(room, windowStart);
+      if (range) {
+        activityStart = Math.min(activityStart, range.start.getTime());
+        activityEnd = Math.max(activityEnd, range.end.getTime());
+      }
+    }
+  });
+
+  // Fallback, když není žádná aktivita: okno kolem „teď".
+  if (!isFinite(activityStart) || !isFinite(activityEnd)) {
+    activityStart = nowMs - 2 * 60 * 60 * 1000;
+    activityEnd = nowMs + 2 * 60 * 60 * 1000;
+  }
+
+  // Vždy zahrň „teď" + 30 min odsazení po stranách.
+  const PAD = 30 * 60 * 1000;
+  let viewStartMs = Math.min(activityStart, nowMs) - PAD;
+  let viewEndMs = Math.max(activityEnd, nowMs) + PAD;
+
+  // Drž se uvnitř 7:00–7:00 kotvy.
+  viewStartMs = Math.max(anchorStartMs, viewStartMs);
+  viewEndMs = Math.min(anchorEndMs, viewEndMs);
+
+  // Minimální rozsah okna ~4 h, ať jsou segmenty čitelné.
+  const MIN_SPAN = 4 * 60 * 60 * 1000;
+  if (viewEndMs - viewStartMs < MIN_SPAN) {
+    const center = (viewStartMs + viewEndMs) / 2;
+    viewStartMs = center - MIN_SPAN / 2;
+    viewEndMs = center + MIN_SPAN / 2;
+    if (viewStartMs < anchorStartMs) {
+      viewStartMs = anchorStartMs;
+      viewEndMs = anchorStartMs + MIN_SPAN;
+    }
+    if (viewEndMs > anchorEndMs) {
+      viewEndMs = anchorEndMs;
+      viewStartMs = anchorEndMs - MIN_SPAN;
+    }
+  }
+
+  const viewSpanMs = viewEndMs - viewStartMs;
+  const pctOf = (ms: number) => ((ms - viewStartMs) / viewSpanMs) * 100;
+  const nowPct = Math.max(0, Math.min(100, pctOf(nowMs)));
+
+  // --- Hodinové popisky uvnitř okna, adaptivní krok ---
+  const spanHours = viewSpanMs / (60 * 60 * 1000);
+  const step = Math.max(1, Math.ceil(spanHours / 6)); // ~6 popisků na šířku
+  const hourMarks: { ms: number; label: string }[] = [];
+  const firstMark = new Date(viewStartMs);
+  firstMark.setMinutes(0, 0, 0);
+  if (firstMark.getTime() < viewStartMs) firstMark.setHours(firstMark.getHours() + 1);
+  while (firstMark.getHours() % step !== 0) firstMark.setHours(firstMark.getHours() + 1);
+  for (let t = firstMark.getTime(); t <= viewEndMs; t += step * 60 * 60 * 1000) {
+    const d = new Date(t);
+    hourMarks.push({ ms: t, label: `${d.getHours().toString().padStart(2, '0')}:00` });
+  }
+
+  const fmt = (ms: number) =>
+    new Date(ms).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div>
-      <MobileSectionLabel className="mb-3">24 h přehled (7:00 – 7:00)</MobileSectionLabel>
+      <MobileSectionLabel className="mb-3">
+        Provoz · {fmt(viewStartMs)} – {fmt(viewEndMs)} · teď {fmt(nowMs)}
+      </MobileSectionLabel>
       <div
         className="rounded-3xl p-3 overflow-hidden"
         style={{
@@ -434,42 +507,25 @@ const AxisView: React.FC<{
           backdropFilter: 'blur(16px)',
         }}
       >
-        {/* Hlavička os — sticky left label + scrollable ruler */}
-        <div className="flex">
-          {/* Left spacer to align with rows below */}
-          <div className="shrink-0 w-20 pr-3" />
-          <div className="flex-1 overflow-x-auto hide-scrollbar" id="mobile-axis-scroll">
-            <div
-              className="relative"
-              style={{ width: `${AXIS_WIDTH}px`, height: '18px' }}
-            >
-              {hours.map(h => {
-                const pct = (h / TIMELINE_HOURS) * 100;
-                const display = (TIMELINE_START_HOUR + h) % 24;
-                const isMajor = h % 3 === 0;
-                return (
-                  <div
-                    key={h}
-                    className="absolute top-0 bottom-0 flex flex-col items-center"
-                    style={{ left: `${pct}%`, transform: 'translateX(-50%)' }}
-                  >
-                    <span
-                      className={`text-[9px] tabular-nums ${
-                        isMajor ? 'text-white/60 font-medium' : 'text-white/20'
-                      }`}
-                    >
-                      {display.toString().padStart(2, '0')}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+        {/* Pravítko hodin — vejde se na šířku, žádné rolování */}
+        <div className="flex items-end mb-1.5">
+          <div className="shrink-0 pr-2" style={{ width: LABEL_W }} />
+          <div className="flex-1 relative h-4">
+            {hourMarks.map((m) => (
+              <span
+                key={m.ms}
+                className="absolute -translate-x-1/2 text-[9px] tabular-nums text-white/55 font-medium"
+                style={{ left: `${pctOf(m.ms)}%` }}
+              >
+                {m.label}
+              </span>
+            ))}
           </div>
         </div>
 
-        {/* Řady sálů */}
-        <div className="flex flex-col gap-2 mt-2">
-          {rooms.map(room => {
+        {/* Řady sálů — celý den vměstnaný na šířku */}
+        <div className="flex flex-col gap-1.5">
+          {rooms.map((room) => {
             const currentStep = statusByOrderIndex[room.currentStepIndex];
             const currentColor =
               room.isEmergency
@@ -478,18 +534,10 @@ const AxisView: React.FC<{
                   ? '#FBBF24'
                   : currentStep?.accent_color || currentStep?.color || '#6B7280';
 
-            // Segmenty statusů z historie (stejně jako desktop Timeline).
-            // Každý segment se omezí na viditelné okno 7:00–7:00.
+            // Segmenty statusů z historie, omezené na dynamické okno provozu.
             const history = room.statusHistory || [];
-            const nowMs = currentTime.getTime();
-            const windowStartMs = windowStart.getTime();
 
-            type Segment = {
-              leftPct: number;
-              widthPct: number;
-              color: string;
-              isCurrent: boolean;
-            };
+            type Segment = { leftPct: number; widthPct: number; color: string; isCurrent: boolean };
             const segments: Segment[] = [];
 
             if (history.length > 0) {
@@ -497,43 +545,25 @@ const AxisView: React.FC<{
                 const segStartRaw = new Date(entry.startedAt).getTime();
                 const nextEntry = history[idx + 1];
                 const isCurrent = idx === history.length - 1;
-                const segEndRaw = nextEntry
-                  ? new Date(nextEntry.startedAt).getTime()
-                  : nowMs;
-
-                const segStart = Math.max(segStartRaw, windowStartMs);
-                const segEnd = Math.min(segEndRaw, windowEndMs);
+                const segEndRaw = nextEntry ? new Date(nextEntry.startedAt).getTime() : nowMs;
+                const segStart = Math.max(segStartRaw, viewStartMs);
+                const segEnd = Math.min(segEndRaw, viewEndMs);
                 if (segEnd <= segStart) return;
-
-                const leftPct =
-                  ((segStart - windowStartMs) / (windowEndMs - windowStartMs)) * 100;
-                const widthPct =
-                  ((segEnd - segStart) / (windowEndMs - windowStartMs)) * 100;
+                const leftPct = pctOf(segStart);
+                const widthPct = ((segEnd - segStart) / viewSpanMs) * 100;
                 if (widthPct <= 0) return;
-
-                const phaseColor =
-                  stepColorMap[entry.stepIndex] ||
-                  entry.color ||
-                  '#6b7280';
-
-                segments.push({
-                  leftPct: Math.max(0, leftPct),
-                  widthPct: Math.max(0.3, widthPct),
-                  color: phaseColor,
-                  isCurrent,
-                });
+                const phaseColor = stepColorMap[entry.stepIndex] || entry.color || '#6b7280';
+                segments.push({ leftPct: Math.max(0, leftPct), widthPct: Math.max(0.6, widthPct), color: phaseColor, isCurrent });
               });
             } else {
-              // Fallback: jeden bar dle aktuální operace (pokud není history)
               const range = getRoomRange(room, windowStart);
               if (range) {
-                const leftPct = Math.max(0, toAxisPercent(range.start, windowStart));
-                const endPct = Math.min(100, toAxisPercent(range.end, windowStart));
-                const width = Math.max(0, endPct - leftPct);
-                if (width > 0) {
+                const segStart = Math.max(range.start.getTime(), viewStartMs);
+                const segEnd = Math.min(range.end.getTime(), viewEndMs);
+                if (segEnd > segStart) {
                   segments.push({
-                    leftPct,
-                    widthPct: width,
+                    leftPct: pctOf(segStart),
+                    widthPct: ((segEnd - segStart) / viewSpanMs) * 100,
                     color: currentColor,
                     isCurrent: true,
                   });
@@ -541,90 +571,78 @@ const AxisView: React.FC<{
               }
             }
 
+            const isActive = segments.length > 0;
+
             return (
               <button
                 key={room.id}
                 onClick={() => onSelectRoom(room)}
-                className="flex items-center outline-none active:opacity-80 transition-opacity"
+                className="flex items-center gap-0 outline-none active:opacity-80 transition-opacity w-full"
               >
-                {/* Left sticky label */}
-                <div className="shrink-0 w-20 pr-3 text-left">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{
-                        backgroundColor: currentColor,
-                        boxShadow: `0 0 6px ${currentColor}99`,
-                      }}
-                    />
-                    <span className="text-[11px] font-semibold text-white truncate">
-                      {room.name}
-                    </span>
-                  </div>
+                {/* Název sálu (pevný levý sloupec) */}
+                <div className="shrink-0 pr-2 text-left flex items-center gap-1.5" style={{ width: LABEL_W }}>
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: currentColor, boxShadow: `0 0 6px ${currentColor}99` }}
+                  />
+                  <span className="text-[10px] font-semibold text-white/90 truncate leading-tight">
+                    {room.name}
+                  </span>
                 </div>
-                {/* Bar track */}
+
+                {/* Dráha — celých 24 h na šířku */}
                 <div
-                  className="flex-1 overflow-x-auto hide-scrollbar"
-                  // sync scroll s hlavičkou: shared scroll container style
+                  className="flex-1 relative rounded-md overflow-hidden"
+                  style={{ height: 30, background: 'rgba(255,255,255,0.025)' }}
                 >
-                  <div
-                    className="relative"
-                    style={{ width: `${AXIS_WIDTH}px`, height: '28px' }}
-                  >
-                    {/* Subtle hourly grid */}
-                    {hours.map(h => (
-                      <div
-                        key={h}
-                        className="absolute top-0 bottom-0"
-                        style={{
-                          left: `${(h / TIMELINE_HOURS) * 100}%`,
-                          width: '1px',
-                          background:
-                            h % 3 === 0 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
-                        }}
-                      />
-                    ))}
-                    {/* Status segments (stejné jako desktop Timeline) */}
-                    {segments.map((seg, i) => (
-                      <div
-                        key={i}
-                        className="absolute top-1.5 bottom-1.5"
-                        style={{
-                          left: `${seg.leftPct}%`,
-                          width: `${seg.widthPct}%`,
-                          background: seg.isCurrent
-                            ? `linear-gradient(90deg, ${seg.color} 0%, ${seg.color}dd 100%)`
-                            : `${seg.color}cc`,
-                          boxShadow: seg.isCurrent ? `0 0 10px ${seg.color}66` : 'none',
-                          borderLeft:
-                            i > 0 ? '1.5px solid rgba(0,0,0,0.35)' : 'none',
-                          borderTopLeftRadius: i === 0 ? 6 : 0,
-                          borderBottomLeftRadius: i === 0 ? 6 : 0,
-                          borderTopRightRadius: i === segments.length - 1 ? 6 : 0,
-                          borderBottomRightRadius: i === segments.length - 1 ? 6 : 0,
-                        }}
-                      />
-                    ))}
-                    {/* Now marker */}
+                  {/* hodinová mřížka */}
+                  {hourMarks.map((m) => (
                     <div
-                      className="absolute top-0 bottom-0"
+                      key={m.ms}
+                      className="absolute top-0 bottom-0 w-px"
+                      style={{ left: `${pctOf(m.ms)}%`, background: 'rgba(255,255,255,0.06)' }}
+                    />
+                  ))}
+                  {/* segmenty statusů */}
+                  {segments.map((seg, i) => (
+                    <div
+                      key={i}
+                      className="absolute top-1 bottom-1 rounded-[3px]"
                       style={{
-                        left: `${nowPercent}%`,
-                        width: '2px',
-                        background: '#FFFFFF',
-                        boxShadow: '0 0 8px rgba(255,255,255,0.8)',
+                        left: `${seg.leftPct}%`,
+                        width: `${seg.widthPct}%`,
+                        background: seg.isCurrent
+                          ? `linear-gradient(180deg, ${seg.color} 0%, ${seg.color}cc 100%)`
+                          : `${seg.color}cc`,
+                        boxShadow: seg.isCurrent ? `0 0 8px ${seg.color}55` : 'none',
                       }}
                     />
-                  </div>
+                  ))}
+                  {/* prázdný sál — jemný text */}
+                  {!isActive && (
+                    <span className="absolute inset-0 flex items-center pl-2 text-[9px] text-white/25 pointer-events-none">
+                      volný
+                    </span>
+                  )}
+                  {/* linka „teď" — oranžová jako na desktopu */}
+                  <div
+                    className="absolute top-0 bottom-0 w-[2px]"
+                    style={{ left: `${nowPct}%`, background: '#FF9800' }}
+                  />
                 </div>
               </button>
             );
           })}
         </div>
 
-        <p className="mt-3 text-[10px] text-white/40 text-center">
-          Posuňte prstem vodorovně pro zobrazení celé 24 h osy.
-        </p>
+        {/* legenda času pod osou */}
+        <div className="flex items-center justify-between mt-2 px-1" style={{ paddingLeft: LABEL_W }}>
+          <span className="text-[8px] text-white/30 tabular-nums">{fmt(viewStartMs)}</span>
+          <span className="text-[8px] font-semibold tabular-nums" style={{ color: '#FF9800' }}>
+            teď {fmt(nowMs)}
+          </span>
+          <span className="text-[8px] text-white/30 tabular-nums">{fmt(viewEndMs)}</span>
+        </div>
       </div>
     </div>
   );

@@ -266,7 +266,7 @@ const BackgroundManager: React.FC = () => {
         {/* Controls */}
         <div className="lg:col-span-2 space-y-6">
           {/* Tab Switcher */}
-          <div className="flex p-1.5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex p-1.5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
             <button
               onClick={() => setActiveTab('color')}
               className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
@@ -315,7 +315,7 @@ const BackgroundManager: React.FC = () => {
                 className="space-y-6"
               >
                 {/* Type Selector */}
-                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                   <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Typ pozadí</p>
                   <div className="flex gap-3">
                     <button
@@ -355,7 +355,7 @@ const BackgroundManager: React.FC = () => {
                 </div>
 
                 {settings.type === 'solid' ? (
-                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                     <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Barva pozadí</p>
                     <div className="flex items-center gap-4">
                       <input
@@ -393,7 +393,7 @@ const BackgroundManager: React.FC = () => {
                 ) : (
                   <>
                     {/* Gradient Colors */}
-                    <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                       <div className="flex items-center justify-between mb-4">
                         <p className="text-xs font-bold text-white/40 uppercase tracking-wider">
                           Barvy přechodu ({settings.colors.length}/4)
@@ -473,7 +473,7 @@ const BackgroundManager: React.FC = () => {
 
                     {/* Direction - only for linear gradient */}
                     {settings.type === 'linear' && (
-                      <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                         <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Směr přechodu</p>
                         <div className="grid grid-cols-4 gap-2">
                           {GRADIENT_DIRECTIONS.map((dir) => {
@@ -499,7 +499,7 @@ const BackgroundManager: React.FC = () => {
                     )}
 
                     {/* Opacity */}
-                    <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                       <div className="flex items-center justify-between mb-4">
                         <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Průhlednost</p>
                         <span className="text-sm font-bold text-white/60">{settings.opacity}%</span>
@@ -526,7 +526,7 @@ const BackgroundManager: React.FC = () => {
                 className="space-y-6"
               >
                 {/* Image Gallery */}
-                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                   <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Galerie obrázků</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {GALLERY_IMAGES.map((image, index) => (
@@ -563,7 +563,7 @@ const BackgroundManager: React.FC = () => {
                 </div>
 
                 {/* Custom Image URL */}
-                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                   <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Vlastní URL obrázku</p>
                   <input
                     type="url"
@@ -577,7 +577,7 @@ const BackgroundManager: React.FC = () => {
                 </div>
 
                 {/* Image Opacity */}
-                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Průhlednost obrázku</p>
                     <span className="text-sm font-bold text-white/60">{settings.imageOpacity}%</span>
@@ -594,7 +594,7 @@ const BackgroundManager: React.FC = () => {
                 </div>
 
                 {/* Image Blur */}
-                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Rozmazání obrázku</p>
                     <span className="text-sm font-bold text-white/60">{settings.imageBlur}px</span>
@@ -619,7 +619,7 @@ const BackgroundManager: React.FC = () => {
                 className="space-y-6"
               >
                 {/* Výběr efektu */}
-                <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}>
                   <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Animace pozadí</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {ANIMATION_OPTIONS.map((opt) => {
@@ -657,8 +657,8 @@ const BackgroundManager: React.FC = () => {
 
                 {/* Rychlost */}
                 <div
-                  className={`p-5 rounded-2xl transition-opacity ${(settings.animation ?? 'none') === 'none' ? 'opacity-40 pointer-events-none' : ''}`}
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  className={`p-6 rounded-3xl transition-opacity ${(settings.animation ?? 'none') === 'none' ? 'opacity-40 pointer-events-none' : ''}`}
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(60px)', boxShadow: '0 15px 35px -10px rgba(0,0,0,0.5)' }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Rychlost animace</p>
@@ -702,7 +702,7 @@ const BackgroundManager: React.FC = () => {
             exit={{ opacity: 0, x: -20 }}
             className="hidden lg:flex flex-col sticky top-20 h-fit"
           >
-            <div className="relative rounded-2xl overflow-hidden border border-white/10" style={{ aspectRatio: '9/12' }}>
+            <div className="relative rounded-3xl overflow-hidden border border-white/5 shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)]" style={{ aspectRatio: '9/12' }}>
               {/* Background Image */}
               {settings.imageUrl && (
                 <img
