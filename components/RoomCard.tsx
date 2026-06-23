@@ -2,7 +2,7 @@
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone } from 'lucide-react';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -136,9 +136,21 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         />
       </div>
 
+      {/* Indikátor čekající zprávy od administrátora */}
+      {room.noticeMessage && (
+        <div className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-30" title="Čeká zpráva — otevři detail sálu">
+          <span className="relative flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center">
+            <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ background: 'rgba(34,211,238,0.35)' }} />
+            <span className="relative inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full" style={{ background: 'rgba(34,211,238,0.18)', border: '1px solid rgba(34,211,238,0.5)' }}>
+              <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: '#22D3EE' }} />
+            </span>
+          </span>
+        </div>
+      )}
+
       {/* Content Container */}
       <div className="relative h-full w-full z-10 p-3 sm:p-6 flex flex-col">
-        
+
         {/* Header — centered */}
         <div className="w-full flex flex-col items-center text-center shrink-0">
           <p className={`text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full transition-colors
