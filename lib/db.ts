@@ -69,6 +69,9 @@ interface DBOperatingRoom {
   weekly_schedule: Record<string, any> | null;
   sort_order: number | null;
   hourly_operating_cost: number | string | null;
+  notice_message: string | null;
+  notice_at: string | null;
+  notice_sender: string | null;
 }
 
 interface DBStaff {
@@ -150,6 +153,9 @@ function transformRoom(
     completedOperations: completedOps,
     isLocked: row.is_locked,
     currentStepIndex: row.current_step_index,
+    noticeMessage: row.notice_message ?? null,
+    noticeAt: row.notice_at ?? null,
+    noticeSender: row.notice_sender ?? null,
     estimatedEndTime: row.estimated_end_time || undefined,
     weeklySchedule: row.weekly_schedule as WeeklySchedule | undefined,
     // Finance — hodinová sazba provozu (CZK/h). NULL = nenastaveno.
@@ -324,6 +330,9 @@ export async function updateOperatingRoom(
     status_history: any[] | null;
     completed_operations: any[] | null;
     hourly_operating_cost: number | null;
+    notice_message: string | null;
+    notice_at: string | null;
+    notice_sender: string | null;
   }>
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
@@ -341,7 +350,7 @@ export async function updateOperatingRoom(
       // dokud nebyla spuštěna migrace) → odeber tyto sloupce a zkus to znovu,
       // aby základní změna (např. is_paused, is_enhanced_hygiene) prošla.
       if (error.code === '42703') {
-        const OPTIONAL_COLUMNS = ['paused_at', 'enhanced_hygiene_at'];
+        const OPTIONAL_COLUMNS = ['paused_at', 'enhanced_hygiene_at', 'notice_message', 'notice_at', 'notice_sender'];
         const stripped: Record<string, any> = { ...(updates as Record<string, any>) };
         let removed = false;
         for (const col of OPTIONAL_COLUMNS) {
@@ -725,6 +734,9 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.completed_operations !== undefined) result.completedOperations = row.completed_operations || [];
   if (row.is_locked !== undefined) result.isLocked = row.is_locked;
   if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
+  if (row.notice_message !== undefined) result.noticeMessage = row.notice_message ?? null;
+  if (row.notice_at !== undefined) result.noticeAt = row.notice_at ?? null;
+  if (row.notice_sender !== undefined) result.noticeSender = row.notice_sender ?? null;
   if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
   if (row.weekly_schedule !== undefined) result.weeklySchedule = row.weekly_schedule as WeeklySchedule | undefined;
   

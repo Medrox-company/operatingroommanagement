@@ -112,7 +112,12 @@ export interface OperatingRoom {
     statusHistory: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>; // Historie změn statusů
   }>; // Dokončené operace daného dne
   currentStepIndex: number; // Index aktuální fáze workflow (0-7)
-  
+
+  // Informační zpráva od administrátora cílená na tento sál (popup v detailu)
+  noticeMessage?: string | null; // Text zprávy; NULL = žádná aktivní zpráva
+  noticeAt?: string | null; // ISO timestamp odeslání (klíč pro „nová zpráva")
+  noticeSender?: string | null; // Jméno odesílatele
+
   // Working hours schedule
   weeklySchedule?: WeeklySchedule;
   

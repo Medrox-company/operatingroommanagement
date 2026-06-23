@@ -7,7 +7,7 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, 
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
@@ -23,6 +23,7 @@ interface RoomDetailProps {
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
   onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
   onPatientStatusChange?: (calledAt: string | null, arrivedAt: string | null) => void;
+  onClearNotice?: () => void;
 }
 
 const usePrevious = (value: number) => {
@@ -33,7 +34,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange, onClearNotice }) => {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -58,6 +59,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
+  // Informační zpráva administrátora — popup vyžadující zavření
+  const [dismissedNoticeAt, setDismissedNoticeAt] = useState<string | null>(null);
+  const showNotice = !!room.noticeMessage && room.noticeAt !== dismissedNoticeAt;
+  const handleCloseNotice = () => {
+    setDismissedNoticeAt(room.noticeAt ?? null);
+    onClearNotice?.();
+  };
   // Auto-ukončení úklidu po 30 min + 10s upozornění v kruhové grafice
   const [showCleaningWarning, setShowCleaningWarning] = useState(false);
   const cleaningWarningRef = useRef<{ stepIndex: number; handled: boolean }>({ stepIndex: -1, handled: false });
@@ -503,6 +511,51 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
+      {/* ========== INFORMAČNÍ ZPRÁVA ADMINISTRÁTORA — popup vyžadující zavření ========== */}
+      <AnimatePresence>
+        {showNotice && (
+          <motion.div
+            key="room-notice"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[300] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+              className="relative w-full max-w-xl rounded-[2rem] border border-white/12 p-8 sm:p-10 text-center overflow-hidden"
+              style={{ background: 'rgba(13,19,32,0.98)', backdropFilter: 'blur(40px)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}
+            >
+              <div aria-hidden className="absolute inset-x-12 top-0 h-[2px] rounded-full" style={{ background: 'linear-gradient(to right, transparent, #22D3EE, transparent)' }} />
+              <div aria-hidden className="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full blur-[100px] pointer-events-none" style={{ backgroundColor: '#22D3EE', opacity: 0.16 }} />
+
+              <div className="relative flex flex-col items-center gap-5">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(34,211,238,0.14)', border: '1px solid rgba(34,211,238,0.4)' }}>
+                  <Megaphone className="w-8 h-8" style={{ color: '#22D3EE' }} />
+                </div>
+                <p className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/40">Zpráva pro sál</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white leading-snug whitespace-pre-wrap break-words max-w-[92%]">
+                  {room.noticeMessage}
+                </h2>
+                {room.noticeSender && (
+                  <p className="text-sm text-white/45">— {room.noticeSender}</p>
+                )}
+                <button
+                  onClick={handleCloseNotice}
+                  className="mt-2 px-8 py-3 rounded-full text-base font-bold text-white transition-opacity hover:opacity-90"
+                  style={{ background: '#22D3EE', boxShadow: '0 10px 28px -8px #22D3EE' }}
+                >
+                  Rozumím
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ========== MOBILE LAYOUT (md:hidden) — původní boxový/kartový design ========== */}
       <div
         className="flex md:hidden w-full h-full flex-col relative overflow-hidden"

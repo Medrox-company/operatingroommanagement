@@ -1,14 +1,15 @@
 import React, { memo, useMemo } from 'react';
 import { SIDEBAR_ITEMS } from '../constants';
-import { LogOut } from 'lucide-react';
+import { LogOut, Megaphone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
   currentView: string;
   onNavigate: (viewId: string) => void;
+  onSendMessage?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
+const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate, onSendMessage }) => {
   const { isAdmin, logout, hasModuleAccess } = useAuth();
 
   // Filter sidebar items based on role + module access.
@@ -53,6 +54,19 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate }) => {
       </nav>
 
       <div className="mt-auto flex flex-col items-center gap-4 pb-4 w-full px-4 pointer-events-auto flex-shrink-0">
+        {/* Zpráva na sál — pouze administrátor */}
+        {isAdmin && onSendMessage && (
+          <button
+            onClick={onSendMessage}
+            aria-label="Zpráva na sál"
+            className="w-full aspect-square rounded-2xl bg-white/5 flex flex-col items-center justify-center text-white/40 hover:text-[#22D3EE] hover:bg-white/10 transition-all duration-300 group relative"
+          >
+            <Megaphone className="w-6 h-6 transition-transform group-hover:scale-110" />
+            <span className="absolute left-full ml-4 px-3 py-1.5 bg-white/10 backdrop-blur-xl text-white text-[9px] font-bold uppercase tracking-widest rounded-lg opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-[100] shadow-2xl font-mono">
+              Zpráva na sál
+            </span>
+          </button>
+        )}
         {/* Logout Button */}
         <button 
           onClick={logout}

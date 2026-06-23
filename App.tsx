@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Sidebar from './components/Sidebar';
+import RoomNoticeComposer from './components/RoomNoticeComposer';
 import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
 import PlaceholderView from './components/PlaceholderView';
@@ -59,6 +60,7 @@ const AppContent: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
+  const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
 
@@ -504,6 +506,20 @@ const AppContent: React.FC = () => {
     if (selectedRoomId) handlePatientStatusChange(selectedRoomId, calledAt, arrivedAt);
   }, [selectedRoomId, handlePatientStatusChange]);
 
+  // Admin → odeslat informační zprávu na konkrétní sál (popup v detailu sálu)
+  const handleSendRoomNotice = useCallback(async (roomId: string, message: string) => {
+    const at = new Date().toISOString();
+    const sender = user?.name || user?.email || 'Administrátor';
+    setRooms(prev => prev.map(r => r.id === roomId ? { ...r, noticeMessage: message, noticeAt: at, noticeSender: sender } : r));
+    await updateOperatingRoom(roomId, { notice_message: message, notice_at: at, notice_sender: sender });
+  }, [user]);
+
+  // Zavření zprávy na sále (z detailu) — smaže zprávu z DB i lokálně
+  const handleClearRoomNotice = useCallback(async (roomId: string) => {
+    setRooms(prev => prev.map(r => r.id === roomId ? { ...r, noticeMessage: null, noticeAt: null, noticeSender: null } : r));
+    await updateOperatingRoom(roomId, { notice_message: null, notice_at: null, notice_sender: null });
+  }, []);
+
   // Show login if not authenticated - must be after all hooks
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -534,11 +550,21 @@ const AppContent: React.FC = () => {
 
       </div>
 
-<Sidebar 
-            currentView={currentView} 
+<Sidebar
+            currentView={currentView}
             onNavigate={handleNavigate}
+            onSendMessage={() => setNoticeComposerOpen(true)}
           />
       <MobileNav currentView={currentView} onNavigate={handleNavigate} />
+
+      {/* Admin → odeslání informační zprávy na konkrétní sál */}
+      {noticeComposerOpen && isAdmin && (
+        <RoomNoticeComposer
+          rooms={rooms}
+          onClose={() => setNoticeComposerOpen(false)}
+          onSend={handleSendRoomNotice}
+        />
+      )}
 
       <div className="flex-1 flex flex-col relative z-20 w-full overflow-hidden">
         {/* Horní lišta se nezobrazuje – všechny moduly mají plnou stránku jako dashboard */}
@@ -571,6 +597,7 @@ const AppContent: React.FC = () => {
                   onEnhancedHygieneToggle={handleEnhancedHygieneToggleSelected}
                   onStaffChange={handleStaffChangeSelected}
                   onPatientStatusChange={handlePatientStatusChangeSelected}
+                  onClearNotice={() => handleClearRoomNotice(selectedRoom.id)}
                 />
               </div>
             )}
