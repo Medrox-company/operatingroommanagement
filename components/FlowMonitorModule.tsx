@@ -634,6 +634,19 @@ const RoomRing: React.FC<{ room: OperatingRoom; color: string; now: number }> = 
   );
 };
 
+/* Plynulé „naskočení" čísla z 0 na cíl (ease-out cubic). */
+const useCountUp = (target: number, on: boolean, dur = 1000) => {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!on) { setV(0); return; }
+    let raf = 0; const t0 = performance.now();
+    const step = (t: number) => { const k = Math.min(1, (t - t0) / dur); setV(target * (1 - Math.pow(1 - k, 3))); if (k < 1) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, on, dur]);
+  return v;
+};
+
 /* ── Animovaný rozpad statusů vybraného sálu za den (donut + legenda) ── */
 const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses: WStatus[]; now: number; todayStr: string }> = ({ room, dateStr, statuses, now, todayStr }) => {
   const [on, setOn] = useState(false);
@@ -657,12 +670,15 @@ const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses
       .sort((a, b) => b.ms - a.ms);
     const total = arr.reduce((a, x) => a + x.ms, 0);
     let acc = 0;
-    const R = 78, CIRC = 2 * Math.PI * R;
+    const R = 130, CIRC = 2 * Math.PI * R;
     const segs = arr.map((s) => { const len = total > 0 ? (s.ms / total) * CIRC : 0; const start = acc; acc += len; return { ...s, len, start, frac: total > 0 ? s.ms / total : 0 }; });
     return { segs, total, R, CIRC };
   }, [room, dateStr, statuses, now, todayStr]);
 
-  const c = room && data.segs[0] ? data.segs[0].c : '#22D3EE';
+  const dom = data.segs[0];
+  const c = dom ? dom.c : '#22D3EE';
+  const dominantPct = data.total > 0 && dom ? (dom.ms / data.total) * 100 : 0;
+  const countPct = useCountUp(dominantPct, on, 1100);
 
   if (data.total === 0) {
     return (
@@ -675,49 +691,56 @@ const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar px-6 py-3">
-      <div className="flex flex-col lg:flex-row items-center gap-8 max-w-4xl mx-auto">
-        {/* Donut */}
-        <div className="relative shrink-0" style={{ width: 240, height: 240 }}>
-          <div className="absolute inset-0 rounded-full blur-[40px]" style={{ background: c, opacity: 0.18 }} />
-          <svg viewBox="0 0 220 220" className="w-full h-full -rotate-90">
-            <circle cx="110" cy="110" r={data.R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="24" />
-            {data.segs.map((s, i) => (
-              <circle key={s.idx} cx="110" cy="110" r={data.R} fill="none" stroke={s.c} strokeWidth="24" strokeLinecap="butt"
-                strokeDasharray={on ? `${Math.max(0, s.len - 1)} ${data.CIRC - Math.max(0, s.len - 1)}` : `0 ${data.CIRC}`}
-                strokeDashoffset={-s.start}
-                style={{ transition: `stroke-dasharray 0.9s cubic-bezier(.22,1,.36,1) ${i * 0.09}s`, filter: `drop-shadow(0 0 5px ${s.c}66)` }} />
-            ))}
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-black text-white tabular-nums leading-none">{data.segs.length}</span>
-            <span className="text-[10px] uppercase tracking-wider text-white/40 mt-1">statusů</span>
-            <span className="text-xs text-white/55 tabular-nums mt-1">{fmtDur(data.total)}</span>
-          </div>
-        </div>
+    <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar flex flex-col items-center justify-center px-6 py-4 gap-7">
+      {/* Hlavička */}
+      <div className="text-center">
+        <h3 className="text-lg font-bold text-white">{room.name} <span className="text-white/40 font-medium">· {room.department}</span></h3>
+        <p className="text-xs text-white/45 mt-0.5 capitalize">{new Date(dateStr).toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}{dateStr === todayStr ? ' · živě' : ''}</p>
+      </div>
 
-        {/* Legenda */}
-        <div className="flex-1 min-w-0 w-full">
-          <div className="mb-3">
-            <h3 className="text-base font-bold text-white truncate">{room.name} <span className="text-white/40 font-medium">· {room.department}</span></h3>
-            <p className="text-xs text-white/45">{new Date(dateStr).toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}{dateStr === todayStr ? ' · živě' : ''}</p>
-          </div>
-          <div className="space-y-2.5">
-            {data.segs.map((s, i) => {
-              const pct = data.total > 0 ? (s.ms / data.total) * 100 : 0;
-              return (
-                <div key={s.idx} className="flex items-center gap-3">
-                  <span className="w-36 shrink-0 text-sm text-white/85 truncate flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: s.c }} /> {s.name}</span>
-                  <div className="flex-1 h-3.5 rounded-full bg-white/[0.05] overflow-hidden">
-                    <div className="h-full rounded-full origin-left transition-transform duration-700 ease-out" style={{ width: `${pct}%`, background: s.c, boxShadow: `0 0 10px ${s.c}88`, transform: on ? 'scaleX(1)' : 'scaleX(0)', transitionDelay: `${i * 0.08}s` }} />
-                  </div>
-                  <span className="w-14 shrink-0 text-right text-sm font-bold text-white tabular-nums">{pct.toFixed(1)}%</span>
-                  <span className="w-16 shrink-0 text-right text-xs text-white/45 tabular-nums">{fmtDur(s.ms)}</span>
-                </div>
-              );
-            })}
-          </div>
+      {/* Velký vystředěný donut */}
+      <div className="relative" style={{ width: 380, height: 380 }}>
+        <div className="absolute inset-8 rounded-full blur-[60px]" style={{ background: c, opacity: 0.22 }} />
+        {/* dekorativní rotující prstence */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 360 360" style={{ animation: 'spin 32s linear infinite' }}>
+          <circle cx="180" cy="180" r="166" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1.5" strokeDasharray="2 10" />
+        </svg>
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 360 360" style={{ animation: 'spin 60s linear infinite reverse' }}>
+          <circle cx="180" cy="180" r="150" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="1 14" />
+        </svg>
+        {/* donut segmenty */}
+        <svg viewBox="0 0 360 360" className="absolute inset-0 w-full h-full -rotate-90">
+          <circle cx="180" cy="180" r={data.R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="36" />
+          {data.segs.map((s, i) => (
+            <circle key={s.idx} cx="180" cy="180" r={data.R} fill="none" stroke={s.c} strokeWidth="36" strokeLinecap="butt"
+              strokeDasharray={on ? `${Math.max(0, s.len - 2)} ${data.CIRC - Math.max(0, s.len - 2)}` : `0 ${data.CIRC}`}
+              strokeDashoffset={-s.start}
+              style={{ transition: `stroke-dasharray 1s cubic-bezier(.22,1,.36,1) ${i * 0.1}s`, filter: `drop-shadow(0 0 6px ${s.c}88)` }} />
+          ))}
+        </svg>
+        {/* střed s count-up */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-10">
+          <span className="text-[10px] uppercase tracking-[0.25em] text-white/45 mb-1.5 truncate max-w-full">{dom?.name}</span>
+          <span className="text-[64px] font-black text-white tabular-nums leading-none" style={{ textShadow: `0 0 28px ${c}77` }}>{Math.round(countPct)}<span className="text-2xl align-top text-white/70">%</span></span>
+          <span className="text-xs text-white/45 tabular-nums mt-2">{data.segs.length} statusů · {fmtDur(data.total)}</span>
         </div>
+      </div>
+
+      {/* Legenda — mřížka */}
+      <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+        {data.segs.map((s, i) => {
+          const pct = data.total > 0 ? (s.ms / data.total) * 100 : 0;
+          return (
+            <div key={s.idx} className="flex items-center gap-3">
+              <span className="w-32 shrink-0 text-sm text-white/85 truncate flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.c, boxShadow: `0 0 6px ${s.c}` }} /> {s.name}</span>
+              <div className="flex-1 h-3 rounded-full bg-white/[0.05] overflow-hidden">
+                <div className="h-full rounded-full origin-left transition-transform duration-700 ease-out" style={{ width: `${pct}%`, background: s.c, boxShadow: `0 0 10px ${s.c}88`, transform: on ? 'scaleX(1)' : 'scaleX(0)', transitionDelay: `${0.3 + i * 0.08}s` }} />
+              </div>
+              <span className="w-11 shrink-0 text-right text-sm font-bold text-white tabular-nums">{pct.toFixed(0)}%</span>
+              <span className="w-14 shrink-0 text-right text-[11px] text-white/45 tabular-nums">{fmtDur(s.ms)}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
