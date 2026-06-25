@@ -15,7 +15,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate, onSendM
   // Filter sidebar items based on role + module access.
   // Dashboard is always accessible for everyone.
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
-    if (item.id === 'dashboard') return true;
+    if (item.id === 'dashboard' || item.id === 'flow') return true;
     if (isAdmin) return true;
     return hasModuleAccess(item.id);
   }), [isAdmin, hasModuleAccess]);

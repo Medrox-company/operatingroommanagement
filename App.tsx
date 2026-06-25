@@ -21,6 +21,7 @@ const StatisticsModule = dynamic(() => import('./components/StatisticsModule'), 
 const StaffManager = dynamic(() => import('./components/StaffManager'), { ssr: false, loading: ModuleLoader });
 const StaffOverviewModule = dynamic(() => import('./components/StaffOverviewModule'), { ssr: false, loading: ModuleLoader });
 const SettingsPage = dynamic(() => import('./components/SettingsPage'), { ssr: false, loading: ModuleLoader });
+const FlowMonitorModule = dynamic(() => import('./components/FlowMonitorModule'), { ssr: false, loading: ModuleLoader });
 import AnimatedCounter from './components/AnimatedCounter';
 import LiveClock from './components/LiveClock';
 import DeviceRegistration from './components/DeviceRegistration';
@@ -731,6 +732,13 @@ const AppContent: React.FC = () => {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Tok pacienta — živý monitorovací modul */}
+            {currentView === 'flow' && (
+              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:py-6 pb-mobile-nav">
+                <FlowMonitorModule rooms={rooms} />
               </div>
             )}
 

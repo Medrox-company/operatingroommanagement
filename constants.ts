@@ -14,6 +14,7 @@ import {
   Sparkles,
   BarChart3,
   ClipboardList,
+  Workflow,
 } from 'lucide-react';
 
 export interface SubDepartment {
@@ -150,6 +151,7 @@ export const STEP_COLORS: Record<number, { bg: string; fill: string; border: str
 
 export const SIDEBAR_ITEMS = [
   { icon: LayoutGrid, label: 'Přehled', id: 'dashboard' },
+  { icon: Workflow, label: 'Tok pacienta', id: 'flow' },
   { icon: CalendarDays, label: 'Timeline', id: 'timeline' },
   { icon: BarChart3, label: 'Statistiky', id: 'statistics' },
   { icon: ClipboardList, label: 'Přehled personálu', id: 'staff' },
