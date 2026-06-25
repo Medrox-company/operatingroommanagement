@@ -1,0 +1,603 @@
+'use client';
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Play, ChevronDown, RefreshCw, FolderOpen, Save, Plus, Minus,
+  Search, Eye, EyeOff, Activity, Cpu, Server, Maximize2, ExternalLink,
+  Radio, History as HistoryIcon, Clock, Layers,
+} from 'lucide-react';
+import { OperatingRoom } from '../types';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
+
+/* ────────────────────────────────────────────────────────────────────────────
+   TOK PACIENTA — živý monitorovací modul.
+   • Sály jako uzly obarvené dle aktuálního statusu, animovaný tok mezi nimi.
+   • Každý sál lze zobrazit/skrýt.
+   • Živé animace právě probíhajícího statusu (pulz + odpočet).
+   • Režim „Historie": animovaný rozpad, jak dlouho trvaly jednotlivé statusy
+     u sálů i celkově (vč. dokončených výkonů).
+   ──────────────────────────────────────────────────────────────────────────── */
+
+interface Props {
+  rooms: OperatingRoom[];
+}
+type WStatus = { name?: string; color?: string; accent_color?: string };
+
+const colorFor = (room: OperatingRoom, statuses: WStatus[]) => {
+  if (room.isEmergency) return '#FF3B30';
+  if (room.isLocked) return '#FBBF24';
+  if (room.isPaused) return '#22D3EE';
+  const idx = Math.min(Math.max(0, room.currentStepIndex || 0), Math.max(0, statuses.length - 1));
+  const s = statuses[idx];
+  return s?.accent_color || s?.color || '#34D399';
+};
+const nameFor = (room: OperatingRoom, statuses: WStatus[]) => {
+  if (room.isEmergency) return 'Nouze';
+  if (room.isLocked) return 'Uzamčeno';
+  if (room.isPaused) return 'Pauza';
+  const idx = Math.min(Math.max(0, room.currentStepIndex || 0), Math.max(0, statuses.length - 1));
+  return statuses[idx]?.name || 'Volný';
+};
+const colorByIndex = (idx: number, statuses: WStatus[]) => {
+  const s = statuses[Math.min(Math.max(0, idx), Math.max(0, statuses.length - 1))];
+  return s?.accent_color || s?.color || '#6B7280';
+};
+const nameByIndex = (idx: number, statuses: WStatus[]) =>
+  statuses[Math.min(Math.max(0, idx), Math.max(0, statuses.length - 1))]?.name || `Status ${idx + 1}`;
+
+const fmtDur = (ms: number) => {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${ss.toString().padStart(2, '0')}s`;
+  return `${ss}s`;
+};
+const fmtClock = (ms: number) => {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+};
+const elbow = (x1: number, y1: number, x2: number, y2: number) => {
+  const mx = (x1 + x2) / 2;
+  return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+};
+
+/* Doba běhu aktuálního statusu sálu (z phaseStartedAt / poslední změny). */
+const currentStatusStart = (room: OperatingRoom): number | null => {
+  const segs = room.statusHistory || [];
+  if (segs.length > 0) return new Date(segs[segs.length - 1].startedAt).getTime();
+  if (room.phaseStartedAt) return new Date(room.phaseStartedAt).getTime();
+  return null;
+};
+
+/* Segmenty trvání statusů sálu z aktuální historie. */
+const roomSegments = (room: OperatingRoom, now: number) => {
+  const segs = room.statusHistory || [];
+  return segs.map((s, i) => {
+    const start = new Date(s.startedAt).getTime();
+    const end = i < segs.length - 1 ? new Date(segs[i + 1].startedAt).getTime() : now;
+    return { stepIndex: s.stepIndex, color: s.color, ms: Math.max(0, end - start) };
+  });
+};
+
+const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
+  const { workflowStatuses } = useWorkflowStatusesContext();
+  const statuses = (workflowStatuses || []) as WStatus[];
+
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const [mode, setMode] = useState<'live' | 'board' | 'history'>('live');
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+  const [zoom, setZoom] = useState(100);
+
+  // Drag & drop uzlů sálů myší
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const dragRef = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const zoomRef = useRef(100);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  const onMove = useCallback((e: MouseEvent) => {
+    const d = dragRef.current; if (!d) return;
+    const k = zoomRef.current / 100;
+    setPositions((p) => ({ ...p, [d.id]: { x: d.ox + (e.clientX - d.sx) / k, y: d.oy + (e.clientY - d.sy) / k } }));
+  }, []);
+  const onUp = useCallback(() => {
+    dragRef.current = null;
+    setDragId(null);
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  }, [onMove]);
+  const onNodeDown = useCallback((e: React.MouseEvent, id: string, cur: { x: number; y: number }) => {
+    e.preventDefault();
+    dragRef.current = { id, sx: e.clientX, sy: e.clientY, ox: cur.x, oy: cur.y };
+    setDragId(id);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [onMove, onUp]);
+
+  const sorted = useMemo(() => [...rooms].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)), [rooms]);
+  const visible = useMemo(() => sorted.filter((r) => !hidden.has(r.id)), [sorted, hidden]);
+  const listed = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return q ? sorted.filter((r) => r.name.toLowerCase().includes(q) || r.department.toLowerCase().includes(q)) : sorted;
+  }, [sorted, search]);
+
+  const toggleRoom = (id: string) =>
+    setHidden((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const nowDate = new Date(now);
+  const fmt = (d: Date) => d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+  const ticks = Array.from({ length: 13 }, (_, i) => new Date(now + (i - 6) * 5 * 60 * 1000));
+
+  const groupL = visible.slice(0, 2);
+  const centerNodes = visible.slice(2, 4);
+  const groupR1 = visible.slice(4, 6);
+  const groupR2 = visible.slice(6, 8);
+  const activeCount = visible.filter((r) => !r.isLocked && (r.currentStepIndex ?? 0) !== 0).length;
+  const emergencyCount = visible.filter((r) => r.isEmergency).length;
+
+  // Agregace: celková doba podle statusu (aktuální historie + dokončené výkony).
+  const aggregate = useMemo(() => {
+    const totals = new Map<number, number>();
+    visible.forEach((r) => {
+      roomSegments(r, now).forEach((s) => totals.set(s.stepIndex, (totals.get(s.stepIndex) || 0) + s.ms));
+      (r.completedOperations || []).forEach((op) => {
+        const segs = op.statusHistory || [];
+        segs.forEach((s, i) => {
+          const start = new Date(s.startedAt).getTime();
+          const end = i < segs.length - 1 ? new Date(segs[i + 1].startedAt).getTime() : new Date(op.endedAt).getTime();
+          totals.set(s.stepIndex, (totals.get(s.stepIndex) || 0) + Math.max(0, end - start));
+        });
+      });
+    });
+    const arr = [...totals.entries()].map(([idx, ms]) => ({ idx, ms })).sort((a, b) => b.ms - a.ms);
+    const max = arr.reduce((m, x) => Math.max(m, x.ms), 1);
+    return { arr, max };
+  }, [visible, now, statuses]);
+
+  // Přehledné rozmístění VŠECH viditelných sálů do mřížky (bez překryvu).
+  const NODE_W = 204, NODE_H = 64, GAP_X = 36, GAP_Y = 66, START_Y = 172;
+  const cols = Math.min(6, Math.max(3, Math.ceil(Math.sqrt(visible.length || 1))));
+  const gridRows = Math.ceil((visible.length || 1) / cols);
+  const gridW = cols * NODE_W + (cols - 1) * GAP_X;
+  const canvasW = Math.max(960, gridW + 80);
+  const canvasH = START_Y + gridRows * (NODE_H + GAP_Y) + 40;
+  const gridStartX = (canvasW - gridW) / 2;
+  const defaultPos = (i: number) => ({ x: gridStartX + (i % cols) * (NODE_W + GAP_X), y: START_Y + Math.floor(i / cols) * (NODE_H + GAP_Y) });
+  const getPos = (room: OperatingRoom, i: number) => positions[room.id] ?? defaultPos(i);
+
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="relative w-full h-full rounded-3xl overflow-hidden border border-white/10"
+        style={{ background: 'radial-gradient(120% 90% at 50% 38%, #241b4f 0%, #140f2e 38%, #0a0a18 70%, #07070f 100%)' }}>
+        <div aria-hidden className="absolute inset-0 pointer-events-none opacity-[0.12]"
+          style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
+
+        <div className="relative h-full flex flex-col">
+          {/* ── Horní lišta ── */}
+          <div className="flex items-center gap-3 px-5 pt-4 pb-3 flex-wrap">
+            <div className="flex items-center gap-3 pr-2">
+              <div className="leading-tight">
+                <p className="text-[11px] font-bold text-white">Interval</p>
+                <p className="text-[10px] text-white/45">posledních 5 min</p>
+              </div>
+              <div className="leading-tight">
+                <p className="text-[11px] font-semibold text-white/80">{nowDate.toLocaleDateString('cs-CZ')}</p>
+                <p className="text-[10px] text-white/45 tabular-nums">{fmt(ticks[2])} – {fmt(ticks[8])}</p>
+              </div>
+            </div>
+
+            {/* Režim Živě / Historie */}
+            <div className="flex p-1 rounded-xl bg-white/[0.04] border border-white/10">
+              {([['live', 'Živě', Radio], ['board', 'Fáze', Layers], ['history', 'Historie', HistoryIcon]] as const).map(([m, label, Icon]) => (
+                <button key={m} onClick={() => setMode(m)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${mode === m ? 'bg-cyan-500/25 text-cyan-200' : 'text-white/55 hover:text-white'}`}>
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-3">
+              {[['Sály', visible.length], ['Oddělení', new Set(visible.map((r) => r.department)).size], ['Nouze', emergencyCount]].map(([label, n], i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <p className="text-[11px] font-semibold text-white/85">{label}</p>
+                  <span className="text-[10px] font-bold text-white/90 px-1.5 py-0.5 rounded-md bg-white/10 tabular-nums">{n as number}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="ml-auto flex items-center gap-2">
+              <button className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors"><RefreshCw className="w-4 h-4" /></button>
+              <button className="px-3.5 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-2 text-white/70 hover:text-white hover:bg-white/[0.08] transition-colors text-sm font-semibold"><FolderOpen className="w-4 h-4" /> Načíst</button>
+              <button className="px-3.5 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-2 text-white/70 hover:text-white hover:bg-white/[0.08] transition-colors text-sm font-semibold"><Save className="w-4 h-4" /> Uložit</button>
+            </div>
+          </div>
+
+          {/* ── Časová osa ── */}
+          <div className="px-5 pb-3 flex items-center gap-3">
+            <div className="flex rounded-xl overflow-hidden border border-white/10">
+              <button onClick={() => setZoom((z) => Math.min(200, z + 10))} className="w-9 h-9 bg-white/[0.04] text-white/60 hover:text-white flex items-center justify-center border-r border-white/10"><Plus className="w-4 h-4" /></button>
+              <button onClick={() => setZoom((z) => Math.max(20, z - 10))} className="w-9 h-9 bg-white/[0.04] text-white/60 hover:text-white flex items-center justify-center"><Minus className="w-4 h-4" /></button>
+            </div>
+            <div className="flex-1 relative h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center px-4">
+              <div className="flex-1 flex items-center justify-between">
+                {ticks.map((t, i) => (
+                  <div key={i} className="relative flex flex-col items-center gap-1">
+                    <span className="w-1 h-1 rounded-full" style={{ background: i % 3 === 0 ? '#34D399' : i % 4 === 0 ? '#F87171' : 'rgba(255,255,255,0.3)' }} />
+                    <span className={`text-[10px] tabular-nums ${i >= 5 && i <= 8 ? 'text-white' : 'text-white/40'}`}>{fmt(t)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="absolute top-1 bottom-1 rounded-xl border border-cyan-400/40 bg-cyan-400/[0.06] pointer-events-none" style={{ left: '40%', width: '24%' }}>
+                {activeCount > 0 && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white px-2 py-0.5 rounded-full" style={{ background: '#F43F5E' }}>{activeCount}+</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Hlavní oblast ── */}
+          <div className="flex-1 min-h-0 flex">
+            {/* Levý panel: hledání + seznam sálů (zobrazit/skrýt) */}
+            <div className="w-64 shrink-0 px-5 py-2 flex flex-col gap-3 min-h-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Hledat sál…" className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/25" />
+              </div>
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] uppercase tracking-wider text-white/40">Sály ({visible.length}/{sorted.length})</span>
+                <button onClick={() => setHidden(hidden.size ? new Set() : new Set(sorted.map((r) => r.id)))} className="text-[11px] font-semibold text-white/50 hover:text-white">{hidden.size ? 'Zobrazit vše' : 'Skrýt vše'}</button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar space-y-1.5 pr-0.5">
+                {listed.map((r) => {
+                  const on = !hidden.has(r.id);
+                  const c = colorFor(r, statuses);
+                  const start = currentStatusStart(r);
+                  const elapsed = start ? now - start : 0;
+                  return (
+                    <button key={r.id} onClick={() => toggleRoom(r.id)}
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl border text-left transition-colors ${on ? 'bg-white/[0.04] border-white/10 hover:bg-white/[0.07]' : 'bg-transparent border-white/5 opacity-45'}`}>
+                      <span className="relative flex h-2.5 w-2.5 shrink-0">
+                        {on && <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ background: c, opacity: 0.5 }} />}
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: on ? c : 'rgba(255,255,255,0.25)' }} />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-xs font-semibold text-white/90 truncate">{r.name}</span>
+                        <span className="block text-[10px] truncate" style={{ color: on ? c : 'rgba(255,255,255,0.35)' }}>{nameFor(r, statuses)}{on && start ? ` · ${fmtClock(elapsed)}` : ''}</span>
+                      </span>
+                      {on ? <Eye className="w-4 h-4 text-white/40 shrink-0" /> : <EyeOff className="w-4 h-4 text-white/25 shrink-0" />}
+                    </button>
+                  );
+                })}
+                {listed.length === 0 && <p className="text-[11px] text-white/30 text-center py-6">Žádný sál</p>}
+              </div>
+
+              {mode === 'live' && (
+                <div className="flex items-center justify-between rounded-2xl bg-white/[0.04] border border-white/10 px-3 py-2 shrink-0">
+                  <button onClick={() => setZoom((z) => Math.max(20, z - 10))} className="w-7 h-7 rounded-lg bg-white/[0.06] text-white/60 flex items-center justify-center"><Minus className="w-3.5 h-3.5" /></button>
+                  <span className="text-sm font-bold text-white tabular-nums">{zoom}%</span>
+                  <button onClick={() => setZoom((z) => Math.min(200, z + 10))} className="w-7 h-7 rounded-lg bg-white/[0.06] text-white/60 flex items-center justify-center"><Plus className="w-3.5 h-3.5" /></button>
+                </div>
+              )}
+            </div>
+
+            {/* Pravá oblast: živý graf nebo historie */}
+            {mode === 'live' ? (
+              <div className="flex-1 min-w-0 relative overflow-auto">
+                <div className="relative mx-auto" style={{ width: canvasW, height: canvasH, transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+                  {/* Spojnice hub → sál + animovaný tok */}
+                  <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${canvasW} ${canvasH}`} fill="none">
+                    <defs>
+                      {visible.map((r, i) => {
+                        const p = getPos(r, i);
+                        return <path key={r.id} id={`edge-${r.id}`} d={elbow(canvasW / 2, 80, p.x + NODE_W / 2, p.y)} />;
+                      })}
+                    </defs>
+                    {visible.map((r) => (
+                      <use key={r.id} href={`#edge-${r.id}`} stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+                    ))}
+                    {visible.map((r, i) => {
+                      const active = !r.isLocked && (r.currentStepIndex ?? 0) !== 0;
+                      if (!active) return null;
+                      const c = colorFor(r, statuses);
+                      const dur = 2.4 + ((i % 5) * 0.45);
+                      return (
+                        <circle key={r.id} r="3.5" fill={c} style={{ filter: `drop-shadow(0 0 5px ${c})` }}>
+                          <animateMotion dur={`${dur}s`} repeatCount="indefinite" rotate="auto"><mpath xlinkHref={`#edge-${r.id}`} /></animateMotion>
+                        </circle>
+                      );
+                    })}
+                  </svg>
+
+                  {/* Centrální hub */}
+                  <div className="absolute" style={{ left: canvasW / 2 - 26, top: 26 }}>
+                    <div className="rounded-2xl flex items-center justify-center" style={{ width: 52, height: 52, background: 'linear-gradient(135deg,#6D5DF6,#3B2E9E)', boxShadow: '0 0 30px rgba(109,93,246,0.6)' }}>
+                      <span className="grid grid-cols-3 gap-0.5">{Array.from({ length: 9 }).map((_, i) => <span key={i} className="w-1 h-1 rounded-full bg-white/85" />)}</span>
+                    </div>
+                  </div>
+
+                  {/* Uzly sálů — přesouvatelné myší */}
+                  {visible.map((r, i) => {
+                    const p = getPos(r, i);
+                    const c = colorFor(r, statuses);
+                    const start = currentStatusStart(r);
+                    const active = !r.isLocked && (r.currentStepIndex ?? 0) !== 0;
+                    const dragging = dragId === r.id;
+                    return (
+                      <div
+                        key={r.id}
+                        onMouseDown={(e) => onNodeDown(e, r.id, p)}
+                        className={`absolute rounded-2xl px-3 py-2.5 border flex items-center gap-2.5 overflow-hidden select-none ${dragging ? 'z-30 cursor-grabbing' : 'z-10 cursor-grab'}`}
+                        style={{ left: p.x, top: p.y, width: NODE_W, background: `${c}1f`, borderColor: `${c}55`, boxShadow: active ? `0 0 22px -6px ${c}` : '0 14px 36px -18px rgba(0,0,0,0.7)', transition: dragging ? 'none' : 'box-shadow 0.2s' }}
+                      >
+                        {active && <span className="absolute inset-0 rounded-2xl border-2 animate-pulse pointer-events-none" style={{ borderColor: `${c}66` }} />}
+                        <div className="relative w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 text-[11px] font-bold tabular-nums" style={{ background: c }}>{(r.sort_order ?? i) + 1}</div>
+                        <div className="relative min-w-0 flex-1">
+                          <p className="text-xs font-bold text-white truncate">{r.name}</p>
+                          <p className="text-[10px] tabular-nums flex items-center gap-1.5"><span className="truncate" style={{ color: c }}>{nameFor(r, statuses)}</span>{start && <span className="text-white/50">{fmtClock(now - start)}</span>}</p>
+                        </div>
+                        <span className="relative flex h-2.5 w-2.5 shrink-0">
+                          {active && <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ background: c, opacity: 0.6 }} />}
+                          <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: c, boxShadow: `0 0 6px ${c}` }} />
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {visible.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm">Všechny sály jsou skryté — zapni je v levém panelu.</div>
+                  )}
+                </div>
+              </div>
+            ) : mode === 'board' ? (
+              <StatusBoard rooms={visible} statuses={statuses} now={now} />
+            ) : (
+              /* ── Režim Historie ── */
+              <div className="flex-1 min-w-0 overflow-y-auto hide-scrollbar px-5 py-2 space-y-5">
+                <section>
+                  <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Clock className="w-4 h-4 text-white/60" /> Doba trvání statusů — podle sálu</h3>
+                  <div className="space-y-2.5">
+                    {visible.map((r) => {
+                      const segs = roomSegments(r, now);
+                      const total = segs.reduce((a, s) => a + s.ms, 0) || 1;
+                      return (
+                        <div key={r.id} className="rounded-2xl bg-white/[0.03] border border-white/10 p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-white/90 truncate flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full" style={{ background: colorFor(r, statuses) }} /> {r.name}</span>
+                            <span className="text-[10px] text-white/40 tabular-nums">{r.department} · {fmtDur(total)}</span>
+                          </div>
+                          {segs.length > 0 ? (
+                            <GrowBar>
+                              <div className="flex h-6 rounded-lg overflow-hidden">
+                                {segs.map((s, i) => (
+                                  <div key={i} title={`${nameByIndex(s.stepIndex, statuses)} · ${fmtDur(s.ms)}`}
+                                    className="h-full flex items-center justify-center min-w-[2px] transition-[flex-grow] duration-700"
+                                    style={{ flexGrow: s.ms / total, flexBasis: 0, background: `${(s.color || colorByIndex(s.stepIndex, statuses))}` }}>
+                                    {s.ms / total > 0.14 && <span className="text-[9px] font-bold text-black/70 px-1 truncate">{fmtDur(s.ms)}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </GrowBar>
+                          ) : (
+                            <p className="text-[11px] text-white/30 py-1">Zatím žádná historie statusů.</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {visible.length === 0 && <p className="text-[11px] text-white/30 text-center py-6">Žádný viditelný sál.</p>}
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Activity className="w-4 h-4 text-white/60" /> Statusy celkem (vč. dokončených výkonů)</h3>
+                  <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4 space-y-2.5">
+                    {aggregate.arr.length > 0 ? aggregate.arr.map(({ idx, ms }) => {
+                      const c = colorByIndex(idx, statuses);
+                      return (
+                        <div key={idx} className="flex items-center gap-3">
+                          <span className="w-40 shrink-0 text-xs text-white/80 truncate flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} /> {nameByIndex(idx, statuses)}</span>
+                          <div className="flex-1 h-3 rounded-full bg-white/[0.05] overflow-hidden">
+                            <GrowBar>
+                              <div className="h-full rounded-full" style={{ width: `${(ms / aggregate.max) * 100}%`, background: c, boxShadow: `0 0 10px ${c}88` }} />
+                            </GrowBar>
+                          </div>
+                          <span className="w-20 shrink-0 text-right text-xs font-semibold text-white tabular-nums">{fmtDur(ms)}</span>
+                        </div>
+                      );
+                    }) : <p className="text-[11px] text-white/30 text-center py-4">Zatím žádná data o trvání statusů.</p>}
+                  </div>
+                </section>
+              </div>
+            )}
+          </div>
+
+          {/* ── Spodní dok ── */}
+          <div className="mx-4 mb-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl flex">
+            <div className="flex-1 p-4 border-r border-white/10 min-w-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center"><Server className="w-4 h-4 text-white/70" /></div><h3 className="text-sm font-bold text-white">Průchodnost sálů</h3></div>
+                <div className="flex items-center gap-4">
+                  {[['Aktivní', '#A78BFA', activeCount], ['Pauza', '#F59E0B', visible.filter(r=>r.isPaused).length], ['Volné', '#60A5FA', visible.filter(r=>(r.currentStepIndex??0)===0).length]].map(([l, c, n], i) => (
+                    <div key={i} className="text-right"><div className="flex items-center gap-1.5 justify-end"><span className="w-2 h-2 rounded-full" style={{ background: c as string }} /><span className="text-[10px] text-white/50">{l}</span></div><p className="text-sm font-bold text-white tabular-nums">{n as number}</p></div>
+                  ))}
+                </div>
+              </div>
+              <div className="relative flex items-end gap-2 h-28">
+                <div className="absolute left-1/2 -translate-x-1/2 -top-1 z-10 px-3 py-2 rounded-xl bg-[#101a3a]/90 border border-white/10 text-center shadow-xl">
+                  <div className="flex items-center gap-1 justify-center text-white/50"><Activity className="w-3 h-3" /><span className="text-[9px]">Stav</span></div>
+                  <p className="text-xl font-black text-white leading-none">{Math.max(0, 100 - emergencyCount * 12)}</p>
+                  <p className="text-[9px] text-emerald-300">Výborný</p>
+                </div>
+                {ticks.map((t, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full">
+                    <div className="w-2.5 rounded-t-sm transition-all duration-500" style={{ height: `${25 + ((i * 37) % 60)}%`, background: 'linear-gradient(180deg,#A78BFA,#7C3AED)' }} />
+                    <div className="w-2.5 rounded-sm transition-all duration-500" style={{ height: `${15 + ((i * 53) % 45)}%`, background: 'linear-gradient(180deg,#F59E0B,#B45309)' }} />
+                    <span className="text-[8px] text-white/35 tabular-nums">{fmt(t)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 p-4 min-w-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center"><Cpu className="w-4 h-4 text-white/70" /></div><h3 className="text-sm font-bold text-white">Přehled sálů</h3></div>
+                <div className="flex gap-1.5"><button className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center text-white/50"><ExternalLink className="w-3.5 h-3.5" /></button><button className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center text-white/50"><Maximize2 className="w-3.5 h-3.5" /></button></div>
+              </div>
+              <div className="grid grid-cols-[1.4fr_1fr_auto_auto] gap-x-3 gap-y-1 text-[11px]">
+                <span className="text-white/40">Sál</span><span className="text-white/40">Oddělení</span><span className="text-white/40">Status</span><span className="text-white/40 text-right">Trvání</span>
+                {visible.slice(0, 4).map((r) => {
+                  const c = colorFor(r, statuses);
+                  const start = currentStatusStart(r);
+                  return (
+                    <React.Fragment key={r.id}>
+                      <span className="flex items-center gap-2 text-white/85 truncate"><span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c }} /> {r.name}</span>
+                      <span className="text-white/55 truncate">{r.department}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold w-fit" style={{ background: `${c}22`, color: c, border: `1px solid ${c}55` }}>{nameFor(r, statuses)}</span>
+                      <span className="text-white/80 text-right tabular-nums">{start ? fmtClock(now - start) : '—'}</span>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* Animovaný „nárůst" obsahu (scaleX 0→1 zleva) při montáži. */
+const GrowBar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [on, setOn] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setOn(true)); return () => cancelAnimationFrame(id); }, []);
+  return (
+    <div className="origin-left transition-transform duration-700 ease-out" style={{ transform: on ? 'scaleX(1)' : 'scaleX(0)' }}>
+      {children}
+    </div>
+  );
+};
+
+const GroupBox: React.FC<{ title: string; x: number; y: number; rooms: OperatingRoom[]; statuses: WStatus[]; now: number; compact?: boolean }> = ({ title, x, y, rooms, statuses, now, compact }) => (
+  <div className="absolute rounded-3xl border border-white/10 backdrop-blur-md" style={{ left: x, top: y, width: compact ? 200 : 230, background: 'linear-gradient(160deg, rgba(40,55,120,0.45), rgba(20,28,70,0.35))', boxShadow: '0 20px 50px -20px rgba(0,0,0,0.7)' }}>
+    <div className="flex items-center justify-between px-3 py-2.5">
+      <div className="w-7 h-7 rounded-xl bg-[#3B82F6] flex items-center justify-center text-white"><Minus className="w-4 h-4" /></div>
+      <span className="text-sm font-semibold text-white/90 truncate">{title}</span>
+      <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+    </div>
+    <div className="px-3 pb-3 space-y-2.5">
+      {rooms.map((r) => {
+        const c = colorFor(r, statuses);
+        const start = currentStatusStart(r);
+        const active = !r.isLocked && (r.currentStepIndex ?? 0) !== 0;
+        return (
+          <div key={r.id} className="relative rounded-2xl p-2.5 border overflow-hidden" style={{ background: `${c}14`, borderColor: `${c}33` }}>
+            {active && <span className="absolute inset-0 rounded-2xl border-2 animate-pulse pointer-events-none" style={{ borderColor: `${c}55` }} />}
+            <div className="relative pl-1">
+              <p className="text-xs font-semibold text-white truncate">{r.name}</p>
+              <p className="text-[10px] tabular-nums flex items-center gap-1.5" style={{ color: c }}>
+                <span className="truncate">{nameFor(r, statuses)}</span>
+                {start && <span className="text-white/45">{fmtClock(now - start)}</span>}
+              </p>
+            </div>
+            <span className="absolute -right-1 top-1/2 -translate-y-1/2 flex h-2.5 w-2.5">
+              {active && <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ background: c, opacity: 0.6 }} />}
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: c, boxShadow: `0 0 6px ${c}` }} />
+            </span>
+          </div>
+        );
+      })}
+      {rooms.length === 0 && <p className="text-[11px] text-white/30 px-1 py-3 text-center">Žádné sály</p>}
+    </div>
+  </div>
+);
+
+const FlowNode: React.FC<{ x: number; y: number; room: OperatingRoom; statuses: WStatus[]; now: number; highlight?: boolean }> = ({ x, y, room, statuses, now, highlight }) => {
+  const c = colorFor(room, statuses);
+  const start = currentStatusStart(room);
+  const active = !room.isLocked && (room.currentStepIndex ?? 0) !== 0;
+  return (
+    <div className="absolute rounded-2xl px-3 py-2.5 border flex items-center gap-2.5 overflow-hidden" style={{ left: x, top: y, width: 180, background: highlight ? `${c}26` : 'rgba(30,40,90,0.5)', borderColor: highlight ? `${c}77` : 'rgba(255,255,255,0.12)', boxShadow: highlight ? `0 0 26px -4px ${c}` : '0 16px 40px -18px rgba(0,0,0,0.7)' }}>
+      {active && <span className="absolute inset-0 rounded-2xl border-2 animate-pulse pointer-events-none" style={{ borderColor: `${c}66` }} />}
+      <div className="relative w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0" style={{ background: c }}><Plus className="w-4 h-4" /></div>
+      <div className="relative min-w-0">
+        <p className="text-xs font-bold text-white truncate">{room.name}</p>
+        <p className="text-[10px] tabular-nums flex items-center gap-1.5" style={{ color: c }}><span className="truncate">{nameFor(room, statuses)}</span>{start && <span className="text-white/50">{fmtClock(now - start)}</span>}</p>
+      </div>
+    </div>
+  );
+};
+
+/* ── Režim „Fáze": kanbanové sloupce podle statusů + živý % ukazatel ── */
+const StatusBoard: React.FC<{ rooms: OperatingRoom[]; statuses: WStatus[]; now: number }> = ({ rooms, statuses, now }) => {
+  const cols = statuses.length > 0 ? statuses : [{ name: 'Status' } as WStatus];
+  const byCol: OperatingRoom[][] = cols.map(() => []);
+  rooms.forEach((r) => {
+    const idx = Math.min(Math.max(0, r.currentStepIndex || 0), cols.length - 1);
+    byCol[idx].push(r);
+  });
+  return (
+    <div className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden hide-scrollbar px-4 py-2">
+      <div className="flex gap-3 h-full min-h-0">
+        {cols.map((s, ci) => {
+          const c = s.accent_color || s.color || colorByIndex(ci, statuses);
+          const list = byCol[ci];
+          return (
+            <div key={ci} className="w-[250px] shrink-0 flex flex-col min-h-0">
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl mb-2 shrink-0" style={{ background: `${c}1a`, border: `1px solid ${c}33` }}>
+                <span className="flex items-center gap-2 text-sm font-semibold text-white truncate">
+                  <span className="relative flex h-2 w-2">
+                    {list.length > 0 && <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ background: c, opacity: 0.6 }} />}
+                    <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: c }} />
+                  </span>
+                  <span className="truncate">{s.name || `Status ${ci + 1}`}</span>
+                </span>
+                <span className="text-xs font-bold text-white/90 px-2 py-0.5 rounded-md bg-white/10 tabular-nums">{list.length}</span>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar space-y-2 pr-0.5">
+                {list.map((r) => <RoomRing key={r.id} room={r} color={c} now={now} />)}
+                {list.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-white/10 text-white/25 text-[11px] text-center py-6">Žádný sál</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/* Karta sálu s živým kruhovým % (podíl času operace v aktuálním statusu). */
+const RoomRing: React.FC<{ room: OperatingRoom; color: string; now: number }> = ({ room, color, now }) => {
+  const segs = roomSegments(room, now);
+  const total = segs.reduce((a, s) => a + s.ms, 0);
+  const start = currentStatusStart(room);
+  const current = start ? now - start : 0;
+  const pct = total > 0 ? Math.min(100, (current / total) * 100) : 100;
+  const R = 26, CIRC = 2 * Math.PI * R, off = CIRC * (1 - pct / 100);
+  return (
+    <div className="relative rounded-2xl p-3 border flex items-center gap-3 overflow-hidden" style={{ background: `${color}14`, borderColor: `${color}33` }}>
+      <span className="absolute inset-0 rounded-2xl border animate-pulse pointer-events-none" style={{ borderColor: `${color}22` }} />
+      <div className="relative w-16 h-16 shrink-0">
+        <svg viewBox="0 0 64 64" className="w-16 h-16 -rotate-90">
+          <circle cx="32" cy="32" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+          <circle cx="32" cy="32" r={R} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round"
+            strokeDasharray={CIRC} strokeDashoffset={off}
+            style={{ transition: 'stroke-dashoffset 1s linear', filter: `drop-shadow(0 0 4px ${color}99)` }} />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-sm font-black text-white leading-none tabular-nums">{Math.round(pct)}%</span>
+        </div>
+      </div>
+      <div className="relative min-w-0 flex-1">
+        <p className="text-sm font-bold text-white truncate">{room.name}</p>
+        <p className="text-[11px] text-white/45 truncate">{room.department}</p>
+        <p className="text-[11px] tabular-nums mt-0.5" style={{ color }}>{fmtClock(current)} <span className="text-white/35">/ {fmtDur(total)}</span></p>
+      </div>
+    </div>
+  );
+};
+
+export default FlowMonitorModule;
