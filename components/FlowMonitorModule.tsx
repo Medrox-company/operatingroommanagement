@@ -56,6 +56,10 @@ const fmtClock = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 };
+const localDate = (t: number) => {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 const elbow = (x1: number, y1: number, x2: number, y2: number) => {
   const mx = (x1 + x2) / 2;
   return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
@@ -90,6 +94,9 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
   }, []);
 
   const [mode, setMode] = useState<'live' | 'board' | 'history'>('live');
+  const [boardRoomId, setBoardRoomId] = useState<string>('');
+  const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+  const [boardDate, setBoardDate] = useState<string>(todayStr);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [zoom, setZoom] = useState(100);
@@ -352,7 +359,34 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
                 </div>
               </div>
             ) : mode === 'board' ? (
-              <StatusBoard rooms={visible} statuses={statuses} now={now} />
+              <div className="flex-1 min-w-0 flex flex-col min-h-0">
+                {/* Výběr sálu + data pro rozpad statusů */}
+                <div className="px-4 pt-1 pb-2 flex items-center gap-2 flex-wrap shrink-0">
+                  <div className="relative">
+                    <select
+                      value={boardRoomId}
+                      onChange={(e) => setBoardRoomId(e.target.value)}
+                      className="appearance-none pl-3 pr-8 py-2 rounded-xl bg-white/[0.05] border border-white/12 text-sm text-white focus:outline-none focus:border-white/30"
+                    >
+                      <option value="" className="bg-[#0d1320]">Přehled — všechny sály (sloupce)</option>
+                      {sorted.map((r) => <option key={r.id} value={r.id} className="bg-[#0d1320]">{r.name} · {r.department}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+                  </div>
+                  {boardRoomId && (
+                    <>
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/12">
+                        <Clock className="w-4 h-4 text-white/40" />
+                        <input type="date" value={boardDate} max={todayStr} onChange={(e) => setBoardDate(e.target.value)} className="bg-transparent text-sm text-white focus:outline-none [color-scheme:dark]" />
+                      </div>
+                      <button onClick={() => { setBoardRoomId(''); setBoardDate(todayStr); }} className="px-3 py-2 rounded-xl bg-white/[0.05] border border-white/12 text-sm text-white/60 hover:text-white">Zrušit výběr</button>
+                    </>
+                  )}
+                </div>
+                {boardRoomId
+                  ? <StatusBreakdown key={`${boardRoomId}-${boardDate}`} room={sorted.find((r) => r.id === boardRoomId)!} dateStr={boardDate} statuses={statuses} now={now} todayStr={todayStr} />
+                  : <StatusBoard rooms={visible} statuses={statuses} now={now} />}
+              </div>
             ) : (
               /* ── Režim Historie ── */
               <div className="flex-1 min-w-0 overflow-y-auto hide-scrollbar px-5 py-2 space-y-5">
@@ -595,6 +629,95 @@ const RoomRing: React.FC<{ room: OperatingRoom; color: string; now: number }> = 
         <p className="text-sm font-bold text-white truncate">{room.name}</p>
         <p className="text-[11px] text-white/45 truncate">{room.department}</p>
         <p className="text-[11px] tabular-nums mt-0.5" style={{ color }}>{fmtClock(current)} <span className="text-white/35">/ {fmtDur(total)}</span></p>
+      </div>
+    </div>
+  );
+};
+
+/* ── Animovaný rozpad statusů vybraného sálu za den (donut + legenda) ── */
+const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses: WStatus[]; now: number; todayStr: string }> = ({ room, dateStr, statuses, now, todayStr }) => {
+  const [on, setOn] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setOn(true)); return () => cancelAnimationFrame(id); }, []);
+
+  const data = useMemo(() => {
+    const totals = new Map<number, number>();
+    const add = (idx: number, ms: number) => { if (ms > 0) totals.set(idx, (totals.get(idx) || 0) + ms); };
+    (room.completedOperations || []).forEach((op) => {
+      if (localDate(new Date(op.startedAt).getTime()) !== dateStr) return;
+      const segs = op.statusHistory || [];
+      segs.forEach((s, i) => {
+        const st = new Date(s.startedAt).getTime();
+        const en = i < segs.length - 1 ? new Date(segs[i + 1].startedAt).getTime() : new Date(op.endedAt).getTime();
+        add(s.stepIndex, en - st);
+      });
+    });
+    if (dateStr === todayStr) roomSegments(room, now).forEach((s) => add(s.stepIndex, s.ms));
+    const arr = [...totals.entries()]
+      .map(([idx, ms]) => ({ idx, ms, c: colorByIndex(idx, statuses), name: nameByIndex(idx, statuses) }))
+      .sort((a, b) => b.ms - a.ms);
+    const total = arr.reduce((a, x) => a + x.ms, 0);
+    let acc = 0;
+    const R = 78, CIRC = 2 * Math.PI * R;
+    const segs = arr.map((s) => { const len = total > 0 ? (s.ms / total) * CIRC : 0; const start = acc; acc += len; return { ...s, len, start, frac: total > 0 ? s.ms / total : 0 }; });
+    return { segs, total, R, CIRC };
+  }, [room, dateStr, statuses, now, todayStr]);
+
+  const c = room && data.segs[0] ? data.segs[0].c : '#22D3EE';
+
+  if (data.total === 0) {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center gap-2 px-6">
+        <div className="w-16 h-16 rounded-full border-2 border-dashed border-white/15 flex items-center justify-center"><Clock className="w-7 h-7 text-white/25" /></div>
+        <p className="text-white/60 font-medium">Žádná data pro vybrané datum</p>
+        <p className="text-sm text-white/30">Pro {new Date(dateStr).toLocaleDateString('cs-CZ')} nemá sál {room.name} žádnou historii statusů.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar px-6 py-3">
+      <div className="flex flex-col lg:flex-row items-center gap-8 max-w-4xl mx-auto">
+        {/* Donut */}
+        <div className="relative shrink-0" style={{ width: 240, height: 240 }}>
+          <div className="absolute inset-0 rounded-full blur-[40px]" style={{ background: c, opacity: 0.18 }} />
+          <svg viewBox="0 0 220 220" className="w-full h-full -rotate-90">
+            <circle cx="110" cy="110" r={data.R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="24" />
+            {data.segs.map((s, i) => (
+              <circle key={s.idx} cx="110" cy="110" r={data.R} fill="none" stroke={s.c} strokeWidth="24" strokeLinecap="butt"
+                strokeDasharray={on ? `${Math.max(0, s.len - 1)} ${data.CIRC - Math.max(0, s.len - 1)}` : `0 ${data.CIRC}`}
+                strokeDashoffset={-s.start}
+                style={{ transition: `stroke-dasharray 0.9s cubic-bezier(.22,1,.36,1) ${i * 0.09}s`, filter: `drop-shadow(0 0 5px ${s.c}66)` }} />
+            ))}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-3xl font-black text-white tabular-nums leading-none">{data.segs.length}</span>
+            <span className="text-[10px] uppercase tracking-wider text-white/40 mt-1">statusů</span>
+            <span className="text-xs text-white/55 tabular-nums mt-1">{fmtDur(data.total)}</span>
+          </div>
+        </div>
+
+        {/* Legenda */}
+        <div className="flex-1 min-w-0 w-full">
+          <div className="mb-3">
+            <h3 className="text-base font-bold text-white truncate">{room.name} <span className="text-white/40 font-medium">· {room.department}</span></h3>
+            <p className="text-xs text-white/45">{new Date(dateStr).toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}{dateStr === todayStr ? ' · živě' : ''}</p>
+          </div>
+          <div className="space-y-2.5">
+            {data.segs.map((s, i) => {
+              const pct = data.total > 0 ? (s.ms / data.total) * 100 : 0;
+              return (
+                <div key={s.idx} className="flex items-center gap-3">
+                  <span className="w-36 shrink-0 text-sm text-white/85 truncate flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: s.c }} /> {s.name}</span>
+                  <div className="flex-1 h-3.5 rounded-full bg-white/[0.05] overflow-hidden">
+                    <div className="h-full rounded-full origin-left transition-transform duration-700 ease-out" style={{ width: `${pct}%`, background: s.c, boxShadow: `0 0 10px ${s.c}88`, transform: on ? 'scaleX(1)' : 'scaleX(0)', transitionDelay: `${i * 0.08}s` }} />
+                  </div>
+                  <span className="w-14 shrink-0 text-right text-sm font-bold text-white tabular-nums">{pct.toFixed(1)}%</span>
+                  <span className="w-16 shrink-0 text-right text-xs text-white/45 tabular-nums">{fmtDur(s.ms)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
