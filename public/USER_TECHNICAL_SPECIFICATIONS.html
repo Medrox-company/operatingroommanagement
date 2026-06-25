@@ -1,0 +1,2510 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technické Specifikace pro Koncového Uživatele - ORMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #1e40af;
+            padding-bottom: 30px;
+        }
+        header h1 {
+            font-size: 2.5em;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        header p {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .metadata-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        .metadata-item strong {
+            color: #1e40af;
+        }
+        .toc {
+            background: #f9f9f9;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #1e40af;
+            border-radius: 4px;
+        }
+        .toc h2 {
+            color: #1e40af;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .toc ul {
+            list-style: none;
+            columns: 2;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .toc a {
+            color: #1e40af;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+        .toc a:hover {
+            border-bottom-color: #1e40af;
+        }
+        section {
+            margin: 50px 0;
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #1e40af;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        h3 {
+            font-size: 1.3em;
+            color: #2c5aa0;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        h4 {
+            font-size: 1.1em;
+            color: #3b5c7f;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table th {
+            background: #1e40af;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        table tr:hover {
+            background: #f5f5f5;
+        }
+        table tr:nth-child(even) {
+            background: #fafafa;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+            border-radius: 4px;
+        }
+        .error {
+            background: #f8d7da;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+            border-radius: 4px;
+        }
+        .info {
+            background: #d1ecf1;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #17a2b8;
+            border-radius: 4px;
+        }
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+        li {
+            margin-bottom: 8px;
+            line-height: 1.8;
+        }
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .spec-card {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            border-left: 4px solid #1e40af;
+        }
+        .spec-card h4 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .comparison-item {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .minimum {
+            background: #ffe6e6;
+            border: 2px solid #ff6b6b;
+        }
+        .recommended {
+            background: #e6f3ff;
+            border: 2px solid #1e40af;
+        }
+        .optimal {
+            background: #e6ffe6;
+            border: 2px solid #28a745;
+        }
+        .comparison-item h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .comparison-item ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            text-align: left;
+        }
+        .comparison-item li {
+            margin: 5px 0;
+        }
+        .checklist {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .checklist ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .checklist li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #c7254e;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        pre code {
+            background: none;
+            color: #f8f8f2;
+            padding: 0;
+        }
+        .device-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .device-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .device-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #1e40af;
+        }
+        .device-card h4 {
+            color: #1e40af;
+            margin-top: 0;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .device-card ul {
+            margin: 10px 0;
+        }
+        .device-card li {
+            font-size: 0.95em;
+            margin-bottom: 5px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .badge-recommended {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-required {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .badge-supported {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .faq {
+            margin: 30px 0;
+        }
+        .faq-item {
+            background: #f9f9f9;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #1e40af;
+        }
+        .faq-question {
+            padding: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #1e40af;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .faq-answer {
+            padding: 0 15px 15px;
+            display: none;
+            color: #555;
+        }
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+        .faq-toggle {
+            font-size: 1.3em;
+            transition: transform 0.3s;
+        }
+        .faq-item.active .faq-toggle {
+            transform: rotate(180deg);
+        }
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .page-break {
+            page-break-after: always;
+            margin: 50px 0;
+        }
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            table {
+                page-break-inside: avoid;
+            }
+            section {
+                page-break-inside: avoid;
+            }
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            header h1 {
+                font-size: 1.8em;
+            }
+            .toc ul {
+                columns: 1;
+            }
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+            .metadata {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Technické Specifikace pro Koncového Uživatele</h1>
+            <p><strong>Operating Room Management System (ORMS)</strong></p>
+            <p>Podrobný průvodce hardwarovými a softwarovými požadavky</p>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <strong>Aplikace:</strong>
+                    <span>ORMS v1.0+</span>
+                </div>
+                <div class="metadata-item">
+                    <strong>Poskytovatel:</strong>
+                    <span>Medrox s.r.o.</span>
+                </div>
+                <div class="metadata-item">
+                    <strong>Verze dokumentu:</strong>
+                    <span>2.0</span>
+                </div>
+                <div class="metadata-item">
+                    <strong>Datum:</strong>
+                    <span>červen 2026</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="toc">
+            <h2>Obsah Dokumentu</h2>
+            <ul>
+                <li><a href="#overview">1. Přehled Aplikace</a></li>
+                <li><a href="#desktop">2. Požadavky na Desktop PC</a></li>
+                <li><a href="#mobile">3. Mobilní Zařízení</a></li>
+                <li><a href="#display">4. Rozlišení a Displeje</a></li>
+                <li><a href="#network">5. Síťové Požadavky</a></li>
+                <li><a href="#browsers">6. Webové Prohlížeče</a></li>
+                <li><a href="#installation">7. Instalace a Nastavení</a></li>
+                <li><a href="#performance">8. Performance Metriky</a></li>
+                <li><a href="#security">9. Bezpečnost</a></li>
+                <li><a href="#troubleshooting">10. Řešení Problémů</a></li>
+                <li><a href="#faq">11. Často Kladené Otázky</a></li>
+                <li><a href="#support">12. Podpora a Kontakt</a></li>
+            </ul>
+        </div>
+
+        <section id="overview">
+            <h2>1. Přehled Aplikace</h2>
+            
+            <h3>Co je ORMS?</h3>
+            <p><strong>Operating Room Management System (ORMS)</strong> je moderní webová a mobilní aplikace určená pro správu operačních sálů v zdravotnických zařízeních. Umožňuje dispečerům, zdravotníkům a administratorům efektivně spravovat:</p>
+            <ul>
+                <li>Plánování a rezervaci operačních sálů</li>
+                <li>Přidělování zdravotnického personálu</li>
+                <li>Real-time sledování stavu operací</li>
+                <li>Správu zařízení a vybavení</li>
+                <li>Tvorbu reportů a statistik</li>
+                <li>Archivaci historických dat</li>
+            </ul>
+
+            <h3>Technologický Stack</h3>
+            <table>
+                <tr>
+                    <th>Komponenta</th>
+                    <th>Technologie</th>
+                    <th>Verze</th>
+                </tr>
+                <tr>
+                    <td>Frontend (Web)</td>
+                    <td>React.js</td>
+                    <td>18.2+</td>
+                </tr>
+                <tr>
+                    <td>Backend (Web)</td>
+                    <td>Next.js</td>
+                    <td>16.0+</td>
+                </tr>
+                <tr>
+                    <td>Databáze</td>
+                    <td>PostgreSQL / Supabase</td>
+                    <td>13+</td>
+                </tr>
+                <tr>
+                    <td>Real-time</td>
+                    <td>WebSocket + Supabase Realtime</td>
+                    <td>Latest</td>
+                </tr>
+                <tr>
+                    <td>Autentifikace</td>
+                    <td>Better Auth</td>
+                    <td>Latest</td>
+                </tr>
+                <tr>
+                    <td>Mobilní App</td>
+                    <td>React Native / Expo</td>
+                    <td>Latest</td>
+                </tr>
+            </table>
+
+            <h3>Přístupné Platformy</h3>
+            <ul>
+                <li><strong>Web:</strong> Chrome, Edge, Firefox, Safari v moderních verzích</li>
+                <li><strong>iOS:</strong> iPhone a iPad s iOS 14+</li>
+                <li><strong>Android:</strong> Tablety a telefony s Android 10+</li>
+                <li><strong>Desktop:</strong> Windows 10+, macOS 12+, Linux</li>
+            </ul>
+        </section>
+
+        <section id="desktop">
+            <h2>2. Požadavky na Desktop PC</h2>
+
+            <h3>Srovnění Konfigurací</h3>
+            <div class="comparison">
+                <div class="comparison-item minimum">
+                    <h4>Minimální</h4>
+                    <ul>
+                        <li><strong>OS:</strong> Windows 10 / macOS 12 / Linux</li>
+                        <li><strong>Procesor:</strong> Intel i5 / AMD Ryzen 5 (2017+)</li>
+                        <li><strong>RAM:</strong> 4 GB</li>
+                        <li><strong>Disk:</strong> 500 MB</li>
+                        <li><strong>Display:</strong> 1280x720</li>
+                        <li><strong>Síť:</strong> 5 Mbps</li>
+                    </ul>
+                </div>
+                <div class="comparison-item recommended">
+                    <h4>Doporučená</h4>
+                    <ul>
+                        <li><strong>OS:</strong> Windows 11 / macOS 13+ / Ubuntu 22.04</li>
+                        <li><strong>Procesor:</strong> Intel i7 / AMD Ryzen 7 (2019+)</li>
+                        <li><strong>RAM:</strong> 16 GB</li>
+                        <li><strong>Disk:</strong> 256 GB SSD</li>
+                        <li><strong>Display:</strong> 1920x1080</li>
+                        <li><strong>Síť:</strong> 50 Mbps</li>
+                    </ul>
+                </div>
+                <div class="comparison-item optimal">
+                    <h4>Optimální</h4>
+                    <ul>
+                        <li><strong>OS:</strong> Windows 11 / macOS 14 / Ubuntu 24.04</li>
+                        <li><strong>Procesor:</strong> Intel i9 / AMD Ryzen 9 (2022+)</li>
+                        <li><strong>RAM:</strong> 32 GB</li>
+                        <li><strong>Disk:</strong> 512 GB NVMe SSD</li>
+                        <li><strong>Display:</strong> 2560x1440+</li>
+                        <li><strong>Síť:</strong> 100+ Mbps</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Operační Systémy - Podrobně</h3>
+
+            <h4>Windows</h4>
+            <table>
+                <tr>
+                    <th>Verze</th>
+                    <th>Podpora</th>
+                    <th>Doporučeno</th>
+                    <th>Pozn.</th>
+                </tr>
+                <tr>
+                    <td>Windows 10 (Build 1909+)</td>
+                    <td>✓ Ano</td>
+                    <td>-</td>
+                    <td>Minimální podpora</td>
+                </tr>
+                <tr>
+                    <td>Windows 10 (Latest)</td>
+                    <td>✓ Ano</td>
+                    <td>✓</td>
+                    <td>Plná podpora</td>
+                </tr>
+                <tr>
+                    <td>Windows 11 (Build 22000+)</td>
+                    <td>✓ Ano</td>
+                    <td>✓ DOPORUČENO</td>
+                    <td>Nejnovější, nejstabilnější</td>
+                </tr>
+            </table>
+
+            <h4>macOS</h4>
+            <table>
+                <tr>
+                    <th>Verze</th>
+                    <th>Podpora</th>
+                    <th>Doporučeno</th>
+                    <th>Poznámka</th>
+                </tr>
+                <tr>
+                    <td>macOS 12 Monterey</td>
+                    <td>✓ Ano</td>
+                    <td>-</td>
+                    <td>Minimální</td>
+                </tr>
+                <tr>
+                    <td>macOS 13 Ventura</td>
+                    <td>✓ Ano</td>
+                    <td>✓</td>
+                    <td>Dobrá volba</td>
+                </tr>
+                <tr>
+                    <td>macOS 14 Sonoma</td>
+                    <td>✓ Ano</td>
+                    <td>✓ DOPORUČENO</td>
+                    <td>Nejnovější, nejlepší performance</td>
+                </tr>
+                <tr>
+                    <td>macOS 15 Sequoia</td>
+                    <td>✓ Ano</td>
+                    <td>✓ DOPORUČENO</td>
+                    <td>Nejnovější, nejlepší performance</td>
+                </tr>
+            </table>
+
+            <h4>Linux</h4>
+            <table>
+                <tr>
+                    <th>Distribuce</th>
+                    <th>Verze</th>
+                    <th>Podpora</th>
+                </tr>
+                <tr>
+                    <td>Ubuntu</td>
+                    <td>20.04 LTS+</td>
+                    <td>✓ Ano</td>
+                </tr>
+                <tr>
+                    <td>Debian</td>
+                    <td>11+</td>
+                    <td>✓ Ano</td>
+                </tr>
+                <tr>
+                    <td>Fedora</td>
+                    <td>38+</td>
+                    <td>✓ Ano</td>
+                </tr>
+                <tr>
+                    <td>Linux Mint</td>
+                    <td>20+</td>
+                    <td>✓ Ano</td>
+                </tr>
+            </table>
+
+            <h3>Procesor (CPU)</h3>
+            <div class="spec-grid">
+                <div class="spec-card">
+                    <h4>Minimální Požadavky</h4>
+                    <ul>
+                        <li>Intel Core i5-6600K (2015) a novější</li>
+                        <li>AMD Ryzen 5 1600 (2017) a novější</li>
+                        <li>Apple M1 (2020) a novější</li>
+                        <li>Minimálně 2 jádra, 2.0 GHz</li>
+                        <li>Výkon: ≥ 1000 Geekbench bodů</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Doporučeno</h4>
+                    <ul>
+                        <li>Intel Core i7-8700K (2018) a novější</li>
+                        <li>AMD Ryzen 7 2700X (2018) a novější</li>
+                        <li>Apple M2 (2022) a novější</li>
+                        <li>Minimálně 4 jádra, 2.5 GHz</li>
+                        <li>Výkon: ≥ 5000 Geekbench bodů</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Ideální</h4>
+                    <ul>
+                        <li>Intel Core i9-12900KS (2023) a novější</li>
+                        <li>AMD Ryzen 9 7950X3D (2023) a novější</li>
+                        <li>Apple M3 Pro/Max (2024) a novější</li>
+                        <li>8+ jader, 3.5+ GHz</li>
+                        <li>Výkon: ≥ 15000 Geekbench bodů</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Paměť (RAM)</h3>
+            <table>
+                <tr>
+                    <th>Scénář Použití</th>
+                    <th>Minimální</th>
+                    <th>Doporučeno</th>
+                    <th>Ideální</th>
+                </tr>
+                <tr>
+                    <td>Jednoduchý prohlížec (web pouze)</td>
+                    <td>2 GB</td>
+                    <td>4 GB</td>
+                    <td>8 GB</td>
+                </tr>
+                <tr>
+                    <td>Standardní uživatel (1-3 open aplikace)</td>
+                    <td>4 GB</td>
+                    <td>8 GB</td>
+                    <td>16 GB</td>
+                </tr>
+                <tr>
+                    <td>Power user (5+ aplikací, multitasking)</td>
+                    <td>8 GB</td>
+                    <td>16 GB</td>
+                    <td>32 GB</td>
+                </tr>
+                <tr>
+                    <td>Developer / Administrator</td>
+                    <td>16 GB</td>
+                    <td>32 GB</td>
+                    <td>64 GB</td>
+                </tr>
+            </table>
+
+            <div class="highlight">
+                <strong>Důležité:</strong> Aplikace ORMS je optimalizovaná a má nízkou spotřebu paměti (~150-200 MB v provozu). I s minimálními 4 GB RAM by měla fungovat plynule s dalšími běžnými aplikacemi (Outlook, Teams, Browser).
+            </div>
+
+            <h3>Úložný Prostor (Disk)</h3>
+            <table>
+                <tr>
+                    <th>Typ Disku</th>
+                    <th>Kapacita</th>
+                    <th>Rychlost</th>
+                    <th>Doporučení</th>
+                </tr>
+                <tr>
+                    <td>HDD (mechanický)</td>
+                    <td>500 GB+</td>
+                    <td>5400-7200 RPM</td>
+                    <td>Nevhodný - pomalý, zastaralý</td>
+                </tr>
+                <tr>
+                    <td>SATA SSD</td>
+                    <td>256 GB+</td>
+                    <td>550 MB/s</td>
+                    <td>Minimálně - funkční, ale pomlejší</td>
+                </tr>
+                <tr>
+                    <td>NVMe SSD (M.2)</td>
+                    <td>256 GB+</td>
+                    <td>3000-7000 MB/s</td>
+                    <td>DOPORUČENO - moderní, rychlý</td>
+                </tr>
+                <tr>
+                    <td>NVMe Gen 4</td>
+                    <td>512 GB+</td>
+                    <td>7000 MB/s+</td>
+                    <td>IDEÁLNÍ - nejrychlejší</td>
+                </tr>
+            </table>
+
+            <div class="success">
+                <strong>Tip:</strong> Pokud máte starou mechanickou jednotku HDD, velmi důrazně se doporučuje upgrade na SSD. Zrychlí to nejen aplikaci ORMS, ale celý počítač.
+            </div>
+
+            <h3>Grafická Karta (GPU)</h3>
+            <ul>
+                <li><strong>Minimálně:</strong> Integrovaná grafika (Intel UHD 630, AMD Radeon Vega) - postačuje</li>
+                <li><strong>Doporučeno:</strong> Dedikovaná GPU s 2 GB VRAM (NVIDIA GeForce GTX 1050, AMD RX 6600)</li>
+                <li><strong>Ideálně:</strong> Moderní dedikovaná GPU s 4-6 GB VRAM (RTX 4060, RTX 4070)</li>
+                <li><strong>Vyžadování:</strong> Aplikace ORMS GPU nepotřebuje, vykreslen se ve webovém prohlížeči - CPU postačuje</li>
+            </ul>
+
+            <div class="info">
+                <strong>Info:</strong> ORMS není náročná graficky. Grafická karta prakticky nikdy není limitujícím faktorem. Prohlížeč hardware acceleration automaticky vypne, pokud je GPU problém.
+            </div>
+        </section>
+
+        <section id="mobile">
+            <h2>3. Mobilní Zařízení</h2>
+
+            <h3>Systémové Požadavky - iOS</h3>
+
+            <h4>iOS Verze</h4>
+            <table>
+                <tr>
+                    <th>iOS Verze</th>
+                    <th>Podpora</th>
+                    <th>Doporučeno</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td>iOS 14.0 - 14.8</td>
+                    <td>✓ Ano</td>
+                    <td>-</td>
+                    <td>Zastaralé, omezená podpora</td>
+                </tr>
+                <tr>
+                    <td>iOS 15.0 - 15.8</td>
+                    <td>✓ Ano</td>
+                    <td>✓</td>
+                    <td>Stabilní</td>
+                </tr>
+                <tr>
+                    <td>iOS 16.0 - 16.7</td>
+                    <td>✓ Ano</td>
+                    <td>✓ DOPORUČENO</td>
+                    <td>Nejlepší</td>
+                </tr>
+                <tr>
+                    <td>iOS 17.0+</td>
+                    <td>✓ Ano</td>
+                    <td>✓ NEJNOVĚJŠÍ</td>
+                    <td>Nejlepší výkon</td>
+                </tr>
+            </table>
+
+            <h4>Kompatibilní iPhone Modely</h4>
+            <div class="device-specs">
+                <div class="device-card">
+                    <h4>iPhone 11 a starší</h4>
+                    <ul>
+                        <li><span class="badge badge-supported">Podporováno</span></li>
+                        <li>RAM: 4 GB</li>
+                        <li>Displej: 6.1"</li>
+                        <li>326 ppi</li>
+                        <li><strong>Status:</strong> Funguje, ale pomalejší</li>
+                    </ul>
+                </div>
+                <div class="device-card">
+                    <h4>iPhone 12 / 13 / SE 3</h4>
+                    <ul>
+                        <li><span class="badge badge-recommended">Doporučeno</span></li>
+                        <li>RAM: 4 GB</li>
+                        <li>Displej: 6.1"</li>
+                        <li>460 ppi OLED</li>
+                        <li><strong>Status:</strong> Dobrá volba</li>
+                    </ul>
+                </div>
+                <div class="device-card">
+                    <h4>iPhone 14 / 15 / 15 Pro</h4>
+                    <ul>
+                        <li><span class="badge badge-recommended">Ideální</span></li>
+                        <li>RAM: 6 GB</li>
+                        <li>Displej: 6.1" / 6.7"</li>
+                        <li>460 ppi OLED</li>
+                        <li><strong>Status:</strong> Nejlepší výkon</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>Kompatibilní iPad Modely</h4>
+            <div class="device-specs">
+                <div class="device-card">
+                    <h4>iPad (Standard)</h4>
+                    <ul>
+                        <li><span class="badge badge-supported">Podporováno</span></li>
+                        <li>Displej: 10.2"</li>
+                        <li>264 ppi</li>
+                        <li>RAM: 3-4 GB</li>
+                        <li>Cena: $329+</li>
+                    </ul>
+                </div>
+                <div class="device-card">
+                    <h4>iPad Air</h4>
+                    <ul>
+                        <li><span class="badge badge-recommended">Doporučeno</span></li>
+                        <li>Displej: 10.9"</li>
+                        <li>264 ppi Retina</li>
+                        <li>RAM: 6-8 GB</li>
+                        <li>Cena: $599+</li>
+                    </ul>
+                </div>
+                <div class="device-card">
+                    <h4>iPad Pro 12.9"</h4>
+                    <ul>
+                        <li><span class="badge badge-recommended">IDEÁLNÍ</span></li>
+                        <li>Displej: 12.9" Liquid Retina</li>
+                        <li>264 ppi</li>
+                        <li>RAM: 8-12 GB</li>
+                        <li>Cena: $1099+</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Systémové Požadavky - Android</h3>
+
+            <h4>Android Verze</h4>
+            <table>
+                <tr>
+                    <th>Android Verze</th>
+                    <th>API Level</th>
+                    <th>Podpora</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td>Android 10</td>
+                    <td>API 29</td>
+                    <td>✓ Ano</td>
+                    <td>Zastaralé, omezená podpora</td>
+                </tr>
+                <tr>
+                    <td>Android 11</td>
+                    <td>API 30</td>
+                    <td>✓ Ano</td>
+                    <td>Stabilní</td>
+                </tr>
+                <tr>
+                    <td>Android 12</td>
+                    <td>API 31</td>
+                    <td>✓ Ano</td>
+                    <td>Doporučeno</td>
+                </tr>
+                <tr>
+                    <td>Android 13</td>
+                    <td>API 33</td>
+                    <td>✓ Ano</td>
+                    <td>Doporučeno</td>
+                </tr>
+                <tr>
+                    <td>Android 14+</td>
+                    <td>API 34+</td>
+                    <td>✓ Ano</td>
+                    <td>Nejnovější, nejlepší</td>
+                </tr>
+            </table>
+
+            <h4>Kompatibilní Android Telefony</h4>
+            <table>
+                <tr>
+                    <th>Výrobce</th>
+                    <th>Model</th>
+                    <th>RAM</th>
+                    <th>Displej</th>
+                    <th>Doporučení</th>
+                </tr>
+                <tr>
+                    <td>Samsung</td>
+                    <td>Galaxy A13+</td>
+                    <td>4 GB</td>
+                    <td>6.5"</td>
+                    <td>Minimum</td>
+                </tr>
+                <tr>
+                    <td>Samsung</td>
+                    <td>Galaxy S22 / S23</td>
+                    <td>8 GB</td>
+                    <td>6.1"</td>
+                    <td>✓ Doporučeno</td>
+                </tr>
+                <tr>
+                    <td>Samsung</td>
+                    <td>Galaxy S24 Ultra</td>
+                    <td>12 GB</td>
+                    <td>6.8"</td>
+                    <td>✓ Ideální</td>
+                </tr>
+                <tr>
+                    <td>Google</td>
+                    <td>Pixel 6a+</td>
+                    <td>6 GB</td>
+                    <td>6.1"</td>
+                    <td>Doporučeno</td>
+                </tr>
+                <tr>
+                    <td>Google</td>
+                    <td>Pixel 8 / 8 Pro</td>
+                    <td>8-12 GB</td>
+                    <td>6.2-6.7"</td>
+                    <td>✓ Ideální</td>
+                </tr>
+                <tr>
+                    <td>OnePlus</td>
+                    <td>OnePlus 12</td>
+                    <td>12 GB</td>
+                    <td>6.7"</td>
+                    <td>✓ Výborný výběr</td>
+                </tr>
+            </table>
+
+            <h4>Kompatibilní Android Tablety</h4>
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>Displej</th>
+                    <th>RAM</th>
+                    <th>Rozlišení</th>
+                    <th>Doporučení</th>
+                </tr>
+                <tr>
+                    <td>Samsung Galaxy Tab S9</td>
+                    <td>11"</td>
+                    <td>8 GB</td>
+                    <td>2560x1600</td>
+                    <td>✓ Doporučeno</td>
+                </tr>
+                <tr>
+                    <td>Samsung Galaxy Tab S9 Ultra</td>
+                    <td>14.6"</td>
+                    <td>12 GB</td>
+                    <td>2960x1848</td>
+                    <td>✓✓ Ideální</td>
+                </tr>
+                <tr>
+                    <td>Lenovo Tab P12 Pro</td>
+                    <td>12.6"</td>
+                    <td>8 GB</td>
+                    <td>2560x1600</td>
+                    <td>✓ Doporučeno</td>
+                </tr>
+                <tr>
+                    <td>Apple iPad Pro 11"</td>
+                    <td>11"</td>
+                    <td>8 GB</td>
+                    <td>2388x1668</td>
+                    <td>✓ Výborný</td>
+                </tr>
+                <tr>
+                    <td>Apple iPad Pro 12.9"</td>
+                    <td>12.9"</td>
+                    <td>12 GB</td>
+                    <td>2732x2048</td>
+                    <td>✓✓ NEJLEPŠÍ</td>
+                </tr>
+            </table>
+
+            <h3>Paměť (RAM) - Mobilní Zařízení</h3>
+            <table>
+                <tr>
+                    <th>Kapacita RAM</th>
+                    <th>Kvalita Provozu</th>
+                    <th>Doporučení</th>
+                </tr>
+                <tr>
+                    <td>2 GB</td>
+                    <td>Velmi pomalý, vznik lagů</td>
+                    <td>Nevhodný</td>
+                </tr>
+                <tr>
+                    <td>3 GB</td>
+                    <td>Pomalý, občasné zpoždění</td>
+                    <td>Minimum</td>
+                </tr>
+                <tr>
+                    <td>4 GB</td>
+                    <td>Přijatelný, plynulý chod</td>
+                    <td>Přijatelné</td>
+                </tr>
+                <tr>
+                    <td>6-8 GB</td>
+                    <td>Velmi dobrý, plynulý chod</td>
+                    <td>DOPORUČENO</td>
+                </tr>
+                <tr>
+                    <td>12 GB+</td>
+                    <td>Výborný, bez problémů</td>
+                    <td>IDEÁLNÍ</td>
+                </tr>
+            </table>
+
+            <div class="highlight">
+                <strong>Pozorování:</strong> Moderní tablety (iPad Pro 12.9", Galaxy Tab S9 Ultra) s 10-12" displejem a 8-12 GB RAM jsou nejlepší volbou pro zdravotnické pracovníky v nemocnicích. Poskytují dostatečný prostor na displej a výkon na hladký provoz.
+            </div>
+        </section>
+
+        <section id="display">
+            <h2>4. Rozlišení a Displeje</h2>
+
+            <h3>Desktop Rozlišení (PC/Notebook)</h3>
+
+            <table>
+                <tr>
+                    <th>Rozlišení</th>
+                    <th>Rozměr</th>
+                    <th>PPI</th>
+                    <th>Použití</th>
+                    <th>Doporučení</th>
+                </tr>
+                <tr>
+                    <td>1024x768</td>
+                    <td>4:3 (17")</td>
+                    <td>~92</td>
+                    <td>Zastaralé monitory</td>
+                    <td>❌ Nevhodný</td>
+                </tr>
+                <tr>
+                    <td>1280x720</td>
+                    <td>16:9 (19-20")</td>
+                    <td>~75</td>
+                    <td>HD - základní</td>
+                    <td>⚠️ Minimum</td>
+                </tr>
+                <tr>
+                    <td>1366x768</td>
+                    <td>16:9 (20-22")</td>
+                    <td>~75</td>
+                    <td>HD - notebooky</td>
+                    <td>⚠️ Přijatelné</td>
+                </tr>
+                <tr>
+                    <td>1600x900</td>
+                    <td>16:9 (22-24")</td>
+                    <td>~94</td>
+                    <td>HD - lepší zobrazení</td>
+                    <td>✓ Dobrá volba</td>
+                </tr>
+                <tr>
+                    <td style="background: #d4edda;"><strong>1920x1080</strong></td>
+                    <td style="background: #d4edda;">16:9 (24")</td>
+                    <td style="background: #d4edda;">~92</td>
+                    <td style="background: #d4edda;">Full HD - standard</td>
+                    <td style="background: #d4edda;">✓✓ DOPORUČENO</td>
+                </tr>
+                <tr>
+                    <td>2560x1440</td>
+                    <td>16:9 (27")</td>
+                    <td>~109</td>
+                    <td>2K - pro detaily</td>
+                    <td>✓ Výborně</td>
+                </tr>
+                <tr>
+                    <td>3440x1440</td>
+                    <td>21.5:9 (34")</td>
+                    <td>~110</td>
+                    <td>Ultrawide - více prostoru</td>
+                    <td>✓ Ideální pro multitasking</td>
+                </tr>
+                <tr>
+                    <td>3840x2160</td>
+                    <td>16:9 (27-32")</td>
+                    <td>~163</td>
+                    <td>4K - velmi detailní</td>
+                    <td>⚠️ Často moc detailní</td>
+                </tr>
+            </table>
+
+            <h3>Doporučená Nastavení Displeje (Desktop)</h3>
+
+            <h4>Ideální Konfigurace pro ORMS</h4>
+            <div class="spec-grid">
+                <div class="spec-card">
+                    <h4>Jednoduché Pracovní Stanice</h4>
+                    <ul>
+                        <li>1x 24" Full HD (1920x1080)</li>
+                        <li>IPS panel (lepší úhly)</li>
+                        <li>75 Hz refresh rate</li>
+                        <li>Cena: $150-300</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Doporučená Konfigurace</h4>
+                    <ul>
+                        <li>2x 24" Full HD (1920x1080)</li>
+                        <li>IPS panel, vertikální orientace</li>
+                        <li>Jeden pro dashboard, jeden pro detaily</li>
+                        <li>Cena: $300-600</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Premium Setup</h4>
+                    <ul>
+                        <li>1x 27" QHD (2560x1440) + 1x 24" FHD</li>
+                        <li>IPS panely, ColorAccurate</li>
+                        <li>USB-C dock pro jednoduché připojení</li>
+                        <li>Cena: $600-1200</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="success">
+                <strong>Řešení pro dispečery:</strong> Používejte 2 monitory vedle sebe v orientaci na výšku (portrait mode). Levý monitor pro seznam sálů, pravý pro detaily vybraného sálu. To zvýší produktivitu a zmenší riziko chyb.
+            </div>
+
+            <h3>Mobilní Rozlišení (Telefon)</h3>
+
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>Rozlišení</th>
+                    <th>Úhlopříčka</th>
+                    <th>PPI</th>
+                    <th>Poměr</th>
+                </tr>
+                <tr>
+                    <td>iPhone SE (3)</td>
+                    <td>1125x2436</td>
+                    <td>5.4"</td>
+                    <td>460</td>
+                    <td>19.5:9</td>
+                </tr>
+                <tr>
+                    <td>iPhone 14</td>
+                    <td>1170x2532</td>
+                    <td>6.1"</td>
+                    <td>460</td>
+                    <td>19.5:9</td>
+                </tr>
+                <tr>
+                    <td>iPhone 14 Plus / 15</td>
+                    <td>1290x2796</td>
+                    <td>6.7"</td>
+                    <td>460</td>
+                    <td>20:9</td>
+                </tr>
+                <tr>
+                    <td>Samsung Galaxy S24</td>
+                    <td>1440x3120</td>
+                    <td>6.2"</td>
+                    <td>505</td>
+                    <td>20:9</td>
+                </tr>
+                <tr>
+                    <td>Samsung Galaxy S24 Ultra</td>
+                    <td>1440x3120</td>
+                    <td>6.8"</td>
+                    <td>486</td>
+                    <td>20:9</td>
+                </tr>
+                <tr>
+                    <td>Google Pixel 8 Pro</td>
+                    <td>1440x3120</td>
+                    <td>6.7"</td>
+                    <td>512</td>
+                    <td>20:9</td>
+                </tr>
+            </table>
+
+            <h3>Tablet Rozlišení</h3>
+
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>Rozlišení</th>
+                    <th>Úhlopříčka</th>
+                    <th>PPI</th>
+                    <th>Typ Panelu</th>
+                </tr>
+                <tr>
+                    <td>iPad (10.2")</td>
+                    <td>2160x1620</td>
+                    <td>10.2"</td>
+                    <td>264</td>
+                    <td>IPS Retina</td>
+                </tr>
+                <tr>
+                    <td>iPad Air (10.9")</td>
+                    <td>2360x1640</td>
+                    <td>10.9"</td>
+                    <td>264</td>
+                    <td>Liquid Retina</td>
+                </tr>
+                <tr style="background: #d4edda;">
+                    <td><strong>iPad Pro 12.9"</strong></td>
+                    <td><strong>2732x2048</strong></td>
+                    <td><strong>12.9"</strong></td>
+                    <td><strong>264</strong></td>
+                    <td><strong>Liquid Retina XDR</strong></td>
+                </tr>
+                <tr>
+                    <td>Samsung Tab S9 (11")</td>
+                    <td>2560x1600</td>
+                    <td>11"</td>
+                    <td>276</td>
+                    <td>AMOLED</td>
+                </tr>
+                <tr>
+                    <td>Samsung Tab S9 Ultra (14.6")</td>
+                    <td>2960x1848</td>
+                    <td>14.6"</td>
+                    <td>326</td>
+                    <td>AMOLED</td>
+                </tr>
+            </table>
+
+            <div class="info">
+                <strong>Minimální Rozlišení Telefonu:</strong> ORMS podporuje telefony s rozlišením 720x1280 a vyšším. Jakýkoliv moderní smartphone (2018+) bude podporován bez problému.
+            </div>
+
+            <h3>Vlastnosti Kvalitního Displeje</h3>
+
+            <h4>Pro Desktop/Notebook Monitory</h4>
+            <ul>
+                <li><strong>Typ panelu:</strong> IPS je lepší než TN (lepší úhly), VA má lepší kontrast</li>
+                <li><strong>Refresh rate:</strong> 60 Hz postačuje, 75+ Hz je hladší</li>
+                <li><strong>Odezva (Response Time):</strong> 5 ms je akceptovatelné, 1-2 ms je nejlepší</li>
+                <li><strong>Kontrast:</strong> Ideálně 1000:1+</li>
+                <li><strong>Jasy:</strong> 300 nits minimálně pro práci v interiéru</li>
+                <li><strong>Color Accuracy:</strong> sRGB 99% pro zdravotnická data</li>
+            </ul>
+
+            <h4>Pro Mobilní Zařízení</h4>
+            <ul>
+                <li><strong>Typ panelu:</strong> AMOLED pro nejlepší barvy, IPS je také velmi dobrý</li>
+                <li><strong>Jasy:</strong> 800+ nits je ideální pro použití na přímém slunečním světle</li>
+                <li><strong>Refresh rate:</strong> 120 Hz+ pro plynulejší scrolling</li>
+                <li><strong>Color Gamut:</strong> Minimálně sRGB, ideálně DCI-P3</li>
+                <li><strong>Ochrana displeje:</strong> Gorilla Glass 5+ se doporučuje</li>
+            </ul>
+
+            <div class="highlight">
+                <strong>Ochrana Displeje:</strong> Pro zdravotnické prostředí se doporučuje používat ochranné sklo a pouzdra na tabletů a telefonů. Slinění, pašity a nečistoty jsou v nemocnicích běžné.
+            </div>
+        </section>
+
+        <section id="network">
+            <h2>5. Síťové Požadavky</h2>
+
+            <h3>Šířka Pásma (Bandwidth)</h3>
+
+            <table>
+                <tr>
+                    <th>Scénář Použití</th>
+                    <th>Minimálně</th>
+                    <th>Doporučeno</th>
+                    <th>Ideálně</th>
+                </tr>
+                <tr>
+                    <td>Jeden uživatel (casual browsing)</td>
+                    <td>2 Mbps</td>
+                    <td>10 Mbps</td>
+                    <td>25 Mbps</td>
+                </tr>
+                <tr>
+                    <td>5 uživatelů (standardní kancelář)</td>
+                    <td>10 Mbps</td>
+                    <td>50 Mbps</td>
+                    <td>100 Mbps</td>
+                </tr>
+                <tr>
+                    <td>20 uživatelů (oddělení)</td>
+                    <td>25 Mbps</td>
+                    <td>100 Mbps</td>
+                    <td>250 Mbps</td>
+                </tr>
+                <tr>
+                    <td>50+ uživatelů (střední nemocnice)</td>
+                    <td>100 Mbps</td>
+                    <td>500 Mbps</td>
+                    <td>1 Gbps</td>
+                </tr>
+                <tr>
+                    <td>100+ uživatelů (velká nemocnice)</td>
+                    <td>250 Mbps</td>
+                    <td>1 Gbps</td>
+                    <td>10 Gbps</td>
+                </tr>
+            </table>
+
+            <h3>Latence (Ping)</h3>
+
+            <table>
+                <tr>
+                    <th>Latence</th>
+                    <th>Kvalita Zážitku</th>
+                    <th>Situace</th>
+                </tr>
+                <tr>
+                    <td>&lt; 20 ms</td>
+                    <td>Výborná - imperceptibilní zpoždění</td>
+                    <td>Lokální síť, stejné město</td>
+                </tr>
+                <tr>
+                    <td>20-50 ms</td>
+                    <td>Velmi dobrá - přirozený chod</td>
+                    <td>Regionální síť, stejná země</td>
+                </tr>
+                <tr>
+                    <td>50-100 ms</td>
+                    <td>Dobrá - nezapomenutný chod</td>
+                    <td>Kontinentální vzdálenost</td>
+                </tr>
+                <tr>
+                    <td>100-150 ms</td>
+                    <td>Přijatelná - mírné zpoždění</td>
+                    <td>Mezinárodní spojení</td>
+                </tr>
+                <tr>
+                    <td>&gt; 200 ms</td>
+                    <td>Špatná - viditelné zpoždění</td>
+                    <td>Velmi vzdálené servery</td>
+                </tr>
+            </table>
+
+            <div class="info">
+                <strong>Realtime Operace:</strong> Pro ORMS se doporučuje latence nižší než 100 ms. Realtime updaty (live room status) budou mít malé zpoždění při latenci > 200 ms, ale aplikace bude stále funkční.
+            </div>
+
+            <h3>Stabilita Připojení</h3>
+
+            <table>
+                <tr>
+                    <th>Parametr</th>
+                    <th>Minimálně</th>
+                    <th>Doporučeno</th>
+                    <th>Ideálně</th>
+                </tr>
+                <tr>
+                    <td>Uptime (dostupnost)</td>
+                    <td>95%</td>
+                    <td>99%</td>
+                    <td>99.9%</td>
+                </tr>
+                <tr>
+                    <td>Packet Loss</td>
+                    <td>&lt; 2%</td>
+                    <td>&lt; 0.5%</td>
+                    <td>&lt; 0.1%</td>
+                </tr>
+                <tr>
+                    <td>Jitter</td>
+                    <td>&lt; 100 ms</td>
+                    <td>&lt; 50 ms</td>
+                    <td>&lt; 10 ms</td>
+                </tr>
+                <tr>
+                    <td>DNS Resolution</td>
+                    <td>&lt; 300 ms</td>
+                    <td>&lt; 100 ms</td>
+                    <td>&lt; 50 ms</td>
+                </tr>
+            </table>
+
+            <h4>Co Znamená Packet Loss?</h4>
+            <p><code>Packet Loss</code> je procento ztracených datových paketů během přenosu. Při 0.5% ztrátě se průměrně ztratí jeden paket z 200. Aplikace má vestavěné mechanismy pro opakované poslání dat, ale vysoká ztráta může způsobit zpoždění a nestabilitu.</p>
+
+            <h3>Typy Síťových Připojení</h3>
+
+            <table>
+                <tr>
+                    <th>Typ</th>
+                    <th>Typická Rychlost</th>
+                    <th>Latence</th>
+                    <th>Vhodnost pro ORMS</th>
+                </tr>
+                <tr>
+                    <td>Ethernet (kabel)</td>
+                    <td>100 Mbps - 10 Gbps</td>
+                    <td>&lt; 5 ms</td>
+                    <td>✓✓ NEJLEPŠÍ</td>
+                </tr>
+                <tr>
+                    <td>WiFi 6 (802.11ax)</td>
+                    <td>1-10 Gbps (teoreticky)</td>
+                    <td>10-50 ms</td>
+                    <td>✓ Výborné</td>
+                </tr>
+                <tr>
+                    <td>WiFi 5 (802.11ac)</td>
+                    <td>433-1733 Mbps</td>
+                    <td>15-100 ms</td>
+                    <td>✓ Dobrá volba</td>
+                </tr>
+                <tr>
+                    <td>5G mobilní síť</td>
+                    <td>100-1000 Mbps</td>
+                    <td>10-50 ms</td>
+                    <td>✓ Velmi dobrá</td>
+                </tr>
+                <tr>
+                    <td>4G LTE</td>
+                    <td>10-50 Mbps</td>
+                    <td>30-100 ms</td>
+                    <td>⚠️ Přijatelné</td>
+                </tr>
+                <tr>
+                    <td>3G / GPRS</td>
+                    <td>0.1-3.6 Mbps</td>
+                    <td>100-300 ms</td>
+                    <td>❌ Nevhodné</td>
+                </tr>
+            </table>
+
+            <h3>WiFi Doporučení pro Nemocnice</h3>
+
+            <ul>
+                <li><strong>Standard:</strong> WiFi 6 (802.11ax) nebo WiFi 6E v operačních sálech</li>
+                <li><strong>Pokrytí:</strong> Minimálně -70 dBm signálu ve všech částech nemocnice</li>
+                <li><strong>Počet AP (přístupových bodů):</strong> 1 na 1500-2000 m² (ideálně 1 na 1000 m²)</li>
+                <li><strong>Separace Kanálů:</strong> Použijte různé kanály (1, 6, 11 pro 2.4 GHz; různé 5 GHz kanály)</li>
+                <li><strong>Šifrování:</strong> WPA3 nebo minimálně WPA2-PSK</li>
+                <li><strong>Guest Network:</strong> Oddělit od interního provozu</li>
+                <li><strong>QoS (Quality of Service):</strong> Nastavit prioritu pro zdravotnické aplikace</li>
+            </ul>
+
+            <div class="success">
+                <strong>Tip pro IT administrátory:</strong> Pravidelně sledujte signál a počet připojených zařízení na jednotlivých AP. Pokud se náhodně odpojují, zvyšte počet přístupových bodů nebo se přesuňte na méně zatížené kanály.
+            </div>
+
+            <h3>Firewall a Port Požadavky</h3>
+
+            <table>
+                <tr>
+                    <th>Port</th>
+                    <th>Protokol</th>
+                    <th>Směr</th>
+                    <th>Účel</th>
+                    <th>Povinné</th>
+                </tr>
+                <tr>
+                    <td>80</td>
+                    <td>HTTP</td>
+                    <td>Outbound</td>
+                    <td>Přesměrování na HTTPS</td>
+                    <td>Doporučeno</td>
+                </tr>
+                <tr>
+                    <td>443</td>
+                    <td>HTTPS</td>
+                    <td>Outbound</td>
+                    <td>Šifrovaná komunikace aplikace</td>
+                    <td>✓ POVINNÉ</td>
+                </tr>
+                <tr>
+                    <td>5432</td>
+                    <td>PostgreSQL</td>
+                    <td>Outbound</td>
+                    <td>Databázové spojení (jen přes VPN)</td>
+                    <td>Jen přes VPN</td>
+                </tr>
+                <tr>
+                    <td>3000</td>
+                    <td>HTTP/WS</td>
+                    <td>Inbound</td>
+                    <td>Lokální development server</td>
+                    <td>Development jen</td>
+                </tr>
+                <tr>
+                    <td>53</td>
+                    <td>DNS</td>
+                    <td>Outbound</td>
+                    <td>DNS rozlišování domén</td>
+                    <td>✓ POVINNÉ</td>
+                </tr>
+            </table>
+
+            <div class="error">
+                <strong>Bezpečnostní Poznámka:</strong> ORMS komunikuje výhradně přes HTTPS (šifrované spojení). Nikdy nevytvářejte HTTP (nešifrované) připojení. Port 443 MUSÍ být otevřen v corporate firewallu.
+            </div>
+        </section>
+
+        <section id="browsers">
+            <h2>6. Webové Prohlížeče</h2>
+
+            <h3>Minimální Verze Prohlížečů</h3>
+
+            <table>
+                <tr>
+                    <th>Prohlížeč</th>
+                    <th>Minimální Verze</th>
+                    <th>Aktuálně (2026)</th>
+                    <th>Doporučeno</th>
+                </tr>
+                <tr>
+                    <td>Google Chrome</td>
+                    <td>90</td>
+                    <td>126+</td>
+                    <td>✓ Latest</td>
+                </tr>
+                <tr>
+                    <td>Microsoft Edge</td>
+                    <td>90</td>
+                    <td>126+</td>
+                    <td>✓ Latest</td>
+                </tr>
+                <tr>
+                    <td>Mozilla Firefox</td>
+                    <td>88</td>
+                    <td>127+</td>
+                    <td>✓ Latest</td>
+                </tr>
+                <tr>
+                    <td>Apple Safari</td>
+                    <td>14</td>
+                    <td>17+</td>
+                    <td>✓ Latest</td>
+                </tr>
+                <tr>
+                    <td>Chrome (mobilní)</td>
+                    <td>90</td>
+                    <td>126+</td>
+                    <td>✓ Latest</td>
+                </tr>
+                <tr>
+                    <td>Safari (iOS)</td>
+                    <td>14</td>
+                    <td>17+</td>
+                    <td>✓ Latest</td>
+                </tr>
+            </table>
+
+            <h3>Srovnění Prohlížečů pro ORMS</h3>
+
+            <table>
+                <tr>
+                    <th>Vlastnost</th>
+                    <th>Chrome/Edge</th>
+                    <th>Firefox</th>
+                    <th>Safari</th>
+                </tr>
+                <tr>
+                    <td>Performance</td>
+                    <td>Velmi rychlý</td>
+                    <td>Rychlý</td>
+                    <td>Velmi rychlý</td>
+                </tr>
+                <tr>
+                    <td>WebSocket Support</td>
+                    <td>✓ Ano</td>
+                    <td>✓ Ano</td>
+                    <td>✓ Ano</td>
+                </tr>
+                <tr>
+                    <td>IndexedDB (Local Cache)</td>
+                    <td>✓ Ano</td>
+                    <td>✓ Ano</td>
+                    <td>✓ Ano</td>
+                </tr>
+                <tr>
+                    <td>Service Workers</td>
+                    <td>✓ Ano</td>
+                    <td>✓ Ano</td>
+                    <td>✓ Ano</td>
+                </tr>
+                <tr>
+                    <td>WebGL (3D Graphics)</td>
+                    <td>✓ Ano</td>
+                    <td>✓ Ano</td>
+                    <td>✓ Ano</td>
+                </tr>
+                <tr>
+                    <td>Memory Usage</td>
+                    <td>Vysoká</td>
+                    <td>Střední</td>
+                    <td>Nízká (na macOS)</td>
+                </tr>
+                <tr>
+                    <td>Battery Life</td>
+                    <td>Nižší (energeticky náročný)</td>
+                    <td>Střední</td>
+                    <td>Vysoká (nejlehčí)</td>
+                </tr>
+                <tr>
+                    <td>Windows Kompatibilita</td>
+                    <td>Výborná</td>
+                    <td>Výborná</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>macOS Kompatibilita</td>
+                    <td>Výborná</td>
+                    <td>Výborná</td>
+                    <td>Nejlepší (nativní)</td>
+                </tr>
+            </table>
+
+            <h3>Doporučení Prohlížeče Dle Platformy</h3>
+
+            <div class="spec-grid">
+                <div class="spec-card">
+                    <h4>Windows PC</h4>
+                    <ul>
+                        <li><strong>Prvá volba:</strong> Microsoft Edge (vestavěný v systému)</li>
+                        <li><strong>Alternativa:</strong> Google Chrome</li>
+                        <li>Firefox je také podporován</li>
+                        <li>Update automaticky nainstalován</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>macOS</h4>
+                    <ul>
+                        <li><strong>Prvá volba:</strong> Apple Safari (nejlepší výkon, baterie)</li>
+                        <li><strong>Alternativa:</strong> Google Chrome</li>
+                        <li>Safari je nativní, nejoptimalističtější</li>
+                        <li>Doporučeno pro MacBook z bateriového hlediska</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Linux</h4>
+                    <ul>
+                        <li><strong>Prvá volba:</strong> Google Chrome (nejlepší kompatibilita)</li>
+                        <li><strong>Alternativa:</strong> Firefox</li>
+                        <li>Edge/Chromium-based také dobrá volba</li>
+                        <li>Všechny moderní prohlížeče jsou plně podporovány</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>iOS / iPad</h4>
+                    <ul>
+                        <li><strong>Prvá volba:</strong> Safari (iOS 14+)</li>
+                        <li><strong>Alternativa:</strong> Chrome pro iOS</li>
+                        <li>Všichni jsou založeni na WebKit engine</li>
+                        <li>Stejný výkon ve všech iOS prohlížečích</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Android</h4>
+                    <ul>
+                        <li><strong>Prvá volba:</strong> Google Chrome (nejoptimalističtější)</li>
+                        <li><strong>Alternativa:</strong> Samsung Internet</li>
+                        <li>Edge, Firefox také fungují dobře</li>
+                        <li>Doporučujem Chrome pro maximum kompatibility</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Nastavení Prohlížeče</h3>
+
+            <h4>Doporučená Nastavení</h4>
+            <ul>
+                <li><strong>JavaScript:</strong> Musí být povolený (ORMS to vyžaduje)</li>
+                <li><strong>Cookies:</strong> Musí být povoleny (session management)</li>
+                <li><strong>Local Storage:</strong> Doporučeno (pro cache)</li>
+                <li><strong>WebSocket:</strong> Musí být povoleno (realtime updates)</li>
+                <li><strong>Hardware Acceleration:</strong> Doporučeno (lepší performance)</li>
+                <li><strong>Auto-update:</strong> Musí být zapnuté (bezpečnost)</li>
+                <li><strong>Popup Blocker:</strong> Doporučeno povolení pro orms.medrox.cz</li>
+            </ul>
+
+            <h4>Tipy na Performance</h4>
+            <ul>
+                <li>Odstranit nepoužívané rozšíření (zpomalují prohlížeč)</li>
+                <li>Vyprázdnit cache a cookies jednou měsíčně</li>
+                <li>Vypnout vizuální efekty a témata v Chrome Canary verzích</li>
+                <li>Omezit počet otevřených tabů (ideálně max 10)</li>
+                <li>Zvažit dedikovaný profil v Chrome jen pro ORMS</li>
+            </ul>
+
+            <div class="highlight">
+                <strong>Upozornění:</strong> Starší prohlížeče (Chrome &lt; 90, Safari &lt; 14) mohou mít problémy. Pokud vidíte chyby, nejdříve aktualizujte prohlížeč.
+            </div>
+        </section>
+
+        <section id="installation">
+            <h2>7. Instalace a Nastavení</h2>
+
+            <h3>Přístup do Aplikace</h3>
+
+            <h4>Krok 1: Otevření v Prohlížeči</h4>
+            <ol>
+                <li>Otevřete webový prohlížeč (Chrome, Safari, Edge, Firefox)</li>
+                <li>Do adresního řádku zadejte: <code>https://orms.medrox.cz</code></li>
+                <li>Stiskněte Enter</li>
+                <li>Měli byste vidět přihlašovací stránku</li>
+            </ol>
+
+            <h4>Krok 2: Přihlášení</h4>
+            <ol>
+                <li>Zadejte své <strong>uživatelské jméno</strong> (email)</li>
+                <li>Zadejte <strong>heslo</strong></li>
+                <li>Vyberte <strong>instituci</strong> (pokud máte přístup k více institucím)</li>
+                <li>Klikněte "Přihlásit se"</li>
+                <li>Pokud se zobrazí dvoufaktorová autentifikace (2FA), zadejte kód z aplikace nebo SMS</li>
+            </ol>
+
+            <div class="success">
+                <strong>Tip:</strong> Pokud jste poprvé, možná budete muset změnit své dočasné heslo. Postupujte podle pokynů na obrazovce.
+            </div>
+
+            <h4>Krok 3: Prvotní Nastavení</h4>
+            <ol>
+                <li>Po přihlášení se objeví uvítací obrazovka</li>
+                <li>Nastavte své <strong>jméno a příjmení</strong></li>
+                <li>Nastavte <strong>oddělení/roli</strong></li>
+                <li>Vyberte <strong>preferovaný jazyk</strong> (Čeština/Angličtina)</li>
+                <li>Nastavte <strong>časové pásmo</strong></li>
+                <li>Vyberte <strong>notifikace</strong> (email, push, SMS)</li>
+                <li>Klikněte "Pokračovat na dashboard"</li>
+            </ol>
+
+            <h3>Instalace na Mobilní Zařízení</h3>
+
+            <h4>iOS (iPhone/iPad)</h4>
+            <ol>
+                <li>Otevřete <strong>Safari</strong></li>
+                <li>Zadejte: <code>https://orms.medrox.cz</code></li>
+                <li>Klikněte na ikonu sdílení (čtvereček se šipkou)</li>
+                <li>Vyberte "<strong>Přidat na Domovskou Obrazovku</strong>"</li>
+                <li>Pojmenujte aplikaci (např. "ORMS")</li>
+                <li>Klikněte "Přidat"</li>
+                <li>Nová ikona se objeví na domovské obrazovce</li>
+            </ol>
+
+            <h4>Android (Telefon/Tablet)</h4>
+            <ol>
+                <li>Otevřete <strong>Chrome</strong></li>
+                <li>Zadejte: <code>https://orms.medrox.cz</code></li>
+                <li>Klikněte na menu (tři tečky vpravo nahoře)</li>
+                <li>Vyberte "<strong>Instalovat aplikaci</strong>" nebo "<strong>Add to Home screen</strong>"</li>
+                <li>Pojmenujte aplikaci (např. "ORMS")</li>
+                <li>Klikněte "Instalovat"</li>
+                <li>Nová ikona se objeví v seznamu aplikací</li>
+            </ol>
+
+            <div class="info">
+                <strong>Poznámka:</strong> Instalace na domovskou obrazovku je vlastně vytvoření webové zástupce. Aplikace se spustí v režimu celné obrazovky bez adresního řádku.
+            </div>
+
+            <h3>Instalace Nativní Mobilní Aplikace (pokud je k dispozici)</h3>
+
+            <h4>iOS App Store</h4>
+            <ol>
+                <li>Otevřete <strong>App Store</strong></li>
+                <li>Vyhledejte "<strong>Medrox ORMS</strong>"</li>
+                <li>Klikněte "Stáhnout" a pak "Instalovat"</li>
+                <li>Přihlaste se se svým Apple ID</li>
+                <li>Počkejte na instalaci</li>
+                <li>Aplikace se spustí</li>
+            </ol>
+
+            <h4>Google Play Store (Android)</h4>
+            <ol>
+                <li>Otevřete <strong>Google Play Store</strong></li>
+                <li>Vyhledejte "<strong>Medrox ORMS</strong>"</li>
+                <li>Klikněte "Instalovat"</li>
+                <li>Autorizujte download</li>
+                <li>Počkejte na instalaci</li>
+                <li>Klikněte "Otevřít"</li>
+            </ol>
+
+            <h3>Pokročilá Nastavení</h3>
+
+            <h4>Offline Mode (Nativní Aplikace)</h4>
+            <p>Nativní aplikace podporují offline režim. Data se synchronizují automaticky, jakmile se znovu připojíte.</p>
+
+            <h4>Cloud Sync (Synchronizace Dat)</h4>
+            <ul>
+                <li>Všechny vaše údaje jsou automaticky synchronizovány do cloudu</li>
+                <li>Můžete přepínat mezi zařízeními bez ztráty dat</li>
+                <li>Synchronizace probíhá na pozadí</li>
+            </ul>
+
+            <h4>Zálohování</h4>
+            <ul>
+                <li>Vaše data se automaticky zálohují denně</li>
+                <li>Zálohy se uchovávají 30 dní zpětně</li>
+                <li>Můžete si vyžádat obnovu z libovolného bodu</li>
+            </ul>
+        </section>
+
+        <section id="performance">
+            <h2>8. Performance Metriky</h2>
+
+            <h3>Očekávaný Výkon</h3>
+
+            <table>
+                <tr>
+                    <th>Metrika</th>
+                    <th>Minimálně</th>
+                    <th>Doporučeno</th>
+                    <th>Ideálně</th>
+                </tr>
+                <tr>
+                    <td><strong>LCP</strong> (Largest Contentful Paint)</td>
+                    <td>&lt; 4.0s</td>
+                    <td>&lt; 2.5s</td>
+                    <td>&lt; 1.0s</td>
+                </tr>
+                <tr>
+                    <td><strong>FID</strong> (First Input Delay)</td>
+                    <td>&lt; 100ms</td>
+                    <td>&lt; 50ms</td>
+                    <td>&lt; 25ms</td>
+                </tr>
+                <tr>
+                    <td><strong>CLS</strong> (Cumulative Layout Shift)</td>
+                    <td>&lt; 0.25</td>
+                    <td>&lt; 0.1</td>
+                    <td>&lt; 0.05</td>
+                </tr>
+                <tr>
+                    <td><strong>TTL</strong> (Time to Live)</td>
+                    <td>&lt; 5s</td>
+                    <td>&lt; 2s</td>
+                    <td>&lt; 1s</td>
+                </tr>
+                <tr>
+                    <td><strong>TTFB</strong> (Time to First Byte)</td>
+                    <td>&lt; 800ms</td>
+                    <td>&lt; 300ms</td>
+                    <td>&lt; 100ms</td>
+                </tr>
+            </table>
+
+            <h3>Co Tyto Metriky Znamenají?</h3>
+
+            <div class="spec-grid">
+                <div class="spec-card">
+                    <h4>LCP (Largest Contentful Paint)</h4>
+                    <p>Čas, kdy se načte největší viditelný prvek na stránce (tlačítko, obrázek, text). Nižší je lepší. Mělo by být &lt; 2.5s.</p>
+                </div>
+                <div class="spec-card">
+                    <h4>FID (First Input Delay)</h4>
+                    <p>Zpoždění od kliknutí/stisknutí klávesy po odezvou aplikace. Mělo by být &lt; 50ms. Nižší je lépe pro responsivnost.</p>
+                </div>
+                <div class="spec-card">
+                    <h4>CLS (Cumulative Layout Shift)</h4>
+                    <p>Měří, jak moc se prvky na stránce "hýbají" během načítání. Nižší je lepší. &lt; 0.1 znamená stabilní layout.</p>
+                </div>
+                <div class="spec-card">
+                    <h4>TTL (Time to Live)</h4>
+                    <p>Celkový čas od kliknutí na odkaz do plného načtení stránky. Mělo by být &lt; 2s pro hladký zážitek.</p>
+                </div>
+            </div>
+
+            <h3>Faktory Ovlivňující Performance</h3>
+
+            <table>
+                <tr>
+                    <th>Faktor</th>
+                    <th>Dopad na Výkon</th>
+                    <th>Řešení</th>
+                </tr>
+                <tr>
+                    <td>Pomalá Síť</td>
+                    <td>Vysoký - zvyšuje LCP a TTL</td>
+                    <td>Upgrade na vyšší propustnost, blíž k serveru</td>
+                </tr>
+                <tr>
+                    <td>Starý Procesor</td>
+                    <td>Střední - zpomaluje FID</td>
+                    <td>Upgrade CPU nebo zavření jiných aplikací</td>
+                </tr>
+                <tr>
+                    <td>Nízká RAM (MB &lt; 1GB volné)</td>
+                    <td>Vysoký - všechno je pomalé</td>
+                    <td>Upgrade RAM na 8GB+ nebo zavření aplikací</td>
+                </tr>
+                <tr>
+                    <td>HDD místo SSD</td>
+                    <td>Střední - pomalejší cache</td>
+                    <td>Upgrade na SSD</td>
+                </tr>
+                <tr>
+                    <td>Vysoká Latence (&gt; 200ms)</td>
+                    <td>Vysoký - viditelné zpoždění</td>
+                    <td>Fyzicky blíž k serveru nebo CDN</td>
+                </tr>
+                <tr>
+                    <td>Příliš Mnoho Otevřených Tabů</td>
+                    <td>Střední - zpomaluje prohlížeč</td>
+                    <td>Zavřete zbytečné taby</td>
+                </tr>
+            </table>
+
+            <h3>Performance Monitoring</h3>
+
+            <h4>Jak Zkontrolovat Výkon</h4>
+            <ol>
+                <li>Otevřete aplikaci ORMS v Chrome/Edge</li>
+                <li>Stiskněte <code>F12</code> (Developer Tools)</li>
+                <li>Jděte na kartu <strong>"Lighthouse"</strong></li>
+                <li>Klikněte "Analyze page load"</li>
+                <li>Počkejte na analýzu (1-2 minuty)</li>
+                <li>Uvidíte skóre pro Performance, Accessibility, Best Practices</li>
+            </ol>
+
+            <h4>Výsledky Lighthouse</h4>
+            <ul>
+                <li><strong>90-100:</strong> Výborné - žádná opatření nejsou potřeba</li>
+                <li><strong>50-89:</strong> Přijatelné - zvažte optimalizace</li>
+                <li><strong>&lt; 50:</strong> Slabé - je potřeba opatření (upgrade, restart, čištění cache)</li>
+            </ul>
+
+            <div class="highlight">
+                <strong>Performance Debug Tip:</strong> Pokud je výkon nižší, zkuste:
+                1. Vyprázdnit cache (Ctrl+Shift+Delete)
+                2. Restart prohlížeče
+                3. Odpojit a znovu připojit síť
+                4. Kontaktovat IT support
+            </div>
+        </section>
+
+        <section id="security">
+            <h2>9. Bezpečnost</h2>
+
+            <h3>Šifrování Dat</h3>
+
+            <h4>Data v Přenosu (In Transit)</h4>
+            <ul>
+                <li><strong>Protokol:</strong> HTTPS (TLS 1.3)</li>
+                <li><strong>Certifikát:</strong> SSL/TLS od trusted CA (Let's Encrypt nebo Sectigo)</li>
+                <li><strong>Šifrování:</strong> AES-256-GCM</li>
+                <li><strong>Perfect Forward Secrecy (PFS):</strong> Povoleno</li>
+                <li>Všechny hesla, osobní údaje a data se odesílají šifrovaně</li>
+            </ul>
+
+            <h4>Data v Klidu (At Rest)</h4>
+            <ul>
+                <li><strong>Databáze:</strong> PostgreSQL s disk encryption (AES-256)</li>
+                <li><strong>Backups:</strong> Šifrovaně uloženy v AWS S3</li>
+                <li><strong>Logs:</strong> Šifrovaně v Elasticsearch</li>
+                <li>Osobní a zdravotnická data jsou vždy šifrovaně</li>
+            </ul>
+
+            <h3>Autentifikace a Autorizace</h3>
+
+            <h4>Hesla</h4>
+            <ul>
+                <li><strong>Minimální délka:</strong> 12 znaků</li>
+                <li><strong>Komplexnost:</strong> Velké písmeno, malé písmeno, číslo, speciální znak</li>
+                <li><strong>Ukládání:</strong> Bcrypt s salt, nikdy v plain textu</li>
+                <li><strong>Expiraci:</strong> Doporučuje se změna každých 90 dní</li>
+                <li><strong>Historie:</strong> Система si pamatuje posledních 5 hesel (nesmíte opakovat)</li>
+            </ul>
+
+            <h4>Dvoufaktorová Autentifikace (2FA)</h4>
+            <ul>
+                <li><strong>Dostupné metody:</strong> TOTP (Google Authenticator), SMS, Email</li>
+                <li><strong>Doporučeno:</strong> TOTP (nejbezpečnější) nebo push notifikace</li>
+                <li><strong>Pro zdravotnický personál:</strong> Povinná pro adminy</li>
+                <li><strong>Recovery codes:</strong> Vygenerují se při aktivaci - ulož je na bezpečné místo!</li>
+            </ul>
+
+            <h4>Session Management</h4>
+            <ul>
+                <li><strong>Session Timeout:</strong> 30 minut neaktivity (admin), 2 hodiny (uživatel)</li>
+                <li><strong>Session Storage:</strong> Server-side (v databázi)</li>
+                <li><strong>Cookie Flags:</strong> HttpOnly, Secure, SameSite=Strict</li>
+                <li><strong>CSRF Protection:</strong> Tokens na všech formulářích</li>
+                <li>Při timeoutu se automaticky odhlásíte</li>
+            </ul>
+
+            <h3>Bezpečnostní Best Practices pro Uživatele</h3>
+
+            <ol>
+                <li><strong>Nikdy nesdílejte heslo</strong> - ani s IT supportem, ani s kolegy</li>
+                <li><strong>Mějte silné heslo</strong> - nejméně 12 znaků s různými typy znaků</li>
+                <li><strong>Aktivujte 2FA</strong> - zejména pokud máte admin přístup</li>
+                <li><strong>Odhlašte se z veřejných počítačů</strong> - po použití vždy klikněte "Odhlásit se"</li>
+                <li><strong>Neklikejte na podezřelé odkazy</strong> - ověřte URL v adresním řádku</li>
+                <li><strong>Hlásit podezřelou aktivitu</strong> - reportujte ihned IT týmu</li>
+                <li><strong>Pravidělně kontrolujte přístup</strong> - prohlédněte si seznam "Aktivní Sessions"</li>
+                <li><strong>Chraňte své zařízení</strong> - používejte antivirus, aktualizujte OS</li>
+            </ol>
+
+            <h3>GDPR a Privacy</h3>
+
+            <h4>Zpracování Osobních Údajů</h4>
+            <ul>
+                <li><strong>Právní základ:</strong> Odsouhlasení v souladu s GDPR</li>
+                <li><strong>Účel:</strong> Poskytování zdravotnických služeb</li>
+                <li><strong>Uchovávání:</strong> Minimálně 10 let dle zdravotnického zákona</li>
+                <li><strong>Právní Základy:</strong> Art. 6 a Art. 9 GDPR (speciální kategorie)</li>
+            </ul>
+
+            <h4>Vaše Práva</h4>
+            <ul>
+                <li><strong>Právo na přístup:</strong> Můžete si vyžádat kopii svých dat</li>
+                <li><strong>Právo na opravu:</strong> Můžete si nechat opravit nesprávné údaje</li>
+                <li><strong>Právo na zapomenutí:</strong> Můžete si vyžádat smazání (v mezích zákona)</li>
+                <li><strong>Právo na přenositelnost:</strong> Údaje ve strukturovaném formátu</li>
+                <li><strong>Právo na stížnost:</strong> U Czech Office for Personal Data Protection (ÚOOÚ)</li>
+            </ul>
+
+            <h3>HIPAA Compliance (je-li relevantní)</h3>
+
+            <ul>
+                <li><strong>Bezpečnost:</strong> Encryption, access controls, audit logging</li>
+                <li><strong>Integrita:</strong> Hash controls, tamper detection</li>
+                <li><strong>Dostupnost:</strong> Redundance, failover, backup recovery</li>
+                <li><strong>Audit:</strong> Všechny přístupy jsou zaznamenány a lze si je prohlédnout</li>
+            </ul>
+
+            <div class="error">
+                <strong>Upozornění Bezpečnosti:</strong> Zdravotnická data jsou velice citlivá. Pokud podezříváte bezpečnostní incident (neautorizovaný přístup, úniku dat, malware), okamžitě kontaktujte IT security tým a Medrox support!
+            </div>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>10. Řešení Problémů</h2>
+
+            <h3>Běžné Problémy a Řešení</h3>
+
+            <h4>Nemůžu se přihlásit</h4>
+            <table>
+                <tr>
+                    <th>Chyba</th>
+                    <th>Příčina</th>
+                    <th>Řešení</th>
+                </tr>
+                <tr>
+                    <td>"Neplatné heslo"</td>
+                    <td>Špatné heslo, caps lock zapnutý</td>
+                    <td>Zkontrolujte heslo, Caps Lock. Používejte "Zapomněl jsem heslo"</td>
+                </tr>
+                <tr>
+                    <td>"Uživatel nenalezen"</td>
+                    <td>Špatné uživatelské jméno/email</td>
+                    <td>Zkontrolujte přesné uživatelské jméno. Kontaktujte administrátora</td>
+                </tr>
+                <tr>
+                    <td>"2FA kód vypršel"</td>
+                    <td>Příliš dlouho trvalo zadat kód (starší než 30 sekund)</td>
+                    <td>Zadam nový kód, je generován každých 30 sekund</td>
+                </tr>
+                <tr>
+                    <td>"Účet je zablokován"</td>
+                    <td>Příliš mnoho selhání při přihlášení</td>
+                    <td>Počkejte 30 minut nebo kontaktujte administrátora</td>
+                </tr>
+            </table>
+
+            <h4>Pomalé Načítání / Lag</h4>
+            <table>
+                <tr>
+                    <th>Symptom</th>
+                    <th>Příčina</th>
+                    <th>Řešení</th>
+                </tr>
+                <tr>
+                    <td>Vše se načítá velmi pomalu</td>
+                    <td>Pomalá síť, server далеко, či přetížený</td>
+                    <td>Zkontrolujte internet (&gt;10 Mbps). Zkuste vypnout VPN. Restartujte modem.</td>
+                </tr>
+                <tr>
+                    <td>Aplikace se občas "zamrzne"</td>
+                    <td>Nedostatek RAM, spuštěno příliš aplikací</td>
+                    <td>Zavřete zbytečné aplikace/taby. Restartujte počítač.</td>
+                </tr>
+                <tr>
+                    <td>Pouze ORMS je pomalá, ostatní OK</td>
+                    <td>Plný cache, nebo starý prohlížeč</td>
+                    <td>Vyprázdnit cache (Ctrl+Shift+Delete). Update prohlížeče.</td>
+                </tr>
+                <tr>
+                    <td>Na mobilu je to pomalé</td>
+                    <td>Slabý signál WiFi, mobil zahřátý, málo RAM</td>
+                    <td>Přesuňte se blíž k routeru. Zavřete jiné aplikace. Restartujte mobil.</td>
+                </tr>
+            </table>
+
+            <h4>Aplikace Se Nespustí / Bílá Stránka</h4>
+            <table>
+                <tr>
+                    <th>Symptom</th>
+                    <th>Příčina</th>
+                    <th>Řešení</th>
+                </tr>
+                <tr>
+                    <td>Bílá stránka, nic se nenačítá</td>
+                    <td>JavaScript vypnutý, prohlížeč zastaralý, proxy problém</td>
+                    <td>Kontrola JS (F12 → Console). Update prohlížeče. Zkuste v Incognito</td>
+                </tr>
+                <tr>
+                    <td>"Chyba 404 - Stránka Nenalezena"</td>
+                    <td>Špatná URL, server vypnutý, DNS problém</td>
+                    <td>Zkontrolujte URL. Zkuste pinanovat DNS (8.8.8.8). Počkejte a zkuste znovu</td>
+                </tr>
+                <tr>
+                    <td>"Chyba 503 - Služba Недoступná"</td>
+                    <td>Server je vypnutý, údržba nebo přetížený</td>
+                    <td>Zkuste později. Zkontrolujte status stránku. Kontaktujte support</td>
+                </tr>
+                <tr>
+                    <td>"CORS Error" (v konzoli)</td>
+                    <td>Proxy, firewall, či špatná konfigurace</td>
+                    <td>Zkontrolujte firewall. Zkuste z jiné sítě. Kontaktujte IT</td>
+                </tr>
+            </table>
+
+            <h4>Bezpečnostní Upozornění / Chyby Certifikátu</h4>
+            <table>
+                <tr>
+                    <th>Chyba</th>
+                    <th>Příčina</th>
+                    <th>Řešení</th>
+                </tr>
+                <tr>
+                    <td>"Spojení není bezpečné"</td>
+                    <td>SSL certifikát vypršel, proxy problém</td>
+                    <td>Zkontrolujte, zda je datum/čas na PC správný. Zkuste jiný prohlížeč.</td>
+                </tr>
+                <tr>
+                    <td>"NET::ERR_CERT_AUTHORITY_INVALID"</td>
+                    <td>Firewall/proxy zachycuje HTTPS</td>
+                    <td>Kontaktujte IT, corporate proxy je problém</td>
+                </tr>
+                <tr>
+                    <td>"Váš připojení bylo resetováno"</td>
+                    <td>Přerušené spojení, timeout, firewall</td>
+                    <td>Zkuste znovu. Zkuste jiný prohlížeč. Restartujte router.</td>
+                </tr>
+            </table>
+
+            <h3>Jak Sbírat Debug Informace</h3>
+
+            <h4>Krok 1: Developer Console</h4>
+            <ol>
+                <li>Stiskněte <code>F12</code> (Windows/Linux) nebo <code>Cmd+Option+I</code> (Mac)</li>
+                <li>Jděte na kartu <strong>"Console"</strong></li>
+                <li>Uvidíte chybové zprávy (červeně)</li>
+                <li>Zkopírujte text chyby</li>
+            </ol>
+
+            <h4>Krok 2: Network Tab</h4>
+            <ol>
+                <li>V Developer Tools klikněte na kartu <strong>"Network"</strong></li>
+                <li>Refreshujte stránku (Ctrl+R)</li>
+                <li>Uvidíte seznam HTTP requestů</li>
+                <li>Pokud je nějaký červený, klikněte na něj</li>
+                <li>Uvidíte status code (200 OK, 404 Not Found, 500 Server Error)</li>
+            </ol>
+
+            <h4>Krok 3: Performance Tab</h4>
+            <ol>
+                <li>Klikněte na kartu <strong>"Performance"</strong></li>
+                <li>Klikněte "Record"</li>
+                <li>Udělejte akci, která je pomalá (klik na tlačítko, scroll)</li>
+                <li>Klikněte "Stop"</li>
+                <li>Uvidíte, co trvá nejdéle</li>
+            </ol>
+
+            <h3>Kdy Kontaktovat Support</h3>
+
+            <ul>
+                <li><strong>Hned (Priority 1):</strong> Aplikace vůbec nefunguje, zdravotnická data jsou nedostupná</li>
+                <li><strong>Do 1 hodiny (Priority 2):</strong> Funkce jsou vypnuty, nemůžete pracovat, bezpečnostní podezření</li>
+                <li><strong>Do 4 hodin (Priority 3):</strong> Menší chyby, workaround existuje, pomalý výkon</li>
+                <li><strong>Do 1 dne (Priority 4):</strong> Drobné UI problémy, enhancement requests</li>
+            </ul>
+
+            <div class="checklist">
+                <h4>Checklist Předtím Ním Kontaktovat Support</h4>
+                <ul>
+                    <li>Zkontrolovat připojení internetu (ping google.com)</li>
+                    <li>Restartovat prohlížeč a počítač</li>
+                    <li>Vyprázdnit cache a cookies</li>
+                    <li>Zkusit jiný prohlížeč (Chrome, Firefox, Edge)</li>
+                    <li>Zkusit v Incognito / Private režimu</li>
+                    <li>Zkusit z jiného počítače/zařízení</li>
+                    <li>Zkontrolovat status stránku (status.medrox.cz)</li>
+                    <li>Sbírat debug infos (console, network logs)</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="faq">
+            <h2>11. Často Kladené Otázky (FAQ)</h2>
+
+            <div class="faq">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Mohu používat aplikaci bez internetu?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Webová verze ORMS vyžaduje internet. Nativní mobilní aplikace (iOS/Android) má offline mode - můžete prohlížet poslední synchronizovaná data offline, ale nové akce se synchronizují až po připojení k internetu.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Jak často se data aktualizují v reálném čase?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Data se aktualizují prakticky okamžitě - latence je &lt; 1 sekunda. Pokud vidíte starší data, zkontrolujte internetové připojení. Server odesílá updaty pomocí WebSocket (realtime) - není potřeba refreshovat.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Jaké zařízení se nejlépe hodí pro zdravotnické prostředí?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Doporučujeme iPad Pro 12.9" nebo Samsung Galaxy Tab S9 Ultra. Displeje 12-13" poskytují dostatek prostoru pro zobrazení informací bez stisknutí přiblížit/oddálit. Mají dobrý výkon, dlouhou výdrž baterie a jsou odolné. Pro desktopy používejte dual monitor setup s alespoň 24" Full HD displeji.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Jaké je minimální internetové připojení?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Minimálně 5 Mbps pro jednoho uživatele, 50 Mbps pro oddělení 10-20 lidí. ORMS je velmi efektivní a nepoužívá mnoho dat (< 1 MB za hodinu). Latence < 100 ms je ideální. 4G LTE v nemocnici je přijatelné, WiFi 6 je doporučeno.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Mohu používat více zařízení zároveň?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Ano, bezpečně. Můžete být přihlášeni na PC, tabletu a telefonů zároveň. Data se synchronizují automaticky. Pokud se přihlásíte z nového zařízení, starší sessions se mohou ukončit (z bezpečnostních důvodů).</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Jak se zálohují moje data?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Vaše data se automaticky zálohují денně v AWS S3 s šifrováním AES-256. Zálohy se uchovávají 30 dní zpětně. Pokud potřebujete obnovit starší data, kontaktujte support - můžeme obnovit z libovolného bodu v čase.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Jaká je podporovaná doba odpovědi technické podpory?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p><strong>Priority 1 (kritické):</strong> 30 minut; <strong>Priority 2 (vysoká):</strong> 2 hodiny; <strong>Priority 3 (normální):</strong> 8 hodin; <strong>Priority 4 (nízká):</strong> 24 hodin. Pracovní doba: Po-Pá 8:00-18:00 CET. V mimo-pracovní doby je dostupný emergency support.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Co když zapomenu heslo?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Na přihlašovací stránce klikněte "Zapomněl jsem heslo". Zadejte svůj email. Dostanete odkaz pro resetování hesla (platný 1 hodinu). Klikněte na odkaz a vytvořte si nové heslo. Pokud si nepamatujete email, kontaktujte administrátora.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Je ORMS kompatibilní s mou institucí? (elektronické zdravotnické systémy, elektronická zdravotnická dokumentace)</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>ORMS je nezávislá aplikace pro správu operačních sálů, ale má API pro integraci s EHR systémy (elektronickou zdravotnickou dokumentací). Pokud máte specifickou EHR, kontaktujte sales@medrox.cz pro custom integraci.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Kolik uživatelů může být současně v ORMS?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>ORMS je stavěna pro stovky současných uživatelů. Serverová infrastruktura se automaticky škáluje. Doporučujeme minimálně 100 Mbps síť pro 50+ uživatelů a server s 16 GB RAM pro plný provoz. Neexistuje limit na počet uživatelů - je to jen záležitost infrastruktury.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Jaké jsou náklady na provoz ORMS?</span>
+                        <span class="faq-toggle">∨</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Ceny jsou různé podle počtu operačních sálů a uživatelů. Kontaktujte sales@medrox.cz. Typická cena pro nemocnici se 20-30 sály je $5,000-15,000/měsíc (včetně cloud hosting, support, updatů).</p>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                document.querySelectorAll('.faq-item').forEach(item => {
+                    item.querySelector('.faq-question').addEventListener('click', () => {
+                        item.classList.toggle('active');
+                    });
+                });
+            </script>
+        </section>
+
+        <section id="support">
+            <h2>12. Podpora a Kontakt</h2>
+
+            <h3>Kontaktní Informace</h3>
+
+            <div class="spec-grid">
+                <div class="spec-card">
+                    <h4>Technická Podpora</h4>
+                    <ul>
+                        <li><strong>Email:</strong> support@medrox.cz</li>
+                        <li><strong>Telefon:</strong> +420 2 XXXX XXXX</li>
+                        <li><strong>Chat:</strong> Integrovaný v aplikaci</li>
+                        <li><strong>Ticket System:</strong> support.medrox.cz</li>
+                        <li><strong>Pracovní doba:</strong> Po-Pá 8:00-18:00</li>
+                        <li><strong>Emergency (mimo pracovní doby):</strong> +420 XXXX XXXXX</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Sales a Prodej</h4>
+                    <ul>
+                        <li><strong>Email:</strong> sales@medrox.cz</li>
+                        <li><strong>Telefon:</strong> +420 2 XXXX XXXX</li>
+                        <li><strong>Web:</strong> www.medrox.cz</li>
+                        <li><strong>Demo:</strong> Zavolejte pro individuální demo</li>
+                        <li><strong>Pracovní doba:</strong> Po-Pá 9:00-17:00</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Bezpečnost a Compliance</h4>
+                    <ul>
+                        <li><strong>Email:</strong> security@medrox.cz</li>
+                        <li><strong>GDPR:** <strong>privacy@medrox.cz</strong></li>
+                        <li><strong>Incident Report:</strong> security@medrox.cz (urgent)</li>
+                        <li><strong>Compliance:</strong> compliance@medrox.cz</li>
+                        <li><strong>SLA/Záruky:</strong> legal@medrox.cz</li>
+                    </ul>
+                </div>
+                <div class="spec-card">
+                    <h4>Školení a Onboarding</h4>
+                    <ul>
+                        <li><strong>Email:</strong> training@medrox.cz</li>
+                        <li><strong>Video Tutoriály:</strong> academy.medrox.cz</li>
+                        <li><strong>Dokumentace:</strong> docs.medrox.cz</li>
+                        <li><strong>Webinář:</strong> Každý čtvrtek v 14:00 CET</li>
+                        <li><strong>On-site školení:</strong> Zavolejte pro objednaní</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Knowledge Base a Dokumentace</h3>
+
+            <table>
+                <tr>
+                    <th>Zdroj</th>
+                    <th>URL</th>
+                    <th>Obsah</th>
+                </tr>
+                <tr>
+                    <td>Dokumentace</td>
+                    <td>https://docs.medrox.cz</td>
+                    <td>Podrobné návody a API reference</td>
+                </tr>
+                <tr>
+                    <td>Knowledge Base</td>
+                    <td>https://kb.medrox.cz</td>
+                    <td>FAQ, Troubleshooting, Best Practices</td>
+                </tr>
+                <tr>
+                    <td>Video Tutoriály</td>
+                    <td>https://academy.medrox.cz</td>
+                    <td>Videa pro jednotlivé funkce</td>
+                </tr>
+                <tr>
+                    <td>Status Stránka</td>
+                    <td>https://status.medrox.cz</td>
+                    <td>Aktuální stav služby, údržba</td>
+                </tr>
+                <tr>
+                    <td>Komunitní Forum</td>
+                    <td>https://forum.medrox.cz</td>
+                    <td>Diskuze s ostatními uživateli</td>
+                </tr>
+                <tr>
+                    <td>Change Log</td>
+                    <td>https://changelog.medrox.cz</td>
+                    <td>Nové funkce a opravy</td>
+                </tr>
+            </table>
+
+            <h3>SLA (Service Level Agreement) - Záruky Dostupnosti</h3>
+
+            <table>
+                <tr>
+                    <th>Metrika</th>
+                    <th>Zaručená Dostupnost</th>
+                    <th>Kompenzace Při Selhání</th>
+                </tr>
+                <tr>
+                    <td>Uptime (dostupnost)</td>
+                    <td>99% (maximálně 7.2 hodin výpadku za měsíc)</td>
+                    <td>Credit 10% měsíčního poplatku za každých 1% pod SLA</td>
+                </tr>
+                <tr>
+                    <td>Response Time (technická podpora)</td>
+                    <td>Priority 1: 30 minut, Priority 2: 2 hodiny</td>
+                    <td>Credit $100/hodinu zpoždění (max $500/incident)</td>
+                </tr>
+                <tr>
+                    <td>Plánovaná údržba</td>
+                    <td>Max 4 hodiny měsíčně (vyhlašujeme 72 hodin dopředu)</td>
+                    <td>Nepočítá se do uptime, kompenzace není</td>
+                </tr>
+                <tr>
+                    <td>Data Loss</td>
+                    <td>Nula - denní backup se zárukou obnovy</td>
+                    <td>Plná obnova bez poplatku, kompenzace $5,000+</td>
+                </tr>
+            </table>
+
+            <div class="success">
+                <strong>Poznámka ke SLA:</strong> V případě, že uptime klesne pod 99%, automaticky se vám připíšou kredity. Není potřeba nic dělat, kontrolujeme to my.
+            </div>
+
+            <h3>Jak Hlásit Problém - Best Practice</h3>
+
+            <ol>
+                <li><strong>Popište problém jasně:</strong> "Nemůžu se přihlásit" vs. "Aplikace nefunguje"</li>
+                <li><strong>Uveďte čas, kdy se problém vyskytl</strong></li>
+                <li><strong>Zaměřte na kterém zařízení se vyskytuje</strong> (PC, tablet, telefon)</li>
+                <li><strong>Co jste již zkusili?</strong> (refresh, restart, jiný prohlížeč)</li>
+                <li><strong>Přiložte screenshot nebo video</strong> - velmi pomáhá</li>
+                <li><strong>Vaše údaje o zařízení:</strong> OS, prohlížeč, verze, RAM</li>
+                <li><strong>Error message z konzole:</strong> F12 → Console → Zkopíruj chybu</li>
+                <li><strong>Vaše login a časy operací</strong> - abychom mohli zjistit v logu co se stalo</li>
+            </ol>
+
+            <div class="highlight">
+                <strong>Pro kritické problémy:</strong> Zavolejte emergency support místo emailu. Telefonicky se řeší rychleji. Support tým bude přesně vědět o čem mluvíte.
+            </div>
+        </section>
+
+        <footer>
+            <p><strong>Medrox s.r.o.</strong> - Operating Room Management System (ORMS)</p>
+            <p>Technické Specifikace pro Koncového Uživatele - Verze 2.0</p>
+            <p>Datum vytvoření: červen 2026 | Poslední aktualizace: červen 2026</p>
+            <p style="margin-top: 20px; font-size: 0.85em;">
+                Tento dokument je vlastnictvím Medrox s.r.o. a je určen výhradně pro interní a autorizované externí použití. 
+                Neoprávněné kopírování, distribuování nebo publikování je zakázáno. Všechny práva vyhrazena.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Smooth scrolling for table of contents
+        document.querySelectorAll('.toc a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(link.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Mobile-friendly navigation
+        if (window.innerWidth < 768) {
+            document.querySelector('.toc').style.display = 'none';
+            console.log('TOC hidden on mobile');
+        }
+    </script>
+</body>
+</html>
