@@ -744,7 +744,7 @@ const AppContent: React.FC = () => {
 
             {/* Timeline */}
             {currentView === 'timeline' && (
-              <div className="w-full h-full overflow-hidden p-3 md:pl-32 md:pr-6 md:py-6 pb-mobile-nav">
+              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:py-6 pb-mobile-nav">
                 <TimelineModule rooms={rooms} onRefresh={refreshRooms} />
               </div>
             )}
