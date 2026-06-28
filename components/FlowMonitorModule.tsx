@@ -4,9 +4,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Play, ChevronDown, RefreshCw, FolderOpen, Save, Plus, Minus,
   Search, Eye, EyeOff, Activity, Cpu, Server, Maximize2, ExternalLink,
-  Radio, History as HistoryIcon, Clock, Layers,
+  Radio, History as HistoryIcon, Clock, Layers, ChevronLeft, ChevronRight,
+  TrendingUp, Lightbulb, AlertTriangle, CheckCircle2,
 } from 'lucide-react';
-import { OperatingRoom } from '../types';
+import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -65,6 +66,15 @@ const localDate = (t: number) => {
   const d = new Date(t);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+/* Posun data ve formátu YYYY-MM-DD o n dní. */
+const addDays = (dateStr: string, n: number) => {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return localDate(d.getTime());
+};
+/* Barva míry vytížení: <50 červená, 50–60 oranžová, 60–80 modrá, ≥80 zelená. */
+const utilColorFor = (pct: number) =>
+  pct < 50 ? '#EF4444' : pct < 60 ? '#F59E0B' : pct < 80 ? '#22D3EE' : '#34D399';
 const elbow = (x1: number, y1: number, x2: number, y2: number) => {
   const mx = (x1 + x2) / 2;
   return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
@@ -105,6 +115,19 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [zoom, setZoom] = useState(100);
+
+  // Listování mezi dny klávesami ← / → (v režimu Fáze s vybraným sálem).
+  useEffect(() => {
+    if (mode !== 'board' || !boardRoomId) return;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.key === 'ArrowLeft') setBoardDate((d) => addDays(d, -1));
+      else if (e.key === 'ArrowRight') setBoardDate((d) => (d >= todayStr ? d : addDays(d, 1)));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mode, boardRoomId, todayStr]);
 
   // Drag & drop uzlů sálů myší
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -380,10 +403,28 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
                   </div>
                   {boardRoomId && (
                     <>
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/12">
-                        <Clock className="w-4 h-4 text-white/40" />
-                        <input type="date" value={boardDate} max={todayStr} onChange={(e) => setBoardDate(e.target.value)} className="bg-transparent text-sm text-white focus:outline-none [color-scheme:dark]" />
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setBoardDate((d) => addDays(d, -1))}
+                          title="Předchozí den (←)"
+                          className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.05] border border-white/12 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/12">
+                          <Clock className="w-4 h-4 text-white/40" />
+                          <input type="date" value={boardDate} max={todayStr} onChange={(e) => setBoardDate(e.target.value)} className="bg-transparent text-sm text-white focus:outline-none [color-scheme:dark]" />
+                        </div>
+                        <button
+                          onClick={() => setBoardDate((d) => (d >= todayStr ? d : addDays(d, 1)))}
+                          disabled={boardDate >= todayStr}
+                          title="Další den (→)"
+                          className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.05] border border-white/12 text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/[0.05] disabled:hover:text-white/70"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
                       </div>
+                      <button onClick={() => setBoardDate(todayStr)} disabled={boardDate >= todayStr} className="px-3 py-2 rounded-xl bg-white/[0.05] border border-white/12 text-sm text-white/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">Dnes</button>
                       <button onClick={() => { setBoardRoomId(''); setBoardDate(todayStr); }} className="px-3 py-2 rounded-xl bg-white/[0.05] border border-white/12 text-sm text-white/60 hover:text-white">Zrušit výběr</button>
                     </>
                   )}
@@ -677,13 +718,62 @@ const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses
     let acc = 0;
     const R = 130, CIRC = 2 * Math.PI * R;
     const segs = arr.map((s) => { const len = total > 0 ? (s.ms / total) * CIRC : 0; const start = acc; acc += len; return { ...s, len, start, frac: total > 0 ? s.ms / total : 0 }; });
-    return { segs, total, R, CIRC };
+
+    // Pracovní kapacita dne (ms) podle rozvrhu sálu pro daný den v týdnu.
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const sched = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+    const day = sched[dayKeys[new Date(dateStr + 'T00:00:00').getDay()]];
+    let workingMs = 0;
+    if (day?.enabled) {
+      const startM = day.startHour * 60 + day.startMinute;
+      const endM = day.endHour * 60 + day.endMinute;
+      const breakM = day.breakMinutes ?? DEFAULT_DAILY_BREAK_MINUTES;
+      workingMs = Math.max(0, endM - startM - breakM) * 60000;
+    }
+    // Vytížení = obsazený čas / pracovní kapacita. Pokud je sál dnes zavřený, ale
+    // má odpracovaný čas, počítáme z 8h baseline (stejně jako modul Timeline).
+    const utilPct = workingMs > 0
+      ? (total / workingMs) * 100
+      : (total > 0 ? (total / (480 * 60000)) * 100 : 0);
+
+    return { segs, total, R, CIRC, workingMs, utilPct };
   }, [room, dateStr, statuses, now, todayStr]);
 
-  const dom = data.segs[0];
-  const c = dom ? dom.c : '#22D3EE';
-  const dominantPct = data.total > 0 && dom ? (dom.ms / data.total) * 100 : 0;
-  const countPct = useCountUp(dominantPct, on, 1100);
+  const utilColor = utilColorFor(data.utilPct);
+  const countPct = useCountUp(data.utilPct, on, 1100);
+
+  // Textová doporučení „co zlepšit / urychlit" odvozená z dat dne.
+  const tips = useMemo(() => {
+    const out: { tone: 'warn' | 'info' | 'good'; title: string; text: string }[] = [];
+    const pct = data.utilPct;
+    const idleMs = data.workingMs > 0 ? Math.max(0, data.workingMs - data.total) : 0;
+    // 1) Vytížení
+    if (pct > 100) {
+      out.push({ tone: 'warn', title: 'Překročená kapacita', text: `Sál běžel ${fmtDur(data.total)}, tj. ${Math.round(pct)} % plánu. Riziko přesčasů — naplánuj realističtější program nebo přesuň výkon na jiný sál.` });
+    } else if (pct < 50) {
+      out.push({ tone: 'warn', title: 'Nízké vytížení', text: `Využito jen ${Math.round(pct)} % pracovní doby${data.workingMs > 0 ? `, volných ${fmtDur(idleMs)}` : ''}. Doplň program nebo sem přesuň výkony z přetížených sálů.` });
+    } else if (pct < 60) {
+      out.push({ tone: 'info', title: 'Podprůměrné vytížení', text: `Vytížení ${Math.round(pct)} %. Zrychlením přípravy a úklidu lze uvolnit čas na další výkon${data.workingMs > 0 ? ` (volných ${fmtDur(idleMs)})` : ''}.` });
+    } else if (pct < 80) {
+      out.push({ tone: 'info', title: 'Dobré vytížení', text: `Vytížení ${Math.round(pct)} %. Stále je prostor zařadit kratší výkon${data.workingMs > 0 ? ` (volných ${fmtDur(idleMs)})` : ''}.` });
+    } else {
+      out.push({ tone: 'good', title: 'Vysoké vytížení', text: `Sál je velmi dobře využit (${Math.round(pct)} %). Udrž tempo a hlídej přesčasy.` });
+    }
+    // 2) Režijní (nechirurgické) časy — předpoklad: největší blok = hlavní výkon.
+    const overhead = data.segs.slice(1);
+    const overheadMs = overhead.reduce((a, s) => a + s.ms, 0);
+    const overheadPct = data.total > 0 ? (overheadMs / data.total) * 100 : 0;
+    const biggest = overhead.slice().sort((a, b) => b.ms - a.ms)[0];
+    if (biggest && data.total > 0 && (biggest.ms / data.total) * 100 >= 10) {
+      out.push({ tone: 'info', title: `Zkrať: ${biggest.name}`, text: `Status „${biggest.name}" zabral ${fmtDur(biggest.ms)} (${Math.round((biggest.ms / data.total) * 100)} % dne). Standardizace tohoto kroku přinese nejrychlejší zlepšení.` });
+    }
+    if (overheadPct >= 35) {
+      out.push({ tone: 'warn', title: 'Vysoká režie', text: `Nechirurgické statusy tvoří ${Math.round(overheadPct)} % času (${fmtDur(overheadMs)}). Zaměř se na zkrácení mezičasů mezi výkony (úklid, příjezd/odjezd, příprava).` });
+    } else if (out.length < 2) {
+      out.push({ tone: 'good', title: 'Nízká režie', text: `Mezičasy mezi výkony jsou pod kontrolou (${Math.round(overheadPct)} % času).` });
+    }
+    return out;
+  }, [data]);
 
   if (data.total === 0) {
     return (
@@ -695,57 +785,95 @@ const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses
     );
   }
 
+  const toneColor = (t: 'warn' | 'info' | 'good') => t === 'warn' ? '#FB7185' : t === 'good' ? '#34D399' : '#22D3EE';
+  const ToneIcon = (t: 'warn' | 'info' | 'good') => t === 'warn' ? AlertTriangle : t === 'good' ? CheckCircle2 : Lightbulb;
+
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar flex flex-col items-center justify-center px-6 py-4 gap-7">
+    <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar flex flex-col items-center px-6 py-4 gap-7">
       {/* Hlavička */}
       <div className="text-center">
         <h3 className="text-lg font-bold text-white">{room.name} <span className="text-white/40 font-medium">· {room.department}</span></h3>
         <p className="text-xs text-white/45 mt-0.5 capitalize">{new Date(dateStr).toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}{dateStr === todayStr ? ' · živě' : ''}</p>
       </div>
 
-      {/* Velký vystředěný donut */}
-      <div className="relative" style={{ width: 380, height: 380 }}>
-        <div className="absolute inset-8 rounded-full blur-[60px]" style={{ background: c, opacity: 0.22 }} />
-        {/* dekorativní rotující prstence */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 360 360" style={{ animation: 'spin 32s linear infinite' }}>
-          <circle cx="180" cy="180" r="166" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1.5" strokeDasharray="2 10" />
-        </svg>
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 360 360" style={{ animation: 'spin 60s linear infinite reverse' }}>
-          <circle cx="180" cy="180" r="150" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="1 14" />
-        </svg>
-        {/* donut segmenty */}
-        <svg viewBox="0 0 360 360" className="absolute inset-0 w-full h-full -rotate-90">
-          <circle cx="180" cy="180" r={data.R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="36" />
-          {data.segs.map((s, i) => (
-            <circle key={s.idx} cx="180" cy="180" r={data.R} fill="none" stroke={s.c} strokeWidth="36" strokeLinecap="butt"
-              strokeDasharray={on ? `${Math.max(0, s.len - 2)} ${data.CIRC - Math.max(0, s.len - 2)}` : `0 ${data.CIRC}`}
-              strokeDashoffset={-s.start}
-              style={{ transition: `stroke-dasharray 1s cubic-bezier(.22,1,.36,1) ${i * 0.1}s`, filter: `drop-shadow(0 0 6px ${s.c}88)` }} />
-          ))}
-        </svg>
-        {/* střed s count-up */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-10">
-          <span className="text-[10px] uppercase tracking-[0.25em] text-white/45 mb-1.5 truncate max-w-full">{dom?.name}</span>
-          <span className="text-[64px] font-black text-white tabular-nums leading-none" style={{ textShadow: `0 0 28px ${c}77` }}>{Math.round(countPct)}<span className="text-2xl align-top text-white/70">%</span></span>
-          <span className="text-xs text-white/45 tabular-nums mt-2">{data.segs.length} statusů · {fmtDur(data.total)}</span>
+      {/* Graf vytížení + panel doporučení vpravo */}
+      <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center gap-8 w-full max-w-5xl">
+        {/* Velký donut — VYTÍŽENÍ SÁLU */}
+        <div className="relative shrink-0" style={{ width: 380, height: 380 }}>
+          <div className="absolute inset-8 rounded-full blur-[60px]" style={{ background: utilColor, opacity: 0.22 }} />
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 360 360" style={{ animation: 'spin 32s linear infinite' }}>
+            <circle cx="180" cy="180" r="166" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1.5" strokeDasharray="2 10" />
+          </svg>
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 360 360" style={{ animation: 'spin 60s linear infinite reverse' }}>
+            <circle cx="180" cy="180" r="150" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="1 14" />
+          </svg>
+          <svg viewBox="0 0 360 360" className="absolute inset-0 w-full h-full -rotate-90">
+            <circle cx="180" cy="180" r={data.R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="36" />
+            <circle cx="180" cy="180" r={data.R} fill="none" stroke={utilColor} strokeWidth="36" strokeLinecap="round"
+              strokeDasharray={`${(on ? Math.min(100, data.utilPct) : 0) / 100 * data.CIRC} ${data.CIRC}`}
+              style={{ transition: 'stroke-dasharray 1.1s cubic-bezier(.22,1,.36,1)', filter: `drop-shadow(0 0 8px ${utilColor}99)` }} />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-10">
+            <span className="text-[10px] uppercase tracking-[0.25em] text-white/45 mb-1.5">Vytížení sálu</span>
+            <span className="text-[64px] font-black text-white tabular-nums leading-none" style={{ textShadow: `0 0 28px ${utilColor}77` }}>{Math.round(countPct)}<span className="text-2xl align-top text-white/70">%</span></span>
+            <span className="text-xs text-white/45 tabular-nums mt-2">Obsazeno {fmtDur(data.total)}{data.workingMs > 0 ? ` / ${fmtDur(data.workingMs)}` : ''}</span>
+          </div>
+        </div>
+
+        {/* Panel doporučení */}
+        <div className="w-full lg:w-[360px] shrink-0 rounded-2xl bg-white/[0.03] border border-white/10 p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-white/50 font-bold flex items-center gap-2 mb-3">
+            <TrendingUp className="w-4 h-4" style={{ color: utilColor }} /> Co zlepšit a urychlit
+          </p>
+          <div className="flex flex-col gap-2.5">
+            {tips.map((t, i) => {
+              const col = toneColor(t.tone);
+              const Icon = ToneIcon(t.tone);
+              return (
+                <div key={i} className="flex items-start gap-2.5 rounded-xl p-2.5" style={{ background: `${col}10`, border: `1px solid ${col}33` }}>
+                  <Icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: col }} />
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-bold text-white leading-tight">{t.title}</p>
+                    <p className="text-[11px] text-white/60 leading-snug mt-0.5">{t.text}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Legenda — mřížka */}
-      <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
-        {data.segs.map((s, i) => {
-          const pct = data.total > 0 ? (s.ms / data.total) * 100 : 0;
-          return (
-            <div key={s.idx} className="flex items-center gap-3">
-              <span className="w-32 shrink-0 text-sm text-white/85 truncate flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.c, boxShadow: `0 0 6px ${s.c}` }} /> {s.name}</span>
-              <div className="flex-1 h-3 rounded-full bg-white/[0.05] overflow-hidden">
-                <div className="h-full rounded-full origin-left transition-transform duration-700 ease-out" style={{ width: `${pct}%`, background: s.c, boxShadow: `0 0 10px ${s.c}88`, transform: on ? 'scaleX(1)' : 'scaleX(0)', transitionDelay: `${0.3 + i * 0.08}s` }} />
+      {/* Mini donuty jednotlivých statusů — % zastoupení v daném dni */}
+      <div className="w-full max-w-5xl">
+        <p className="text-[11px] uppercase tracking-[0.22em] text-white/45 text-center mb-5">Zastoupení statusů v dni</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8 justify-items-center">
+          {data.segs.map((s, i) => {
+            const pct = data.total > 0 ? (s.ms / data.total) * 100 : 0;
+            const r = 46, circ = 2 * Math.PI * r;
+            return (
+              <div key={s.idx} className="flex flex-col items-center gap-2.5 w-full">
+                <div className="relative" style={{ width: 120, height: 120 }}>
+                  <div className="absolute inset-4 rounded-full blur-xl" style={{ background: s.c, opacity: 0.18 }} />
+                  <svg viewBox="0 0 108 108" className="absolute inset-0 w-full h-full -rotate-90">
+                    <circle cx="54" cy="54" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="11" />
+                    <circle cx="54" cy="54" r={r} fill="none" stroke={s.c} strokeWidth="11" strokeLinecap="round"
+                      strokeDasharray={`${(on ? pct : 0) / 100 * circ} ${circ}`}
+                      style={{ transition: `stroke-dasharray 0.9s cubic-bezier(.22,1,.36,1) ${0.2 + i * 0.07}s`, filter: `drop-shadow(0 0 6px ${s.c}88)` }} />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-black text-white tabular-nums">{pct.toFixed(0)}<span className="text-xs align-top text-white/60">%</span></span>
+                  </div>
+                </div>
+                <div className="text-center leading-tight">
+                  <p className="text-[13px] font-semibold text-white/90 truncate max-w-[140px] flex items-center justify-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.c, boxShadow: `0 0 6px ${s.c}` }} /> {s.name}
+                  </p>
+                  <p className="text-[11px] text-white/45 tabular-nums mt-0.5">{fmtDur(s.ms)}</p>
+                </div>
               </div>
-              <span className="w-11 shrink-0 text-right text-sm font-bold text-white tabular-nums">{pct.toFixed(0)}%</span>
-              <span className="w-14 shrink-0 text-right text-[11px] text-white/45 tabular-nums">{fmtDur(s.ms)}</span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
