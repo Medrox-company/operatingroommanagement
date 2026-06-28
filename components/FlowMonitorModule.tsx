@@ -197,7 +197,7 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
   // Fit-to-screen rozmístění do ŘAD podle statusu (zachována grafika topologie).
   // Každý status = jedna vodorovná řada; sály se v ní vystředí a při změně
   // statusu se box animovaně přesune do řady svého nového statusu.
-  const NODE_W = 204, NODE_H = 64, GAP_X = 24, GAP_Y = 28, START_Y = 150, LANE_GAP = 30;
+  const NODE_W = 244, NODE_H = 76, GAP_X = 60, GAP_Y = 46, START_Y = 156, LANE_GAP = 46;
   const stageRef = useRef<HTMLDivElement>(null);
   const [stage, setStage] = useState({ w: 1100, h: 640 });
   useEffect(() => {
@@ -402,14 +402,14 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
                     return (
                       <div
                         key={r.id}
-                        className="absolute rounded-2xl px-3 py-2.5 border flex items-center gap-2.5 overflow-hidden select-none z-10"
+                        className="absolute rounded-2xl px-4 py-3 border flex items-center gap-3 overflow-hidden select-none z-10"
                         style={{ left: p.x, top: p.y, width: NODE_W, background: `${c}1f`, borderColor: `${c}55`, boxShadow: active ? `0 0 22px -6px ${c}` : '0 14px 36px -18px rgba(0,0,0,0.7)', transition: 'left 0.6s cubic-bezier(.22,1,.36,1), top 0.6s cubic-bezier(.22,1,.36,1), box-shadow 0.3s' }}
                       >
                         {active && <span className="absolute inset-0 rounded-2xl border-2 animate-pulse pointer-events-none" style={{ borderColor: `${c}66` }} />}
-                        <div className="relative w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 text-[11px] font-bold tabular-nums" style={{ background: c }}>{(r.sort_order ?? i) + 1}</div>
+                        <div className="relative w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0 text-xs font-bold tabular-nums" style={{ background: c }}>{(r.sort_order ?? i) + 1}</div>
                         <div className="relative min-w-0 flex-1">
-                          <p className="text-xs font-bold text-white truncate">{r.name}</p>
-                          <p className="text-[10px] tabular-nums flex items-center gap-1.5"><span className="truncate" style={{ color: c }}>{nameFor(r, statuses)}</span>{start && <span className="text-white/50">{fmtClock(now - start)}</span>}</p>
+                          <p className="text-sm font-bold text-white truncate">{r.name}</p>
+                          <p className="text-[11px] tabular-nums flex items-center gap-1.5"><span className="truncate" style={{ color: c }}>{nameFor(r, statuses)}</span>{start && <span className="text-white/50">{fmtClock(now - start)}</span>}</p>
                         </div>
                         <span className="relative flex h-2.5 w-2.5 shrink-0">
                           {active && <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ background: c, opacity: 0.6 }} />}
