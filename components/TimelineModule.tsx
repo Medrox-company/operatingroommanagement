@@ -524,6 +524,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         .sort((a, b) => a.stepIndex - b.stepIndex);
       const phaseTotalMs = phases.reduce((acc, p) => acc + p.ms, 0);
 
+      // Doba pauzy — aktuálně probíhající pauza (od pausedAt do teď).
+      const pausedMs = room.isPaused && room.pausedAt
+        ? Math.max(0, now - new Date(room.pausedAt).getTime())
+        : 0;
+      const pausedMinutes = Math.round(pausedMs / 60000);
+
       return {
         id: room.id,
         name: room.name,
@@ -538,6 +544,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         avgOpMin,
         phases,
         phaseTotalMs,
+        pausedMs,
+        pausedMinutes,
       };
     });
 
@@ -935,6 +943,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             { label: 'Obsazené', value: fmtMin(sr.occupiedMinutes), color: C.textHi },
             { label: 'Pracovní', value: sr.workingMinutes > 0 ? fmtMin(sr.workingMinutes) : '—', color: 'rgba(255,255,255,0.7)' },
             { label: 'Ø délka operace', value: sr.avgOpMin > 0 ? fmtMin(sr.avgOpMin) : '—', color: C.textHi },
+            { label: 'Pauza', value: sr.pausedMinutes > 0 ? fmtMin(sr.pausedMinutes) : '—', color: sr.pausedMinutes > 0 ? C.cyan : 'rgba(255,255,255,0.4)' },
           ];
           return (
             <motion.div
@@ -975,7 +984,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 </div>
 
                 {/* KPI mřížka */}
-                <div className="grid grid-cols-5 gap-2 px-5 pt-4">
+                <div className="grid grid-cols-3 gap-2 px-5 pt-4">
                   {kpis.map((k, i) => (
                     <div key={i} className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
                       <span className="text-lg font-bold tabular-nums leading-none" style={{ color: k.color }}>{k.value}</span>
@@ -2245,6 +2254,34 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       );
                     })()}
 
+                    {/* Marker pauzy — ikona v čase, kdy byla pauza aktivována (pausedAt).
+                        Stejný princip jako marker hygienického režimu. */}
+                    {room.isPaused && room.pausedAt && !room.isLocked && (() => {
+                      const ws = new Date(currentTime);
+                      ws.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+                      if (currentTime.getHours() < TIMELINE_START_HOUR) ws.setDate(ws.getDate() - 1);
+                      const pct = getTimePercentForTimeline(new Date(room.pausedAt), ws);
+                      if (!Number.isFinite(pct) || pct < 0 || pct > 100) return null;
+                      return (
+                        <div
+                          className="absolute top-0 bottom-0 z-[26] pointer-events-none flex items-center"
+                          style={{ left: `${pct}%` }}
+                          title={`Pauza · ${new Date(room.pausedAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}`}
+                        >
+                          <div
+                            className="-translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center animate-pulse"
+                            style={{
+                              background: `${C.cyan}f0`,
+                              boxShadow: `0 0 12px ${C.cyan}cc`,
+                              border: '1.5px solid #fff',
+                            }}
+                          >
+                            <Pause className="w-3 h-3 text-white" fill="#fff" />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Locked room diagonal stripes overlay */}
                     {room.isLocked && (
                       <div className="locked-room-stripes absolute inset-0 z-10 rounded-lg" />
@@ -3014,15 +3051,19 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           const w = hasStart ? Math.max(0.6, r - l) : 100;
                           return (
                             <div
-                              className="absolute top-0 bottom-0 z-[6] pointer-events-none animate-pulse"
+                              className="absolute top-0 bottom-0 z-[6] pointer-events-none"
                               style={{
                                 left: `${l}%`,
                                 width: `${w}%`,
-                                background: 'repeating-linear-gradient(135deg, rgba(34,211,238,0.40) 0px, rgba(34,211,238,0.40) 7px, rgba(34,211,238,0.12) 7px, rgba(34,211,238,0.12) 14px)',
-                                borderLeft: hasStart ? '1.5px solid rgba(34,211,238,0.85)' : 'none',
-                                boxShadow: hasStart ? 'none' : 'inset 0 0 0 1.5px rgba(34,211,238,0.5)',
+                                // Plná barva pauzy (cyan) — čte se jako barevný status na ose.
+                                background: `linear-gradient(180deg, ${C.cyan}55 0%, ${C.cyan}2e 100%)`,
+                                borderLeft: hasStart ? `1.5px solid ${C.cyan}d9` : 'none',
+                                boxShadow: hasStart ? `inset 6px 0 12px -6px ${C.cyan}99` : `inset 0 0 0 1.5px ${C.cyan}80`,
                               }}
-                            />
+                            >
+                              {/* Jemný živý přeliv, ať je úsek pauzy „živý" jako ostatní statusy */}
+                              <div className="tl-shimmer" style={{ opacity: 0.35 }} />
+                            </div>
                           );
                         })()}
 
