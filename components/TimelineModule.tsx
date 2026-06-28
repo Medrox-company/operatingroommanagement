@@ -211,6 +211,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   // --- Další funkce: řazení, souhrn dne, živá data ---
   const [sortMode, setSortMode] = useState<SortMode>('default');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [statsRoomId, setStatsRoomId] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -1248,11 +1249,38 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         <div className={`py-4 ${isFullscreen ? 'px-4' : 'px-4 sm:px-6'}`}>
 
           {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
-          <div className="flex items-center justify-between gap-4">
+          <div
+            className="relative flex items-center justify-between gap-4 rounded-[26px] px-3 py-2"
+            style={{
+              background: 'linear-gradient(120deg, rgba(54,217,236,0.055) 0%, rgba(255,255,255,0.022) 42%, rgba(251,191,36,0.035) 100%)',
+              border: `1px solid ${C.borderStrong}`,
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.045), 0 18px 55px -42px rgba(54,217,236,0.55)',
+            }}
+          >
+            <div
+              aria-hidden
+              className="absolute inset-x-16 top-0 h-px"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.5), rgba(251,191,36,0.28), transparent)' }}
+            />
 
             {/* Left: Live operations stats — control-center cluster */}
             <div className="flex-1 flex items-center justify-start min-w-0">
               <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden xl:flex items-center gap-3 pl-1 pr-3 border-r border-white/10 flex-shrink-0">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `${C.yellow}14`, border: `1px solid ${C.yellow}28` }}
+              >
+                <CalendarDays className="w-4.5 h-4.5" style={{ color: C.yellow }} />
+              </div>
+              <div className="leading-tight">
+                <p className="text-[9px] font-bold tracking-[0.22em] uppercase" style={{ color: C.yellow }}>Živý provoz</p>
+                <p className="text-sm font-bold text-white mt-0.5 whitespace-nowrap">Denní timeline</p>
+                <p className="text-[10px] text-white/35 mt-0.5 whitespace-nowrap">
+                  {stats.operations} aktivní · {stats.free} volné
+                </p>
+              </div>
+            </div>
             {/* Akční cluster: živá data / souhrn / řazení */}
             <div
               className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1"
@@ -1310,25 +1338,71 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 <BellRing className="w-4 h-4 text-white/60" />
               </button>
 
-              {/* Simulátor zpoždění — „co kdyby" scénáře */}
-              <button
-                onClick={() => setShowSimulator(true)}
-                aria-label="Simulátor zpoždění"
-                title="Simulátor zpoždění — co se stane s přesahem a koncem provozu, když operace naberou skluz"
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
-              >
-                <SlidersHorizontal className="w-4 h-4 text-white/60" />
-              </button>
-
-              {/* Prognóza kapacity — predikce vytížení a uvolnění sálů */}
-              <button
-                onClick={() => setShowForecast(true)}
-                aria-label="Prognóza kapacity"
-                title="Prognóza kapacity — vlna vytížení, predikce uvolnění sálů a úzká hrdla"
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
-              >
-                <TrendingUp className="w-4 h-4 text-white/60" />
-              </button>
+              {/* Pokročilé nástroje — soustředěné do jednoho přehledného menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowToolsMenu((value) => !value)}
+                  aria-label="Pokročilé nástroje"
+                  aria-haspopup="menu"
+                  aria-expanded={showToolsMenu}
+                  className="h-9 px-3 rounded-xl flex items-center gap-2 text-xs font-semibold transition-colors hover:bg-white/5"
+                  style={showToolsMenu ? { background: `${C.cyan}1f`, color: C.cyan } : { color: 'rgba(255,255,255,0.65)' }}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>Nástroje</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showToolsMenu ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {showToolsMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowToolsMenu(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.12 }}
+                        role="menu"
+                        className="absolute left-0 top-11 z-50 w-64 rounded-2xl overflow-hidden p-1.5"
+                        style={{
+                          background: 'rgba(7,16,25,0.98)',
+                          border: `1px solid ${C.borderStrong}`,
+                          boxShadow: '0 22px 55px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)',
+                          backdropFilter: 'blur(24px)',
+                        }}
+                      >
+                        {[
+                          { label: 'Simulátor zpoždění', detail: 'Dopad skluzu na provoz', icon: SlidersHorizontal, color: C.orange, action: () => setShowSimulator(true) },
+                          { label: 'Prognóza kapacity', detail: 'Vytížení a úzká hrdla', icon: TrendingUp, color: C.blue, action: () => setShowForecast(true) },
+                          { label: 'Optimalizace fází', detail: 'Doporučení ke zrychlení', icon: Zap, color: C.yellow, action: () => setShowPhaseOptimizer(true) },
+                          { label: 'Fázový otisk', detail: 'Porovnání profilů sálů', icon: Fingerprint, color: C.purple, action: () => setShowFingerprint(true) },
+                          { label: 'Statistiky dne', detail: 'Výkon a rozpad času', icon: BarChart3, color: C.green, action: () => setShowStats(true) },
+                        ].map((tool) => {
+                          const ToolIcon = tool.icon;
+                          return (
+                            <button
+                              key={tool.label}
+                              role="menuitem"
+                              onClick={() => { tool.action(); setShowToolsMenu(false); }}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/[0.055] transition-colors"
+                            >
+                              <span
+                                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                style={{ color: tool.color, background: `${tool.color}14`, border: `1px solid ${tool.color}25` }}
+                              >
+                                <ToolIcon className="w-4 h-4" />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-xs font-semibold text-white/85">{tool.label}</span>
+                                <span className="block text-[10px] text-white/35 mt-0.5">{tool.detail}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Časová lupa — inspekce stavu sálů v libovolném čase dne */}
               <button
@@ -1359,36 +1433,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               </button>
 
               <div className="w-px h-6 bg-white/10 mx-0.5" />
-
-              {/* Optimalizace fází — doporučení, kde zrychlit */}
-              <button
-                onClick={() => setShowPhaseOptimizer(true)}
-                aria-label="Optimalizace fází"
-                title="Optimalizace fází — rozpad dnešních fází po sálech a doporučení, kde zrychlit"
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
-              >
-                <Zap className="w-4 h-4 text-white/60" />
-              </button>
-
-              {/* Fázový otisk sálů — radarové porovnání profilů */}
-              <button
-                onClick={() => setShowFingerprint(true)}
-                aria-label="Fázový otisk sálů"
-                title="Fázový otisk sálů — radarové porovnání časového profilu fází proti mediánu"
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
-              >
-                <Fingerprint className="w-4 h-4 text-white/60" />
-              </button>
-
-              {/* Statistiky dne — animovaný grafický přehled */}
-              <button
-                onClick={() => setShowStats(true)}
-                aria-label="Statistiky dne"
-                title="Statistiky dne — vytížení sálů, výkon a rozpad času po fázích"
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
-              >
-                <BarChart3 className="w-4 h-4 text-white/60" />
-              </button>
 
               {/* Řazení sálů */}
               <div className="relative">
@@ -1442,13 +1486,16 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               </div>
             </div>
 
-            {/* Center: Current Time (no box, just prominent display) */}
-            <div className="flex flex-col items-center justify-center flex-shrink-0">
-              <p className="text-[10px] uppercase tracking-[0.4em] font-medium text-white/30 mb-1">
+            {/* Center: Current Time */}
+            <div
+              className="flex flex-col items-center justify-center flex-shrink-0 rounded-2xl px-5 py-2"
+              style={{ background: 'rgba(255,255,255,0.022)', border: `1px solid ${C.border}` }}
+            >
+              <p className="text-[9px] uppercase tracking-[0.28em] font-semibold text-white/35 mb-0.5">
                 {formatDate(currentTime)}
               </p>
               <motion.p
-                className="text-3xl font-bold tabular-nums tracking-tight flex items-baseline gap-1"
+                className="text-[28px] leading-none font-bold tabular-nums tracking-tight flex items-baseline gap-1"
                 style={{ color: C.textHi }}
                 initial={false}
               >
@@ -1590,16 +1637,19 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
         {/* Time Axis Header - Premium Glass */}
         <div 
-          className="flex flex-shrink-0 rounded-t-2xl relative overflow-hidden" 
+          className="flex flex-shrink-0 rounded-t-[24px] relative overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, rgba(30,52,104,0.45) 0%, rgba(16,26,52,0.55) 100%)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+            background: 'linear-gradient(115deg, rgba(54,217,236,0.075) 0%, rgba(7,16,25,0.88) 34%, rgba(251,191,36,0.035) 100%)',
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
+            borderTop: `1px solid ${C.borderStrong}`,
+            borderLeft: `1px solid ${C.borderStrong}`,
+            borderRight: `1px solid ${C.borderStrong}`,
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.055), 0 18px 40px -36px rgba(54,217,236,0.6)',
           }}
         >
-          {/* Modrý horní akcent */}
-          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(56,120,235,0.5) 50%, transparent 100%)' }} />
+          {/* Cyan–zlatý horní akcent */}
+          <div className="absolute top-0 left-12 right-12 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(54,217,236,0.65) 42%, rgba(251,191,36,0.38) 72%, transparent 100%)' }} />
           
           {/* Room label header — vyhledávání + filtr stavu */}
           <div 
@@ -1709,8 +1759,14 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
         {/* Room Rows Container - Premium Glass */}
         <div
-          className="flex-1 min-h-0 overflow-y-hidden overflow-x-auto rounded-b-2xl timeline-scroll"
-          style={{}}
+          className="flex-1 min-h-0 overflow-y-hidden overflow-x-auto rounded-b-[24px] timeline-scroll"
+          style={{
+            background: 'linear-gradient(180deg, rgba(5,13,21,0.64) 0%, rgba(4,9,15,0.42) 100%)',
+            borderLeft: `1px solid ${C.borderStrong}`,
+            borderRight: `1px solid ${C.borderStrong}`,
+            borderBottom: `1px solid ${C.borderStrong}`,
+            boxShadow: '0 26px 70px -52px rgba(54,217,236,0.7)',
+          }}
           ref={rowsContainerRef}
           onScroll={(e) => {
             // Synchronizace horizontálního scrollu řádk�� s časovou osou nahoře
@@ -2035,18 +2091,18 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               return (
                 <div
                   key={room.id}
-                  className={`relative flex items-stretch group cursor-pointer rounded-sm overflow-hidden transition-colors duration-300 ${room.isLocked ? 'locked-room-glow' : ''}`}
+                  className={`relative flex items-stretch group cursor-pointer rounded-xl overflow-hidden transition-colors duration-300 ${room.isLocked ? 'locked-room-glow' : ''}`}
                   style={{
                     height: rowHeight,
                     background: isActive
-                      ? `linear-gradient(135deg, ${stepColor}26 0%, ${stepColor}0c 100%)`
-                      : 'linear-gradient(135deg, rgba(40,80,180,0.05) 0%, rgba(40,80,180,0.02) 60%, rgba(255,255,255,0.01) 100%)',
+                      ? `linear-gradient(100deg, ${stepColor}24 0%, ${stepColor}0b 38%, rgba(255,255,255,0.012) 100%)`
+                      : 'linear-gradient(100deg, rgba(54,217,236,0.025) 0%, rgba(255,255,255,0.012) 58%, rgba(251,191,36,0.01) 100%)',
                     border: room.isLocked
                       ? `1px solid ${C.borderActive}`
                       : `1px solid ${isActive ? `${stepColor}55` : C.border}`,
                     boxShadow: isActive
-                      ? `inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px ${stepColor}1f`
-                      : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                      ? `inset 0 1px 0 rgba(255,255,255,0.065), 0 14px 36px -30px ${stepColor}`
+                      : 'inset 0 1px 0 rgba(255,255,255,0.035)',
                   }}
                   onClick={() => (showSummary ? setStatsRoomId(room.id) : setSelectedRoom(room))}
                 >
@@ -2055,7 +2111,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                   {/* Colored left accent bar - Premium enhanced */}
                   <div
-                    className="absolute left-0 top-0 bottom-0 w-1 rounded-l-sm transition-all duration-300 z-30"
+                    className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl transition-all duration-300 z-30"
                     style={{ 
                       background: isActive
                         ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`
@@ -2070,8 +2126,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     style={{
                       width: ROOM_LABEL_WIDTH,
                       minWidth: ROOM_LABEL_WIDTH,
-                      // Průhledné, bez barvy.
-                      background: 'transparent',
+                      background: isActive
+                        ? `linear-gradient(90deg, rgba(5,14,24,0.97), ${stepColor}0D)`
+                        : 'linear-gradient(90deg, rgba(5,14,24,0.97), rgba(7,16,25,0.82))',
+                      borderRight: `1px solid ${isActive ? `${stepColor}24` : C.border}`,
+                      boxShadow: '8px 0 22px -22px rgba(0,0,0,0.9)',
                     }}
                   >
                     {/* ARO Overtime Badge - Premium style */}
@@ -2165,11 +2224,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
                       {/* Room name and details */}
                       <div className="flex flex-col justify-center min-w-0 flex-1">
-                        <p className="text-sm font-semibold tracking-tight text-white truncate leading-tight">
+                        <p className="text-sm font-bold tracking-tight text-white truncate leading-tight">
                           {room.name}
                         </p>
                         {room.department && rowHeight >= 42 && (
-                          <p className="text-[9px] text-white/35 truncate leading-tight mt-0.5 uppercase tracking-[0.14em]">
+                          <p className="text-[10px] text-white/38 truncate leading-tight mt-0.5 uppercase tracking-[0.12em]">
                             {room.department}
                           </p>
                         )}
@@ -2538,7 +2597,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         return (
                           <motion.div
                             key={`completed-${opIdx}`}
-                            className="absolute top-1 bottom-1 overflow-hidden rounded-sm group"
+                            className="absolute top-1 bottom-1 overflow-hidden rounded-lg group"
                             style={{ 
                               left: `${position.left}%`, 
                               width: `${Math.max(0.5, position.width)}%`,
@@ -2564,7 +2623,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           >
                               {/* Completed operation segments with colors from database context */}
                               {operation.statusHistory && operation.statusHistory.length > 0 && (
-                                <div className="absolute inset-0 flex overflow-hidden rounded-sm">
+                                <div className="absolute inset-0 flex overflow-hidden rounded-lg">
                                   {(() => {
                                     // KLÍČOVÉ: `stepIndex` v room_status_history se ukládá jako
                                     // POZICE v poli `activeDbStatuses` (kompaktní 0..N po vyfiltrování
@@ -2793,7 +2852,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     
                     {!showSummary && isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
-                        className="absolute top-1 bottom-1 overflow-hidden rounded-sm"
+                        className="absolute top-1 bottom-1 overflow-hidden rounded-lg"
                         style={{
                           left: `${Math.max(0, boxLeftPct)}%`,
                           width: `${boxWidthPct}%`,
