@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORMS - Hlasový Asistent - Kompletní Příručka</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            line-height: 1.8;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .toc {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .toc h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .toc-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2a5298;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toc-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .toc-item a {
+            text-decoration: none;
+            color: #1e3c72;
+            font-weight: 600;
+            display: block;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        section {
+            margin-bottom: 50px;
+            page-break-inside: avoid;
+        }
+        
+        .module-header {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .module-icon {
+            font-size: 2em;
+            min-width: 50px;
+        }
+        
+        .module-header h2 {
+            font-size: 1.8em;
+            flex: 1;
+        }
+        
+        .subsection {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2a5298;
+        }
+        
+        .subsection h3 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .voice-box {
+            background: #e8f4f8;
+            border-left: 4px solid #00bcd4;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-style: italic;
+            color: #0097a7;
+        }
+        
+        .voice-label {
+            display: inline-block;
+            background: #00bcd4;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 10px;
+            font-style: normal;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            color: #4caf50;
+            font-weight: bold;
+            font-size: 1.3em;
+            flex-shrink: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: #2a5298;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .command-box {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            color: #333;
+            overflow-x: auto;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        
+        .warning strong {
+            color: #856404;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        
+        .info strong {
+            color: #0c5460;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        
+        .success strong {
+            color: #155724;
+        }
+        
+        footer {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 2px solid #e0e0e0;
+            color: #666;
+        }
+        
+        .print-footer {
+            display: none;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .print-footer {
+                display: block;
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #ccc;
+                text-align: center;
+                font-size: 0.8em;
+                color: #999;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .module-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .toc-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎤 ORMS - Hlasový Asistent</h1>
+            <p>Kompletní Příručka pro Uživatele</p>
+            <p style="font-size: 0.9em; margin-top: 15px;">Operating Room Management System</p>
+        </header>
+        
+        <div class="toc">
+            <h2>📋 Obsah Příručky</h2>
+            <div class="toc-grid">
+                <div class="toc-item"><a href="#dashboard">1. Dashboard - Hlavní Přehled</a></div>
+                <div class="toc-item"><a href="#rooms">2. Správa Operačních Sálů</a></div>
+                <div class="toc-item"><a href="#staff">3. Management Personálu</a></div>
+                <div class="toc-item"><a href="#schedule">4. Plánování a Rozvrh</a></div>
+                <div class="toc-item"><a href="#timeline">5. Časová Osa Operací</a></div>
+                <div class="toc-item"><a href="#statistics">6. Statistika a Analýza</a></div>
+                <div class="toc-item"><a href="#emergencies">7. Nouzové Situace</a></div>
+                <div class="toc-item"><a href="#settings">8. Nastavení a Konfigurace</a></div>
+                <div class="toc-item"><a href="#help">9. Nápověda a Troubleshooting</a></div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- SEKCE 1: DASHBOARD -->
+            <section id="dashboard">
+                <div class="module-header">
+                    <span class="module-icon">📊</span>
+                    <h2>MODUL 1: Dashboard - Hlavní Přehled</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Co je to Dashboard?</h3>
+                    <p>Dashboard je hlavní stránka aplikace, kde vidíte okamžitý přehled všech operačních sálů, jejich stavu a aktuálních činností. Je to vaše první zastávka po přihlášení do systému.</p>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ ASISTENT ŘÍKÁ:</span>
+                        "Vítejte v ORMS. Zobrazuji vám přehled všech operačních sálů. Máte aktivní operace v pěti sálech. Sál číslo tři je v alarmovém stavu."
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlavní Prvky Dashboardu</h3>
+                    <ul class="feature-list">
+                        <li><strong>Počítadlo Aktivních Sálů:</strong> Zobrazuje, kolik sálů je v tuto chvíli obsazeno. Číslo se mění v reálném čase.</li>
+                        <li><strong>Digitální Hodiny:</strong> Přesný čas v nemocnici. Důležité pro synchronizaci operací.</li>
+                        <li><strong>Kartičky Sálů:</strong> Každý sál má vlastní kartičku s barevným kódem podle stavu.</li>
+                        <li><strong>Sidebar Navigace:</strong> Tlačítka pro přechod mezi jednotlivými moduly aplikace.</li>
+                        <li><strong>Informační Panel:</strong> Zobrazuje aktuální upozornění a notifikace.</li>
+                    </ul>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Stavy Sálů - Barevné Kódy</h3>
+                    <table>
+                        <tr>
+                            <th>Barva</th>
+                            <th>Stav</th>
+                            <th>Popis</th>
+                            <th>Hlasový Výstup</th>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: #4caf50;">🟢 Zelená</strong></td>
+                            <td>Volný - Připravený</td>
+                            <td>Sál je vyčištěný a připravený na další operaci</td>
+                            <td>"Sál je připravený"</td>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: #ff9800;">🟠 Oranžová</strong></td>
+                            <td>Obsazený - Probíhá Operace</td>
+                            <td>V sále právě probíhá chirurgický zákrok</td>
+                            <td>"Operace v průběhu"</td>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: #f44336;">🔴 Červená</strong></td>
+                            <td>Alarm - Urgentní Stav</td>
+                            <td>V sále je problém, potřeba okamžitá pomoc</td>
+                            <td>"Alarm! Sál číslo... potřebuje pomoc"</td>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: #9c27b0;">🟣 Fialová</strong></td>
+                            <td>Údržba - Mimo Provoz</td>
+                            <td>Sál není k dispozici - probíhá údržba nebo čištění</td>
+                            <td>"Sál je v údržbě"</td>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: #ffeb3b;">🟡 Žlutá</strong></td>
+                            <td>Příprava - Chuť Operace</td>
+                            <td>Tým se připravuje na operaci, sál se dezinfikuje</td>
+                            <td>"Příprava operace"</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy na Dashboardu</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Ukaž mi všechny sály" → Hlasový asistent vypíše seznam všech sálů s jejich stavy
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Kolik sálů je obsazených?" → Asistent řekne počet aktivních operací
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Má kterýkoliv sál problém?" → Asistent vás upozorní na alarmy nebo chyby
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Otevři sál číslo třeba" → Zobrazí detaily daného sálu
+                    </div>
+                </div>
+                
+                <div class="info">
+                    <strong>💡 TIP:</strong> Dashboard se aktualizuje automaticky každých 2-3 sekund. Pokud nevidíte změnu, zkuste stránku obnovit klávesou F5.
+                </div>
+            </section>
+            
+            <!-- SEKCE 2: SPRÁVA SÁLŮ -->
+            <section id="rooms">
+                <div class="module-header">
+                    <span class="module-icon">🏥</span>
+                    <h2>MODUL 2: Správa Operačních Sálů</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Co Je to Modul Sálů?</h3>
+                    <p>Modul pro správu operačních sálů vám umožňuje spravovat informace o jednotlivých sálech, jejich kapacitu, vybavení, dostupnosti a historie. Zde přiřazujete lékaře a sestry ke sálům.</p>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ ASISTENT ŘÍKÁ:</span>
+                        "Spouštím modul pro správu sálů. Máte devadesát operačních sálů v systému. Ze kterého sálu chcete detaily?"
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Funkce Modulu Sálů</h3>
+                    <ul class="feature-list">
+                        <li><strong>Přehled Sálů:</strong> Kompletní seznam všech operačních sálů v nemocnici</li>
+                        <li><strong>Detaily Sálu:</strong> Informace jako typ operace, vybavení, kapacita</li>
+                        <li><strong>Přiřazení Personálu:</strong> Výběr chirurgů, sester a ostatního personálu</li>
+                        <li><strong>Historie Operací:</strong> Přehled všech operací, které se v sále konaly</li>
+                        <li><strong>Údržba Sálu:</strong> Plánování údržby a dezinfekce</li>
+                        <li><strong>Pracovní Doba:</strong> Nastavení pracovní doby sálu (pondělí-pátek, nonstop apod.)</li>
+                    </ul>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Detaily Operačního Sálu</h3>
+                    <p>Kliknutím na sál se otevře detailní pohled se všemi informacemi:</p>
+                    <div class="command-box">
+                        📍 Sál č.: 5
+                        🏷️ Název: TRAUMATOLOGIE - 1
+                        👥 Kapacita: 4 osoby
+                        🔧 Vybavení: Operační stůl, C-rameno, monitoring
+                        ⏰ Pracovní doba: Pondělí-Neděle 6:00-22:00
+                        📊 Počet operací měsíčně: 84
+                        🟢 Stav: PŘIPRAVENÝ
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy - Správa Sálů</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Ukaž mi detaily sálu pět" → Zobrazí informace o sále číslo 5
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Který sál má nejvíce vybavení?" → Asistent najde sál s nejlepším vybavením
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Který sál je nejdéle volný?" → Asistent najde nejdéle nepoužívaný sál
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Přiřaď doktora Novotného do sálu tři" → Přiřadí lékaře ke sále
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Naplánuj údržbu sálu dva na zítřek" → Nastaví údržbu do plánu
+                    </div>
+                </div>
+                
+                <div class="warning">
+                    <strong>⚠️ DŮLEŽITÉ:</strong> Změny v konfiguraci sálu (vybavení, kapacita) ovlivňují plánování operací. Vždy konzultujte změny s vedením oddělení.
+                </div>
+            </section>
+            
+            <!-- SEKCE 3: MANAGEMENT PERSONÁLU -->
+            <section id="staff">
+                <div class="module-header">
+                    <span class="module-icon">👥</span>
+                    <h2>MODUL 3: Management Personálu</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Co Je to Modul Personálu?</h3>
+                    <p>Modul pro správu všech členů operačního týmu. Spravujete zde profily lékařů, sester, asistentů a ostatních pracovníků, jejich kvalifikaci, plán práce a dostupnost.</p>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ ASISTENT ŘÍKÁ:</span>
+                        "Spouštím modul pro management personálu. V systému máte sto čtyřicet osm zaměstnanců. Kteří jsou dnes dostupní?"
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Typy Personálu v Systému</h3>
+                    <table>
+                        <tr>
+                            <th>Typ Personálu</th>
+                            <th>Odpovědnost</th>
+                            <th>Kvalifikace</th>
+                            <th>Počet</th>
+                        </tr>
+                        <tr>
+                            <td>Chirurg / Lékař</td>
+                            <td>Vedení operace</td>
+                            <td>Vysokoškolské vzdělání + certifikace</td>
+                            <td>~30</td>
+                        </tr>
+                        <tr>
+                            <td>Zdravotní Sestra</td>
+                            <td>Asistence lékařům</td>
+                            <td>Zdravotnické vzdělání</td>
+                            <td>~60</td>
+                        </tr>
+                        <tr>
+                            <td>Instrumentářka</td>
+                            <td>Příprava nástrojů</td>
+                            <td>Speciální zdravotnické školení</td>
+                            <td>~25</td>
+                        </tr>
+                        <tr>
+                            <td>Anesteziolog</td>
+                            <td>Anestezie pacienta</td>
+                            <td>Vysokoškolské vzdělání + certifikace</td>
+                            <td>~15</td>
+                        </tr>
+                        <tr>
+                            <td>Pomocný Personál</td>
+                            <td>Podpora operačního sálu</td>
+                            <td>Základní zdravotnické školení</td>
+                            <td>~18</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Informace o Členu Týmu</h3>
+                    <p>V detailu každého zaměstnance najdete:</p>
+                    <div class="command-box">
+                        👤 Jméno: MUDr. Jan Novotný
+                        🏷️ Funkce: Chirurg - Traumatologie
+                        📋 Kvalifikace: Chirurgie, Traumatologie
+                        ⏰ Dostupnost: Pondělí-Pátek 7:00-15:00, Sobota On-Call
+                        📞 Kontakt: +420 723 456 789
+                        🎖️ Zkušenosti: 15 let v oboru
+                        📊 Počet operací: 1247 v systému
+                        ✅ Aktivní: ANO
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy - Management Personálu</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Kdo je dostupný v pondělí?" → Asistent vypíše dostupný personál
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Zavolej dr. Novotného" → Zobrazí kontaktní informace
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Který chirurg má dnes nejméně operací?" → Najde nejméně vytíženého lékaře
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Přiřaď sestru Kovářovou do operace" → Přiřadí sestru k operaci
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Kolik chirurgů je dnes na směně?" → Asistent spočítá dostupné chirurgy
+                    </div>
+                </div>
+                
+                <div class="info">
+                    <strong>💡 TIP:</strong> Vždy si ověřte dostupnost personálu před plánováním operace. Někdo může mít neplánovanou dovolenou nebo nemoc.
+                </div>
+            </section>
+            
+            <!-- SEKCE 4: PLÁNOVÁNÍ A ROZVRH -->
+            <section id="schedule">
+                <div class="module-header">
+                    <span class="module-icon">📅</span>
+                    <h2>MODUL 4: Plánování a Rozvrh</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Co Je to Modul Plánování?</h3>
+                    <p>Modul plánování vám umožňuje naplánovat operace, nastavit pracovní dobu personálu, sledovat obsazenost sálů a optimalizovat použití recursos. Vidíte zde časový rozvrh na dny, týdny i měsíce.</p>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ ASISTENT ŘÍKÁ:</span>
+                        "Spouštím kalendář plánování. V tento týden máte naplánováno tisíc sto dvacet tři operací. Chcete přidat novou operaci?"
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Typy Pohledů Kalendáře</h3>
+                    <ul class="feature-list">
+                        <li><strong>Denní Pohled:</strong> Detailní přehled operací na jeden den, čas operace, chirurg, sál</li>
+                        <li><strong>Týdenní Pohled:</strong> Přehled celého týdne, která pole je kdy obsazena</li>
+                        <li><strong>Měsíční Pohled:</strong> Celkový přehled měsíce, trendů a vytíženosti</li>
+                        <li><strong>Personální Rozvrh:</strong> Pracovní doba jednotlivých zaměstnanců</li>
+                        <li><strong>Dostupnost Sálů:</strong> Které sály jsou kdy dostupné</li>
+                    </ul>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Plánování Nové Operace</h3>
+                    <p>Postup přidání nové operace do kalendáře:</p>
+                    <div class="command-box">
+                        1. Klikněte na volný čas v kalendáři
+                        2. Vyберete typ operace (chirurgie, ortopédie atd.)
+                        3. Vyberte sál
+                        4. Vyberte chirurga a tým
+                        5. Nastavte čas operace a předpokládanou dobu
+                        6. Přidejte poznámky
+                        7. Potvrďte plán
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy - Plánování</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Naplánuj operaci na zítřek v devět hodin" → Asistent vás provede plánováním
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Kolik operací je naplánováno na pátek?" → Asistent spočítá operace
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Který sál je volný v pondělí dopoledne?" → Najde dostupný sál
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Otevři rozvrhh dr. Novotného" → Zobrazí pracovní plán lékaře
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Zruš operaci číslo 54" → Zruší zvolenou operaci z plánu
+                    </div>
+                </div>
+                
+                <div class="success">
+                    <strong>✅ BEST PRACTICE:</strong> Plánujte operace minimálně den dopředu a dejte týmu čas na přípravu. Urgentní operace plánujte co nejdříve.
+                </div>
+            </section>
+            
+            <!-- SEKCE 5: ČASOVÁ OSA -->
+            <section id="timeline">
+                <div class="module-header">
+                    <span class="module-icon">⏱️</span>
+                    <h2>MODUL 5: Časová Osa Operací</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Co Je to Modul Časové Osy?</h3>
+                    <p>Modul Časové Osy zobrazuje detailný průběh každé operace v reálném čase. Sledujete zde různé fáze operace, časy, příslušné osoby a důležité milníky.</p>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ ASISTENT ŘÍKÁ:</span>
+                        "Spouštím časovou osu. Operace v sále číslo pět trvá pět hodin a dvacet minut. Pacienta právě šijeme."
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Fáze Operace</h3>
+                    <table>
+                        <tr>
+                            <th>Fáze</th>
+                            <th>Popis</th>
+                            <th>Typická Doba</th>
+                            <th>Hlasový Výstup</th>
+                        </tr>
+                        <tr>
+                            <td>1️⃣ Příprava</td>
+                            <td>Příprava sálu, pacienta a personálu</td>
+                            <td>15-30 minut</td>
+                            <td>"Fáze přípravy"</td>
+                        </tr>
+                        <tr>
+                            <td>2️⃣ Anestezie</td>
+                            <td>Aplikace anestezie pacientovi</td>
+                            <td>10-20 minut</td>
+                            <td>"Anestezie se aplikuje"</td>
+                        </tr>
+                        <tr>
+                            <td>3️⃣ Chirurgický Zákrok</td>
+                            <td>Vlastní chirurgický úkon</td>
+                            <td>Variable - od 30 minut až po 6 hodin</td>
+                            <td>"Probíhá chirurgický zákrok"</td>
+                        </tr>
+                        <tr>
+                            <td>4️⃣ Sešívání</td>
+                            <td>Zavřítí incize a sešití rány</td>
+                            <td>20-40 minut</td>
+                            <td>"Probíhá sešívání"</td>
+                        </tr>
+                        <tr>
+                            <td>5️⃣ Probuzení</td>
+                            <td>Probuzení pacienta z anestezie</td>
+                            <td>10-30 minut</td>
+                            <td>"Probuzení pacienta"</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Informace na Časové Ose</h3>
+                    <div class="command-box">
+                        🕐 Čas Začátku: 08:00
+                        🕐 Trvání: 05:20 (5 hodin 20 minut)
+                        👤 Pacient: Jan Dvořák (ID: 2024-4521)
+                        🏥 Sál: 5 - TRAUMATOLOGIE
+                        👨‍⚕️ Chirurg: MUDr. Novotný
+                        👨‍⚕️ Asistenti: 2 (Dr. Hora, Dr. Svoboda)
+                        👩‍⚕️ Sestry: 3
+                        💊 Anestezie: Obecná
+                        📝 Operace: Operace menisků kolenního kloubu
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy - Časová Osa</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Jak dlouho trvá operace v sále pět?" → Asistent řekne přesný čas
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "V jaké fázi je operace číslo 42?" → Asistent řekne aktuální fázi
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Kdy skončí operace v sále tři?" → Asistent vypočítá přibližný čas ukončení
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Otevři časovou osu operace číslo 52" → Zobrazí detailní časovou osu
+                    </div>
+                </div>
+                
+                <div class="info">
+                    <strong>💡 TIP:</strong> Časová osa se aktualizuje v reálném čase. Využijte ji k plánování následujících operací a koordinaci týmu.
+                </div>
+            </section>
+            
+            <!-- SEKCE 6: STATISTIKA -->
+            <section id="statistics">
+                <div class="module-header">
+                    <span class="module-icon">📈</span>
+                    <h2>MODUL 6: Statistika a Analýza</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Co Je to Modul Statistiky?</h3>
+                    <p>Modul Statistiky a Analýzy vám poskytuje hluboký vhled do provozu operačních sálů. Vidíte zde grafy, trendy, efektivitu a výkonnostní ukazatele.</p>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ ASISTENT ŘÍKÁ:</span>
+                        "Spouštím modul statistiky. V letošním měsíci proběhlo čtyři tisíc pět set operací. Průměrná doba operace je dva tisíc osm minut."
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Klíčové Metriky</h3>
+                    <ul class="feature-list">
+                        <li><strong>Celkový Počet Operací:</strong> Kolik operací proběhlo za zvolené období</li>
+                        <li><strong>Průměrná Doba Operace:</strong> Jak dlouho trvá typická operace</li>
+                        <li><strong>Vytíženost Sálů:</strong> Jaké procento času je sál obsazen</li>
+                        <li><strong>Počet Operací na Chirurga:</strong> Jak vytížení jsou jednotliví lékaři</li>
+                        <li><strong>Doba Čekání:</strong> Jak dlouho průměrně čeká pacient na operaci</li>
+                        <li><strong>Efektivita Týmu:</strong> Hodnocení výkonnosti operačního týmu</li>
+                        <li><strong>Počet Zásahů ze Stavu Nouze:</strong> Jak často se příhodí nouzové situace</li>
+                    </ul>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Typy Grafů a Zpráv</h3>
+                    <table>
+                        <tr>
+                            <th>Typ Grafu</th>
+                            <th>Co Ukazuje</th>
+                            <th>Použití</th>
+                        </tr>
+                        <tr>
+                            <td>Sloupcový Graf</td>
+                            <td>Počty operací za období</td>
+                            <td>Srovnání měsíců, týdnů, dní</td>
+                        </tr>
+                        <tr>
+                            <td>Koláčový Graf</td>
+                            <td>Procento operací dle typu</td>
+                            <td>Přehled všech typů operací</td>
+                        </tr>
+                        <tr>
+                            <td>Spojnicový Graf</td>
+                            <td>Trend v čase</td>
+                            <td>Dlouhodobé trendy</td>
+                        </tr>
+                        <tr>
+                            <td>Heatmapa</td>
+                            <td>Vytíženost v určitý čas</td>
+                            <td>Zjišťování špiček</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy - Statistika</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Ukaž mi statistiku tohoto měsíce" → Asistent zobrazí měsíční přehled
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Která operace je nejčastější?" → Asistent najde nejčastější typ operace
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOWY PŘÍKAZ:</span>
+                        "Který sál má nejvyšší vytíženost?" → Najde nejpoužívanější sál
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Jak dlouho je průměrná operace?" → Asistent řekne průměrný čas
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Vytvořit měsíční zprávu" → Asistent vygeneruje podrobnou zprávu
+                    </div>
+                </div>
+                
+                <div class="success">
+                    <strong>✅ BEST PRACTICE:</strong> Pravidelně sledujte statistiky, abyste mohli optimalizovat rozvrh a efektivitu. Data vám pomohou při plánování a alokaci recursos.
+                </div>
+            </section>
+            
+            <!-- SEKCE 7: NOUZOVÉ SITUACE -->
+            <section id="emergencies">
+                <div class="module-header">
+                    <span class="module-icon">🚨</span>
+                    <h2>MODUL 7: Nouzové Situace a Alarmy</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Co Je to Nouzový Režim?</h3>
+                    <p>Nouzový režim je kritická funkce aplikace pro situace, kdy se něco v operačním sále pokazí. Hlasový asistent vás upozorní a pomůže vám koordinovat záchranu.</p>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ ASISTENT ŘÍKÁ (V NOUZOVÉ SITUACI):</span>
+                        "ALARM! V sále číslo osm došlo k NOUZOVÉ SITUACI! Volám všechny dostupné lékaře! Zastavuji plánované operace!"
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Typy Alarmů a Nouzových Stavů</h3>
+                    <table>
+                        <tr>
+                            <th>Typ Alarmu</th>
+                            <th>Závažnost</th>
+                            <th>Popis</th>
+                            <th>Akce</th>
+                        </tr>
+                        <tr>
+                            <td>🔴 KRITICKÝ - Srdeční Zástava</td>
+                            <td>⚠️⚠️⚠️ KRITICKÁ</td>
+                            <td>Pacient má srdeční zástavu, potřebuje CPR</td>
+                            <td>Okamžité svolání všech dostupných lékařů</td>
+                        </tr>
+                        <tr>
+                            <td>🟠 ALARM - Haemorrhage</td>
+                            <td>⚠️⚠️⚠️ VÁŽNÝ</td>
+                            <td>Pacient silně krvácí, život v ohrožení</td>
+                            <td>Okamžité přivolání pomoci, zahájení transfuze</td>
+                        </tr>
+                        <tr>
+                            <td>🟡 UPOZORNĚNÍ - Nižší Tlak</td>
+                            <td>⚠️⚠️ STŘEDNÍ</td>
+                            <td>Pacient má nižší krevní tlak než normální</td>
+                            <td>Informace lékařům, zvýšení monitoringu</td>
+                        </tr>
+                        <tr>
+                            <td>🔵 INFO - Chyba Přístroje</td>
+                            <td>⚠️ NÍZKÁ</td>
+                            <td>Přístroj selhává, ale není to život ohrožující</td>
+                            <td>Výměna přístroje, pokud je k dispozici</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Postup při Nouzové Situaci</h3>
+                    <div class="command-box">
+                        1. ALARM - Hlasový asistent ohlášuje nouzový stav
+                        2. SVOLÁNÍ - Všichni dostupní lékaři jsou ihned informováni
+                        3. KOORDINACE - Operační sál, pokoj pro záchranu, krevní banka
+                        4. DOKUMENTACE - Všechny podniknuté akce jsou zaznamenány
+                        5. INFORMACE - Vedení nemocnice je okamžitě informováno
+                        6. NÁSLEDNÁ PÉČE - Sledování pacienta v pooperační péči
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy - Nouzové Situace</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Aktivuj nouzový stav v sále číslo osm!" → Asistent iniciuje nouzový protokol
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Zavolej všechny chirurgy okamžitě!" → Svolá všechny dostupné chirurgy
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Připrav krevní banku - typ O negativní!" → Asistent připravuje transfuzi
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Informuj vedení nemocnice o stavu!" → Asistent ohlašuje vedení
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Zruš všechny neplánované operace!" → Asistent ruší zbytečné operace
+                    </div>
+                </div>
+                
+                <div class="warning">
+                    <strong>⚠️ KRITICKÉ:</strong> Při nouzové situaci poslouchejte pokyny asistenta. Každá sekunda je důležitá! Vytvořte tým okamžitě a komunikujte jasně.
+                </div>
+                
+                <div class="success">
+                    <strong>✅ DEPOIS NOUZOVÉ SITUACE:</strong> Vždy zdokumentujte co se stalo, jak se jednalo a jaké jsou lekce. Debrief s týmem je kritický.
+                </div>
+            </section>
+            
+            <!-- SEKCE 8: NASTAVENÍ -->
+            <section id="settings">
+                <div class="module-header">
+                    <span class="module-icon">⚙️</span>
+                    <h2>MODUL 8: Nastavení a Konfigurace</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Co Je to Modul Nastavení?</h3>
+                    <p>Modul Nastavení vám umožňuje konfigurovat aplikaci podle potřeb vaší nemocnice. Nastavujete zde vzhled, jazyk, práva přístupu a technické parametry.</p>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ ASISTENT ŘÍKÁ:</span>
+                        "Spouštím modul nastavení. Máte přístup ke konfiguraci systému. Jakou položku chcete měnit?"
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlavní Nastavení</h3>
+                    <ul class="feature-list">
+                        <li><strong>Profil Uživatele:</strong> Jméno, email, heslo, foto</li>
+                        <li><strong>Jazyk a Lokalita:</strong> Výběr jazyka, časové zóny, formátu data</li>
+                        <li><strong>Oprávnění a Role:</strong> Co může daný uživatel dělat v systému</li>
+                        <li><strong>Notifikace:</strong> Jaké upozornění chcete dostávat</li>
+                        <li><strong>Vzhled Aplikace:</strong> Barvy, motivy, rozložení</li>
+                        <li><strong>Bezpečnost:</strong> Dvoustupňová autentifikace, hesel</li>
+                        <li><strong>Integrace:</strong> Připojení s dalšími systémy</li>
+                        <li><strong>Zálohování a Obnova:</strong> Správa záloh dat</li>
+                    </ul>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Role a Oprávnění v Systému</h3>
+                    <table>
+                        <tr>
+                            <th>Role</th>
+                            <th>Popis</th>
+                            <th>Oprávnění</th>
+                        </tr>
+                        <tr>
+                            <td>👑 Správce</td>
+                            <td>Má úplný přístup k systému</td>
+                            <td>Vše - přidávání uživatelů, změny konfigurace</td>
+                        </tr>
+                        <tr>
+                            <td>👨‍💼 Manager Sálu</td>
+                            <td>Spravuje operační sál</td>
+                            <td>Správa sálu, personálu v sále, plánování</td>
+                        </tr>
+                        <tr>
+                            <td>👨‍⚕️ Chirurg</td>
+                            <td>Provádí operace</td>
+                            <td>Plánování operací, přístup k datům pacienta</td>
+                        </tr>
+                        <tr>
+                            <td>👩‍⚕️ Sestra</td>
+                            <td>Asistuje v sále</td>
+                            <td>Přístup do své operace, přidávání poznámek</td>
+                        </tr>
+                        <tr>
+                            <td>📊 Analytik</td>
+                            <td>Analyzuje data</td>
+                            <td>Přístup ke statistikám, nemůže měnit data</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy - Nastavení</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Otevři moje nastavení profilu" → Asistent otevře váš profil
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Změní jazyk na angličtinu" → Asistent změní jazyk aplikace
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Aktivuj dvoustupňovou autentifikaci" → Asistent zapne 2FA
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Přidej nového uživatele" → Asistent vás provede přidáním uživatele
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Vytvořit zálohu všech dat" → Asistent zahájí zálohování
+                    </div>
+                </div>
+                
+                <div class="info">
+                    <strong>💡 TIP:</strong> Pravidelně kontrolujte nastavení bezpečnosti a ujistěte se, že je vše správně nastaveno. Silné hesla a 2FA jsou kritické.
+                </div>
+            </section>
+            
+            <!-- SEKCE 9: NÁPOVĚDA -->
+            <section id="help">
+                <div class="module-header">
+                    <span class="module-icon">❓</span>
+                    <h2>MODUL 9: Nápověda a Troubleshooting</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Nejčastěji Kladené Otázky (FAQ)</h3>
+                    
+                    <div class="subsection" style="background: #f0f7ff; margin: 15px 0; padding: 15px;">
+                        <h4>❓ Jak se přihlásím do systému?</h4>
+                        <p><strong>Odpověď:</strong> Zadejte své uživatelské jméno a heslo na přihlašovací stránce. Pokud zapomenete heslo, klikněte na "Zapomenuté heslo" a sledujte pokyny.</p>
+                    </div>
+                    
+                    <div class="subsection" style="background: #f0f7ff; margin: 15px 0; padding: 15px;">
+                        <h4>❓ Co když vidím červený alarm v sále?</h4>
+                        <p><strong>Odpověď:</strong> Červený alarm znamená nouzový stav. Okamžitě se obraťte na operační tým v sále. Hlasový asistent bude vydávat pokyny.</p>
+                    </div>
+                    
+                    <div class="subsection" style="background: #f0f7ff; margin: 15px 0; padding: 15px;">
+                        <h4>❓ Jak naplánuji novou operaci?</h4>
+                        <p><strong>Odpověď:</strong> Jděte do modulu Plánování, vyberte volný čas v kalendáři, vyberte sál a chirurga, a potvrďte. Hlasový asistent vám pomůže s jednotlivými kroky.</p>
+                    </div>
+                    
+                    <div class="subsection" style="background: #f0f7ff; margin: 15px 0; padding: 15px;">
+                        <h4>❓ Jak se dostanu do statistiky?</h4>
+                        <p><strong>Odpověď:</strong> Klikněte na "Statistika" v hlavním menu. Asistent vám pomůže vybrat období a typ dat, která chcete vidět.</p>
+                    </div>
+                    
+                    <div class="subsection" style="background: #f0f7ff; margin: 15px 0; padding: 15px;">
+                        <h4>❓ Co když se aplikace zpomalí?</h4>
+                        <p><strong>Odpověď:</strong> Zkuste obnovit stránku (F5), zavřete a znovu otevřete aplikaci. Pokud problém přetrvává, kontaktujte IT podporu.</p>
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Řešení Běžných Problémů</h3>
+                    
+                    <div class="subsection" style="background: #ffe8e8; margin: 15px 0; padding: 15px;">
+                        <h4>🔴 Problém: Nemohu se přihlásit</h4>
+                        <p><strong>Řešení:</strong></p>
+                        <ul style="margin-left: 20px;">
+                            <li>Ověřte, že píšete správné uživatelské jméno a heslo</li>
+                            <li>Ujistěte se, že máte internetové připojení</li>
+                            <li>Smažte cookies a cache prohlížeče</li>
+                            <li>Pokud problém přetrvává, resetujte heslo</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="subsection" style="background: #ffe8e8; margin: 15px 0; padding: 15px;">
+                        <h4>🔴 Problém: Aplikace se zpomalila nebo zamrzla</h4>
+                        <p><strong>Řešení:</strong></p>
+                        <ul style="margin-left: 20px;">
+                            <li>Obnovte stránku (Ctrl+R nebo Cmd+R)</li>
+                            <li>Zavřete a znovu otevřete okno aplikace</li>
+                            <li>Restartujte počítač</li>
+                            <li>Ověřte internetové připojení (minimálně 10 Mbps)</li>
+                            <li>Kontaktujte IT podporu</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="subsection" style="background: #ffe8e8; margin: 15px 0; padding: 15px;">
+                        <h4>🔴 Problém: Data se v aplikaci nezobrazují</h4>
+                        <p><strong>Řešení:</strong></p>
+                        <ul style="margin-left: 20px;">
+                            <li>Obnovte stránku (F5)</li>
+                            <li>Vypněte a zapněte aplikaci znovu</li>
+                            <li>Ověřte, že máte přístup k danému modulu</li>
+                            <li>Kontaktujte správce systému</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="subsection" style="background: #ffe8e8; margin: 15px 0; padding: 15px;">
+                        <h4>🔴 Problém: Alarm v sále se nespustil</h4>
+                        <p><strong>Řešení:</strong></p>
+                        <ul style="margin-left: 20px;">
+                            <li>Ověřte, že hlasitost počítače je zapnutá</li>
+                            <li>Ověřte nastavení notifikací v prohlížeči</li>
+                            <li>Ujistěte se, že máte správné oprávnění k vidění alarmů</li>
+                            <li>Kontaktujte IT podporu</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="subsection" style="background: #ffe8e8; margin: 15px 0; padding: 15px;">
+                        <h4>🔴 Problém: Nemohu změnit nastavení</h4>
+                        <p><strong>Řešení:</strong></p>
+                        <ul style="margin-left: 20px;">
+                            <li>Ověřte, že máte práva správce nebo manažera</li>
+                            <li>Zkuste se znovu přihlásit</li>
+                            <li>Kontaktujte správce systému, aby vám udělil práva</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Hlasové Příkazy - Nápověda</h3>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Potřebuji pomoc!" → Asistent se zeptá, s čím potřebujete pomoc
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Jak se používá modul X?" → Asistent vysvětlí daný modul
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Vysvětli mi tuto funkci" → Asistent podrobně vysvětlí funkci
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Jak řešit problém s připojením?" → Asistent vás provede troubleshootingem
+                    </div>
+                    <div class="voice-box">
+                        <span class="voice-label">HLASOVÝ PŘÍKAZ:</span>
+                        "Zavolej IT podporu" → Asistent vytočí nebo pošle zprávu do IT
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h3>Kontakt na Podporu</h3>
+                    <p>Pokud si nemůžete poradit:</p>
+                    <div class="command-box">
+                        📞 IT Hotline: +420 800 123 456
+                        📧 Email: support@orms.cz
+                        💬 Chat Support: V aplikaci (ikona chat)
+                        🕐 Dostupnost: Pondělí-Pátek 7:00-19:00
+                        🚨 Nouzová Linka: +420 800 111 111 (24/7)
+                    </div>
+                </div>
+            </section>
+            
+            <!-- FINÁLNÍ SEKCE -->
+            <section style="background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%); color: white; padding: 30px; border-radius: 8px; margin-top: 50px;">
+                <h2 style="text-align: center; font-size: 1.8em; margin-bottom: 20px;">Shrnutí Hlasových Příkazů</h2>
+                
+                <p style="text-align: center; margin-bottom: 20px; font-size: 1.1em;">
+                    Vždy se můžete zeptat hlasového asistenta pomocí těchto základních příkazů:
+                </p>
+                
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px;">
+                    <ul style="list-style: none; color: white;">
+                        <li style="margin: 10px 0;">🎤 "Potřebuji pomoc" - Asistent se zeptá, co potřebujete</li>
+                        <li style="margin: 10px 0;">🎤 "Vysvětli mi" - Asistent vysvětlí libovolnou funkci</li>
+                        <li style="margin: 10px 0;">🎤 "Jak to funguje?" - Asistent poskytne instrukce</li>
+                        <li style="margin: 10px 0;">🎤 "Další krok" - Asistent vás provede dalším krokem</li>
+                        <li style="margin: 10px 0;">🎤 "Zrušit poslední akci" - Vrátí se k předchozímu stavu</li>
+                        <li style="margin: 10px 0;">🎤 "Restart aplikace" - Restartuje aplikaci</li>
+                        <li style="margin: 10px 0;">🎤 "Zavolej IT" - Zavolá IT podporu</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>&copy; 2026 ORMS - Operating Room Management System. Medrox s.r.o.</p>
+            <p>Verze: 1.0 | Poslední aktualizace: Červen 2026</p>
+            <p style="font-size: 0.9em; margin-top: 15px; color: #999;">
+                Tento dokument obsahuje kompletní příručku pro hlasový asistent ORMS aplikace. 
+                Pro technickou podporu kontaktujte IT oddělení.
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
