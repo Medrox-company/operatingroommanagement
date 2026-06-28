@@ -14,6 +14,17 @@ import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
 
+// Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
+const formatElapsed = (totalSeconds: number): string => {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  if (s >= 3600) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+};
+
 interface RoomDetailProps {
   room: OperatingRoom;
   allRooms?: OperatingRoom[];
@@ -105,9 +116,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       const now = new Date();
       const diff = now.getTime() - phaseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
-      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-      const seconds = String(totalSeconds % 60).padStart(2, '0');
-      setElapsedTime(`${minutes}:${seconds}`);
+      setElapsedTime(formatElapsed(totalSeconds));
     };
     
     updateElapsedTime();
@@ -128,9 +137,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       const now = new Date();
       const diff = now.getTime() - pauseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
-      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-      const seconds = String(totalSeconds % 60).padStart(2, '0');
-      setPauseElapsedTime(`${minutes}:${seconds}`);
+      setPauseElapsedTime(formatElapsed(totalSeconds));
     };
     
     updatePauseTime();
@@ -164,9 +171,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       const now = new Date();
       const diff = now.getTime() - patientCalledTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
-      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-      const seconds = String(totalSeconds % 60).padStart(2, '0');
-      setPatientCallElapsedTime(`${minutes}:${seconds}`);
+      setPatientCallElapsedTime(formatElapsed(totalSeconds));
     };
     
     updatePatientCallTime();
