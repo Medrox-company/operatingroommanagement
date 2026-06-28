@@ -843,15 +843,17 @@ const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses
         </div>
       </div>
 
-      {/* Mini donuty jednotlivých statusů — % zastoupení v daném dni */}
-      <div className="w-full max-w-5xl">
+      {/* Mini donuty jednotlivých statusů — % zastoupení v daném dni.
+          Flex se zalamováním: v jednom řádku, když je místo, jinak responzivně
+          přetečou na další řádek a nikdy se nepřekrývají. */}
+      <div className="w-full">
         <p className="text-[11px] uppercase tracking-[0.22em] text-white/45 text-center mb-5">Zastoupení statusů v dni</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-8 justify-items-center">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-8">
           {data.segs.map((s, i) => {
             const pct = data.total > 0 ? (s.ms / data.total) * 100 : 0;
             const r = 46, circ = 2 * Math.PI * r;
             return (
-              <div key={s.idx} className="flex flex-col items-center gap-2.5 w-full">
+              <div key={s.idx} className="flex flex-col items-center gap-2.5 w-[136px] shrink-0">
                 <div className="relative" style={{ width: 120, height: 120 }}>
                   <div className="absolute inset-4 rounded-full blur-xl" style={{ background: s.c, opacity: 0.18 }} />
                   <svg viewBox="0 0 108 108" className="absolute inset-0 w-full h-full -rotate-90">
