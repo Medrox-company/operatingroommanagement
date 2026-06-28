@@ -247,10 +247,7 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
 
   return (
     <div className="w-full h-full overflow-hidden">
-      <div className="relative w-full h-full rounded-3xl overflow-hidden border border-white/10"
-        style={{ background: 'radial-gradient(120% 90% at 50% 38%, #241b4f 0%, #140f2e 38%, #0a0a18 70%, #07070f 100%)' }}>
-        <div aria-hidden className="absolute inset-0 pointer-events-none opacity-[0.12]"
-          style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
+      <div className="relative w-full h-full overflow-hidden" style={{ background: 'transparent' }}>
 
         <div className="relative h-full flex flex-col">
           {/* ── Horní lišta ── */}
