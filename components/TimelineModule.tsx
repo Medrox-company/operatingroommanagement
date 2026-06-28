@@ -890,16 +890,22 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   return (
     <div
       ref={moduleRootRef}
-      className="w-full h-full text-white overflow-hidden flex flex-col relative antialiased"
+      className={`w-full h-full text-white overflow-hidden flex flex-col relative antialiased ${isFullscreen ? '' : 'rounded-3xl border border-white/10'}`}
       style={{
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
         textRendering: 'optimizeLegibility',
-        // Tmavě modro-černý přechod — modrý závan vlevo nahoře, jinak hluboká čerň.
+        // Stejný grafický styl jako modul „Tok pacienta" — fialový radiální přechod.
         background:
-          'radial-gradient(120% 95% at 18% -6%, rgba(40,80,180,0.18) 0%, rgba(28,54,130,0.07) 32%, transparent 58%), linear-gradient(160deg, #070c1b 0%, #05080f 55%, #03050a 100%)',
+          'radial-gradient(120% 90% at 50% 38%, #241b4f 0%, #140f2e 38%, #0a0a18 70%, #07070f 100%)',
       }}
     >
+      {/* Tečkované pozadí (sjednoceno s modulem Tok pacienta) */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none opacity-[0.12] z-0"
+        style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '26px 26px' }}
+      />
 
       {/* Room Detail Popup */}
       <AnimatePresence>
@@ -1228,7 +1234,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           background: 'transparent',
         }}
       >
-        <div className={`py-4 ${isFullscreen ? 'px-4' : 'px-8 md:pl-32 md:pr-10'}`}>
+        <div className={`py-4 ${isFullscreen ? 'px-4' : 'px-4 sm:px-6'}`}>
 
           {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
           <div className="flex items-center justify-between gap-4">
@@ -1569,7 +1575,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
 
       {/* ======== Main Timeline - Premium Glass Container ======== */}
-      <div className={`flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden ${isFullscreen ? 'px-4' : 'px-8 md:pl-32 md:pr-10'}`}>
+      <div className={`flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden ${isFullscreen ? 'px-4' : 'px-4 sm:px-6'}`}>
 
         {/* Time Axis Header - Premium Glass */}
         <div 
