@@ -80,6 +80,11 @@ const elbow = (x1: number, y1: number, x2: number, y2: number) => {
   return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
 };
 
+/* Styl horní lišty — sjednoceno s toolbarem modulu Timeline. */
+const TB_GLASS = 'rgba(255, 255, 255, 0.025)';
+const TB_BORDER = 'rgba(125, 165, 185, 0.20)';
+const TB_CYAN = '#36D9EC';
+
 /* Doba běhu aktuálního statusu sálu (z phaseStartedAt / poslední změny). */
 const currentStatusStart = (room: OperatingRoom): number | null => {
   const segs = room.statusHistory || [];
@@ -252,40 +257,52 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
         <div className="relative h-full flex flex-col">
           {/* ── Horní lišta ── */}
           <div className="flex items-center gap-3 px-5 pt-4 pb-3 flex-wrap">
-            <div className="flex items-center gap-3 pr-2">
+            {/* Interval — informační cluster (glass styl jako toolbar v Timeline) */}
+            <div className="hidden md:flex items-center h-14 rounded-2xl px-4 gap-3" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
               <div className="leading-tight">
                 <p className="text-[11px] font-bold text-white">Interval</p>
                 <p className="text-[10px] text-white/45">posledních 5 min</p>
               </div>
+              <div className="w-px h-6 bg-white/10" />
               <div className="leading-tight">
                 <p className="text-[11px] font-semibold text-white/80">{nowDate.toLocaleDateString('cs-CZ')}</p>
                 <p className="text-[10px] text-white/45 tabular-nums">{fmt(ticks[2])} – {fmt(ticks[8])}</p>
               </div>
             </div>
 
-            {/* Režim Živě / Historie */}
-            <div className="flex p-1 rounded-xl bg-white/[0.04] border border-white/10">
-              {([['live', 'Živě', Radio], ['board', 'Fáze', Layers], ['history', 'Historie', HistoryIcon]] as const).map(([m, label, Icon]) => (
-                <button key={m} onClick={() => setMode(m)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${mode === m ? 'bg-cyan-500/25 text-cyan-200' : 'text-white/55 hover:text-white'}`}>
-                  <Icon className="w-3.5 h-3.5" /> {label}
-                </button>
-              ))}
+            {/* Režim Živě / Fáze / Historie — glass cluster jako toolbar v Timeline */}
+            <div className="flex items-center h-14 rounded-2xl px-2 gap-1" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
+              {([['live', 'Živě', Radio], ['board', 'Fáze', Layers], ['history', 'Historie', HistoryIcon]] as const).map(([m, label, Icon]) => {
+                const on = mode === m;
+                return (
+                  <button key={m} onClick={() => setMode(m)}
+                    className="h-9 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors hover:bg-white/5"
+                    style={on ? { background: `${TB_CYAN}1f`, color: TB_CYAN } : { color: 'rgba(255,255,255,0.6)' }}>
+                    <Icon className="w-3.5 h-3.5" /> {label}
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-3">
+            {/* Počty — glass cluster */}
+            <div className="hidden lg:flex items-center h-14 rounded-2xl px-4 gap-3" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
               {[['Sály', visible.length], ['Oddělení', new Set(visible.map((r) => r.department)).size], ['Nouze', emergencyCount]].map(([label, n], i) => (
-                <div key={i} className="flex items-center gap-1.5">
-                  <p className="text-[11px] font-semibold text-white/85">{label}</p>
-                  <span className="text-[10px] font-bold text-white/90 px-1.5 py-0.5 rounded-md bg-white/10 tabular-nums">{n as number}</span>
-                </div>
+                <React.Fragment key={i}>
+                  {i > 0 && <div className="w-px h-6 bg-white/10" />}
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[11px] font-semibold text-white/85">{label}</p>
+                    <span className="text-[10px] font-bold text-white/90 px-1.5 py-0.5 rounded-md bg-white/10 tabular-nums">{n as number}</span>
+                  </div>
+                </React.Fragment>
               ))}
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
-              <button className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors"><RefreshCw className="w-4 h-4" /></button>
-              <button className="px-3.5 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-2 text-white/70 hover:text-white hover:bg-white/[0.08] transition-colors text-sm font-semibold"><FolderOpen className="w-4 h-4" /> Načíst</button>
-              <button className="px-3.5 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-2 text-white/70 hover:text-white hover:bg-white/[0.08] transition-colors text-sm font-semibold"><Save className="w-4 h-4" /> Uložit</button>
+            {/* Akce — glass cluster */}
+            <div className="ml-auto flex items-center h-14 rounded-2xl px-2 gap-1" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
+              <button title="Obnovit" className="w-9 h-9 rounded-xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors"><RefreshCw className="w-4 h-4" /></button>
+              <div className="w-px h-6 bg-white/10 mx-0.5" />
+              <button className="h-9 px-3 rounded-xl flex items-center gap-2 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-sm font-semibold"><FolderOpen className="w-4 h-4" /> Načíst</button>
+              <button className="h-9 px-3 rounded-xl flex items-center gap-2 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-sm font-semibold"><Save className="w-4 h-4" /> Uložit</button>
             </div>
           </div>
 

@@ -80,9 +80,23 @@ export const usePWAInstall = () => {
     const id = getOrCreateDeviceId();
     setDeviceId(id);
 
-    // Register Service Worker
+    // Service Worker.
+    // V dev režimu (localhost) se NEregistruje a navíc aktivně odregistruje
+    // případný starý SW a vymaže jeho cache — jinak by trvale servíroval starý
+    // build a změny by se na localhostu neprojevovaly.
+    const isLocalhost = typeof window !== 'undefined' &&
+      /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+      if (isLocalhost) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => r.unregister());
+        }).catch(() => {});
+        if (typeof caches !== 'undefined') {
+          caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
+        }
+      } else {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+      }
     }
 
     // Check if already installed as PWA
