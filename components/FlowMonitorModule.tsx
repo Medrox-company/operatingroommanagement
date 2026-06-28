@@ -194,16 +194,56 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
     return { arr, max };
   }, [visible, now, statuses]);
 
-  // Přehledné rozmístění VŠECH viditelných sálů do mřížky (bez překryvu).
-  const NODE_W = 204, NODE_H = 64, GAP_X = 36, GAP_Y = 66, START_Y = 172;
-  const cols = Math.min(6, Math.max(3, Math.ceil(Math.sqrt(visible.length || 1))));
-  const gridRows = Math.ceil((visible.length || 1) / cols);
-  const gridW = cols * NODE_W + (cols - 1) * GAP_X;
-  const canvasW = Math.max(960, gridW + 80);
-  const canvasH = START_Y + gridRows * (NODE_H + GAP_Y) + 40;
-  const gridStartX = (canvasW - gridW) / 2;
-  const defaultPos = (i: number) => ({ x: gridStartX + (i % cols) * (NODE_W + GAP_X), y: START_Y + Math.floor(i / cols) * (NODE_H + GAP_Y) });
-  const getPos = (room: OperatingRoom, i: number) => positions[room.id] ?? defaultPos(i);
+  // Fit-to-screen rozmístění do ŘAD podle statusu (zachována grafika topologie).
+  // Každý status = jedna vodorovná řada; sály se v ní vystředí a při změně
+  // statusu se box animovaně přesune do řady svého nového statusu.
+  const NODE_W = 204, NODE_H = 64, GAP_X = 24, GAP_Y = 28, START_Y = 150, LANE_GAP = 30;
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [stage, setStage] = useState({ w: 1100, h: 640 });
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const update = () => setStage({ w: el.clientWidth, h: el.clientHeight });
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const flowLayout = useMemo(() => {
+    const cols = Math.max(1, Math.floor((stage.w - 32) / (NODE_W + GAP_X)));
+    const byStatus = new Map<number, OperatingRoom[]>();
+    visible.forEach((r) => {
+      const idx = Math.min(Math.max(0, r.currentStepIndex || 0), Math.max(0, statuses.length - 1));
+      const arr = byStatus.get(idx);
+      if (arr) arr.push(r); else byStatus.set(idx, [r]);
+    });
+    const laneIdxs = [...byStatus.keys()].sort((a, b) => a - b);
+    const pos = new Map<string, { x: number; y: number }>();
+    const lanes: { idx: number; y: number; h: number; name: string; color: string }[] = [];
+    let cursorY = START_Y;
+    laneIdxs.forEach((laneIdx) => {
+      const roomsIn = byStatus.get(laneIdx)!;
+      const subRows = Math.max(1, Math.ceil(roomsIn.length / cols));
+      const laneH = subRows * NODE_H + (subRows - 1) * GAP_Y;
+      roomsIn.forEach((r, ri) => {
+        const sr = Math.floor(ri / cols);
+        const inRow = Math.min(cols, roomsIn.length - sr * cols);
+        const rowW = inRow * NODE_W + (inRow - 1) * GAP_X;
+        const startX = Math.max(16, (stage.w - rowW) / 2);
+        pos.set(r.id, { x: startX + (ri % cols) * (NODE_W + GAP_X), y: cursorY + sr * (NODE_H + GAP_Y) });
+      });
+      lanes.push({ idx: laneIdx, y: cursorY, h: laneH, name: nameByIndex(laneIdx, statuses), color: colorByIndex(laneIdx, statuses) });
+      cursorY += laneH + LANE_GAP;
+    });
+    const contentH = cursorY + 16;
+    const scale = Math.min(1, stage.h / contentH);
+    return { pos, lanes, cols, contentH, scale };
+  }, [visible, statuses, stage]);
+
+  const canvasW = stage.w;
+  const canvasH = flowLayout.contentH;
+  const getPos = (room: OperatingRoom) => flowLayout.pos.get(room.id) ?? { x: stage.w / 2 - NODE_W / 2, y: START_Y };
 
   return (
     <div className="w-full h-full overflow-hidden">
@@ -320,13 +360,13 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
 
             {/* Pravá oblast: živý graf nebo historie */}
             {mode === 'live' ? (
-              <div className="flex-1 min-w-0 relative overflow-auto">
-                <div className="relative mx-auto" style={{ width: canvasW, height: canvasH, transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+              <div ref={stageRef} className="flex-1 min-w-0 relative overflow-hidden">
+                <div className="absolute left-1/2 top-0 -translate-x-1/2" style={{ width: canvasW, height: canvasH, transform: `translateX(-50%) scale(${flowLayout.scale})`, transformOrigin: 'top center' }}>
                   {/* Spojnice hub → sál + animovaný tok */}
-                  <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${canvasW} ${canvasH}`} fill="none">
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${canvasW} ${canvasH}`} fill="none">
                     <defs>
-                      {visible.map((r, i) => {
-                        const p = getPos(r, i);
+                      {visible.map((r) => {
+                        const p = getPos(r);
                         return <path key={r.id} id={`edge-${r.id}`} d={elbow(canvasW / 2, 80, p.x + NODE_W / 2, p.y)} />;
                       })}
                     </defs>
@@ -353,19 +393,17 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
                     </div>
                   </div>
 
-                  {/* Uzly sálů — přesouvatelné myší */}
+                  {/* Uzly sálů — automaticky rozmístěné do řad podle statusu */}
                   {visible.map((r, i) => {
-                    const p = getPos(r, i);
+                    const p = getPos(r);
                     const c = colorFor(r, statuses);
                     const start = currentStatusStart(r);
                     const active = !r.isLocked && (r.currentStepIndex ?? 0) !== 0;
-                    const dragging = dragId === r.id;
                     return (
                       <div
                         key={r.id}
-                        onMouseDown={(e) => onNodeDown(e, r.id, p)}
-                        className={`absolute rounded-2xl px-3 py-2.5 border flex items-center gap-2.5 overflow-hidden select-none ${dragging ? 'z-30 cursor-grabbing' : 'z-10 cursor-grab'}`}
-                        style={{ left: p.x, top: p.y, width: NODE_W, background: `${c}1f`, borderColor: `${c}55`, boxShadow: active ? `0 0 22px -6px ${c}` : '0 14px 36px -18px rgba(0,0,0,0.7)', transition: dragging ? 'none' : 'box-shadow 0.2s' }}
+                        className="absolute rounded-2xl px-3 py-2.5 border flex items-center gap-2.5 overflow-hidden select-none z-10"
+                        style={{ left: p.x, top: p.y, width: NODE_W, background: `${c}1f`, borderColor: `${c}55`, boxShadow: active ? `0 0 22px -6px ${c}` : '0 14px 36px -18px rgba(0,0,0,0.7)', transition: 'left 0.6s cubic-bezier(.22,1,.36,1), top 0.6s cubic-bezier(.22,1,.36,1), box-shadow 0.3s' }}
                       >
                         {active && <span className="absolute inset-0 rounded-2xl border-2 animate-pulse pointer-events-none" style={{ borderColor: `${c}66` }} />}
                         <div className="relative w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 text-[11px] font-bold tabular-nums" style={{ background: c }}>{(r.sort_order ?? i) + 1}</div>
