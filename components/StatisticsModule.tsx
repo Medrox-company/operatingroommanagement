@@ -49,14 +49,13 @@ import { RoomsTab } from './statistics/RoomsTab';
 import { PhasesTab } from './statistics/PhasesTab';
 import { NotificationsTab } from './statistics/NotificationsTab';
 import { HeatmapTab } from './statistics/HeatmapTab';
-import { DepartmentsTab } from './statistics/DepartmentsTab';
 import { DevicesTab } from './statistics/DevicesTab';
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal'
-            | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'oddeleni' | 'zarizeni';
+            | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'zarizeni';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -1424,7 +1423,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 'faze':       'Fáze',
 'heatmapa':   'Heatmapa',
 'notifikace': 'Notifikace',
-'oddeleni':   'Oddělení',
 'zarizeni':   'Zařízení',
   };
 
@@ -1708,7 +1706,6 @@ const TABS:{ id:Tab; label:string }[]=[
 {id:'faze',       label:'Fáze'},
 {id:'heatmapa',   label:'Heatmapa'},
 {id:'notifikace', label:'Notifikace'},
-{id:'oddeleni',   label:'Oddělení'},
 {id:'zarizeni',   label:'Zařízení'},
   ];
 
@@ -1755,7 +1752,7 @@ const TABS:{ id:Tab; label:string }[]=[
         style={{
           zIndex: 0,
           background:
-            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
+            'radial-gradient(120% 90% at 50% 10%, #241b4f 0%, #140f2e 40%, #0a0a18 72%, #07070f 100%)',
         }}
       />
       <div
@@ -1768,6 +1765,23 @@ const TABS:{ id:Tab; label:string }[]=[
           style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
         />
       </div>
+
+      {/* Desktop pozadí — sjednoceno s modulem Tok pacienta (fialový radiální
+          gradient + jemné tečkování). */}
+      <div
+        aria-hidden
+        className="print-hide hidden md:block fixed inset-0 pointer-events-none"
+        style={{
+          zIndex: 0,
+          background:
+            'radial-gradient(120% 90% at 50% 38%, #241b4f 0%, #140f2e 38%, #0a0a18 70%, #07070f 100%)',
+        }}
+      />
+      <div
+        aria-hidden
+        className="print-hide hidden md:block fixed inset-0 pointer-events-none opacity-[0.12]"
+        style={{ zIndex: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '26px 26px' }}
+      />
 
       {/* ========== MOBILE (md:hidden) ========== */}
       <div className="md:hidden w-full relative" style={{ zIndex: 1 }} data-print-area="statistics">
@@ -1847,7 +1861,6 @@ tabs={[
 { id: 'faze', label: 'Fáze' },
 { id: 'heatmapa', label: 'Heatmapa' },
 { id: 'notifikace', label: 'Notifikace' },
-{ id: 'oddeleni', label: 'Oddělení' },
 { id: 'zarizeni', label: 'Zařízení' },
   ]}
               value={tab}
@@ -2115,19 +2128,6 @@ tabs={[
             </div>
           )}
 
-          {/* ── Oddělení ── */}
-          {(tab === 'oddeleni' || isPrinting) && (
-            <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Oddělení</h2>}
-              <MobileSectionLabel>Přehled oddělení</MobileSectionLabel>
-              <DepartmentsTab
-                departments={departments}
-                subDepartments={subDepartments}
-                rooms={rooms}
-                periodLabel={periodLabelMap[period]}
-              />
-            </div>
-          )}
 
           {/* ── Zařízení ── */}
           {(tab === 'zarizeni' || isPrinting) && (
@@ -2155,7 +2155,7 @@ tabs={[
           desktop layout) — uživatel ji nevidí, ale Recharts ji změří. Print
           CSS pak při window.print() přemístí na origin a zviditelní. */}
       <div
-        className="hidden md:block w-full"
+        className="hidden md:block w-full relative"
         data-print-area="statistics"
         style={isPrinting ? {
           display: 'block',
@@ -2166,7 +2166,7 @@ tabs={[
           opacity: 0,
           pointerEvents: 'none',
           zIndex: -1,
-        } : undefined}
+        } : { position: 'relative', zIndex: 1 }}
       >
 
       {/* ── Print-only hlavička reportu (minimalistická, černý text na bílém) ── */}
@@ -2197,20 +2197,16 @@ tabs={[
         </h1>
       </div>
 
-      {/* ── Row 1: Tab navigation ── */}
-      <div className="print-hide flex items-center overflow-x-auto pb-px"
-        style={{
-          borderBottom: `1px solid ${C.border}`,
-          scrollbarWidth: 'thin',
-          scrollbarColor: `${C.faint} transparent`,
-        }}>
+      {/* ── Row 1: Tab navigation (pill styl jako modul Tok pacienta) ── */}
+      <div className="print-hide flex items-center gap-1.5 overflow-x-auto pb-2 mb-3"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: `${C.faint} transparent` }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="px-4 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap shrink-0"
-            style={{
-              color: tab === t.id ? 'white' : C.muted,
-              borderBottom: tab === t.id ? `2px solid white` : '2px solid transparent',
-            }}>
+            className={`px-3.5 py-2 rounded-xl text-[13px] font-semibold whitespace-nowrap shrink-0 transition-colors border ${
+              tab === t.id
+                ? 'bg-cyan-500/25 text-cyan-100 border-cyan-400/30'
+                : 'text-white/55 hover:text-white bg-white/[0.04] border-white/10'
+            }`}>
             {t.label}
           </button>
         ))}
@@ -2776,24 +2772,6 @@ tabs={[
         >
           <NotificationsTab
             notifications={notifications}
-            rooms={rooms}
-            periodLabel={periodLabelMap[period]}
-          />
-        </motion.div>
-        )}
-
-        {/* ── Oddělení ── (nový tab) */}
-        {(tab==='oddeleni' || isPrinting) && (
-        <motion.div key="oddeleni"
-        initial={isPrinting ? false : {opacity:0,y:10}}
-        animate={{opacity:1,y:0}}
-        exit={{opacity:0,y:-6}}
-        transition={{duration:0.22}}
-        className="flex flex-col gap-5 print-section"
-        >
-          <DepartmentsTab
-            departments={departments}
-            subDepartments={subDepartments}
             rooms={rooms}
             periodLabel={periodLabelMap[period]}
           />
