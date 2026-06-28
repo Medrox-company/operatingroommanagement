@@ -898,21 +898,23 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   return (
     <div
       ref={moduleRootRef}
-      className={`w-full h-full text-white overflow-hidden flex flex-col relative antialiased ${isFullscreen ? '' : 'rounded-3xl border border-white/10'}`}
+      className="w-full h-full text-white overflow-hidden flex flex-col relative antialiased"
       style={{
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
         textRendering: 'optimizeLegibility',
-        // Stejný grafický styl jako modul „Tok pacienta" — fialový radiální přechod.
-        background:
-          'radial-gradient(120% 90% at 50% 38%, #241b4f 0%, #140f2e 38%, #0a0a18 70%, #07070f 100%)',
+        // Pozadí jako dashboard — průhledné (prosvítá globální animované pozadí).
+        // Ve fullscreenu zachováme tmavý přechod, aby plocha nebyla prázdná.
+        background: isFullscreen
+          ? 'radial-gradient(120% 90% at 50% 38%, #241b4f 0%, #140f2e 38%, #0a0a18 70%, #07070f 100%)'
+          : 'transparent',
       }}
     >
-      {/* Tečkované pozadí (sjednoceno s modulem Tok pacienta) */}
+      {/* Tečkované pozadí jen ve fullscreenu (jinak prosvítá pozadí dashboardu) */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none opacity-[0.12] z-0"
-        style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '26px 26px' }}
+        style={{ display: isFullscreen ? 'block' : 'none', backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '26px 26px' }}
       />
 
       {/* Room Detail Popup */}
