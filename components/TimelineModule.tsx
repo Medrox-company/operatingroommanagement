@@ -2228,7 +2228,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           {room.name}
                         </p>
                         {room.department && rowHeight >= 42 && (
-                          <p className="text-[10px] text-white/38 truncate leading-tight mt-0.5 uppercase tracking-[0.12em]">
+                          <p className="text-[8px] font-medium text-white/30 truncate leading-tight mt-0.5 uppercase tracking-[0.18em]">
                             {room.department}
                           </p>
                         )}
