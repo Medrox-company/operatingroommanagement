@@ -737,14 +737,14 @@ const AppContent: React.FC = () => {
 
             {/* Tok pacienta — živý monitorovací modul */}
             {currentView === 'flow' && (
-              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:pt-0 md:pb-6 pb-mobile-nav">
+              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:pt-2 md:pb-6 pb-mobile-nav">
                 <FlowMonitorModule rooms={rooms} />
               </div>
             )}
 
             {/* Timeline */}
             {currentView === 'timeline' && (
-              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:pt-0 md:pb-6 pb-mobile-nav">
+              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:pt-2 md:pb-6 pb-mobile-nav">
                 <TimelineModule rooms={rooms} onRefresh={refreshRooms} />
               </div>
             )}
