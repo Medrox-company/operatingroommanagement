@@ -1246,7 +1246,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           background: 'transparent',
         }}
       >
-        <div className={`${isFullscreen ? 'px-4' : 'px-5'} pt-1 pb-2`}>
+        <div className={`${isFullscreen ? 'px-4' : 'px-5'} -mt-1 pt-1 pb-2`}>
 
           {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
           <div className="relative flex items-center justify-between gap-3">
