@@ -1246,22 +1246,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           background: 'transparent',
         }}
       >
-        <div className={`py-4 ${isFullscreen ? 'px-4' : 'px-4 sm:px-6'}`}>
+        <div className={`${isFullscreen ? 'px-4' : 'px-5'} pt-4 pb-3`}>
 
           {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
-          <div
-            className="relative flex items-center justify-between gap-4 rounded-[26px] px-3 py-2"
-            style={{
-              background: 'linear-gradient(120deg, rgba(54,217,236,0.055) 0%, rgba(255,255,255,0.022) 42%, rgba(251,191,36,0.035) 100%)',
-              border: `1px solid ${C.borderStrong}`,
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.045), 0 18px 55px -42px rgba(54,217,236,0.55)',
-            }}
-          >
-            <div
-              aria-hidden
-              className="absolute inset-x-16 top-0 h-px"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.5), rgba(251,191,36,0.28), transparent)' }}
-            />
+          <div className="relative flex items-center justify-between gap-3">
 
             {/* Left: Live operations stats — control-center cluster */}
             <div className="flex-1 flex items-center justify-start min-w-0">
