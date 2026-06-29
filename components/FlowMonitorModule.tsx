@@ -256,9 +256,9 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
 
         <div className="relative h-full flex flex-col">
           {/* ── Horní lišta ── */}
-          <div className="flex items-center gap-3 px-5 pt-1 pb-2 flex-wrap">
+          <div className="flex items-center gap-3 px-5 pt-0 pb-1 flex-wrap">
             {/* Interval — informační cluster (glass styl jako toolbar v Timeline) */}
-            <div className="hidden md:flex items-center h-14 rounded-2xl px-4 gap-3" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
+            <div className="hidden md:flex items-center h-12 rounded-xl px-3 gap-2" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
               <div className="leading-tight">
                 <p className="text-[11px] font-bold text-white">Interval</p>
                 <p className="text-[10px] text-white/45">posledních 5 min</p>
@@ -271,7 +271,7 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
             </div>
 
             {/* Režim Živě / Fáze / Historie — glass cluster jako toolbar v Timeline */}
-            <div className="flex items-center h-14 rounded-2xl px-2 gap-1" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
+            <div className="flex items-center h-12 rounded-xl px-1.5 gap-1" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
               {([['live', 'Živě', Radio], ['board', 'Fáze', Layers], ['history', 'Historie', HistoryIcon]] as const).map(([m, label, Icon]) => {
                 const on = mode === m;
                 return (
@@ -285,7 +285,7 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
             </div>
 
             {/* Počty — glass cluster */}
-            <div className="hidden lg:flex items-center h-14 rounded-2xl px-4 gap-3" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
+            <div className="hidden lg:flex items-center h-12 rounded-xl px-3 gap-2" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
               {[['Sály', visible.length], ['Oddělení', new Set(visible.map((r) => r.department)).size], ['Nouze', emergencyCount]].map(([label, n], i) => (
                 <React.Fragment key={i}>
                   {i > 0 && <div className="w-px h-6 bg-white/10" />}
@@ -298,7 +298,7 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
             </div>
 
             {/* Akce — glass cluster */}
-            <div className="ml-auto flex items-center h-14 rounded-2xl px-2 gap-1" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
+            <div className="ml-auto flex items-center h-12 rounded-xl px-1.5 gap-1" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
               <button title="Obnovit" className="w-9 h-9 rounded-xl flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors"><RefreshCw className="w-4 h-4" /></button>
               <div className="w-px h-6 bg-white/10 mx-0.5" />
               <button className="h-9 px-3 rounded-xl flex items-center gap-2 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-sm font-semibold"><FolderOpen className="w-4 h-4" /> Načíst</button>

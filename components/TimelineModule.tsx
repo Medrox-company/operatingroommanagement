@@ -1246,7 +1246,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           background: 'transparent',
         }}
       >
-        <div className={`${isFullscreen ? 'px-4' : 'px-5'} pt-1 pb-2`}>
+        <div className={`${isFullscreen ? 'px-4' : 'px-5'} pt-0 pb-1`}>
 
           {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
           <div className="relative flex items-center justify-between gap-3">
@@ -1256,7 +1256,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               <div className="hidden lg:flex items-center gap-3">
             {/* Akční cluster: živá data / souhrn / řazení */}
             <div
-              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1"
+              className="hidden lg:flex items-center h-12 rounded-xl px-1.5 gap-1"
               style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
             >
               {/* Indikátor živých dat + ruční obnovení */}
@@ -1461,7 +1461,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
             {/* Center: Current Time */}
             <div
-              className="flex flex-col items-center justify-center flex-shrink-0 rounded-2xl px-5 py-2"
+              className="flex h-12 flex-col items-center justify-center flex-shrink-0 rounded-xl px-4 py-1"
               style={{ background: 'rgba(255,255,255,0.022)', border: `1px solid ${C.border}` }}
             >
               <p className="text-[9px] uppercase tracking-[0.28em] font-semibold text-white/35 mb-0.5">
@@ -1486,7 +1486,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
             {/* Zoom controls — horizontální zoom časové osy */}
             <div
-              className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1"
+              className="hidden lg:flex items-center h-12 rounded-xl px-1.5 gap-1"
               style={{ background: C.glass, border: `1px solid ${C.borderStrong}` }}
             >
               <button
@@ -1548,7 +1548,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             {aroOvertimeRooms.length > 0 ? (
               <motion.button
                 onClick={() => setShowAroPopup(true)}
-                className="relative flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 overflow-hidden transition-transform duration-300 hover:scale-105 cursor-pointer"
+                className="relative flex-shrink-0 h-12 rounded-xl px-4 py-1 overflow-hidden transition-transform duration-300 hover:scale-105 cursor-pointer"
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 style={{
@@ -1581,7 +1581,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               </motion.button>
             ) : (
               <div 
-                className="flex-shrink-0 h-14 rounded-2xl px-5 py-2.5 flex items-center gap-3"
+                className="flex-shrink-0 h-12 rounded-xl px-4 py-1 flex items-center gap-3"
                 style={{
                   background: `linear-gradient(135deg, ${C.green}15 0%, ${C.green}05 100%)`,
                   border: `1px solid ${C.green}30`,
