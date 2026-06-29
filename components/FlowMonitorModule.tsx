@@ -256,7 +256,7 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
 
         <div className="relative h-full flex flex-col">
           {/* ── Horní lišta ── */}
-          <div className="flex items-center gap-3 px-5 pt-4 pb-3 flex-wrap">
+          <div className="flex items-center gap-3 px-5 pt-1 pb-2 flex-wrap">
             {/* Interval — informační cluster (glass styl jako toolbar v Timeline) */}
             <div className="hidden md:flex items-center h-14 rounded-2xl px-4 gap-3" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
               <div className="leading-tight">

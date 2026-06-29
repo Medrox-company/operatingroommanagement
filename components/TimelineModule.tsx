@@ -1246,29 +1246,14 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           background: 'transparent',
         }}
       >
-        <div className={`${isFullscreen ? 'px-4' : 'px-5'} pt-4 pb-3`}>
+        <div className={`${isFullscreen ? 'px-4' : 'px-5'} pt-1 pb-2`}>
 
           {/* Header Row - Live stats (left) · Time (center) · ARO (right) */}
           <div className="relative flex items-center justify-between gap-3">
 
-            {/* Left: Live operations stats — control-center cluster */}
+            {/* Left: timeline actions */}
             <div className="flex-1 flex items-center justify-start min-w-0">
               <div className="hidden lg:flex items-center gap-3">
-            <div className="hidden xl:flex items-center gap-3 pl-1 pr-3 border-r border-white/10 flex-shrink-0">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: `${C.yellow}14`, border: `1px solid ${C.yellow}28` }}
-              >
-                <CalendarDays className="w-4.5 h-4.5" style={{ color: C.yellow }} />
-              </div>
-              <div className="leading-tight">
-                <p className="text-[9px] font-bold tracking-[0.22em] uppercase" style={{ color: C.yellow }}>Živý provoz</p>
-                <p className="text-sm font-bold text-white mt-0.5 whitespace-nowrap">Denní timeline</p>
-                <p className="text-[10px] text-white/35 mt-0.5 whitespace-nowrap">
-                  {stats.operations} aktivní · {stats.free} volné
-                </p>
-              </div>
-            </div>
             {/* Akční cluster: živá data / souhrn / řazení */}
             <div
               className="hidden lg:flex items-center h-14 rounded-2xl px-2 gap-1"
