@@ -308,21 +308,50 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
 
           {/* ── Časová osa ── */}
           <div className="px-5 pb-3 flex items-center gap-3">
-            <div className="flex rounded-xl overflow-hidden border border-white/10">
-              <button onClick={() => setZoom((z) => Math.min(200, z + 10))} className="w-9 h-9 bg-white/[0.04] text-white/60 hover:text-white flex items-center justify-center border-r border-white/10"><Plus className="w-4 h-4" /></button>
-              <button onClick={() => setZoom((z) => Math.max(20, z - 10))} className="w-9 h-9 bg-white/[0.04] text-white/60 hover:text-white flex items-center justify-center"><Minus className="w-4 h-4" /></button>
+            <div
+              className="flex h-12 rounded-2xl overflow-hidden"
+              style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}`, boxShadow: 'none' }}
+            >
+              <button onClick={() => setZoom((z) => Math.min(200, z + 10))} title="Přiblížit časovou osu" className="w-10 text-white/55 hover:text-white hover:bg-white/[0.05] flex items-center justify-center border-r border-white/10 transition-colors"><Plus className="w-4 h-4" /></button>
+              <button onClick={() => setZoom((z) => Math.max(20, z - 10))} title="Oddálit časovou osu" className="w-10 text-white/55 hover:text-white hover:bg-white/[0.05] flex items-center justify-center transition-colors"><Minus className="w-4 h-4" /></button>
             </div>
-            <div className="flex-1 relative h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center px-4">
-              <div className="flex-1 flex items-center justify-between">
+            <div
+              className="flex-1 relative h-14 rounded-[18px] overflow-hidden px-4"
+              style={{
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.018))',
+                border: `1px solid ${TB_BORDER}`,
+                boxShadow: 'none',
+              }}
+            >
+              <div className="absolute left-5 right-5 top-[21px] h-px bg-white/10 pointer-events-none" />
+              <div
+                className="absolute top-1.5 bottom-1.5 rounded-[13px] pointer-events-none overflow-hidden"
+                style={{
+                  left: '40%',
+                  width: '24%',
+                  background: 'rgba(54, 217, 236, 0.055)',
+                  border: '1px solid rgba(54, 217, 236, 0.26)',
+                  boxShadow: 'none',
+                }}
+              >
+                <div className="absolute left-3 right-3 top-0 h-px bg-cyan-300/55" />
+                {activeCount > 0 && (
+                  <span className="absolute right-2 top-1 text-[9px] leading-none font-bold text-rose-200 px-1.5 py-1 rounded-md bg-rose-400/15 border border-rose-300/20">
+                    {activeCount} aktivní
+                  </span>
+                )}
+              </div>
+              <div className="absolute left-1/2 top-1.5 bottom-1.5 w-px bg-cyan-300/45 pointer-events-none" />
+              <div className="relative z-10 grid h-full items-center" style={{ gridTemplateColumns: `repeat(${ticks.length}, minmax(0, 1fr))` }}>
                 {ticks.map((t, i) => (
-                  <div key={i} className="relative flex flex-col items-center gap-1">
-                    <span className="w-1 h-1 rounded-full" style={{ background: i % 3 === 0 ? '#34D399' : i % 4 === 0 ? '#F87171' : 'rgba(255,255,255,0.3)' }} />
-                    <span className={`text-[10px] tabular-nums ${i >= 5 && i <= 8 ? 'text-white' : 'text-white/40'}`}>{fmt(t)}</span>
+                  <div key={i} className="relative flex h-full flex-col items-center justify-center pt-2">
+                    {i === 6 && <span className="absolute top-1 text-[7px] font-bold uppercase tracking-[0.16em] text-cyan-200">nyní</span>}
+                    <span
+                      className={`w-px ${i === 6 ? 'h-3 bg-cyan-200' : i % 3 === 0 ? 'h-2 bg-white/50' : 'h-1.5 bg-white/20'}`}
+                    />
+                    <span className={`mt-1.5 text-[10px] tabular-nums ${i === 6 ? 'font-bold text-cyan-100' : i >= 5 && i <= 8 ? 'font-medium text-white/85' : 'text-white/38'}`}>{fmt(t)}</span>
                   </div>
                 ))}
-              </div>
-              <div className="absolute top-1 bottom-1 rounded-xl border border-cyan-400/40 bg-cyan-400/[0.06] pointer-events-none" style={{ left: '40%', width: '24%' }}>
-                {activeCount > 0 && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white px-2 py-0.5 rounded-full" style={{ background: '#F43F5E' }}>{activeCount}+</span>}
               </div>
             </div>
           </div>
