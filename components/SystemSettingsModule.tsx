@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings as SettingsIcon,
@@ -60,6 +60,15 @@ interface FacilityInfo {
 }
 
 type TabId = 'facility' | 'modules' | 'database' | 'access';
+
+const COLORS = {
+  cyan: '#36D9EC',
+  green: '#34D399',
+  amber: '#FBBF24',
+  red: '#FB7185',
+  blue: '#38BDF8',
+  violet: '#A78BFA',
+};
 
 const SystemSettingsModule: React.FC = () => {
   const { user, isAdmin, logout, modules, toggleModule, toggleModuleRole } = useAuth();
@@ -338,70 +347,123 @@ const SystemSettingsModule: React.FC = () => {
     setImportResult(null);
   };
 
+  const systemStats = useMemo(() => {
+    const enabledModules = modules.filter(module => module.is_enabled).length;
+    const disabledModules = modules.length - enabledModules;
+    const configuredRoles = new Set(
+      modules.flatMap(module => module.allowed_roles || []),
+    ).size;
+
+    return {
+      facility: facility.facility_name?.trim() ? 1 : 0,
+      enabledModules,
+      disabledModules,
+      configuredRoles,
+      pwa: isInstalled ? 1 : 0,
+    };
+  }, [facility.facility_name, isInstalled, modules]);
+
   // ==========================================================================
   // RENDER
   // ==========================================================================
 
   return (
-    <div className="w-full">
-      {/* Header — stejný styl jako ostatní moduly */}
-      <header className="flex flex-col items-center lg:items-start justify-between gap-4 md:gap-6 mb-8 md:mb-12 lg:mb-16 flex-shrink-0">
-        <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
-          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-            <SettingsIcon className="w-4 h-4 text-[#64748B]" />
-            <p className="text-[10px] font-bold text-[#64748B] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
+    <div className="min-h-full w-full pb-8 font-sans">
+      <header className="mb-7 space-y-3">
+        <div className="flex items-center gap-3">
+          <SettingsIcon className="h-4 w-4 text-[#FBBF24]" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#FBBF24]">SYSTEM CONTROL</p>
+        </div>
+        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+          Nastavení <span className="text-white/20">SYSTÉMU</span>
+        </h1>
+        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+          <p className="text-sm font-medium text-white/40">
+            Identita zařízení, dostupné moduly, zabezpečení a správa dat
+          </p>
+          <div className="inline-flex items-center gap-2 text-[9px] font-bold tracking-[0.16em] text-emerald-300/75">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            SYSTÉMOVÁ KONFIGURACE AKTIVNÍ
           </div>
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-            NASTAVENÍ <span className="text-white/20">SYSTÉMU</span>
-          </h1>
         </div>
       </header>
 
-      {/* Tab navigation */}
-      <div className="mb-8 flex flex-wrap gap-2 sm:gap-3">
+      <section
+        className="relative mb-4 overflow-hidden rounded-[26px] p-2.5"
+        style={{
+          background: 'rgba(255,255,255,0.024)',
+          border: '1px solid rgba(125,165,185,0.18)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
+        }}
+      >
+        <div
+          aria-hidden
+          className="absolute inset-x-24 top-0 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.45), transparent)' }}
+        />
+        <div className="grid grid-cols-2 gap-1.5 md:grid-cols-5">
+          {[
+            { label: 'Zařízení', value: systemStats.facility, suffix: 'konfigurace', color: systemStats.facility ? COLORS.green : COLORS.amber, icon: Building2 },
+            { label: 'Aktivní moduly', value: systemStats.enabledModules, suffix: 'modulů', color: COLORS.cyan, icon: LayoutGrid },
+            { label: 'Vypnuté moduly', value: systemStats.disabledModules, suffix: 'modulů', color: systemStats.disabledModules ? COLORS.amber : COLORS.green, icon: ShieldOff },
+            { label: 'Nastavené role', value: systemStats.configuredRoles, suffix: 'rolí', color: COLORS.blue, icon: UserCog },
+            { label: 'Instalace PWA', value: systemStats.pwa, suffix: systemStats.pwa ? 'aktivní' : 'prohlížeč', color: COLORS.violet, icon: Smartphone },
+          ].map(({ label, value, suffix, color, icon: Icon }, index) => (
+            <div
+              key={label}
+              className={`relative flex min-h-[78px] flex-col justify-between rounded-2xl px-3.5 py-3 ${index === 4 ? 'col-span-2 md:col-span-1' : ''}`}
+              style={{ background: `${color}08`, border: `1px solid ${color}17` }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</p>
+                <Icon className="h-3.5 w-3.5" style={{ color }} />
+              </div>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className="text-2xl font-semibold tabular-nums tracking-tight" style={{ color }}>{value}</span>
+                <span className="text-[9px] text-white/25">{suffix}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section
+        className="mb-5 flex items-center gap-1 overflow-x-auto rounded-[22px] p-2 hide-scrollbar"
+        style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
+      >
 {([
-  { id: 'facility' as const, label: 'Zdravotnické zařízení', icon: Building2, color: '#0EA5E9' },
-  { id: 'modules' as const,  label: 'Správa modulů',         icon: SlidersHorizontal, color: '#A855F7' },
-  { id: 'database' as const, label: 'Administrace databáze', icon: Database, color: '#EC4899' },
-  { id: 'access' as const,   label: 'Přihlášení a přístup',  icon: UserCog, color: '#10B981' },
+  { id: 'facility' as const, label: 'Zdravotnické zařízení', icon: Building2 },
+  { id: 'modules' as const,  label: 'Správa modulů',         icon: SlidersHorizontal },
+  { id: 'database' as const, label: 'Administrace databáze', icon: Database },
+  { id: 'access' as const,   label: 'Přihlášení a přístup',  icon: UserCog },
   ]).map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl border text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
-                isActive
-                  ? 'bg-white/[0.06] text-white'
-                  : 'bg-white/[0.02] text-white/50 hover:text-white/80 hover:bg-white/[0.04]'
-              }`}
-              style={{
-                borderColor: isActive ? `${tab.color}60` : 'rgba(255,255,255,0.08)',
-                boxShadow: isActive ? `0 0 30px ${tab.color}20, inset 0 0 20px ${tab.color}10` : undefined,
-              }}
+              className="flex h-9 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-semibold transition-colors"
+              style={isActive
+                ? { background: 'rgba(54,217,236,0.12)', color: COLORS.cyan, border: '1px solid rgba(54,217,236,0.22)' }
+                : { color: 'rgba(255,255,255,0.42)', border: '1px solid transparent' }}
             >
-              <Icon className="w-4 h-4" style={{ color: isActive ? tab.color : undefined }} />
+              <Icon className="h-3.5 w-3.5" />
               <span>{tab.label}</span>
             </button>
           );
         })}
-      </div>
+      </section>
 
-      {/* Panel container */}
-      <div className="relative rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-4 sm:p-6 md:p-8 overflow-hidden">
-        {/* decorative glow */}
-        <div
-          className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none opacity-20"
-          style={{
-            background:
-              activeTab === 'facility' ? '#0EA5E9'
-              : activeTab === 'modules' ? '#A855F7'
-              : activeTab === 'database' ? '#EC4899'
-              : activeTab === 'access' ? '#10B981'
-              : '#10B981',
-          }}
-        />
+      <div
+        className="relative overflow-hidden rounded-[22px] p-4 sm:p-6"
+        style={{
+          background: 'rgba(255,255,255,0.018)',
+          border: '1px solid rgba(125,165,185,0.14)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
+        }}
+      >
 
         <AnimatePresence mode="wait">
           {activeTab === 'facility' && (
