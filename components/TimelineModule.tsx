@@ -1880,13 +1880,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     style={{
                       left: `${period.left}%`,
                       width: `${period.width}%`,
-                      background: `${period.color}08`,
+                      background: 'transparent',
                       borderRight: '1px solid rgba(148,180,196,0.07)',
                     }}
                   >
                     <span
-                      className="text-[7px] font-bold tracking-[0.22em]"
-                      style={{ color: `${period.color}8f` }}
+                      className="text-[7px] font-bold tracking-[0.22em] text-white/35"
                     >
                       {period.label}
                     </span>
@@ -2020,7 +2019,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               transition: 'width 0.25s ease, min-width 0.25s ease',
             }}
           >
-            {/* Jemné denní pásy pokračují z hlavičky přes celou datovou plochu. */}
+            {/* Denní pásy — pouze jemné neutrální oddělovače, BEZ barevného závoje,
+                aby barvy statusů zůstaly čisté a jasné. */}
             <div className="absolute inset-0 pointer-events-none z-0">
               {TIME_PERIOD_BANDS.map((period) => (
                 <div
@@ -2029,8 +2029,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   style={{
                     left: `calc(${ROOM_LABEL_WIDTH}px + ((100% - ${ROOM_LABEL_WIDTH}px) * ${period.left / 100}))`,
                     width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${period.width / 100})`,
-                    background: `linear-gradient(180deg, ${period.color}07 0%, ${period.color}03 55%, transparent 100%)`,
-                    borderRight: '1px solid rgba(148,180,196,0.045)',
+                    background: 'transparent',
+                    borderRight: '1px solid rgba(148,180,196,0.06)',
                   }}
                 />
               ))}
@@ -2058,32 +2058,26 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   }}
                   initial={false}
                 >
-                  {/* „teď" indikátor — živý, moderní: jemná záře + gradientová
-                      linka + pulzující bod + časový štítek. Oranžová je vyhrazena
-                      pro značku „teď" (červená je pro nouzové stavy). */}
-                  {/* Měkká záře kolem linky */}
-                  <div
-                    className="absolute -left-[7px] top-0 bottom-0 w-[14px] pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse at center, rgba(255,152,0,0.30) 0%, rgba(255,152,0,0.06) 45%, transparent 72%)' }}
-                  />
-                  {/* Hlavní linka — jemný svislý gradient + záře */}
+                  {/* „teď" indikátor — čistá oranžová linka bez záře. Oranžová je
+                      vyhrazena pro značku „teď" (červená je pro nouzové stavy). */}
+                  {/* Hlavní linka — plná oranžová, bez záře */}
                   <div
                     className="absolute -left-[1px] top-0 bottom-0 w-[2px]"
-                    style={{ background: 'linear-gradient(180deg, #FFB74D 0%, #FF9800 55%, rgba(255,152,0,0.35) 100%)', boxShadow: '0 0 10px rgba(255,152,0,0.55)' }}
+                    style={{ background: '#FF9800' }}
                   />
-                  {/* Pulzující bod na vrcholu linky */}
+                  {/* Pulzující bod na vrcholu linky (bez záře) */}
                   <motion.div
                     className="absolute -left-[1px] top-[2px] -translate-x-1/2 w-2.5 h-2.5 rounded-full"
-                    style={{ background: '#FF9800', boxShadow: '0 0 10px rgba(255,152,0,0.9)' }}
-                    animate={{ scale: [1, 1.55, 1], opacity: [1, 0.55, 1] }}
+                    style={{ background: '#FF9800' }}
+                    animate={{ scale: [1, 1.45, 1], opacity: [1, 0.6, 1] }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                   />
                   {/* Časový štítek na lince — oranžový (jediné zobrazení času) */}
                   <div
                     className="absolute -left-[1px] -top-[13px] -translate-x-1/2 px-2 py-[3px] rounded-md whitespace-nowrap"
                     style={{
-                      background: 'linear-gradient(180deg, #FFB74D 0%, #FF9800 100%)',
-                      boxShadow: '0 2px 10px rgba(255,152,0,0.45), 0 1px 3px rgba(0,0,0,0.4)',
+                      background: '#FF9800',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
                     }}
                   >
                     <span className="text-[10px] font-bold font-mono tabular-nums leading-none" style={{ color: '#2B1600' }}>
