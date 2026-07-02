@@ -17,7 +17,7 @@ import {
   Clock, CalendarDays, Lock, AlertTriangle, Stethoscope, Activity, Users, Shield, X, Syringe, 
   Settings, User, Info, ChevronRight, Loader2, Pause, Phone, BedDouble, AlertCircle, CheckCircle,
   Search, ZoomIn, ZoomOut, Maximize2, Minimize2,
-  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown, Timer, History, TrendingUp, SlidersHorizontal, Fingerprint, BellRing, Workflow, Zap, Biohazard
+  RefreshCw, ArrowUpDown, Crosshair, BarChart3, ChevronDown, Timer, History, TrendingUp, SlidersHorizontal, Fingerprint, BellRing, Workflow, Zap, Biohazard, List
 } from 'lucide-react';
 
 // ========== DESIGN TOKENS, CONSTANTS & HELPERS (extrahováno do ./timeline) ==========
@@ -192,6 +192,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   // Mobilní přepínač: list = karty se statusem a progressem; axis = horizontální 24h osa
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
+  // Hustota řádků: 'auto' = vejít vše na obrazovku; 'compact' = víc sálů (pevná nízká
+  // výška + scroll); 'comfort' = víc detailu (pevná vyšší výška + scroll).
+  const [density, setDensity] = useState<'auto' | 'compact' | 'comfort'>('auto');
   const [showAroPopup, setShowAroPopup] = useState(false);
   const [showForecast, setShowForecast] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -402,6 +405,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     const calculateRowHeight = () => {
       const count = displayRooms.length;
       if (rowsContainerRef.current && count > 0) {
+        // Pevné hustoty — nezávislé na počtu sálů (scroll zapnut v kontejneru).
+        if (density === 'compact') { setRowHeight(34); return; }
+        if (density === 'comfort') { setRowHeight(88); return; }
+        // 'auto' — všechny sály se vejdou bez scrollování.
         const containerHeight = rowsContainerRef.current.clientHeight;
         const totalGapPx = (count - 1) * ROW_GAP_PX;
         const totalPaddingPx = ROW_PADDING_PX * 2; // top + bottom
@@ -412,17 +419,17 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         setRowHeight(clampedHeight);
       }
     };
-    
+
     calculateRowHeight();
-    
+
     // Recalculate on resize
     const resizeObserver = new ResizeObserver(calculateRowHeight);
     if (rowsContainerRef.current) {
       resizeObserver.observe(rowsContainerRef.current);
     }
-    
+
     return () => resizeObserver.disconnect();
-  }, [displayRooms.length]);
+  }, [displayRooms.length, density]);
 
   // Auto-scroll to current time position on mount - NE POTŘEBA KDYŽ JE VŠE VIDITELNÉ
   // useEffect(() => {
@@ -1364,6 +1371,22 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 </span>
               </button>
 
+              {/* Hustota řádků — Auto → Kompakt → Komfort */}
+              <button
+                onClick={() => setDensity((d) => (d === 'auto' ? 'compact' : d === 'compact' ? 'comfort' : 'auto'))}
+                aria-label="Hustota řádků"
+                title={density === 'auto' ? 'Hustota: Auto (vejít vše) — klikni pro Kompakt' : density === 'compact' ? 'Hustota: Kompakt (víc sálů) — klikni pro Komfort' : 'Hustota: Komfort (víc detailu) — klikni pro Auto'}
+                className="h-8 px-2 rounded-xl flex items-center gap-1.5 transition-colors hover:bg-white/5"
+                style={density !== 'auto'
+                  ? { background: `${C.cyan}1f`, color: C.cyan, boxShadow: `inset 0 0 0 1px ${C.cyan}35` }
+                  : { color: 'rgba(255,255,255,0.6)' }}
+              >
+                <List className="w-4 h-4" />
+                <span className="hidden 2xl:inline text-xs font-semibold">
+                  {density === 'auto' ? 'Auto' : density === 'compact' ? 'Kompakt' : 'Komfort'}
+                </span>
+              </button>
+
               {/* Triáž pozornosti — co vyžaduje pozornost teď */}
               <button
                 onClick={() => setShowAttention(true)}
@@ -1973,7 +1996,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
         {/* Room Rows Container */}
         <div
-          className="flex-1 min-h-0 overflow-y-hidden overflow-x-auto rounded-b-[14px] timeline-scroll"
+          className={`flex-1 min-h-0 overflow-x-auto rounded-b-[14px] timeline-scroll ${density === 'auto' ? 'overflow-y-hidden' : 'overflow-y-auto'}`}
           style={{
             background: 'linear-gradient(180deg, rgba(6,15,24,0.84) 0%, rgba(4,11,18,0.72) 100%)',
             borderLeft: `1px solid ${C.borderStrong}`,
@@ -1987,8 +2010,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             if (timelineRef.current) timelineRef.current.scrollLeft = e.currentTarget.scrollLeft;
           }}
         >
-          <div 
-            className="relative h-full"
+          <div
+            className="relative min-h-full"
             ref={scrollContainerRef}
             style={{
               width: `${zoom * 100}%`,
@@ -2035,21 +2058,32 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   }}
                   initial={false}
                 >
-                  {/* Glow effect — sladěno do tyrkysové (medical accent),
-                      konzistentní s časovou osou nahoře. Červená je vyhrazena
-                      pro stavy nouze, ne pro běžnou značku „teď". */}
-                  {/* Main line */}
-                  {/* „teď" linka — oranžová, bez záře */}
+                  {/* „teď" indikátor — živý, moderní: jemná záře + gradientová
+                      linka + pulzující bod + časový štítek. Oranžová je vyhrazena
+                      pro značku „teď" (červená je pro nouzové stavy). */}
+                  {/* Měkká záře kolem linky */}
+                  <div
+                    className="absolute -left-[7px] top-0 bottom-0 w-[14px] pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse at center, rgba(255,152,0,0.30) 0%, rgba(255,152,0,0.06) 45%, transparent 72%)' }}
+                  />
+                  {/* Hlavní linka — jemný svislý gradient + záře */}
                   <div
                     className="absolute -left-[1px] top-0 bottom-0 w-[2px]"
-                    style={{ background: '#FF9800' }}
+                    style={{ background: 'linear-gradient(180deg, #FFB74D 0%, #FF9800 55%, rgba(255,152,0,0.35) 100%)', boxShadow: '0 0 10px rgba(255,152,0,0.55)' }}
+                  />
+                  {/* Pulzující bod na vrcholu linky */}
+                  <motion.div
+                    className="absolute -left-[1px] top-[2px] -translate-x-1/2 w-2.5 h-2.5 rounded-full"
+                    style={{ background: '#FF9800', boxShadow: '0 0 10px rgba(255,152,0,0.9)' }}
+                    animate={{ scale: [1, 1.55, 1], opacity: [1, 0.55, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                   />
                   {/* Časový štítek na lince — oranžový (jediné zobrazení času) */}
                   <div
-                    className="absolute -left-[1px] -top-[11px] -translate-x-1/2 px-2 py-[3px] rounded-md whitespace-nowrap"
+                    className="absolute -left-[1px] -top-[13px] -translate-x-1/2 px-2 py-[3px] rounded-md whitespace-nowrap"
                     style={{
-                      background: '#FF9800',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                      background: 'linear-gradient(180deg, #FFB74D 0%, #FF9800 100%)',
+                      boxShadow: '0 2px 10px rgba(255,152,0,0.45), 0 1px 3px rgba(0,0,0,0.4)',
                     }}
                   >
                     <span className="text-[10px] font-bold font-mono tabular-nums leading-none" style={{ color: '#2B1600' }}>
@@ -2218,7 +2252,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               let progressPct = 0;
               let startDate: Date = new Date();
               let endDate: Date = new Date();
-              
+              // Prostoj (turnover) před aktuálním výkonem a pauza — pro živý řádek
+              let gapLeftPct = 0, gapWidthPct = 0, gapMins = 0;
+
               // Show status bar if active - use operationStartedAt (arrival to OR) as the fixed start point
               const hasRealData = startParts && startParts.length === 2;
               const hasOperationStart = room.operationStartedAt;
@@ -2248,6 +2284,22 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 const rawLeftPct = getTimePercentForTimeline(startDate, activeWindowStart);
                 // If operation started before window (continuing), clamp to 0
                 boxLeftPct = Math.max(0, rawLeftPct);
+
+                // Prostoj před aktuálním výkonem: od konce předchozí operace do
+                // začátku té současné (kolik minut sál stál).
+                const prevEnd = (room.completedOperations || [])
+                  .map((op) => new Date(op.endedAt).getTime())
+                  .filter((t) => Number.isFinite(t) && t <= startDate.getTime())
+                  .sort((a, b) => b - a)[0];
+                if (prevEnd) {
+                  const mins = Math.round((startDate.getTime() - prevEnd) / 60000);
+                  if (mins >= 2) {
+                    const gl = getTimePercentForTimeline(new Date(prevEnd), activeWindowStart);
+                    const gr = getTimePercentForTimeline(startDate, activeWindowStart);
+                    const gw = Math.min(100, gr) - Math.max(0, gl);
+                    if (gw > 0) { gapLeftPct = Math.max(0, gl); gapWidthPct = gw; gapMins = mins; }
+                  }
+                }
 
                 if (room.estimatedEndTime) {
                   const estimatedEnd = new Date(room.estimatedEndTime);
@@ -2734,10 +2786,56 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       if (room.operationStartedAt && room.currentStepIndex > 0) {
                         addHistory(room.statusHistory, new Date(room.operationStartedAt).getTime(), currentTime.getTime());
                       }
+
+                      // ── Turnover / prostoje: mezery mezi po sobě jdoucími výkony ──
+                      // Seřadíme dnešní operace dle času a spočítáme prázdné mezery
+                      // (kolik minut sál stál mezi koncem jednoho a začátkem dalšího).
+                      const opsList: { s: number; e: number }[] = [];
+                      (room.completedOperations || []).forEach((op) => {
+                        const s = new Date(op.startedAt).getTime();
+                        const e = new Date(op.endedAt).getTime();
+                        if (Number.isFinite(s) && Number.isFinite(e) && e > s) opsList.push({ s, e });
+                      });
+                      if (room.operationStartedAt && room.currentStepIndex > 0) {
+                        const s = new Date(room.operationStartedAt).getTime();
+                        if (Number.isFinite(s)) opsList.push({ s, e: currentTime.getTime() });
+                      }
+                      opsList.sort((a, b) => a.s - b.s);
+                      const gaps: { l: number; w: number; mins: number }[] = [];
+                      for (let i = 1; i < opsList.length; i++) {
+                        const gs = opsList[i - 1].e;
+                        const ge = opsList[i].s;
+                        const mins = Math.round((ge - gs) / 60000);
+                        if (mins < 2) continue; // drobné mezery ignorujeme
+                        const l = getTimePercentForTimeline(new Date(gs), summaryWindowStart);
+                        const r = getTimePercentForTimeline(new Date(ge), summaryWindowStart);
+                        const w = Math.min(100, r) - Math.max(0, l);
+                        if (w <= 0) continue;
+                        gaps.push({ l: Math.max(0, l), w, mins });
+                      }
+
                       const u = roomUtilization.rows.find((x) => x.id === room.id);
                       const uc = u ? utilColor(u.utilizationPct) : C.slate;
                       return (
                         <>
+                          {/* Prostoje (turnover) mezi výkony — šrafovaný pruh + minuty */}
+                          {gaps.map((g, i) => (
+                            <div
+                              key={`gap-${i}`}
+                              className="absolute top-[30%] bottom-[30%] rounded-[3px] flex items-center justify-center pointer-events-none overflow-hidden"
+                              title={`Prostoj mezi výkony · ${g.mins} min`}
+                              style={{
+                                left: `${g.l}%`,
+                                width: `${Math.max(0.3, g.w)}%`,
+                                background: 'repeating-linear-gradient(135deg, rgba(245,158,11,0.16) 0px, rgba(245,158,11,0.16) 4px, rgba(245,158,11,0.04) 4px, rgba(245,158,11,0.04) 8px)',
+                                border: '1px dashed rgba(245,158,11,0.45)',
+                              }}
+                            >
+                              {g.w > 2.6 && (
+                                <span className="text-[9px] font-bold tabular-nums whitespace-nowrap px-0.5" style={{ color: '#FBBF24' }}>{g.mins}m</span>
+                              )}
+                            </div>
+                          ))}
                           {segs.map((sg, i) => (
                             <div
                               key={`sum-${i}`}
@@ -3122,6 +3220,24 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       );
                     })()}
                     
+                    {/* Prostoj (turnover) před aktuálním výkonem — živý režim */}
+                    {!showSummary && isActive && !room.isLocked && gapWidthPct > 0 && (
+                      <div
+                        className="absolute top-[30%] bottom-[30%] rounded-[3px] flex items-center justify-center pointer-events-none overflow-hidden z-[5]"
+                        title={`Prostoj mezi výkony · ${gapMins} min`}
+                        style={{
+                          left: `${gapLeftPct}%`,
+                          width: `${Math.max(0.3, gapWidthPct)}%`,
+                          background: 'repeating-linear-gradient(135deg, rgba(245,158,11,0.16) 0px, rgba(245,158,11,0.16) 4px, rgba(245,158,11,0.04) 4px, rgba(245,158,11,0.04) 8px)',
+                          border: '1px dashed rgba(245,158,11,0.45)',
+                        }}
+                      >
+                        {gapWidthPct > 2.6 && (
+                          <span className="text-[9px] font-bold tabular-nums whitespace-nowrap px-0.5" style={{ color: '#FBBF24' }}>{gapMins}m</span>
+                        )}
+                      </div>
+                    )}
+
                     {!showSummary && isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
                         className="absolute top-1 bottom-1 overflow-hidden rounded-[5px]"
@@ -3382,9 +3498,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           const l = hasStart ? Math.max(0, Math.min(100, ((ps - startDate.getTime()) / span) * 100)) : 0;
                           const r = Math.max(0, Math.min(100, ((currentTime.getTime() - startDate.getTime()) / span) * 100));
                           const w = hasStart ? Math.max(0.6, r - l) : 100;
+                          const pauseMins = hasStart ? Math.round((currentTime.getTime() - ps) / 60000) : 0;
                           return (
                             <div
-                              className="absolute top-0 bottom-0 z-[6] pointer-events-none"
+                              className="absolute top-0 bottom-0 z-[6] pointer-events-none flex items-center justify-center overflow-hidden"
+                              title={pauseMins > 0 ? `Pauza · ${pauseMins} min` : 'Pauza'}
                               style={{
                                 left: `${l}%`,
                                 width: `${w}%`,
@@ -3396,6 +3514,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             >
                               {/* Jemný živý přeliv, ať je úsek pauzy „živý" jako ostatní statusy */}
                               <div className="tl-shimmer" style={{ opacity: 0.35 }} />
+                              {/* Délka pauzy v minutách — v duchu značení prostojů */}
+                              {w > 2.6 && pauseMins > 0 && (
+                                <span className="relative text-[9px] font-bold tabular-nums whitespace-nowrap px-1 rounded flex items-center gap-0.5" style={{ color: '#0B2027', background: `${C.cyan}e6` }}>
+                                  <Pause className="w-2.5 h-2.5" fill="#0B2027" /> {pauseMins}m
+                                </span>
+                              )}
                             </div>
                           );
                         })()}
@@ -3412,16 +3536,23 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           const startMs = startDate.getTime();
                           const span = Math.max(1, endDate.getTime() - startMs);
                           const leftPct = Math.max(0, Math.min(100, ((estMs - startMs) / span) * 100));
+                          const overrunMins = Math.round(overrunMs / 60000);
+                          const overrunW = 100 - leftPct;
                           return (
                             <div
-                              className="absolute top-0 bottom-0 right-0 z-[6] pointer-events-none rounded-r-[5px] overflow-hidden"
+                              className="absolute top-0 bottom-0 right-0 z-[6] pointer-events-none rounded-r-[5px] overflow-hidden flex items-center justify-center"
+                              title={`Skluz · +${overrunMins} min po plánovaném konci`}
                               style={{
                                 left: `${leftPct}%`,
                                 background: `repeating-linear-gradient(135deg, ${C.red}30 0px, ${C.red}30 6px, ${C.red}12 6px, ${C.red}12 12px)`,
                                 borderLeft: `1.5px dashed ${C.red}b0`,
                                 boxShadow: `inset 0 0 12px ${C.red}25`,
                               }}
-                            />
+                            >
+                              {overrunW > 3.2 && (
+                                <span className="text-[9px] font-bold tabular-nums whitespace-nowrap px-1 rounded" style={{ color: '#fff', background: `${C.red}d9` }}>+{overrunMins}m</span>
+                              )}
+                            </div>
                           );
                         })()}
 
