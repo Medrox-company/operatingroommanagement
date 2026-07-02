@@ -2,13 +2,15 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { AlertTriangle, Clock, X } from 'lucide-react';
 
 interface WorkflowStatus {
   id: string;
   name: string;
   color: string;
   order_index: number;
+  default_duration?: number;
+  default_duration_minutes?: number;
 }
 
 interface StepConfirmationOverlayProps {
@@ -16,6 +18,7 @@ interface StepConfirmationOverlayProps {
   activeDbStatuses: WorkflowStatus[];
   safeStepIndex: number;
   validStepCount: number;
+  elapsedSeconds: number | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -25,6 +28,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
   activeDbStatuses,
   safeStepIndex,
   validStepCount,
+  elapsedSeconds,
   onConfirm,
   onCancel,
 }) => {
@@ -33,11 +37,26 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
   const pendingStep = activeDbStatuses[Math.min(pendingStepIndex, activeDbStatuses.length - 1)];
   const pendingColor = pendingStep?.color || '#6B7280';
   const isReset = pendingStepIndex === 0 && safeStepIndex === validStepCount - 1;
+  const currentStep = activeDbStatuses[Math.min(safeStepIndex, activeDbStatuses.length - 1)];
+  const averageMinutes = Math.max(
+    1,
+    currentStep?.default_duration_minutes || currentStep?.default_duration || 5,
+  );
+  const isShortInterval = elapsedSeconds !== null && elapsedSeconds < 5 * 60;
+  const elapsedLabel = elapsedSeconds === null
+    ? '—'
+    : elapsedSeconds < 60
+      ? `${elapsedSeconds} s`
+      : `${Math.floor(elapsedSeconds / 60)} min ${elapsedSeconds % 60} s`;
 
   return (
     <AnimatePresence>
       <motion.div
         key="step-confirm-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="step-confirm-title"
+        aria-describedby={isShortInterval ? 'step-short-interval-warning' : undefined}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -72,13 +91,14 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="text-center mb-12 md:mb-16"
+            className={`text-center ${isShortInterval ? 'mb-5 md:mb-6' : 'mb-12 md:mb-16'}`}
           >
             <p className="text-[10px] sm:text-[11px] font-bold text-white/30 tracking-[0.5em] uppercase mb-4">
               POTVRZENÍ PŘECHODU
             </p>
             <AnimatePresence mode="wait">
               <motion.h2
+                id="step-confirm-title"
                 key={pendingStep?.name}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -88,6 +108,42 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
               </motion.h2>
             </AnimatePresence>
           </motion.div>
+
+          {isShortInterval && (
+            <motion.div
+              id="step-short-interval-warning"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18, duration: 0.4 }}
+              className="w-full max-w-2xl mb-7 rounded-2xl px-5 py-4"
+              style={{
+                background: 'rgba(251,191,36,0.10)',
+                border: '1px solid rgba(251,191,36,0.34)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+              }}
+              role="alert"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-amber-300/10 border border-amber-300/25">
+                  <AlertTriangle className="w-5 h-5 text-amber-300" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">
+                    Neobvykle krátký interval
+                  </p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-white/70">
+                    Fáze <span className="font-semibold text-white">{currentStep?.name || 'aktuální krok'}</span> trvá pouze{' '}
+                    <span className="font-bold text-amber-200">{elapsedLabel}</span>. To je méně než 5 minut
+                    a kratší než nastavený časový průměr tohoto kroku ({averageMinutes} min).
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-white/55">
+                    <Clock className="w-3.5 h-3.5 text-amber-200/80" />
+                    Opravdu chcete přejít na další fázi?
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Two circles container */}
           <div className="flex items-center gap-8 sm:gap-12 md:gap-20 lg:gap-32">

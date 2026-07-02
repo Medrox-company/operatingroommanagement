@@ -25,6 +25,14 @@ const formatElapsed = (totalSeconds: number): string => {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
 
+const resolvePhaseStartTime = (room: OperatingRoom): Date => {
+  const latestSegment = room.statusHistory?.[room.statusHistory.length - 1];
+  const rawStart = room.phaseStartedAt
+    || (latestSegment?.stepIndex === room.currentStepIndex ? latestSegment.startedAt : null);
+  const parsed = rawStart ? new Date(rawStart) : new Date();
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+};
+
 interface RoomDetailProps {
   room: OperatingRoom;
   allRooms?: OperatingRoom[];
@@ -53,7 +61,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   // Add null safety fallback to prevent crashes if context is not ready
   const activeDbStatuses = workflowStatuses || [];
 
-  const [phaseStartTime, setPhaseStartTime] = useState(() => new Date());
+  const [phaseStartTime, setPhaseStartTime] = useState(() => resolvePhaseStartTime(room));
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
   const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
@@ -66,6 +74,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings | null>(null);
   const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
   const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
+  const [pendingStepElapsedSeconds, setPendingStepElapsedSeconds] = useState<number | null>(null);
   const [patientCallElapsedTime, setPatientCallElapsedTime] = useState('00:00');
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
@@ -211,6 +220,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
   const currentStepIndex = room.currentStepIndex;
   const prevStepIndex = usePrevious(currentStepIndex);
+  const latestStatusStartedAt = room.statusHistory?.[room.statusHistory.length - 1]?.startedAt;
+
+  useEffect(() => {
+    setPhaseStartTime(resolvePhaseStartTime(room));
+  }, [room.id, room.currentStepIndex, room.phaseStartedAt, latestStatusStartedAt]);
   
   // Use active statuses count for rotation calculation
   const stepsCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
@@ -367,6 +381,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     if (room.isLocked && nextIndex === 0) return;
 
     // Show confirmation overlay instead of immediately changing
+    setPendingStepElapsedSeconds(Math.max(0, Math.floor((Date.now() - phaseStartTime.getTime()) / 1000)));
     setPendingStepIndex(nextIndex);
   };
 
@@ -414,10 +429,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     if (pendingStepIndex === null) return;
     changeStep(pendingStepIndex);
     setPendingStepIndex(null);
+    setPendingStepElapsedSeconds(null);
   };
 
   const cancelStepChange = () => {
     setPendingStepIndex(null);
+    setPendingStepElapsedSeconds(null);
   };
   
   const roundUpTo15Min = (date: Date): Date => {
@@ -1743,6 +1760,7 @@ const prevStep = activeDbStatuses.length > 0
         activeDbStatuses={activeDbStatuses}
         safeStepIndex={safeStepIndex}
         validStepCount={validStepCount}
+        elapsedSeconds={pendingStepElapsedSeconds}
         onConfirm={confirmStepChange}
         onCancel={cancelStepChange}
       />
