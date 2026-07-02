@@ -1,10 +1,10 @@
 import { TIMELINE_START_HOUR, TIMELINE_HOURS } from './constants';
 
 // ========== HELPER FUNCTIONS ==========
-export const getTimePercent = (date: Date): number => {
+export const getTimePercent = (date: Date, totalHours: number = TIMELINE_HOURS): number => {
   const hours = date.getHours() + date.getMinutes() / 60;
-  let percent = ((hours - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100;
-  if (percent < 0) percent += (24 / TIMELINE_HOURS) * 100;
+  let percent = ((hours - TIMELINE_START_HOUR) / totalHours) * 100;
+  if (percent < 0) percent += (24 / totalHours) * 100;
   // Return percent clamped to valid timeline range
   return Math.max(0, Math.min(100, percent));
 };
@@ -64,14 +64,14 @@ export const exceedsT24Hours = (startDate: Date, endDate: Date): boolean => {
 // Get time percent for timeline display
 // Timeline runs from 7:00 (0%) to 7:00 next day (100%)
 // Operations that cross 7:00 will extend beyond 100%
-export const getTimePercentForTimeline = (date: Date, referenceStart: Date): number => {
+export const getTimePercentForTimeline = (date: Date, referenceStart: Date, totalHours: number = TIMELINE_HOURS): number => {
   const diffMs = date.getTime() - referenceStart.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
-  return (diffHours / TIMELINE_HOURS) * 100;
+  return (diffHours / totalHours) * 100;
 };
 
 // Get operation position on timeline (single continuous bar, even if crossing 7:00)
-export const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date): {
+export const getOperationPosition = (startDate: Date, endDate: Date, currentTime: Date, totalHours: number = TIMELINE_HOURS): {
   left: number,
   width: number,
   exceedsBoundary: boolean,
@@ -87,8 +87,8 @@ export const getOperationPosition = (startDate: Date, endDate: Date, currentTime
   }
 
   // Calculate position relative to window start
-  let leftPct = getTimePercentForTimeline(startDate, windowStart);
-  let endPct = getTimePercentForTimeline(endDate, windowStart);
+  let leftPct = getTimePercentForTimeline(startDate, windowStart, totalHours);
+  let endPct = getTimePercentForTimeline(endDate, windowStart, totalHours);
 
   // Check if operation started before window (continuing from previous day)
   const isContinuing = leftPct < 0;

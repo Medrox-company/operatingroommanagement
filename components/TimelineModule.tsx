@@ -23,25 +23,24 @@ import {
 import {
   C,
   TIMELINE_START_HOUR,
-  TIMELINE_HOURS,
+  TIMELINE_HOURS as TIMELINE_HOURS_FULL,
   ROOM_LABEL_WIDTH,
   MIN_ROW_HEIGHT,
   MAX_ROW_HEIGHT,
   ROW_GAP_PX,
   ROW_PADDING_PX,
-  TIME_MARKERS,
   ROOM_COLOR_ORDER,
   ROOM_COLORS,
   STEP_INDEX_COLORS,
 } from './timeline/constants';
 import {
-  getTimePercent,
+  getTimePercent as getTimePercentRaw,
   parseTimeToDate,
   hourLabelCompact,
   isOperationInWindow,
   exceedsT24Hours,
-  getTimePercentForTimeline,
-  getOperationPosition,
+  getTimePercentForTimeline as getTimePercentForTimelineRaw,
+  getOperationPosition as getOperationPositionRaw,
 } from './timeline/utils';
 import StatBox from './timeline/StatBox';
 import RoomDetailPopup from './timeline/RoomDetailPopup';
@@ -261,6 +260,18 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       setIsRefreshing(false);
     }
   }, [onRefresh, isRefreshing]);
+
+  // ── Dynamický rozsah osy ──
+  // Standardně osa končí v 0:00 (7:00 → 24:00 = 17 h). Jakmile aktuální čas
+  // překročí půlnoc (0:00–6:59), rozsah se rozšíří na plných 24 h (7:00 → 7:00),
+  // aby byl vidět i noční provoz až do konce (6:00). Lokální definice stíní
+  // konstantu i utils funkce, takže se dynamický rozsah propíše do celé osy.
+  const afterMidnight = currentTime.getHours() < TIMELINE_START_HOUR;
+  const TIMELINE_HOURS = afterMidnight ? TIMELINE_HOURS_FULL : (24 - TIMELINE_START_HOUR);
+  const TIME_MARKERS = Array.from({ length: TIMELINE_HOURS + 1 }, (_, i) => i);
+  const getTimePercent = (date: Date) => getTimePercentRaw(date, TIMELINE_HOURS);
+  const getTimePercentForTimeline = (date: Date, ref: Date) => getTimePercentForTimelineRaw(date, ref, TIMELINE_HOURS);
+  const getOperationPosition = (s: Date, e: Date, ct: Date) => getOperationPositionRaw(s, e, ct, TIMELINE_HOURS);
 
   // Skok na aktuální čas — odscrolluje osu i řádky tak, aby byl „teď" indikátor uprostřed.
   const scrollToNow = useCallback(() => {
@@ -1901,7 +1912,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     }}
                   >
                     {/* Svislá hodinová značka */}
-                    <div 
+                    <div
                       className="absolute left-0 top-0 bottom-0 w-px"
                       style={{
                         background: isMajorHour
