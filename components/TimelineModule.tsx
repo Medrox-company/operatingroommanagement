@@ -10,7 +10,6 @@ import DayStatistics from './timeline/DayStatistics';
 import DelaySimulator from './timeline/DelaySimulator';
 import PhaseFingerprint from './timeline/PhaseFingerprint';
 import AttentionFeed from './timeline/AttentionFeed';
-import PatientFlow from './timeline/PatientFlow';
 import PhaseOptimizer from './timeline/PhaseOptimizer';
 import TimelineHistory from './timeline/TimelineHistory';
 import { 
@@ -201,7 +200,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   const [showSimulator, setShowSimulator] = useState(false);
   const [showFingerprint, setShowFingerprint] = useState(false);
   const [showAttention, setShowAttention] = useState(false);
-  const [showPatientFlow, setShowPatientFlow] = useState(false);
   const [showPhaseOptimizer, setShowPhaseOptimizer] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   // --- Nové funkce: vyhledávání, filtr stavu, zoom časové osy, hover tooltip ---
@@ -1129,12 +1127,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         currentTime={currentTime}
         onSelectRoom={(id) => { setShowAttention(false); const room = rooms.find((r) => r.id === id); if (room) setSelectedRoom(room); }}
       />
-      <PatientFlow
-        isOpen={showPatientFlow}
-        onClose={() => setShowPatientFlow(false)}
-        rooms={rooms}
-        onSelectRoom={(id) => { setShowPatientFlow(false); const room = rooms.find((r) => r.id === id); if (room) setSelectedRoom(room); }}
-      />
       <PhaseOptimizer
         isOpen={showPhaseOptimizer}
         onClose={() => setShowPhaseOptimizer(false)}
@@ -1342,16 +1334,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                 className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
               >
                 <CalendarDays className="w-4 h-4 text-white/60" />
-              </button>
-
-              {/* Tok pacienta — pipeline napříč traktem */}
-              <button
-                onClick={() => setShowPatientFlow(true)}
-                aria-label="Tok pacienta"
-                title="Tok pacienta — kde se nacházejí pacienti napříč traktem (volán → operace → volný)"
-                className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
-              >
-                <Workflow className="w-4 h-4 text-white/60" />
               </button>
 
               {/* Živé zobrazení / denní souhrn — využívá stejnou osu a zachovává kontext sálů. */}
@@ -2034,18 +2016,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   }}
                 />
               ))}
-              {nowPercent >= 0 && nowPercent <= 100 && (
-                <div
-                  className="absolute top-0 bottom-0"
-                  style={{
-                    left: `calc(${ROOM_LABEL_WIDTH}px + ((100% - ${ROOM_LABEL_WIDTH}px) * ${Math.max(0, nowPercent - 0.5 * (100 / TIMELINE_HOURS)) / 100}))`,
-                    width: `calc((100% - ${ROOM_LABEL_WIDTH}px) * ${100 / TIMELINE_HOURS / 100})`,
-                    background: 'linear-gradient(180deg, rgba(255,152,0,0.045), rgba(255,152,0,0.012) 72%, transparent)',
-                    borderLeft: '1px solid rgba(255,152,0,0.055)',
-                    borderRight: '1px solid rgba(255,152,0,0.055)',
-                  }}
-                />
-              )}
             </div>
 
             {/* Now indicator - Premium animated line with glow */}
