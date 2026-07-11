@@ -314,6 +314,18 @@ body {
   padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* Bezpečné HORNÍ odsazení mobilních obrazovek — notch / status bar (PWA
+   s viewport-fit=cover kreslí obsah až pod stavový řádek). Na desktopu (md+)
+   se vrací standardní horní padding. */
+.mobile-safe-top {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1.25rem) !important;
+}
+@media (min-width: 768px) {
+  .mobile-safe-top {
+    padding-top: 2.5rem !important;
+  }
+}
+
 /* Layout safe area that respects Sidebar (desktop, 96px) and MobileNav (bottom) */
 .layout-safe-area {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));

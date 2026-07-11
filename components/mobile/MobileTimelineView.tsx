@@ -161,7 +161,10 @@ const MobileTimelineView: React.FC<Props> = ({
           paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <div className="flex flex-col gap-5 px-5 pt-5">
+        <div
+          className="flex flex-col gap-5 px-5"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}
+        >
         <section className="timeline-mobile-hero rounded-[28px] p-4">
         {/* Header */}
         <MobileHeader

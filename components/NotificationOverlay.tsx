@@ -169,8 +169,11 @@ export default function NotificationOverlay({
           >
             {/* Content */}
             <div
-              className="relative z-10 flex flex-col h-full px-5 pt-4 overflow-y-auto hide-scrollbar"
-              style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
+              className="relative z-10 flex flex-col h-full px-5 overflow-y-auto hide-scrollbar"
+              style={{
+                paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)',
+                paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
+              }}
             >
               {/* Header — zpět · název + podtitul (stejný vzor jako detail sálu) */}
               <div className="flex items-center gap-3.5 mb-6">

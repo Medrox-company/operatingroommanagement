@@ -11,6 +11,17 @@ interface MobileNavProps {
 /* Plovoucí skleněná navigace ve stylu moderních mobilních aplikací —
    zaoblená teal „pill" lišta odsazená od okrajů, aktivní položka má
    gradientní teal podsvícení s jemnou září. */
+/* Krátké popisky pro úzkou mobilní lištu — plné názvy se nevejdou. */
+const MOBILE_LABELS: Record<string, string> = {
+  dashboard: 'Přehled',
+  flow: 'Tok',
+  timeline: 'Timeline',
+  statistics: 'Statistiky',
+  staff: 'Personál',
+  'staff-overview': 'Personál',
+  settings: 'Nastavení',
+};
+
 const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) => {
   const { isAdmin, hasModuleAccess, logout } = useAuth();
 
@@ -60,7 +71,7 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
                 className="text-[8px] font-bold uppercase tracking-wider truncate max-w-[64px] transition-colors duration-300"
                 style={{ color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.45)' }}
               >
-                {item.label}
+                {MOBILE_LABELS[item.id] || item.label}
               </span>
               {/* Aktivní indikátor — krátká linka pod položkou */}
               {isActive && (

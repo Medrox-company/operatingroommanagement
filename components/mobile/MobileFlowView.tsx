@@ -100,7 +100,10 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
         className="md:hidden h-full w-full overflow-y-auto hide-scrollbar relative"
         style={{ zIndex: 1, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
       >
-        <div className="flex flex-col gap-4 px-5 pt-5">
+        <div
+          className="flex flex-col gap-4 px-5"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}
+        >
           {/* Titulek */}
           <h1 className="text-[24px] font-extrabold leading-none" style={{ color: NAVY }}>
             Tok pacienta

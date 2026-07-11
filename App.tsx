@@ -668,7 +668,7 @@ const AppContent: React.FC = () => {
 
             {/* Dashboard — room grid */}
             {currentView === 'dashboard' && !selectedRoom && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+              <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
                 {/* Světlý podklad dashboardu na mobilu — ladí s detailem sálu */}
                 <div aria-hidden className="fixed inset-0 -z-10 md:hidden" style={{ background: '#EDF1F8' }} />
                 <div className="max-w-[2400px] mx-auto w-full">
@@ -875,7 +875,7 @@ const AppContent: React.FC = () => {
             {/* Statistics */}
             {currentView === 'statistics' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+                <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
                   <StatisticsModule rooms={rooms} />
                 </div>
               </div>
@@ -884,7 +884,7 @@ const AppContent: React.FC = () => {
   {/* Staff */}
   {currentView === 'staff' && (
   <div className="w-full h-full overflow-y-auto hide-scrollbar">
-  <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+  <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
   <StaffOverviewModule />
   </div>
   </div>

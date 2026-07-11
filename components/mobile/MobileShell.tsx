@@ -25,7 +25,12 @@ export const MobileScreen: React.FC<{ children: React.ReactNode; className?: str
     className={`md:hidden h-full w-full overflow-y-auto hide-scrollbar ${className}`}
     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
   >
-    <div className="flex flex-col gap-5 px-5 pt-5">{children}</div>
+    <div
+      className="flex flex-col gap-5 px-5"
+      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}
+    >
+      {children}
+    </div>
   </div>
 );
 
