@@ -8,6 +8,7 @@ export const runtime = 'nodejs';
 interface LoginBody {
   email?: unknown;
   password?: unknown;
+  hospitalId?: unknown;
 }
 
 export async function POST(request: NextRequest) {
@@ -31,8 +32,9 @@ export async function POST(request: NextRequest) {
 
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   const password = typeof body.password === 'string' ? body.password : '';
+  const hospitalId = typeof body.hospitalId === 'string' ? body.hospitalId.trim() : '';
 
-  if (!email || !password || email.length > 255 || password.length > 512) {
+  if (!email || !password || !/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId) || email.length > 255 || password.length > 512) {
     return NextResponse.json({ error: 'Neplatné přihlašovací údaje' }, { status: 400 });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -64,18 +66,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Neplatný e-mail nebo heslo' }, { status: 401 });
   }
 
+  const { data: hospital } = await supabase.from('hospitals').select('id').eq('id', hospitalId).maybeSingle();
+  if (!hospital) return NextResponse.json({ error: 'Vybraná nemocnice neexistuje' }, { status: 400 });
+
+  if (user.role !== 'admin') {
+    const { data: membership } = await supabase
+      .from('hospital_user_memberships')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .eq('hospital_id', hospitalId)
+      .maybeSingle();
+    if (!membership) {
+      return NextResponse.json({ error: 'Pro vybranou nemocnici nemáte oprávnění' }, { status: 403 });
+    }
+  }
+
   // Úspěch — vystav session cookie
   const token = signSession({
     sub: user.id,
     email: user.email,
     role: user.role,
     name: user.name,
+    hospitalId,
   });
 
   const res = NextResponse.json({
     success: true,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role, is_active: true },
+    user: { id: user.id, email: user.email, name: user.name, role: user.role, hospitalId, is_active: true },
   });
   res.cookies.set({ ...getSessionCookieOptions(), value: token });
+  res.cookies.set('or_hospital', hospitalId, {
+    httpOnly: false, sameSite: 'lax', secure: process.env.ALLOW_INSECURE_COOKIE !== '1', path: '/', maxAge: 7 * 24 * 60 * 60,
+  });
   return res;
 }

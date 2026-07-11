@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft,
   Shield, User, Stethoscope, Activity, Briefcase, ClipboardList,
-  LogIn, Sparkles, ChevronRight,
+  LogIn, Sparkles, ChevronRight, Building2, ChevronDown, Loader2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -13,6 +13,7 @@ interface LoginPageProps {
 
 type QuickRoleId = 'admin' | 'user' | 'aro' | 'cos' | 'management' | 'primar';
 type Screen = 'intro' | 'form' | 'demo';
+interface LoginHospital { id: string; hospital_name: string; hospital_short_name: string | null; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN TOKENS — matching the rest of the app
@@ -84,11 +85,39 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hospitals, setHospitals] = useState<LoginHospital[]>([]);
+  const [selectedHospitalId, setSelectedHospitalId] = useState('');
+  const [hospitalsLoading, setHospitalsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch('/api/hospitals', { cache: 'no-store' });
+        const json = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(json.error || 'Nemocnice nelze načíst');
+        const next = Array.isArray(json.hospitals) ? json.hospitals as LoginHospital[] : [];
+        if (cancelled) return;
+        setHospitals(next);
+        const stored = localStorage.getItem('orm-active-hospital');
+        setSelectedHospitalId(next.some(item => item.id === stored) ? stored! : (next[0]?.id || ''));
+      } catch (cause) {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : 'Nemocnice nelze načíst');
+      } finally {
+        if (!cancelled) setHospitalsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const submitCredentials = async (mail: string, pwd: string) => {
     setError(null);
+    if (!selectedHospitalId) {
+      setError('Vyberte zdravotnické zařízení');
+      return false;
+    }
     setIsLoading(true);
-    const result = await login(mail, pwd);
+    const result = await login(mail, pwd, selectedHospitalId);
     setIsLoading(false);
     if (result.success) {
       onLoginSuccess?.();
@@ -115,6 +144,35 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setError(null);
     setScreen(next);
   };
+
+  const hospitalSelector = (
+    <div>
+      <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-white/40 mb-2">
+        Zdravotnické zařízení
+      </label>
+      <div className="relative group">
+        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-cyan-400 transition-colors" />
+        <select
+          value={selectedHospitalId}
+          onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }}
+          disabled={hospitalsLoading || hospitals.length === 0}
+          required
+          className="w-full appearance-none pl-11 pr-11 py-4 rounded-xl text-sm text-white transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/30 disabled:opacity-50"
+          style={{ background: '#101827', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          {hospitals.length === 0 && <option value="">Žádné zařízení není dostupné</option>}
+          {hospitals.map(hospital => (
+            <option key={hospital.id} value={hospital.id}>
+              {hospital.hospital_name}{hospital.hospital_short_name ? ` (${hospital.hospital_short_name})` : ''}
+            </option>
+          ))}
+        </select>
+        {hospitalsLoading
+          ? <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-white/30" />
+          : <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-white/30" />}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen w-full text-white relative overflow-hidden flex flex-col font-sans bg-[#050d18]">
@@ -283,6 +341,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5">
+                {hospitalSelector}
                 {/* Email */}
                 <div>
                   <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-white/40 mb-2">
@@ -373,13 +432,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <p className="text-base text-white/40 mt-3">Vyberte roli pro rychlé přihlášení</p>
             </div>
 
+            <div className="max-w-md mx-auto mb-7">{hospitalSelector}</div>
+
             {/* Roles grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {QUICK_ROLES.map((role) => (
                 <button
                   key={role.id}
                   onClick={() => (role.id === 'user' ? goToScreen('form') : handleQuickLogin(role.id))}
-                  disabled={isLoading}
+                  disabled={isLoading || !selectedHospitalId}
                   className="group relative p-6 rounded-2xl text-center transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                   style={{
                     background: 'rgba(255,255,255,0.02)',

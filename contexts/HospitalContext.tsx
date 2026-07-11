@@ -58,7 +58,15 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
   const refreshHospitals = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/hospital', { credentials: 'include', cache: 'no-store' });
-      if (!response.ok) return;
+      if (!response.ok) {
+        if (response.status === 401) {
+          setSupabaseHospitalToken(null);
+          setDatabaseHospitalId(null);
+          setActiveHospitalId(null);
+          setHospitals([]);
+        }
+        return;
+      }
       const json = await response.json();
       const next: Hospital[] = Array.isArray(json.hospitals) ? json.hospitals : [];
       setHospitals(next);

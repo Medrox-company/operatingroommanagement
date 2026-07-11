@@ -41,6 +41,8 @@ import {
   Monitor,
   Tablet,
   ChevronDown,
+  UserRoundCheck,
+  UserRoundX,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
@@ -559,7 +561,7 @@ const SystemSettingsModule: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="relative"
             >
-              <AccessPanel user={user} isAdmin={isAdmin} onLogout={logout} hospitalName={hospital.hospital_name} />
+              <AccessPanel user={user} isAdmin={isAdmin} onLogout={logout} hospitalName={hospital.hospital_name} hospitalId={activeHospitalId} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -1206,9 +1208,61 @@ interface AccessPanelProps {
   isAdmin: boolean;
   onLogout: () => void;
   hospitalName?: string | null;
+  hospitalId: string | null;
 }
 
-const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, hospitalName }) => {
+interface HospitalAccessUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  is_active: boolean;
+  has_access: boolean;
+  access_is_global: boolean;
+}
+
+const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, hospitalName, hospitalId }) => {
+  const [accessUsers, setAccessUsers] = useState<HospitalAccessUser[]>([]);
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [accessSaving, setAccessSaving] = useState<string | null>(null);
+  const [accessError, setAccessError] = useState<string | null>(null);
+
+  const loadAccess = useCallback(async () => {
+    if (!isAdmin || !hospitalId) return;
+    setAccessLoading(true);
+    setAccessError(null);
+    try {
+      const response = await fetch(`/api/admin/hospital-memberships?hospitalId=${encodeURIComponent(hospitalId)}`, { cache: 'no-store' });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(json.error || 'Přístupy nelze načíst');
+      setAccessUsers(Array.isArray(json.users) ? json.users : []);
+    } catch (cause) {
+      setAccessError(cause instanceof Error ? cause.message : 'Přístupy nelze načíst');
+    } finally {
+      setAccessLoading(false);
+    }
+  }, [hospitalId, isAdmin]);
+
+  useEffect(() => { void loadAccess(); }, [loadAccess]);
+
+  const toggleAccess = useCallback(async (accessUser: HospitalAccessUser) => {
+    if (!hospitalId || accessUser.access_is_global) return;
+    setAccessSaving(accessUser.id);
+    setAccessError(null);
+    try {
+      const response = await fetch('/api/admin/hospital-memberships', {
+        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hospitalId, userId: accessUser.id, enabled: !accessUser.has_access }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(json.error || 'Přístup nelze změnit');
+      setAccessUsers(previous => previous.map(item => item.id === accessUser.id ? { ...item, has_access: !item.has_access } : item));
+    } catch (cause) {
+      setAccessError(cause instanceof Error ? cause.message : 'Přístup nelze změnit');
+    } finally {
+      setAccessSaving(null);
+    }
+  }, [hospitalId]);
   return (
     <div className="space-y-6">
       <div>
@@ -1266,23 +1320,57 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, hosp
 
           <dl className="space-y-3 text-sm">
             <InfoRow label="Připojeno k" value={hospitalName || 'Nenakonfigurováno'} />
-            <InfoRow label="Instance" value="Produkční (single-tenant)" />
+            <InfoRow label="Režim" value="Oddělený multi-hospital" />
           </dl>
 
           <p className="mt-5 text-xs text-white/40 leading-relaxed">
-            Jedna nasazená instance odpovídá jedné nemocnici. Pro více zařízení se aplikace nasazuje vícekrát s oddělenými
-            databázemi. Název zařízení nastavíte v záložce <strong className="text-white/60">Zdravotnické zařízení</strong>.
+            Aktivní nemocnice určuje databázový kontext celé relace. Její data jsou oddělena pomocí hospital_id a RLS pravidel.
           </p>
         </div>
       </div>
 
-      <div className="flex items-start gap-2 p-4 rounded-xl bg-[#FBBF24]/5 border border-[#FBBF24]/20 text-sm">
-        <Shield className="w-4 h-4 text-[#FBBF24] mt-0.5 flex-shrink-0" />
-        <p className="text-white/60 leading-relaxed">
-          Chystaná funkce: <strong className="text-white/80">multi-tenant přihlášení</strong> — jedna instance aplikace
-          umožní výběr nemocnice přímo při přihlášení, s oddělenými daty pro každé zařízení.
-        </p>
-      </div>
+      {isAdmin && (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <h3 className="text-base font-bold text-white">Uživatelé nemocnice</h3>
+              <p className="text-xs text-white/40 mt-1">Povolte uživatelům přihlášení do {hospitalName || 'vybrané nemocnice'}.</p>
+            </div>
+            {accessLoading && <Loader2 className="w-5 h-5 animate-spin text-white/40" />}
+          </div>
+
+          {accessError && (
+            <div className="mb-3 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {accessError}
+            </div>
+          )}
+
+          <div className="divide-y divide-white/[0.06]">
+            {accessUsers.map(accessUser => (
+              <div key={accessUser.id} className="flex items-center gap-3 py-3">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${accessUser.has_access ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-white/25'}`}>
+                  {accessUser.has_access ? <UserRoundCheck className="w-4 h-4" /> : <UserRoundX className="w-4 h-4" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-white">{accessUser.name}</p>
+                  <p className="truncate text-xs text-white/35">{accessUser.email} · {accessUser.role}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void toggleAccess(accessUser)}
+                  disabled={accessUser.access_is_global || accessSaving === accessUser.id || !accessUser.is_active}
+                  className={`min-w-[96px] rounded-xl border px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${accessUser.has_access ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-white/10 bg-white/[0.03] text-white/45'}`}
+                >
+                  {accessSaving === accessUser.id ? <Loader2 className="mx-auto w-4 h-4 animate-spin" /> : accessUser.access_is_global ? 'Všechny' : accessUser.has_access ? 'Povoleno' : 'Zakázáno'}
+                </button>
+              </div>
+            ))}
+            {!accessLoading && accessUsers.length === 0 && (
+              <p className="py-6 text-center text-sm text-white/35">Nebyli nalezeni žádní uživatelé.</p>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 };

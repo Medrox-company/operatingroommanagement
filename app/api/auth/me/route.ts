@@ -12,6 +12,7 @@ export async function GET() {
       email: user.email,
       name: user.name,
       role: user.role,
+      hospitalId: user.hospitalId,
       is_active: true,
     },
   });

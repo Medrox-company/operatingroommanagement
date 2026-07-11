@@ -13,6 +13,7 @@ export interface SessionPayload {
   email: string;
   role: string;
   name: string;
+  hospitalId: string;
   exp: number;        // expiration timestamp (ms since epoch)
   iat: number;        // issued-at timestamp (ms since epoch)
 }
@@ -65,7 +66,7 @@ export function verifySession(token: string | null | undefined): SessionPayload 
     if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
     const payload = JSON.parse(b64urlDecode(p).toString('utf8')) as SessionPayload;
     if (!payload || typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
-    if (!payload.sub || !payload.email || !payload.role) return null;
+    if (!payload.sub || !payload.email || !payload.role || !payload.hospitalId) return null;
     return payload;
   } catch {
     return null;

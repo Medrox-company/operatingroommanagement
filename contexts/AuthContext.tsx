@@ -9,6 +9,7 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  hospitalId: string;
   is_active: boolean;
 }
 
@@ -29,7 +30,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   modules: AppModule[];
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string, hospitalId: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshModules: () => Promise<void>;
   toggleModule: (moduleId: string, enabled: boolean) => Promise<boolean>;
@@ -101,13 +102,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(
-    async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    async (email: string, password: string, hospitalId: string): Promise<{ success: boolean; error?: string }> => {
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, hospitalId }),
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok || !json?.user) {
@@ -117,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
         setUser(json.user as User);
+        localStorage.setItem('orm-active-hospital', hospitalId);
         window.dispatchEvent(new Event('authenticationChanged'));
         return { success: true };
       } catch (error) {
