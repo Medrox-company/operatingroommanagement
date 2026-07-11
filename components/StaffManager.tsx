@@ -8,6 +8,7 @@ import {
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel } from '../types';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { useHospital } from '../contexts/HospitalContext';
 
 // Types from database
 interface StaffMember {
@@ -454,6 +455,7 @@ function DetailEditModal({
 }
 
 export default function StaffManager() {
+  const { activeHospitalId } = useHospital();
   const confirm = useConfirm();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -478,6 +480,7 @@ export default function StaffManager() {
         const { data, error } = await supabase
           .from('staff')
           .select('*')
+          .eq('hospital_id', activeHospitalId || 'default')
           .order('name');
         
         if (error) throw error;
@@ -491,7 +494,7 @@ export default function StaffManager() {
     
     fetchStaff();
     return () => { mounted = false; };
-  }, []);
+  }, [activeHospitalId]);
 
   // Filter staff by category
   const staffByCategory = useMemo(() => {
@@ -545,6 +548,7 @@ export default function StaffManager() {
         name: newStaffName.trim(),
         role: roleMap[activeCategory],
         is_active: true,
+        hospital_id: activeHospitalId || 'default',
       };
       
       const { error } = await supabase.from('staff').insert(newStaff);
@@ -571,7 +575,7 @@ export default function StaffManager() {
     }))) return;
 
     try {
-      const { error } = await supabase.from('staff').delete().eq('id', id);
+      const { error } = await supabase.from('staff').delete().eq('id', id).eq('hospital_id', activeHospitalId || 'default');
       if (error) throw error;
       
       setStaff(prev => prev.filter(s => s.id !== id));
@@ -601,7 +605,8 @@ export default function StaffManager() {
           vacation_days: updated.vacation_days,
           notes: updated.notes,
         })
-        .eq('id', updated.id);
+        .eq('id', updated.id)
+        .eq('hospital_id', activeHospitalId || 'default');
       
       if (error) throw error;
       
@@ -622,7 +627,8 @@ export default function StaffManager() {
       const { error } = await supabase
         .from('staff')
         .update({ is_active: !member.is_active })
-        .eq('id', member.id);
+        .eq('id', member.id)
+        .eq('hospital_id', activeHospitalId || 'default');
       
       if (error) throw error;
       

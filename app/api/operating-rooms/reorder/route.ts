@@ -9,13 +9,16 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const { rooms } = await req.json();
+    const { rooms, hospitalId } = await req.json();
 
     if (!Array.isArray(rooms)) {
       return NextResponse.json({ error: 'Invalid rooms format' }, { status: 400 });
     }
     if (rooms.length > 200) {
       return NextResponse.json({ error: 'Too many rooms' }, { status: 400 });
+    }
+    if (typeof hospitalId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) {
+      return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
     }
 
     const supabase = getSupabaseAdmin();
@@ -28,7 +31,8 @@ export async function POST(req: NextRequest) {
       const { error } = await supabase
         .from('operating_rooms')
         .update({ sort_order: i })
-        .eq('id', roomId);
+        .eq('id', roomId)
+        .eq('hospital_id', hospitalId);
 
       if (error) {
         console.error('[rooms/reorder] Error updating room order:', error);

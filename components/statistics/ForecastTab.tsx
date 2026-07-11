@@ -277,10 +277,16 @@ export const ForecastTab: React.FC<ForecastTabProps> = memo(({
                     borderRadius: 8, fontSize: 11,
                   }}
                   labelStyle={{ color: C.text }}
-                  formatter={(v: number, name: string, p: any) => [
-                    `${v} výkonů • ~${Math.round((p.payload.minutes ?? 0) / 60)}h`,
-                    'Plán',
-                  ]}
+                  formatter={(v: unknown, _name: unknown, p: unknown) => {
+                    const itemPayload = p && typeof p === 'object' && 'payload' in p
+                      ? (p.payload as { minutes?: number } | undefined)
+                      : undefined;
+                    const count = typeof v === 'number' ? v : Number(v) || 0;
+                    return [
+                      `${count} výkonů • ~${Math.round((itemPayload?.minutes ?? 0) / 60)}h`,
+                      'Plán',
+                    ];
+                  }}
                 />
                 <Bar dataKey="count" fill="url(#day-gradient)" radius={[6, 6, 0, 0]} />
               </BarChart>

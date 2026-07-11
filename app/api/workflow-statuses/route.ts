@@ -1,18 +1,32 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
+import { logger } from '@/lib/logger';
+import { getRequestHospitalId } from '@/lib/hospital/request';
 
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+let supabaseInstance: SupabaseClient | null | undefined;
 
-const supabase = supabaseUrl && supabaseKey
-  ? createClient(supabaseUrl, supabaseKey)
-  : null;
+function getSupabaseClient(): SupabaseClient | null {
+  if (supabaseInstance !== undefined) return supabaseInstance;
 
-export async function GET() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  supabaseInstance = supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey)
+    : null;
+
+  return supabaseInstance;
+}
+
+export async function GET(request: NextRequest) {
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+  const supabase = getSupabaseClient();
+
   if (!supabase) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
   }
@@ -21,12 +35,13 @@ export async function GET() {
     const { data, error } = await supabase
       .from('workflow_statuses')
       .select('*')
+      .eq('hospital_id', hospitalId)
       .order('sort_order', { ascending: true });
 
     if (error) throw error;
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching workflow statuses:', error);
+    logger.error('Error fetching workflow statuses:', error);
     return NextResponse.json({ error: 'Failed to fetch statuses' }, { status: 500 });
   }
 }
@@ -36,6 +51,10 @@ export async function PUT(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+
+  const supabase = getSupabaseClient();
 
   if (!supabase) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
@@ -64,13 +83,14 @@ export async function PUT(request: NextRequest) {
       .from('workflow_statuses')
       .update(updates)
       .eq('id', id)
+      .eq('hospital_id', hospitalId)
       .select()
       .single();
 
     if (error) throw error;
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error updating workflow status:', error);
+    logger.error('Error updating workflow status:', error);
     return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
   }
 }
@@ -80,6 +100,10 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+
+  const supabase = getSupabaseClient();
 
   if (!supabase) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
@@ -92,6 +116,7 @@ export async function POST(request: NextRequest) {
     const { data: maxData } = await supabase
       .from('workflow_statuses')
       .select('sort_order')
+      .eq('hospital_id', hospitalId)
       .order('sort_order', { ascending: false })
       .limit(1)
       .single();
@@ -102,6 +127,7 @@ export async function POST(request: NextRequest) {
       .from('workflow_statuses')
       .insert({
         id: `status-${Date.now()}`,
+        hospital_id: hospitalId,
         name: body.name || 'Nový status',
         description: body.description || '',
         accent_color: body.accent_color || '#6B7280',
@@ -118,7 +144,7 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error creating workflow status:', error);
+    logger.error('Error creating workflow status:', error);
     return NextResponse.json({ error: 'Failed to create status' }, { status: 500 });
   }
 }
@@ -128,6 +154,10 @@ export async function DELETE(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+
+  const supabase = getSupabaseClient();
 
   if (!supabase) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
@@ -144,12 +174,13 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase
       .from('workflow_statuses')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('hospital_id', hospitalId);
 
     if (error) throw error;
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting workflow status:', error);
+    logger.error('Error deleting workflow status:', error);
     return NextResponse.json({ error: 'Failed to delete status' }, { status: 500 });
   }
 }

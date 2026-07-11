@@ -7,6 +7,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 // Singleton pattern for Supabase client to avoid creating multiple instances
 let supabaseInstance: SupabaseClient | null = null;
+let hospitalAccessToken: string | null = null;
+
+export function setSupabaseHospitalToken(token: string | null) {
+  hospitalAccessToken = token;
+}
 
 function getSupabaseClient(): SupabaseClient | null {
   if (supabaseInstance) return supabaseInstance;
@@ -16,6 +21,7 @@ function getSupabaseClient(): SupabaseClient | null {
   }
   
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    accessToken: async () => hospitalAccessToken,
     realtime: {
       params: {
         eventsPerSecond: 10,

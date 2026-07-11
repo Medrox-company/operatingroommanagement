@@ -94,10 +94,122 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     if (action) action(e);
   };
 
+  // Průběh kroků pro mobilní progress bar (místo středového čísla)
+  const totalStepsAll = activeStatuses.length > 0 ? activeStatuses.length : 1;
+  const safeIdxMobile = Math.min(Math.max(0, room.currentStepIndex || 0), totalStepsAll - 1);
+  const progressPct = ((safeIdxMobile + 1) / totalStepsAll) * 100;
+
   return (
+    <>
+    {/* ===== MOBILE — kompaktní box dle prototypu (2 sloupce, bez středového čísla) ===== */}
     <div
       onClick={onClick}
-      className={`relative group cursor-pointer w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] ${fill ? 'h-full min-h-[140px]' : 'h-[260px] sm:h-[340px]'}`}
+      className="md:hidden relative w-full rounded-[16px] px-3.5 pt-3.5 pb-3 cursor-pointer active:scale-[0.99] transition-transform select-none"
+      style={{
+        background: '#FFFFFF',
+        boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
+        border: room.isEmergency
+          ? '1.5px solid rgba(229,72,77,0.6)'
+          : room.isLocked
+          ? '1.5px solid rgba(245,158,11,0.6)'
+          : '1px solid transparent',
+      }}
+    >
+      {/* Název + oddělení (dle prototypu název nahoře, oddělení pod ním) */}
+      <div className="flex items-start justify-between gap-1.5">
+        <div className="min-w-0">
+          <h3 className="text-[14px] font-extrabold uppercase truncate leading-tight tracking-tight" style={{ color: '#1E3560' }}>
+            {room.name}
+          </h3>
+          <p className="text-[11px] font-medium truncate mt-0.5" style={{ color: '#7C8AA5' }}>
+            {room.department}
+          </p>
+        </div>
+        {room.noticeMessage && (
+          <span
+            className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: 'rgba(41,82,200,0.10)' }}
+            title="Čeká zpráva — otevři detail sálu"
+          >
+            <Megaphone className="w-3 h-3" style={{ color: '#2952C8' }} />
+          </span>
+        )}
+      </div>
+
+      {/* Status chip s tečkou */}
+      <div className="mt-2.5">
+        <span
+          className="inline-flex max-w-full items-center gap-1.5 px-2.5 h-6 rounded-full text-[9.5px] font-bold uppercase tracking-wide"
+          style={room.isEmergency
+            ? { background: '#E5484D', color: '#FFFFFF' }
+            : room.isLocked
+            ? { background: '#F59E0B', color: '#FFFFFF' }
+            : { background: `${themeColor}16`, color: themeColor }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full shrink-0"
+            style={{ background: room.isEmergency || room.isLocked ? '#FFFFFF' : themeColor }}
+          />
+          <span className="truncate">
+            {room.isEmergency
+              ? 'STAV NOUZE'
+              : room.isLocked
+              ? 'SÁL UZAMČEN'
+              : room.isPaused
+              ? `${currentStep.title} · Pauza`
+              : currentStep.title}
+          </span>
+        </span>
+      </div>
+
+      {/* Tenký progress kroků — nahrazuje středové číslo */}
+      <div className="mt-2.5 h-1 rounded-full overflow-hidden" style={{ background: '#E7ECF5' }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${room.isPaused ? 100 : progressPct}%`, background: themeColor }}
+        />
+      </div>
+
+      {/* Spodní řádek — lékař · čas | indikátory · (i) | zámek */}
+      <div className="mt-2.5 pt-2.5 flex items-center justify-between gap-1.5" style={{ borderTop: '1px solid #EDF1F8' }}>
+        <div className="flex items-center gap-1 min-w-0">
+          <User className="w-3.5 h-3.5 shrink-0" style={{ color: '#7C8AA5' }} strokeWidth={2.25} />
+          <span className="text-[9.5px] font-bold uppercase tracking-wide truncate" style={{ color: '#7C8AA5' }}>
+            {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
+          </span>
+          {room.estimatedEndTime && shouldShowTime && (
+            <span className="text-[12px] font-bold tabular-nums shrink-0 ml-0.5" style={{ color: '#2952C8' }}>
+              {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {room.isSeptic && <Biohazard className="w-3.5 h-3.5" style={{ color: '#E5484D' }} />}
+          {room.patientCalledAt && !room.patientArrivedAt && <Phone className="w-3.5 h-3.5" style={{ color: '#2952C8' }} />}
+          {room.patientArrivedAt && <BedDouble className="w-3.5 h-3.5" style={{ color: '#10B981' }} />}
+          <button
+            onClick={(e) => handleAction(e, onEmergency)}
+            aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
+            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <AlertCircle className="w-[17px] h-[17px]" strokeWidth={2} style={{ color: room.isEmergency ? '#E5484D' : '#1E3560' }} />
+          </button>
+          <span className="w-px h-4" style={{ background: '#E1E8F3' }} />
+          <button
+            onClick={(e) => handleAction(e, onLock)}
+            aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
+            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Lock className="w-[17px] h-[17px]" strokeWidth={2} style={{ color: room.isLocked ? '#F59E0B' : '#1E3560' }} />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {/* ===== DESKTOP — původní karta ===== */}
+    <div
+      onClick={onClick}
+      className={`hidden md:block relative group cursor-pointer w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] ${fill ? 'h-full min-h-[140px]' : 'h-[260px] sm:h-[340px]'}`}
     >
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
@@ -348,6 +460,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         </div>
       </div>
     </div>
+    </>
   );
 }, (prev, next) => {
   // Custom comparator — re-renderuj pouze když se změní DATA sálu, nikoli callbacky.

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { getDatabaseHospitalId } from '../lib/db';
 
 export type UserRole = 'admin' | 'user' | 'aro' | 'cos' | 'management' | 'primar';
 
@@ -60,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('app_modules')
         .select('*')
+        .eq('hospital_id', getDatabaseHospitalId())
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
@@ -68,6 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[Auth] Failed to fetch modules:', error);
     }
   }, []);
+
+  useEffect(() => {
+    const handleHospitalChange = () => { void refreshModules(); };
+    window.addEventListener('activeHospitalChanged', handleHospitalChange);
+    return () => window.removeEventListener('activeHospitalChanged', handleHospitalChange);
+  }, [refreshModules]);
 
   // Bootstrap: obnov session z HttpOnly cookie přes /api/auth/me
   useEffect(() => {
@@ -127,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setUser(json.user as User);
         await refreshModules();
+        window.dispatchEvent(new Event('authenticationChanged'));
         return { success: true };
       } catch (error) {
         console.error('[Auth] Login failed:', error);
@@ -143,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Ignore
     }
     setUser(null);
+    window.dispatchEvent(new Event('authenticationChanged'));
   }, []);
 
   const toggleModule = useCallback(
@@ -155,7 +165,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from('app_modules')
           .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
-          .eq('id', moduleId);
+          .eq('id', moduleId)
+          .eq('hospital_id', getDatabaseHospitalId());
 
         if (error) throw error;
         await refreshModules();
@@ -189,7 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from('app_modules')
           .update({ allowed_roles: next, updated_at: new Date().toISOString() })
-          .eq('id', moduleId);
+          .eq('id', moduleId)
+          .eq('hospital_id', getDatabaseHospitalId());
 
         if (error) throw error;
         setModules(prev => prev.map(m => (m.id === moduleId ? { ...m, allowed_roles: next } : m)));

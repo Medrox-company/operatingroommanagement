@@ -36,14 +36,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { mode?: string; confirmation?: string };
+  let body: { mode?: string; confirmation?: string; hospitalId?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Neplatné tělo požadavku' }, { status: 400 });
   }
 
-  const { mode, confirmation } = body;
+  const { mode, confirmation, hospitalId } = body;
+  if (typeof hospitalId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) {
+    return NextResponse.json({ error: 'Neplatné zařízení' }, { status: 400 });
+  }
 
   if (confirmation !== 'SMAZAT DATA') {
     return NextResponse.json(
@@ -69,7 +72,7 @@ export async function POST(req: NextRequest) {
     const { error, count } = await admin
       .from(table)
       .delete({ count: 'exact' })
-      .not('id', 'is', null);
+      .eq('hospital_id', hospitalId);
     if (error) {
       deletedCounts[table] = `ERROR: ${error.message}`;
     } else {
@@ -81,17 +84,22 @@ export async function POST(req: NextRequest) {
   // 1) Historie a logy (závislé na operating_rooms)
   await wipeTable('room_status_history');
   await wipeTable('notifications_log');
+  await wipeTable('safety_checklists');
+  await wipeTable('operating_procedures');
   // 2) Rozpisy a směny
   await wipeTable('shift_schedules');
   await wipeTable('schedules');
   // 3) Vybavení
   await wipeTable('equipment');
+  await wipeTable('devices');
 
   if (mode === 'full') {
     // V režimu 'full' smažeme i konfigurační tabulky (personál, oddělení, workflow).
     await wipeTable('sub_departments');
     await wipeTable('departments');
     await wipeTable('staff');
+    await wipeTable('patients');
+    await wipeTable('procedures');
     await wipeTable('management_contacts');
     await wipeTable('workflow_statuses');
     // operating_rooms se smažou kompletně — budou se znovu nakonfigurovat.
@@ -123,7 +131,7 @@ export async function POST(req: NextRequest) {
         },
         { count: 'exact' }
       )
-      .not('id', 'is', null);
+      .eq('hospital_id', hospitalId);
     if (resetErr) {
       deletedCounts['operating_rooms_reset'] = `ERROR: ${resetErr.message}`;
     } else {

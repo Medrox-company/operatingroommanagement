@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { requireSession, requireAdmin } from '@/lib/auth/server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
+import { getRequestHospitalId } from '@/lib/hospital/request';
 
 export const runtime = 'nodejs';
 
@@ -17,9 +18,11 @@ function getSupabase() {
 }
 
 // GET - List all devices (jen přihlášení — seznam obsahuje IP adresy zařízení)
-export async function GET() {
+export async function GET(request: NextRequest) {
   const auth = await requireSession();
   if (auth instanceof NextResponse) return auth;
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
 
   const supabase = getSupabase();
   if (!supabase) {
@@ -30,6 +33,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('devices')
       .select('*')
+      .eq('hospital_id', hospitalId)
       .order('last_seen_at', { ascending: false });
 
     if (error) {
@@ -51,6 +55,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const auth = await requireSession();
   if (auth instanceof NextResponse) return auth;
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
 
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
@@ -93,6 +99,7 @@ export async function POST(request: NextRequest) {
       .from('devices')
       .select('id, is_active')
       .eq('device_id', device_id)
+      .eq('hospital_id', hospitalId)
       .single();
 
     if (existing) {
@@ -118,6 +125,7 @@ export async function POST(request: NextRequest) {
         .from('devices')
         .update(updateData)
         .eq('device_id', device_id)
+        .eq('hospital_id', hospitalId)
         .select()
         .single();
 
@@ -128,6 +136,7 @@ export async function POST(request: NextRequest) {
       const { data, error } = await supabase
         .from('devices')
         .insert({
+          hospital_id: hospitalId,
           device_id,
           device_name: device_name || `Zařízení ${new Date().toLocaleDateString('cs')}`,
           device_type: device_type || 'unknown',
@@ -154,6 +163,8 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const auth = await requireAdmin();
   if (auth instanceof NextResponse) return auth;
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
 
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
@@ -187,6 +198,7 @@ export async function PATCH(request: NextRequest) {
       query.eq('device_id', device_id);
     }
 
+    query.eq('hospital_id', hospitalId);
     const { data, error } = await query.select().single();
 
     if (error) throw error;
@@ -201,6 +213,8 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const auth = await requireAdmin();
   if (auth instanceof NextResponse) return auth;
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
 
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
@@ -228,6 +242,7 @@ export async function DELETE(request: NextRequest) {
       query.eq('device_id', device_id);
     }
 
+    query.eq('hospital_id', hospitalId);
     const { error } = await query;
 
     if (error) throw error;

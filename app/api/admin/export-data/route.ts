@@ -25,14 +25,18 @@ const EXPORT_TABLES = [
   'departments',
   'sub_departments',
   'staff',
+  'patients',
+  'procedures',
   'management_contacts',
   'operating_rooms',
+  'operating_procedures',
+  'safety_checklists',
   'equipment',
   'schedules',
   'shift_schedules',
   'room_status_history',
   'notifications_log',
-  'app_users',
+  'devices',
 ] as const;
 
 // Sloupce, které se z vybraných tabulek při exportu vynechávají (citlivá data).
@@ -40,7 +44,7 @@ const STRIPPED_COLUMNS: Record<string, string[]> = {
   app_users: ['password_hash', 'password'],
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   const authResult = await requireAdmin();
   if (authResult instanceof NextResponse) return authResult;
   const sessionUser = authResult.user;
@@ -53,13 +57,17 @@ export async function GET() {
   }
 
   const admin = getSupabaseAdmin();
+  const hospitalId = new URL(request.url).searchParams.get('hospitalId') || '';
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) {
+    return NextResponse.json({ error: 'Neplatné zařízení' }, { status: 400 });
+  }
 
   const tables: Record<string, unknown[]> = {};
   const errors: Record<string, string> = {};
   let totalRows = 0;
 
   for (const table of EXPORT_TABLES) {
-    const { data, error } = await admin.from(table).select('*');
+    const { data, error } = await admin.from(table).select('*').eq('hospital_id', hospitalId);
     if (error) {
       // Tabulka může neexistovat — zaznamenáme, ale export nepadne
       errors[table] = error.message;
@@ -79,15 +87,16 @@ export async function GET() {
     totalRows += cleaned.length;
   }
 
-  const facilityRow = (tables.app_settings?.[0] ?? {}) as Record<string, unknown>;
+  const { data: hospitalData } = await admin.from('hospitals').select('*').eq('id', hospitalId).single();
+  const hospitalRow = (hospitalData ?? {}) as Record<string, unknown>;
 
   const payload = {
     version: '1.0',
     exportedAt: new Date().toISOString(),
     exportedBy: sessionUser.email,
-    facility: {
-      name: facilityRow.facility_name ?? null,
-      ico: facilityRow.facility_ico ?? null,
+    hospital: {
+      name: hospitalRow.hospital_name ?? null,
+      ico: hospitalRow.hospital_ico ?? null,
     },
     meta: {
       tableCount: EXPORT_TABLES.length,
@@ -98,14 +107,14 @@ export async function GET() {
   };
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const facilitySlug =
-    typeof facilityRow.facility_name === 'string' && facilityRow.facility_name
-      ? String(facilityRow.facility_name)
+  const hospitalSlug =
+    typeof hospitalRow.hospital_name === 'string' && hospitalRow.hospital_name
+      ? String(hospitalRow.hospital_name)
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-|-$/g, '')
       : 'nemocnice';
-  const filename = `or-backup_${facilitySlug}_${timestamp}.json`;
+  const filename = `or-backup_${hospitalSlug}_${timestamp}.json`;
 
   return new NextResponse(JSON.stringify(payload, null, 2), {
     status: 200,

@@ -1,6 +1,7 @@
 import { fetchOperatingRooms } from '@/lib/db';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireSession } from '@/lib/auth/server';
+import { getRequestHospitalId } from '@/lib/hospital/request';
 
 // CRITICAL: Disable all caching - this endpoint must always return fresh data
 // for real-time sync of room states (lock, emergency) across devices
@@ -8,12 +9,14 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const auth = await requireSession();
   if (auth instanceof NextResponse) return auth;
+  const hospitalId = getRequestHospitalId(request);
+  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
 
   try {
-    const rooms = await fetchOperatingRooms();
+    const rooms = await fetchOperatingRooms(hospitalId);
     return NextResponse.json(rooms, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

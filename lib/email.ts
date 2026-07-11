@@ -2,9 +2,15 @@
 // Server-side only - this module should only be imported in API routes
 
 import { Resend } from 'resend';
+import { logger } from './logger';
 
-// Initialize Resend client - will be null if API key is not set
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+let resendInstance: Resend | null | undefined;
+
+function getResendClient(): Resend | null {
+  if (resendInstance !== undefined) return resendInstance;
+  resendInstance = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+  return resendInstance;
+}
 
 // Default sender email - use Resend's test email if not configured
 const DEFAULT_FROM = process.env.EMAIL_FROM || 'Operacni Saly <onboarding@resend.dev>';
@@ -30,8 +36,10 @@ export interface EmailTemplateData {
 export async function sendEmailNotification(
   notification: EmailNotification
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  const resend = getResendClient();
+
   if (!resend) {
-    console.error('[Email] Resend API key not configured (RESEND_API_KEY)');
+    logger.error('[Email] Resend API key not configured (RESEND_API_KEY)');
     return { success: false, error: 'Email service not configured - missing RESEND_API_KEY' };
   }
 
@@ -44,14 +52,14 @@ export async function sendEmailNotification(
     });
 
     if (error) {
-      console.error('[Email] Resend API error:', error);
+      logger.error('[Email] Resend API error:', error);
       return { success: false, error: error.message || 'Failed to send email' };
     }
 
-    console.log('[Email] Email sent successfully:', data?.id);
+    logger.info('[Email] Email sent successfully:', data?.id);
     return { success: true, messageId: data?.id };
   } catch (error) {
-    console.error('[Email] Failed to send email:', error);
+    logger.error('[Email] Failed to send email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

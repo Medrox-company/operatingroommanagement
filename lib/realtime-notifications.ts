@@ -16,7 +16,7 @@ export function subscribeToNotifications(callback: (notification: RealtimeNotifi
   };
 }
 
-export function notifyChange(type: 'insert' | 'update' | 'delete', table: string, data?: any) {
+export function notifyChange(type: 'insert' | 'update' | 'delete', table: string, data?: unknown) {
   const notification: RealtimeNotification = {
     id: `${table}-${Date.now()}`,
     type,

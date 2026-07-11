@@ -29,21 +29,17 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
   }, [logout]);
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] pointer-events-none pb-[max(env(safe-area-inset-bottom),0.75rem)] px-4">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] pointer-events-none">
+      {/* Plná tmavě modrá lišta dle prototypu — přes celou šířku, ke spodní hraně */}
       <nav
-        className="pointer-events-auto mx-auto flex items-center justify-around gap-1 max-w-md rounded-[26px] px-2 py-2 relative overflow-hidden"
+        className="pointer-events-auto flex items-start justify-around gap-0.5 px-2 pt-2.5 relative"
         style={{
-          background: 'linear-gradient(180deg, rgba(13,42,46,0.82) 0%, rgba(8,26,30,0.9) 100%)',
-          border: '1px solid rgba(45,212,191,0.18)',
-          boxShadow: '0 16px 40px -12px rgba(0,0,0,0.7), 0 0 30px rgba(45,212,191,0.08), inset 0 1px 0 rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          background: '#1E3560',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
+          boxShadow: '0 -8px 24px rgba(23,43,99,0.25)',
         }}
         aria-label="Hlavní navigace"
       >
-        {/* jemný horní světelný akcent lišty */}
-        <div className="absolute inset-x-10 top-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(45,212,191,0.4), transparent)' }} />
-
         {enabledItems.map((item) => {
           const isActive = currentView === item.id;
           return (
@@ -52,25 +48,24 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
               onClick={() => onNavigate(item.id)}
               aria-current={isActive ? 'page' : undefined}
               aria-label={item.label}
-              className="relative flex flex-col items-center justify-center gap-1 flex-1 min-w-0 py-2 rounded-2xl transition-all duration-300 focus:outline-none"
-              style={isActive ? {
-                background: 'linear-gradient(180deg, rgba(45,212,191,0.22) 0%, rgba(34,211,238,0.10) 100%)',
-                boxShadow: '0 0 18px -2px rgba(45,212,191,0.35), inset 0 1px 0 rgba(255,255,255,0.10)',
-                border: '1px solid rgba(45,212,191,0.4)',
-              } : { border: '1px solid transparent' }}
+              className="relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-0 py-1 transition-all duration-300 focus:outline-none"
             >
               <item.icon
-                className="w-[22px] h-[22px] transition-colors duration-300"
+                className="w-[21px] h-[21px] transition-colors duration-300"
                 strokeWidth={isActive ? 2.5 : 2}
-                style={{ color: isActive ? '#5EEAD4' : 'rgba(255,255,255,0.5)' }}
+                style={{ color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.45)' }}
                 aria-hidden
               />
               <span
-                className="text-[8px] font-bold uppercase tracking-wider truncate max-w-[60px] transition-colors duration-300"
-                style={{ color: isActive ? '#99F6E4' : 'rgba(255,255,255,0.4)' }}
+                className="text-[8px] font-bold uppercase tracking-wider truncate max-w-[64px] transition-colors duration-300"
+                style={{ color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.45)' }}
               >
                 {item.label}
               </span>
+              {/* Aktivní indikátor — krátká linka pod položkou */}
+              {isActive && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-[3px] rounded-full bg-white" />
+              )}
             </button>
           );
         })}
@@ -79,11 +74,10 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
         <button
           onClick={handleLogout}
           aria-label="Odhlásit se"
-          className="relative flex flex-col items-center justify-center gap-1 flex-1 min-w-0 py-2 rounded-2xl transition-all duration-200 active:bg-red-500/15"
-          style={{ border: '1px solid transparent' }}
+          className="relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-0 py-1 transition-all duration-200"
         >
-          <LogOut className="w-[22px] h-[22px]" strokeWidth={2} style={{ color: 'rgba(255,255,255,0.5)' }} aria-hidden />
-          <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>Odhlásit</span>
+          <LogOut className="w-[21px] h-[21px]" strokeWidth={2} style={{ color: 'rgba(255,255,255,0.45)' }} aria-hidden />
+          <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.45)' }}>Odhlásit</span>
         </button>
       </nav>
     </div>

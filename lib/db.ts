@@ -1,5 +1,9 @@
 import { supabase, isSupabaseConfigured } from './supabase';
+import { logger } from './logger';
 import { OperatingRoom, RoomStatus, WeeklySchedule, SkillLevel } from '../types';
+
+type JsonObject = Record<string, unknown>;
+type RoomStatusHistoryEntry = NonNullable<OperatingRoom['statusHistory']>[number];
 
 // Network resilience: Retry wrapper for transient failures
 const MAX_RETRIES = 3;
@@ -41,6 +45,7 @@ async function withRetry<T>(
 // Type for database row
 interface DBOperatingRoom {
   id: string;
+  hospital_id: string;
   name: string;
   department: string;
   status: string;
@@ -57,8 +62,8 @@ interface DBOperatingRoom {
   patient_arrived_at: string | null;
   phase_started_at: string | null;
   operation_started_at: string | null;
-  status_history: any[] | null;
-  completed_operations: any[] | null;
+  status_history: RoomStatusHistoryEntry[] | null;
+  completed_operations: CompletedOperation[] | string | null;
   current_step_index: number;
   estimated_end_time: string | null;
   doctor_id: string | null;
@@ -66,12 +71,22 @@ interface DBOperatingRoom {
   anesthesiologist_id: string | null;
   current_patient_id: string | null;
   current_procedure_id: string | null;
-  weekly_schedule: Record<string, any> | null;
+  weekly_schedule: WeeklySchedule | null;
   sort_order: number | null;
   hourly_operating_cost: number | string | null;
   notice_message: string | null;
   notice_at: string | null;
   notice_sender: string | null;
+}
+
+// Aktivní zařízení nastavuje HospitalContext. Všechny dotazy na sály pak mají
+// stejný tenant filtr i při přímém použití Supabase klienta.
+let activeHospitalId: string | null = null;
+export function setDatabaseHospitalId(id: string | null) {
+  activeHospitalId = id;
+}
+export function getDatabaseHospitalId(): string {
+  return activeHospitalId || 'default';
 }
 
 interface DBStaff {
@@ -105,6 +120,23 @@ interface DBProcedure {
   progress: number;
 }
 
+function parseCompletedOperations(
+  completedOperations: DBOperatingRoom['completed_operations'] | undefined
+): CompletedOperation[] {
+  if (Array.isArray(completedOperations)) {
+    return completedOperations;
+  }
+  if (typeof completedOperations === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(completedOperations);
+      return Array.isArray(parsed) ? parsed as CompletedOperation[] : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 // Transform DB row to app type
 function transformRoom(
   row: DBOperatingRoom,
@@ -118,18 +150,9 @@ function transformRoom(
   const patient = row.current_patient_id ? patientMap.get(row.current_patient_id) : null;
   const procedure = row.current_procedure_id ? procedureMap.get(row.current_procedure_id) : null;
 
-  // Parse completed_operations - Supabase returns JSONB arrays as-is
-  let completedOps: CompletedOperation[] = [];
-  if (Array.isArray(row.completed_operations)) {
-    completedOps = row.completed_operations;
-  } else if (typeof row.completed_operations === 'string') {
-    try {
-      const parsed = JSON.parse(row.completed_operations);
-      completedOps = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      completedOps = [];
-    }
-  }
+  // Parse completed_operations - Supabase returns JSONB arrays as-is, older
+  // payloads can still arrive as serialized JSON.
+  const completedOps = parseCompletedOperations(row.completed_operations);
 
   return {
     id: row.id,
@@ -221,7 +244,7 @@ function transformRoom(
 }
 
 // Fetch all operating rooms with related data
-export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
+export async function fetchOperatingRooms(hospitalId: string = getDatabaseHospitalId()): Promise<OperatingRoom[] | null> {
   if (!isSupabaseConfigured || !supabase) {
     return null;
   }
@@ -233,9 +256,10 @@ export async function fetchOperatingRooms(): Promise<OperatingRoom[] | null> {
       supabase
         .from('operating_rooms')
         .select('*, completed_operations')
+        .eq('hospital_id', hospitalId)
         .order('sort_order', { ascending: true, nullsFirst: false })
         .order('name', { ascending: true }),
-      supabase.from('staff').select('*'),
+      supabase.from('staff').select('*').eq('hospital_id', hospitalId),
     ]);
 
     if (roomsRes.error) throw roomsRes.error;
@@ -281,9 +305,10 @@ export async function fetchOperatingRoomsLight(): Promise<OperatingRoom[] | null
       supabase
         .from('operating_rooms')
         .select(LIGHT_ROOM_COLUMNS)
+        .eq('hospital_id', activeHospitalId || 'default')
         .order('sort_order', { ascending: true, nullsFirst: false })
         .order('name', { ascending: true }),
-      supabase.from('staff').select('*'),
+      supabase.from('staff').select('*').eq('hospital_id', activeHospitalId || 'default'),
     ]);
 
     if (roomsRes.error) throw roomsRes.error;
@@ -323,12 +348,12 @@ export async function updateOperatingRoom(
     operation_started_at: string | null;
     current_step_index: number;
     estimated_end_time: string | null;
-    weekly_schedule: Record<string, any>;
+    weekly_schedule: WeeklySchedule;
     doctor_id: string | null;
     nurse_id: string | null;
     anesthesiologist_id: string | null;
-    status_history: any[] | null;
-    completed_operations: any[] | null;
+    status_history: RoomStatusHistoryEntry[] | null;
+    completed_operations: CompletedOperation[] | null;
     hourly_operating_cost: number | null;
     notice_message: string | null;
     notice_at: string | null;
@@ -343,7 +368,8 @@ export async function updateOperatingRoom(
     const { error } = await supabase
       .from('operating_rooms')
       .update(updates)
-      .eq('id', id);
+      .eq('id', id)
+      .eq('hospital_id', activeHospitalId || 'default');
 
     if (error) {
       // Chybějící volitelný sloupec (kód 42703, např. paused_at / enhanced_hygiene_at,
@@ -351,13 +377,17 @@ export async function updateOperatingRoom(
       // aby základní změna (např. is_paused, is_enhanced_hygiene) prošla.
       if (error.code === '42703') {
         const OPTIONAL_COLUMNS = ['paused_at', 'enhanced_hygiene_at', 'notice_message', 'notice_at', 'notice_sender'];
-        const stripped: Record<string, any> = { ...(updates as Record<string, any>) };
+        const stripped: Record<string, unknown> = { ...(updates as Record<string, unknown>) };
         let removed = false;
         for (const col of OPTIONAL_COLUMNS) {
           if (col in stripped) { delete stripped[col]; removed = true; }
         }
         if (removed && Object.keys(stripped).length > 0) {
-          const retry = await supabase.from('operating_rooms').update(stripped).eq('id', id);
+          const retry = await supabase
+            .from('operating_rooms')
+            .update(stripped)
+            .eq('id', id)
+            .eq('hospital_id', activeHospitalId || 'default');
           if (!retry.error) {
             console.warn('[DB] Volitelný sloupec chybí — proběhla migrace bez něj. Spusť scripts/add-*.sql.');
             return true;
@@ -395,7 +425,8 @@ export async function updateRoomHourlyOperatingCost(
     const { error } = await supabase
       .from('operating_rooms')
       .update({ hourly_operating_cost: hourlyCost })
-      .eq('id', roomId);
+      .eq('id', roomId)
+      .eq('hospital_id', activeHospitalId || 'default');
     if (error) {
       console.error('[DB] Failed to update hourly_operating_cost:', error);
       return false;
@@ -443,9 +474,10 @@ export async function createOperatingRoom(
       is_paused: roomData.is_paused ?? false,
       is_septic: roomData.is_septic ?? false,
       sort_order: roomData.sort_order ?? 0,
+      hospital_id: activeHospitalId || 'default',
     };
     
-    console.log('[DB] Attempting to create room:', {
+    logger.debug('[DB] Attempting to create room:', {
       id: insertData.id,
       name: insertData.name,
       department: insertData.department,
@@ -466,7 +498,7 @@ export async function createOperatingRoom(
       return false;
     }
     
-    console.log('[DB] Successfully created operating room:', roomData.id);
+    logger.info('[DB] Successfully created operating room:', roomData.id);
     return true;
   } catch (err) {
     console.error('[DB] Exception creating operating room:', err instanceof Error ? err.message : err);
@@ -484,13 +516,14 @@ export async function deleteOperatingRoom(id: string): Promise<boolean> {
     const { error } = await supabase
       .from('operating_rooms')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('hospital_id', activeHospitalId || 'default');
     
     if (error) {
       console.error('[DB] Error deleting operating room:', error);
       return false;
     }
-    console.log('[DB] Successfully deleted operating room:', id);
+    logger.info('[DB] Successfully deleted operating room:', id);
     return true;
   } catch (err) {
     console.error('[DB] Error deleting operating room:', err);
@@ -524,6 +557,7 @@ export async function fetchAllCompletedOperationsForDay(
     const { data, error } = await supabase
       .from('room_status_history')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .gte('timestamp', startOfWindow.toISOString())
       .lte('timestamp', endOfWindow.toISOString())
       .order('operating_room_id')
@@ -659,11 +693,12 @@ export function subscribeToOperatingRooms(
     return null;
   }
 
+  const hospitalId = activeHospitalId || 'default';
   const channel = supabase
-    .channel('operating_rooms_realtime')
+    .channel(`operating_rooms_realtime:${hospitalId}`)
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'operating_rooms' },
+      { event: '*', schema: 'public', table: 'operating_rooms', filter: `hospital_id=eq.${hospitalId}` },
       (payload: { eventType: string; new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
         if (payload.eventType === 'UPDATE' && payload.new && onRoomUpdate) {
           const newRecord = payload.new as unknown as DBOperatingRoom;
@@ -703,11 +738,11 @@ export function subscribeToOperatingRooms(
       }
     )
     .subscribe((status) => {
-      console.log('[DB] Realtime subscription status:', status);
+      logger.debug('[DB] Realtime subscription status:', status);
     });
 
   return () => {
-    console.log('[DB] Unsubscribing from realtime');
+    logger.debug('[DB] Unsubscribing from realtime');
     channel.unsubscribe();
   };
 }
@@ -731,7 +766,7 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.phase_started_at !== undefined) result.phaseStartedAt = row.phase_started_at;
   if (row.operation_started_at !== undefined) result.operationStartedAt = row.operation_started_at;
   if (row.status_history !== undefined) result.statusHistory = row.status_history || [];
-  if (row.completed_operations !== undefined) result.completedOperations = row.completed_operations || [];
+  if (row.completed_operations !== undefined) result.completedOperations = parseCompletedOperations(row.completed_operations);
   if (row.is_locked !== undefined) result.isLocked = row.is_locked;
   if (row.current_step_index !== undefined) result.currentStepIndex = row.current_step_index;
   if (row.notice_message !== undefined) result.noticeMessage = row.notice_message ?? null;
@@ -766,6 +801,7 @@ export async function recordStatusEvent(event: StatusHistoryEvent): Promise<bool
     const { error } = await supabase
       .from('room_status_history')
       .insert({
+        hospital_id: activeHospitalId || 'default',
         operating_room_id: event.operating_room_id,
         event_type: event.event_type,
         step_index: event.step_index,
@@ -813,6 +849,7 @@ export async function fetchStatusHistory(
     let query = supabase
       .from('room_status_history')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('timestamp', { ascending: false });
 
     if (options?.roomId) {
@@ -866,6 +903,7 @@ export async function fetchRoomStatistics(
     const { data, error } = await supabase
       .from('room_status_history')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .gte('timestamp', from.toISOString())
       .lte('timestamp', to.toISOString())
       .order('timestamp', { ascending: true });
@@ -1006,6 +1044,7 @@ export async function fetchPeriodComparison(
     const { data, error } = await supabase
       .from('room_status_history')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .gte('timestamp', previousStart.toISOString())
       .lte('timestamp', now.toISOString())
       .order('timestamp', { ascending: true });
@@ -1099,15 +1138,15 @@ export interface SafetyChecklistRow {
   sign_in_completed: boolean;
   sign_in_completed_at: string | null;
   sign_in_completed_by: string | null;
-  sign_in_data: Record<string, any> | null;
+  sign_in_data: JsonObject | null;
   time_out_completed: boolean;
   time_out_completed_at: string | null;
   time_out_completed_by: string | null;
-  time_out_data: Record<string, any> | null;
+  time_out_data: JsonObject | null;
   sign_out_completed: boolean;
   sign_out_completed_at: string | null;
   sign_out_completed_by: string | null;
-  sign_out_data: Record<string, any> | null;
+  sign_out_data: JsonObject | null;
   is_active: boolean;
   notes: string | null;
   created_at: string;
@@ -1122,6 +1161,7 @@ export async function fetchSafetyChecklists(
     let query = supabase
       .from('safety_checklists')
       .select('*')
+      .eq('hospital_id', getDatabaseHospitalId())
       .order('created_at', { ascending: false });
 
     if (options?.fromDate) query = query.gte('created_at', options.fromDate.toISOString());
@@ -1156,6 +1196,7 @@ export async function fetchEquipment(): Promise<EquipmentRow[] | null> {
     const { data, error } = await supabase
       .from('equipment')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('next_maintenance', { ascending: true, nullsFirst: false });
     if (error) throw error;
     return (data ?? []) as EquipmentRow[];
@@ -1188,6 +1229,7 @@ export async function fetchAllStaff(): Promise<StaffRow[] | null> {
     const { data, error } = await supabase
       .from('staff')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('role', { ascending: true })
       .order('name', { ascending: true });
     if (error) throw error;
@@ -1222,6 +1264,7 @@ export async function fetchSchedules(
     let query = supabase
       .from('schedules')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('scheduled_date', { ascending: true })
       .order('scheduled_time', { ascending: true, nullsFirst: false });
 
@@ -1272,7 +1315,8 @@ export async function fetchBackgroundSettings(): Promise<BackgroundSettings | nu
     const { data, error } = await supabase
       .from('app_settings')
       .select('*')
-      .eq('id', 'global')
+      .eq('hospital_id', getDatabaseHospitalId())
+      .eq('id', `${getDatabaseHospitalId()}-global`)
       .single();
 
     if (error || !data) {
@@ -1307,7 +1351,8 @@ export async function saveBackgroundSettings(settings: BackgroundSettings): Prom
   try {
     // Map BackgroundSettings to database columns
     const dbData: Record<string, unknown> = {
-      id: 'global',
+      id: `${getDatabaseHospitalId()}-global`,
+      hospital_id: getDatabaseHospitalId(),
       background_type: settings.type,
       background_colors: settings.colors,
       background_direction: settings.direction,
@@ -1361,6 +1406,7 @@ export async function fetchNotificationsLog(
     let query = supabase
       .from('notifications_log')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('created_at', { ascending: false });
 
     if (options?.fromDate) query = query.gte('created_at', options.fromDate.toISOString());
@@ -1390,6 +1436,7 @@ export async function logNotificationEvent(params: {
   if (!isSupabaseConfigured || !supabase) return false;
   try {
     const { error } = await supabase.from('notifications_log').insert({
+      hospital_id: activeHospitalId || 'default',
       room_id: params.roomId,
       room_name: params.roomName,
       notification_type: params.notificationType,
@@ -1428,6 +1475,7 @@ export async function fetchShiftSchedules(
     let query = supabase
       .from('shift_schedules')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('shift_date', { ascending: true })
       .order('start_time', { ascending: true, nullsFirst: false });
 
@@ -1477,6 +1525,7 @@ export async function fetchDepartments(): Promise<DepartmentRow[] | null> {
     const { data, error } = await supabase
       .from('departments')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('name', { ascending: true });
     if (error) throw error;
     return (data ?? []) as DepartmentRow[];
@@ -1492,6 +1541,7 @@ export async function fetchSubDepartments(): Promise<SubDepartmentRow[] | null> 
     const { data, error } = await supabase
       .from('sub_departments')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('name', { ascending: true });
     if (error) throw error;
     return (data ?? []) as SubDepartmentRow[];
@@ -1530,6 +1580,7 @@ export async function fetchManagementContacts(): Promise<ManagementContactRow[] 
     const { data, error } = await supabase
       .from('management_contacts')
       .select('*')
+      .eq('hospital_id', getDatabaseHospitalId())
       .order('sort_order', { ascending: true });
     if (error) throw error;
     return (data ?? []) as ManagementContactRow[];
@@ -1563,6 +1614,7 @@ export async function fetchDevices(): Promise<DeviceRow[] | null> {
     const { data, error } = await supabase
       .from('devices')
       .select('*')
+      .eq('hospital_id', activeHospitalId || 'default')
       .order('last_seen_at', { ascending: false, nullsFirst: false });
     if (error) throw error;
     return (data ?? []) as DeviceRow[];

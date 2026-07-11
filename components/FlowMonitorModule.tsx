@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
+import MobileFlowView from './mobile/MobileFlowView';
 
 /* ────────────────────────────────────────────────────────────────────────────
    TOK PACIENTA — živý monitorovací modul.
@@ -252,7 +253,10 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
 
   return (
     <div className="w-full h-full overflow-hidden">
-      <div className="relative w-full h-full overflow-hidden" style={{ background: 'transparent' }}>
+      {/* ── MOBILE — Tok pacienta dle prototypu ── */}
+      <MobileFlowView rooms={rooms} />
+
+      <div className="relative w-full h-full overflow-hidden hidden md:block" style={{ background: 'transparent' }}>
 
         <div className="relative h-full flex flex-col">
           {/* ── Horní lišta ── */}
@@ -404,7 +408,16 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
             {/* Pravá oblast: živý graf nebo historie */}
             {mode === 'live' ? (
               <div ref={stageRef} className="flex-1 min-w-0 relative overflow-hidden">
-                <div className="absolute left-1/2 top-0 -translate-x-1/2" style={{ width: canvasW, height: canvasH, transform: `translateX(-50%) scale(${flowLayout.scale})`, transformOrigin: 'top center' }}>
+                <div
+                  className="absolute top-0"
+                  style={{
+                    left: '50%',
+                    width: canvasW,
+                    height: canvasH,
+                    transform: `translateX(-50%) scale(${flowLayout.scale})`,
+                    transformOrigin: 'top center',
+                  }}
+                >
                   {/* Spojnice hub → sál + animovaný tok */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${canvasW} ${canvasH}`} fill="none">
                     <defs>

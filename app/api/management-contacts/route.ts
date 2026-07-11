@@ -12,15 +12,18 @@ function sanitizeString(v: unknown, maxLen = 500): string {
 }
 
 // GET - seznam všech management kontaktů (pro přihlášené uživatele)
-export async function GET() {
+export async function GET(request: NextRequest) {
   const auth = await requireSession();
   if (auth instanceof NextResponse) return auth;
 
   try {
+    const hospitalId = request.nextUrl.searchParams.get('hospitalId') || '';
+    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('management_contacts')
       .select('*')
+      .eq('hospital_id', hospitalId)
       .order('sort_order', { ascending: true });
 
     if (error) throw error;
@@ -41,6 +44,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
+    const hospitalId = sanitizeString(body.hospitalId, 100);
+    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
     const position = sanitizeString(body.position, 200);
     const email = sanitizeString(body.email, 255).toLowerCase();
     const name = sanitizeString(body.name, 200);
@@ -63,6 +68,7 @@ export async function POST(request: NextRequest) {
       .insert([
         {
           id: `mgmt-${Date.now()}`,
+          hospital_id: hospitalId,
           position,
           email,
           name,
@@ -95,6 +101,8 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
+    const hospitalId = sanitizeString(body.hospitalId, 100);
+    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
     const id = sanitizeString(body.id, 100);
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -130,6 +138,7 @@ export async function PUT(request: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
+      .eq('hospital_id', hospitalId)
       .select();
 
     if (error) throw error;
@@ -151,15 +160,18 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const hospitalId = searchParams.get('hospitalId') || '';
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
+    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
 
     const supabase = getSupabaseAdmin();
     const { error } = await supabase
       .from('management_contacts')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('hospital_id', hospitalId);
 
     if (error) throw error;
     return NextResponse.json({ success: true });

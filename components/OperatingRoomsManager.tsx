@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 import { updateOperatingRoom, createOperatingRoom, deleteOperatingRoom } from '../lib/db';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
+import { useHospital } from '../contexts/HospitalContext';
 import {
   Plus, Trash2, Edit2, X, Check, AlertCircle, Clock, Calendar,
   Building2, ChevronDown, ChevronUp, Power, GripVertical, Search,
@@ -31,7 +32,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface OperatingRoomsManagerProps {
   rooms?: OperatingRoom[];
   onRoomsChange?: (rooms: OperatingRoom[]) => void;
-  onScheduleUpdate?: (roomId: string, schedule: Record<string, any>) => void;
+  onScheduleUpdate?: (roomId: string, schedule: WeeklySchedule) => void;
 }
 
 type RoomFilter = 'all' | 'today' | 'locked';
@@ -470,6 +471,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   onRoomsChange,
   onScheduleUpdate,
 }) => {
+  const { activeHospitalId } = useHospital();
   // Use ref to track if we've done initial load - prevents re-sync from polling
   const hasInitialized = useRef(false);
   const [roomsList, setRoomsList] = useState<OperatingRoom[]>([]);
@@ -487,7 +489,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
   // Initialize roomsList only once on mount, ignore subsequent prop changes from polling
   useEffect(() => {
-    if (!hasInitialized.current && initialRooms && initialRooms.length > 0) {
+    if (!hasInitialized.current && initialRooms) {
       hasInitialized.current = true;
       const sorted = initialRooms.map(room => ({
         ...room,
@@ -503,7 +505,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rooms })
+        body: JSON.stringify({ rooms, hospitalId: activeHospitalId })
       });
 
       if (!response.ok) {
@@ -513,7 +515,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       console.error('Error saving room order:', err);
       setError('Chyba při ukládání pořadí sálů');
     }
-  }, []);
+  }, [activeHospitalId]);
 
   const handleAddRoom = async () => {
     if (!newRoomData.name || !newRoomData.department) {

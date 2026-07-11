@@ -4,10 +4,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, User, Stethoscope, AlertCircle, CheckCircle2, TrendingUp } from 'lucide-react';
 import { C, Card, KPIBlock, formatMinutes, formatPercent, formatNumber } from './shared';
 
+interface OperationDetails {
+  name?: string | null;
+  patientId?: string | null;
+  status?: string | null;
+  startTime?: string | null;
+  duration?: number | null;
+  endTime?: string | null;
+  surgeon?: string | null;
+  anesthetist?: string | null;
+  staffCount?: number | null;
+}
+
 interface OperationDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  operation: any | null;
+  operation: OperationDetails | null;
   room?: string;
 }
 

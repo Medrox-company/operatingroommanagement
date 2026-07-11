@@ -29,11 +29,11 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import AnimatedBackground from './components/AnimatedBackground';
 import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
-import { MOCK_ROOMS } from './constants';
 import { OperatingRoom, WeeklySchedule } from './types';
-import { Activity, LayoutGrid, Shield, AlertTriangle, Lock } from 'lucide-react';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent } from './lib/db';
+import { Activity, LayoutGrid, Shield, AlertTriangle, Lock, Bell, CalendarDays, ChevronRight } from 'lucide-react';
+import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { HospitalProvider, useHospital } from './contexts/HospitalContext';
 import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
@@ -52,8 +52,14 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
   imageBlur: 0,
 };
 
+type CompletedOperations = NonNullable<OperatingRoom['completedOperations']>;
+type RoomStatusHistory = NonNullable<OperatingRoom['statusHistory']>;
+type StaffAssignmentField = 'doctor_id' | 'nurse_id' | 'anesthesiologist_id';
+type StaffAssignmentUpdate = Partial<Record<StaffAssignmentField, string | null>>;
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules, user } = useAuth();
+  const { activeHospitalId, loading: hospitalLoading } = useHospital();
   const { workflowStatuses } = useWorkflowStatusesContext();
   // Začínáme prázdní — mock data se NEzobrazují (zabrání probliknutí špatných
   // názvů/statusů). Mock zůstává jen jako záloha při selhání načtení (offline/demo).
@@ -65,6 +71,10 @@ const AppContent: React.FC = () => {
   const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
+
+  useEffect(() => {
+    setDatabaseHospitalId(activeHospitalId);
+  }, [activeHospitalId]);
 
   // Global error handler - prevent white screen on unhandled errors
   useEffect(() => {
@@ -93,7 +103,7 @@ const AppContent: React.FC = () => {
       }
     };
     loadBgSettings();
-  }, []);
+  }, [activeHospitalId]);
 
   // Listen for background settings changes
   useEffect(() => {
@@ -124,7 +134,10 @@ const AppContent: React.FC = () => {
   // Load rooms after login (one-time fetch). Supabase Realtime handles all subsequent updates.
   // /api/rooms nově vyžaduje session, proto načítáme až po přihlášení.
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || hospitalLoading || !activeHospitalId) return;
+    setDatabaseHospitalId(activeHospitalId);
+    setRooms([]);
+    setRoomsLoaded(false);
     let isMounted = true;
 
     const withTimeout = <T,>(p: Promise<T>, ms = 9000) =>
@@ -137,7 +150,7 @@ const AppContent: React.FC = () => {
         const dbRooms = await withTimeout(fetchOperatingRooms());
         if (!isMounted) return;
         if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) {
-          setRooms(MOCK_ROOMS);
+          setRooms([]);
           setRoomsLoaded(true);
           return;
         }
@@ -147,7 +160,7 @@ const AppContent: React.FC = () => {
       } catch (error) {
         if (!isMounted) return;
         console.error("[App] Failed to load rooms:", error);
-        setRooms(MOCK_ROOMS);
+        setRooms([]);
         setRoomsLoaded(true);
       }
     };
@@ -158,7 +171,7 @@ const AppContent: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeHospitalId, hospitalLoading]);
 
   // Prefetch nejčastěji používaných modulů na pozadí (až je prohlížeč v klidu),
   // aby přepnutí bylo okamžité bez spinneru. Lazy-loading šetří úvodní bundle,
@@ -191,10 +204,12 @@ const AppContent: React.FC = () => {
     } catch (error) {
       console.error('[App] Manual refresh failed:', error);
     }
-  }, []);
+  }, [activeHospitalId]);
   
   // Cleanup old entries from recentLocalUpdates to prevent memory growth.
   useEffect(() => {
+    if (!activeHospitalId) return;
+    setDatabaseHospitalId(activeHospitalId);
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
       recentLocalUpdates.current.forEach((timestamp, roomId) => {
@@ -212,9 +227,7 @@ const AppContent: React.FC = () => {
       // Full refresh callback (for INSERT/DELETE)
       async () => {
         const dbRooms = await fetchOperatingRooms();
-        if (dbRooms && dbRooms.length > 0) {
-          setRooms(dbRooms);
-        }
+        setRooms(dbRooms || []);
       },
       // Granular update callback (for UPDATE - instant sync)
       (roomId, dbChanges) => {
@@ -233,7 +246,7 @@ const AppContent: React.FC = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, []);
+  }, [activeHospitalId]);
 
   // Memoize selectedRoom — bez useMemo se find() spouští každý render a `selectedRoom`
   // má pokaždé jinou referenci, což spou��tí re-render RoomDetailu i když data sálu jsou
@@ -285,8 +298,8 @@ const AppContent: React.FC = () => {
       current_step_index: number;
       phase_started_at: string;
       operation_started_at: string | null;
-      status_history: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }>;
-      completed_operations: Array<{ startedAt: string; endedAt: string; statusHistory: any[] }>;
+      status_history: RoomStatusHistory;
+      completed_operations: CompletedOperations;
     } | null = null;
 
     setRooms(prev => prev.map(room => {
@@ -465,11 +478,11 @@ const AppContent: React.FC = () => {
     }
   }, [isDbConnected, rooms]);
 
-  const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: Record<string, any>) => {
+  const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: WeeklySchedule) => {
     recentLocalUpdates.current.set(roomId, Date.now());
     setRooms(prev => prev.map(room =>
       room.id === roomId
-        ? { ...room, weeklySchedule: schedule as WeeklySchedule }
+        ? { ...room, weeklySchedule: schedule }
         : room
     ));
     if (isDbConnected) {
@@ -501,8 +514,9 @@ const AppContent: React.FC = () => {
 
     // Update database - null to unassign
     if (isDbConnected) {
-      const dbField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
-      await updateOperatingRoom(roomId, { [dbField]: isUnassigning ? null : staffId } as any);
+      const dbField: StaffAssignmentField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
+      const staffUpdate: StaffAssignmentUpdate = { [dbField]: isUnassigning ? null : staffId };
+      await updateOperatingRoom(roomId, staffUpdate);
     }
   }, [isDbConnected]);
 
@@ -577,6 +591,7 @@ const AppContent: React.FC = () => {
   return (
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
+      {!hospitalLoading && activeHospitalId && <DeviceRegistration key={activeHospitalId} />}
       {/* Dynamic Background Layer - Controlled by BackgroundManager settings */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Background Image Layer - lazy loaded for performance */}
@@ -654,8 +669,77 @@ const AppContent: React.FC = () => {
             {/* Dashboard — room grid */}
             {currentView === 'dashboard' && !selectedRoom && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+                {/* Světlý podklad dashboardu na mobilu — ladí s detailem sálu */}
+                <div aria-hidden className="fixed inset-0 -z-10 md:hidden" style={{ background: '#EDF1F8' }} />
                 <div className="max-w-[2400px] mx-auto w-full">
-                  <header className="flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
+                  {/* ── Mobilní hlavička — dle prototypu: ● OPERAČNÍ SÁLY + zvonek ── */}
+                  <div className="md:hidden mb-4">
+                    {(() => {
+                      const isRoomReadyM = (room: OperatingRoom) => room.currentStepIndex === 0 || room.currentStepIndex === 7;
+                      const emergencyM = rooms.filter(r => r.isEmergency).length;
+                      const readyM = rooms.filter(r => isRoomReadyM(r) && !r.isEmergency && !r.isLocked).length;
+                      const activeM = rooms.filter(r => !isRoomReadyM(r) && !r.isEmergency && !r.isLocked).length;
+                      const noticeM = rooms.filter(r => r.noticeMessage).length + emergencyM;
+                      return (
+                        <>
+                          <div className="flex items-center justify-between mb-4">
+                            <h1 className="flex items-center gap-2.5 text-[22px] font-extrabold uppercase tracking-tight leading-none" style={{ color: '#1E3560' }}>
+                              <span
+                                className="w-2.5 h-2.5 rounded-full shrink-0"
+                                style={{ background: activeM > 0 ? '#10B981' : '#2952C8' }}
+                              />
+                              Operační sály
+                            </h1>
+                            <span
+                              className="relative w-11 h-11 rounded-full flex items-center justify-center"
+                              style={{ background: '#FFFFFF', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
+                            >
+                              <Bell className="w-[19px] h-[19px]" style={{ color: '#1E3560' }} strokeWidth={2} />
+                              {noticeM > 0 && (
+                                <span
+                                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white"
+                                  style={{ background: '#1E3560' }}
+                                >
+                                  {noticeM}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          {/* Stat karty — ikona vlevo, popisek + hodnota (dle prototypu) */}
+                          <div className="grid grid-cols-2 gap-3">
+                            {[
+                              { label: 'AKTIVNÍ', value: activeM, unit: activeM === 1 ? 'v provozu' : 'v provozu', color: '#2952C8', bg: '#E7EEFB', Icon: Activity },
+                              { label: 'PŘIPRAVENO', value: readyM, unit: 'sálů', color: '#10B981', bg: '#E3F5EE', Icon: LayoutGrid },
+                            ].map(({ label, value, unit, color, bg, Icon }) => (
+                              <div
+                                key={label}
+                                className="rounded-[18px] px-3.5 py-3.5 flex items-center gap-3"
+                                style={{ background: '#FFFFFF', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
+                              >
+                                <span
+                                  className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0"
+                                  style={{ background: bg, border: `1px solid ${color}33` }}
+                                >
+                                  <Icon className="w-5 h-5" style={{ color }} strokeWidth={2} />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: '#9AA7BF' }}>
+                                    {label}
+                                  </p>
+                                  <p className="mt-0.5 leading-none">
+                                    <span className="text-[22px] font-extrabold tabular-nums" style={{ color: '#1E3560' }}>{value}</span>{' '}
+                                    <span className="text-[12px] font-medium" style={{ color: '#7C8AA5' }}>{unit}</span>
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <header className="hidden md:flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
                     <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
                       <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
                         <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
@@ -714,11 +798,11 @@ const AppContent: React.FC = () => {
                   <div className="pb-20 px-0 sm:px-2">
                     {!roomsLoaded ? (
                       <div className="flex flex-col items-center justify-center py-32 gap-3">
-                        <div className="w-7 h-7 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" />
-                        <p className="text-sm text-white/40">Načítám operační sály…</p>
+                        <div className="w-7 h-7 border-2 border-[#C7D4E8] border-t-[#2952C8] md:border-white/20 md:border-t-white/70 rounded-full animate-spin" />
+                        <p className="text-sm text-[#7C8AA5] md:text-white/40">Načítám operační sály…</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-x-5 md:gap-x-6 sm:gap-y-6 md:gap-y-8">
                         {rooms.map((room) => (
                           <RoomCard
                             key={room.id}
@@ -730,6 +814,41 @@ const AppContent: React.FC = () => {
                         ))}
                       </div>
                     )}
+
+                    {/* Banner „Dnešní plán" — mobil, dle prototypu */}
+                    {roomsLoaded && (() => {
+                      const now = new Date();
+                      const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
+                      let ops = 0; let durMs = 0;
+                      rooms.forEach(r => (r.completedOperations || []).forEach(op => {
+                        const s = new Date(op.startedAt).getTime();
+                        const e = new Date(op.endedAt).getTime();
+                        if (Number.isFinite(s) && Number.isFinite(e) && e > s && s >= dayStart.getTime()) {
+                          ops++; durMs += e - s;
+                        }
+                      }));
+                      const avgMin = ops > 0 ? Math.round(durMs / ops / 60000) : 0;
+                      return (
+                        <button
+                          onClick={() => handleNavigate('timeline')}
+                          className="md:hidden mt-4 w-full rounded-[18px] px-4 py-3.5 flex items-center gap-3.5 text-left active:scale-[0.99] transition-transform"
+                          style={{ background: '#FFFFFF', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
+                        >
+                          <span className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0" style={{ background: '#E7EEFB' }}>
+                            <CalendarDays className="w-5 h-5" style={{ color: '#2952C8' }} strokeWidth={2} />
+                          </span>
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-[14px] font-bold leading-tight" style={{ color: '#1E3560' }}>
+                              Dnešní plán: <span style={{ color: '#2952C8' }}>{ops} operací</span>
+                            </span>
+                            <span className="block text-[12px] font-medium mt-0.5" style={{ color: '#7C8AA5' }}>
+                              Prům. doba operace: <b style={{ color: '#1E3560' }}>{avgMin} min</b>
+                            </span>
+                          </span>
+                          <ChevronRight className="w-5 h-5 shrink-0" style={{ color: '#9AA7BF' }} strokeWidth={2.25} />
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -743,8 +862,12 @@ const AppContent: React.FC = () => {
             )}
 
             {/* Timeline */}
+            {/* Pozn.: BEZ `pb-mobile-nav` — třída je definovaná mimo Tailwind vrstvy,
+                takže přebíjela i `md:pb-6` a modul na desktopu nedosahoval na spodní
+                okraj obrazovky. Mobilní odsazení řeší `pb-20` na <main> + interní
+                spodní padding v MobileTimelineView. */}
             {currentView === 'timeline' && (
-              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:pt-2 md:pb-6 pb-mobile-nav">
+              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:pt-2 md:pb-6">
                 <TimelineModule rooms={rooms} onRefresh={refreshRooms} />
               </div>
             )}
@@ -802,13 +925,14 @@ const App: React.FC = () => {
   return (
   <ErrorBoundary>
   <AuthProvider>
+  <HospitalProvider>
   <WorkflowStatusesProvider>
   <ConfirmProvider>
-  <DeviceRegistration />
   <AppToaster />
   <AppContent />
   </ConfirmProvider>
   </WorkflowStatusesProvider>
+  </HospitalProvider>
   </AuthProvider>
   </ErrorBoundary>
   );

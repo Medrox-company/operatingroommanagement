@@ -46,7 +46,19 @@ interface EfficiencyTabProps {
 // ─────────────────────────────────────────────────────────────────────────────
 // Custom Tooltip pro Recharts
 // ─────────────────────────────────────────────────────────────────────────────
-const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
+type ChartTooltipPayload = {
+  color?: string;
+  name?: string;
+  value?: React.ReactNode;
+};
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: ChartTooltipPayload[];
+  label?: React.ReactNode;
+}
+
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div 
@@ -58,7 +70,7 @@ const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
       }}
     >
       <p className="text-[10px] font-bold mb-1" style={{ color: C.textHi }}>{label}</p>
-      {payload.map((p: any, i: number) => (
+      {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
           <span className="text-[10px]" style={{ color: C.muted }}>{p.name}:</span>
@@ -328,7 +340,7 @@ export const EfficiencyTab: React.FC<EfficiencyTabProps> = ({
     
     statusHistory.forEach(entry => {
       if (entry.duration_seconds && entry.step_name) {
-        const stepIndex = avgStepDurations.findIndex((_: any) => true); // Zjednodušeně
+        const stepIndex = avgStepDurations.findIndex((duration) => Number.isFinite(duration) && duration > 0); // Zjednodušeně
         const expectedSeconds = stepIndex >= 0 ? avgStepDurations[stepIndex] * 60 : 0;
         if (expectedSeconds > 0 && entry.duration_seconds > expectedSeconds * 1.15) {
           overrunCount++;

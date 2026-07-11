@@ -1,7 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
+import { useHospital } from './HospitalContext';
 
 export interface WorkflowStatus {
   id: string;
@@ -80,6 +82,7 @@ const mapDBToStatus = (db: WorkflowStatusDBRow): WorkflowStatus => ({
 });
 
 export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { activeHospitalId } = useHospital();
   const [statuses, setStatuses] = useState<WorkflowStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +100,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       const { data, error: fetchError } = await supabase
         .from('workflow_statuses')
         .select('*')
+        .eq('hospital_id', activeHospitalId || 'default')
         .order('sort_order', { ascending: true });
 
       if (fetchError) throw fetchError;
@@ -117,7 +121,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
         setLoading(false);
       }
     }
-  }, []);
+  }, [activeHospitalId]);
 
   const updateStatus = useCallback(async (id: string, updates: Partial<WorkflowStatus>) => {
     // IMMEDIATELY update local state for responsive UI
@@ -144,12 +148,13 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
 
-      console.log('[v0] Updating status in DB:', id, dbUpdates);
+      logger.debug('[v0] Updating status in DB:', id, dbUpdates);
 
       const { error: updateError } = await supabase
         .from('workflow_statuses')
         .update(dbUpdates)
         .eq('id', id)
+        .eq('hospital_id', activeHospitalId || 'default')
         .select();
 
       if (updateError) throw updateError;
@@ -159,7 +164,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       // Revert on error
       await fetchStatuses();
     }
-  }, [fetchStatuses]);
+  }, [fetchStatuses, activeHospitalId]);
 
   const getActiveStatuses = useCallback(() => {
     return statuses.filter(s => s.is_active).sort((a, b) => a.order_index - b.order_index);

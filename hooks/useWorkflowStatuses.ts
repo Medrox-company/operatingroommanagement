@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { useHospital } from '../contexts/HospitalContext';
 
 // Interface matching database schema
 export interface WorkflowStatusDB {
@@ -67,6 +68,7 @@ const mapStatusToDB = (updates: Partial<WorkflowStatus>): Partial<WorkflowStatus
 };
 
 export const useWorkflowStatuses = () => {
+  const { activeHospitalId } = useHospital();
   const [statuses, setStatuses] = useState<WorkflowStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +80,7 @@ export const useWorkflowStatuses = () => {
       const { data, error: fetchError } = await supabase
         .from('workflow_statuses')
         .select('*')
+        .eq('hospital_id', activeHospitalId || 'default')
         .order('sort_order', { ascending: true });
 
       if (fetchError) throw fetchError;
@@ -91,7 +94,7 @@ export const useWorkflowStatuses = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeHospitalId]);
 
   // Update status
   const updateStatus = async (id: string, updates: Partial<WorkflowStatus>) => {
@@ -101,7 +104,8 @@ export const useWorkflowStatuses = () => {
       const { error: updateError } = await supabase
         .from('workflow_statuses')
         .update(dbUpdates)
-        .eq('id', id);
+        .eq('id', id)
+        .eq('hospital_id', activeHospitalId || 'default');
 
       if (updateError) throw updateError;
       

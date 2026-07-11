@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useHospital } from '../contexts/HospitalContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -423,6 +424,7 @@ const ContactCard: React.FC<{
 };
 
 export default function ManagementManager() {
+  const { activeHospitalId } = useHospital();
   const [contacts, setContacts] = useState<ManagementContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -432,7 +434,7 @@ export default function ManagementManager() {
 
   const fetchContacts = async () => {
     try {
-      const response = await fetch('/api/management-contacts');
+      const response = await fetch(`/api/management-contacts?hospitalId=${encodeURIComponent(activeHospitalId || '')}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setContacts(Array.isArray(data) ? data : []);
@@ -449,7 +451,7 @@ export default function ManagementManager() {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [activeHospitalId]);
 
   const handleSave = async (updated: ManagementContact) => {
     setSaving(true);
@@ -458,7 +460,7 @@ export default function ManagementManager() {
       const response = await fetch('/api/management-contacts', {
         method: isNew ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(isNew ? { ...updated, id: undefined } : updated),
+        body: JSON.stringify({ ...(isNew ? { ...updated, id: undefined } : updated), hospitalId: activeHospitalId }),
       });
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
@@ -475,7 +477,7 @@ export default function ManagementManager() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/management-contacts?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const response = await fetch(`/api/management-contacts?id=${encodeURIComponent(id)}&hospitalId=${encodeURIComponent(activeHospitalId || '')}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       await fetchContacts();
       setSelectedContact(null);

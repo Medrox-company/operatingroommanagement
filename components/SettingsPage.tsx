@@ -14,16 +14,18 @@ import DevicesManager from './DevicesManager';
 import CalendarManager from './CalendarManager';
 import SystemSettingsModule from './SystemSettingsModule';
 import { ErrorBoundary } from './ErrorBoundary';
-import { OperatingRoom } from '../types';
+import { OperatingRoom, WeeklySchedule } from '../types';
+import { useHospital } from '../contexts/HospitalContext';
 
 interface SettingsPageProps {
   rooms?: OperatingRoom[];
   onRoomsChange?: (rooms: OperatingRoom[]) => void;
-  onScheduleUpdate?: (roomId: string, schedule: Record<string, any>) => void;
+  onScheduleUpdate?: (roomId: string, schedule: WeeklySchedule) => void;
   resetTrigger?: number;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, onScheduleUpdate, resetTrigger = 0 }) => {
+  const { activeHospitalId } = useHospital();
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   
   useEffect(() => {
@@ -145,6 +147,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       {selectedModule === 'rooms' ? (
         <ModuleWrapper>
           <OperatingRoomsManager 
+            key={activeHospitalId || 'no-hospital'}
             rooms={rooms} 
             onRoomsChange={(updatedRooms) => {
               onRoomsChange?.(updatedRooms);

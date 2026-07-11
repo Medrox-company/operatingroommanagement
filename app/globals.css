@@ -1,6 +1,31 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+@theme {
+  --font-sans: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* Tailwind v3 compatibility: keep old focus ring defaults. */
+  --default-ring-width: 3px;
+  --default-ring-color: var(--color-blue-500);
+}
+
+@layer base {
+  /* Tailwind v3 compatibility: preserve old implicit border color. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* Tailwind v3 compatibility: buttons used pointer by default. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 :root {
   /* Premium Medical Dashboard Theme */
@@ -50,6 +75,129 @@ body {
 }
 
 /* Timeline Premium Styles */
+/* Horní lišta — sjednoceno se stylem modulu Tok pacienta: žádný společný
+   podklad, jednotlivé clustery jsou samostatné „glass" pilulky s rámečkem. */
+.timeline-commandbar {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.timeline-toolbar-float {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(125, 165, 185, 0.20);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.timeline-clock-clean::after {
+  content: '';
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(119, 137, 255, 0.34), transparent);
+  pointer-events: none;
+}
+
+.timeline-clock-clean > * {
+  position: relative;
+}
+
+.timeline-status-calm {
+  border: 1px solid rgba(125, 165, 185, 0.20);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.timeline-field-soft {
+  background: rgba(255, 255, 255, 0.025);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.timeline-field-soft:focus-within {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 0 0 1px rgba(54, 217, 236, 0.18);
+}
+
+.timeline-scheduler-shell {
+  /* Tmavý navy podklad časové osy. BEZ vlastního rámečku — jedinou
+     ohraničující linku kreslí vnější panel modulu; osa do něj plynule
+     zapadá jen rozdílem tmavosti plochy (vrstvení bez dvojitých hran). */
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(28, 38, 76, 0.22) 0%, transparent 55%),
+    linear-gradient(180deg, #0a0e1c 0%, #060912 55%, #030509 100%);
+  border: none;
+  /* Měkký stín místo linky — osa se nad pozadím vznáší, žádné hrany */
+  box-shadow:
+    0 22px 55px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.timeline-room-row {
+  transform: translateZ(0);
+}
+
+.timeline-room-row:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 28px rgba(0, 0, 0, 0.24) !important;
+}
+
+.timeline-operation-block {
+  isolation: isolate;
+}
+
+.timeline-operation-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.07), transparent 36%, transparent 70%, rgba(255, 255, 255, 0.035));
+}
+
+/* ── Mobilní světlý medicínský styl (jednotný s detailem sálu) ── */
+.timeline-mobile-hero {
+  position: relative;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 1px solid transparent;
+  box-shadow: 0 8px 20px rgba(23, 43, 99, 0.06);
+}
+
+.timeline-mobile-clock {
+  position: relative;
+}
+
+.timeline-mobile-metric {
+  box-shadow: 0 4px 12px rgba(23, 43, 99, 0.05);
+}
+
+.timeline-mobile-tabs {
+  background: #E3E9F4 !important;
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+.timeline-mobile-room-card {
+  background: #FFFFFF !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 20px rgba(23, 43, 99, 0.06);
+}
+
+.timeline-mobile-axis-row {
+  padding: 3px;
+}
+
+.timeline-mobile-axis-row:hover {
+  background: rgba(23, 43, 99, 0.03);
+}
+
 .timeline-card {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.6) 100%);
   backdrop-filter: blur(20px);
@@ -150,7 +298,7 @@ body {
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Subtle horizontal scrollbar for the zoomable timeline */
-.timeline-scroll::-webkit-scrollbar { height: 8px; }
+.timeline-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
 .timeline-scroll::-webkit-scrollbar-track { background: transparent; }
 .timeline-scroll::-webkit-scrollbar-thumb {
   background: rgba(6, 182, 212, 0.25);
@@ -796,4 +944,3 @@ body {
   .ecg-trace { animation: none; stroke-dasharray: none; }
   .ecg-dot { display: none; }
 }
-

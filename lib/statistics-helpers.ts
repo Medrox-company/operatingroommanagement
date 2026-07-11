@@ -1,15 +1,46 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getDatabaseHospitalId } from './db';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+type RoomStatusHistoryRow = {
+  room_id: string;
+  status: string | null;
+  created_at: string;
+};
+
+type OperatingRoomSummaryRow = {
+  id: string;
+  name: string;
+};
+
+type StaffShiftRow = {
+  staff_id: string;
+  start_time: string;
+  end_time: string;
+};
+
+type ProcedurePhaseRow = {
+  id: string;
+  status: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+};
+
+let statisticsSupabase: SupabaseClient | null = null;
+
+function getStatisticsSupabase() {
+  statisticsSupabase ??= createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
+  return statisticsSupabase;
+}
 
 /**
  * Get hourly heatmap data (rooms × hours) from real database
  * Returns utilization percentage for each room and hour
  */
 export async function getHourlyHeatmapData(periodDays: number = 7) {
+  const supabase = getStatisticsSupabase();
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
@@ -17,6 +48,7 @@ export async function getHourlyHeatmapData(periodDays: number = 7) {
   const { data: statusHistory, error } = await supabase
     .from('room_status_history')
     .select('room_id, status, created_at, operating_rooms(name)')
+    .eq('hospital_id', getDatabaseHospitalId())
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString())
     .order('created_at', { ascending: true });
@@ -29,7 +61,9 @@ export async function getHourlyHeatmapData(periodDays: number = 7) {
   // Group by room and hour
   const heatmapMap = new Map<string, Map<number, number[]>>();
 
-  statusHistory?.forEach((entry: any) => {
+  const statusRows = (statusHistory || []) as RoomStatusHistoryRow[];
+
+  statusRows.forEach((entry) => {
     const roomId = entry.room_id;
     const date = new Date(entry.created_at);
     const hour = date.getHours();
@@ -64,12 +98,14 @@ export async function getHourlyHeatmapData(periodDays: number = 7) {
  * Get room utilization statistics (real database data)
  */
 export async function getRoomUtilizationStats(periodDays: number = 7) {
+  const supabase = getStatisticsSupabase();
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
   const { data: statusHistory, error } = await supabase
     .from('room_status_history')
     .select('room_id, status, created_at')
+    .eq('hospital_id', getDatabaseHospitalId())
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString());
 
@@ -80,7 +116,9 @@ export async function getRoomUtilizationStats(periodDays: number = 7) {
 
   const roomStats = new Map<string, { total: number; operating: number }>();
 
-  statusHistory?.forEach((entry: any) => {
+  const statusRows = (statusHistory || []) as RoomStatusHistoryRow[];
+
+  statusRows.forEach((entry) => {
     const roomId = entry.room_id;
     if (!roomStats.has(roomId)) {
       roomStats.set(roomId, { total: 0, operating: 0 });
@@ -110,11 +148,13 @@ export async function getRoomUtilizationStats(periodDays: number = 7) {
  * Get bottleneck analysis - identify rooms with high utilization
  */
 export async function getBottleneckAnalysis(periodDays: number = 7) {
+  const supabase = getStatisticsSupabase();
   const stats = await getRoomUtilizationStats(periodDays);
   
   const { data: rooms, error } = await supabase
     .from('operating_rooms')
     .select('id, name')
+    .eq('hospital_id', getDatabaseHospitalId())
     .order('name');
 
   if (error) {
@@ -129,12 +169,15 @@ export async function getBottleneckAnalysis(periodDays: number = 7) {
   const { data: statusHistory } = await supabase
     .from('room_status_history')
     .select('room_id, status, created_at')
+    .eq('hospital_id', getDatabaseHospitalId())
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString());
 
   const roomUtilization = new Map<string, { total: number; operating: number }>();
 
-  statusHistory?.forEach((entry: any) => {
+  const statusRows = (statusHistory || []) as RoomStatusHistoryRow[];
+
+  statusRows.forEach((entry) => {
     const roomId = entry.room_id;
     if (!roomUtilization.has(roomId)) {
       roomUtilization.set(roomId, { total: 0, operating: 0 });
@@ -147,8 +190,8 @@ export async function getBottleneckAnalysis(periodDays: number = 7) {
     }
   });
 
-  return (rooms || [])
-    .map((room: any) => {
+  return ((rooms || []) as OperatingRoomSummaryRow[])
+    .map((room) => {
       const utilStats = roomUtilization.get(room.id) || { total: 0, operating: 0 };
       const utilization = utilStats.total > 0
         ? Math.round((utilStats.operating / utilStats.total) * 100)
@@ -169,12 +212,14 @@ export async function getBottleneckAnalysis(periodDays: number = 7) {
  * Get staff utilization from database
  */
 export async function getStaffUtilization(periodDays: number = 7) {
+  const supabase = getStatisticsSupabase();
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
   const { data: shifts, error } = await supabase
     .from('shift_schedules')
     .select('staff_id, start_time, end_time, staff(name, department)')
+    .eq('hospital_id', getDatabaseHospitalId())
     .gte('start_time', startDate.toISOString())
     .lte('end_time', endDate.toISOString());
 
@@ -187,7 +232,9 @@ export async function getStaffUtilization(periodDays: number = 7) {
   const now = new Date();
   const totalPeriodHours = periodDays * 24;
 
-  shifts?.forEach((shift: any) => {
+  const shiftRows = (shifts || []) as StaffShiftRow[];
+
+  shiftRows.forEach((shift) => {
     const staffId = shift.staff_id;
     const startTime = new Date(shift.start_time);
     const endTime = new Date(shift.end_time);
@@ -219,6 +266,7 @@ export async function getStaffUtilization(periodDays: number = 7) {
  * Get financial metrics from database
  */
 export async function getFinancialMetrics(periodDays: number = 7) {
+  const supabase = getStatisticsSupabase();
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
@@ -226,6 +274,7 @@ export async function getFinancialMetrics(periodDays: number = 7) {
   const { data: statusHistory, error } = await supabase
     .from('room_status_history')
     .select('room_id, status, created_at')
+    .eq('hospital_id', getDatabaseHospitalId())
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString());
 
@@ -235,15 +284,16 @@ export async function getFinancialMetrics(periodDays: number = 7) {
   }
 
   // Calculate based on room utilization
-  const operatingHours = statusHistory?.filter(
-    (h: any) => h.status === 'in_use' || h.status === 'occupied'
-  ).length || 0;
+  const statusRows = (statusHistory || []) as RoomStatusHistoryRow[];
+  const operatingHours = statusRows.filter(
+    (h) => h.status === 'in_use' || h.status === 'occupied'
+  ).length;
 
   // Estimate costs: ~$500 per operating hour in modern OR
   const costPerHour = 500;
   const totalCosts = operatingHours * costPerHour;
 
-  const { data: rooms } = await supabase.from('operating_rooms').select('id');
+  const { data: rooms } = await supabase.from('operating_rooms').select('id').eq('hospital_id', getDatabaseHospitalId());
   const roomCount = rooms?.length || 1;
 
   return {
@@ -257,12 +307,14 @@ export async function getFinancialMetrics(periodDays: number = 7) {
  * Get notifications from database (real alerts)
  */
 export async function getNotifications(limit: number = 50, periodDays: number = 7) {
+  const supabase = getStatisticsSupabase();
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
   const { data: notifications, error } = await supabase
     .from('notifications_log')
     .select('id, type, severity, message, created_at, room_id, operating_rooms(name)')
+    .eq('hospital_id', getDatabaseHospitalId())
     .gte('created_at', startDate.toISOString())
     .lte('created_at', endDate.toISOString())
     .order('created_at', { ascending: false })
@@ -280,12 +332,14 @@ export async function getNotifications(limit: number = 50, periodDays: number = 
  * Get phase/stage efficiency metrics
  */
 export async function getPhaseEfficiency(periodDays: number = 7) {
+  const supabase = getStatisticsSupabase();
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
   const { data: procedures, error } = await supabase
     .from('operating_procedures')
     .select('id, status, started_at, completed_at')
+    .eq('hospital_id', getDatabaseHospitalId())
     .gte('started_at', startDate.toISOString())
     .lte('completed_at', endDate.toISOString());
 
@@ -296,7 +350,9 @@ export async function getPhaseEfficiency(periodDays: number = 7) {
 
   const phaseStats: Record<string, { count: number; totalTime: number }> = {};
 
-  procedures?.forEach((proc: any) => {
+  const procedureRows = (procedures || []) as ProcedurePhaseRow[];
+
+  procedureRows.forEach((proc) => {
     const phase = proc.status || 'unknown';
     if (!phaseStats[phase]) {
       phaseStats[phase] = { count: 0, totalTime: 0 };

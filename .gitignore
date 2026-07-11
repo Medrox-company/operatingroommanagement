@@ -17,7 +17,6 @@ out
 # Lock files
 pnpm-lock.yaml
 yarn.lock
-package-lock.json
 
 # IDE
 .idea

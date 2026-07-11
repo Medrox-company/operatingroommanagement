@@ -8,6 +8,7 @@ import {
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
 // Step durations now calculated from real database history
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
+import { useHospital } from '../contexts/HospitalContext';
 import {
   fetchRoomStatistics,
   fetchStatusHistory,
@@ -737,7 +738,7 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
       }}
       initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.18, delay: index * 0.025 }}
-      whileHover={{ scale: 1.03 } as any}>
+      whileHover={{ scale: 1.03 }}>
       <div className="flex items-center justify-between mb-1.5 gap-1.5">
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc2, boxShadow: `0 0 5px ${sc2}` }} />
@@ -1317,6 +1318,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
 // MAIN MODULE
 // ══════════════════════════════════════════════════════════════════════════════
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms }) => {
+  const { activeHospitalId } = useHospital();
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -1474,7 +1476,7 @@ const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, su
     };
 
     loadStats();
-  }, [period]);
+  }, [period, activeHospitalId]);
 
   // Build utilisation data from real database history with room schedules
   const utilData = useMemo(() => {

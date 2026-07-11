@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { fetchAllStaff, StaffRow } from '../lib/db';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { useHospital } from '../contexts/HospitalContext';
 
 interface RoomWithStaff {
   id: string;
@@ -279,6 +280,7 @@ const AvailablePerson: React.FC<{ staff: StaffRow }> = ({ staff }) => {
 };
 
 const StaffOverviewModule: React.FC = () => {
+  const { activeHospitalId } = useHospital();
   const [staffList, setStaffList] = useState<StaffRow[]>([]);
   const [rooms, setRooms] = useState<RoomWithStaff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -298,6 +300,7 @@ const StaffOverviewModule: React.FC = () => {
       const { data: roomsData } = await supabase
         .from('operating_rooms')
         .select('id, name, department, current_step_index, doctor_id, nurse_id, anesthesiologist_id, is_locked, is_paused')
+        .eq('hospital_id', activeHospitalId || 'default')
         .order('sort_order', { ascending: true });
 
       const staffMap = new Map(staffData?.map(staff => [staff.id, staff]) || []);
@@ -335,16 +338,16 @@ const StaffOverviewModule: React.FC = () => {
 
     if (isSupabaseConfigured && supabase) {
       const channel = supabase
-        .channel('staff-overview-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'staff' }, fetchData)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'operating_rooms' }, fetchData)
+        .channel(`staff-overview-realtime:${activeHospitalId || 'default'}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'staff', filter: `hospital_id=eq.${activeHospitalId || 'default'}` }, fetchData)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'operating_rooms', filter: `hospital_id=eq.${activeHospitalId || 'default'}` }, fetchData)
         .subscribe();
 
       return () => {
         void supabase.removeChannel(channel);
       };
     }
-  }, []);
+  }, [activeHospitalId]);
 
   const assignedIds = useMemo(() => {
     const ids = new Set<string>();

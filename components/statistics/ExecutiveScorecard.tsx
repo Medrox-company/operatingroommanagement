@@ -22,6 +22,7 @@ import {
 import {
   C, Card, GradeBadge, KPIBlock, LiveDot,
 } from './shared';
+import type { IconComponent } from './shared';
 import { OperatingRoom } from '../../types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,8 +112,7 @@ function computeCompositeScore(d: ScorecardData): number {
 interface Insight {
   level: 'success' | 'info' | 'warning' | 'critical';
   text: string;
-  // Lucide ikony — ForwardRefExoticComponent. Přijímáme obecné ikonové komponenty.
-  icon: React.ComponentType<any>;
+  icon: IconComponent;
 }
 
 function generateInsights(d: ScorecardData, score: number): Insight[] {

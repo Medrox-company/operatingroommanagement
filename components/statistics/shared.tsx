@@ -18,6 +18,10 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
+export type IconComponent = React.ElementType<React.SVGProps<SVGSVGElement> & {
+  size?: number | string;
+}>;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Design tokens — vylepšená paleta s lepším kontrastem, glows a vygenerovanými shadow efekty
 // ─────────────────────────────────────────────────────────────────────────────
@@ -158,7 +162,7 @@ export interface CardProps {
   elevated?: boolean;
   noPadding?: boolean;
   /** Lucide ikona renderovaná v hlavičce vedle title */
-  icon?: React.ComponentType<any>;
+  icon?: IconComponent;
 }
 export const Card: React.FC<CardProps> = memo(({
   title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon,
@@ -474,7 +478,7 @@ export interface KPIBlockProps {
   color?: string;
   // Lucide ikona (LucideIcon je `ForwardRefExoticComponent`); přijímáme i obecné komponenty.
   // Zachováme volnost — ikona se renderuje dále s běžnými LucideProps.
-  icon?: React.ComponentType<any>;
+  icon?: IconComponent;
   /** Mini sparkline serie pod hodnotou */
   trend?: number[];
   /** Cílová hodnota — render progress baru */
@@ -582,7 +586,7 @@ KPIBlock.displayName = 'KPIBlock';
 // ─────────────────────────────────────────────────────────────────────────────
 export const IconBubble: React.FC<{
   // Lucide icony jsou ForwardRefExoticComponent — přijímáme libovolnou ikonovou komponentu.
-  icon: React.ComponentType<any>;
+  icon: IconComponent;
   color?: string;
   size?: number;
   pulsing?: boolean;
@@ -921,7 +925,7 @@ export interface MetricTileProps {
   value: string | number;
   sublabel?: string;
   color?: string;
-  icon?: React.ComponentType<any>;
+  icon?: IconComponent;
   delta?: number;
   invertedDelta?: boolean;
   trend?: number[];

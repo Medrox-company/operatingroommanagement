@@ -19,20 +19,21 @@ import { Activity, Stethoscope, Sparkles, CheckCircle2, AlertTriangle, Clock } f
    Barvy stavů se čerpají ŽIVĚ z `statusByOrderIndex` (DB → modul Statusy).
    ========================================================================== */
 
-// Design tokens
+// Design tokens — světlý medicínský styl
 const C = {
-  accent: '#00D9FF',
-  green: '#00F5A0',
-  yellow: '#FFE66D',
-  orange: '#FF9F43',
-  red: '#FF6B6B',
-  purple: '#A78BFA',
-  surface: 'rgba(255,255,255,0.03)',
-  surface2: 'rgba(255,255,255,0.06)',
-  border: 'rgba(255,255,255,0.08)',
-  borderHover: 'rgba(255,255,255,0.15)',
-  muted: 'rgba(255,255,255,0.45)',
-  text: 'rgba(255,255,255,0.85)',
+  accent: '#2952C8',
+  now: '#2952C8',
+  green: '#10B981',
+  yellow: '#D9A407',
+  orange: '#EA8A2C',
+  red: '#E5484D',
+  purple: '#8B5CF6',
+  surface: '#FFFFFF',
+  surface2: '#EDF1F8',
+  border: '#E1E8F3',
+  borderHover: '#C9D5E8',
+  muted: '#7C8AA5',
+  text: '#17233F',
 };
 
 const TIMELINE_START_HOUR = 7;
@@ -146,31 +147,12 @@ const MobileTimelineView: React.FC<Props> = ({
 
   return (
     <>
-      {/* Mobile background — modern glass-morphism */}
+      {/* Mobile background — světlý podklad shodný s detailem sálu */}
       <div
         aria-hidden
         className="fixed inset-0 md:hidden pointer-events-none"
-        style={{
-          zIndex: 0,
-          background:
-            'radial-gradient(120% 80% at 50% 0%, #0a1525 0%, #050d18 45%, #000810 100%)',
-        }}
+        style={{ zIndex: 0, background: '#EDF1F8' }}
       />
-      {/* Ambient cyan glow - enhanced */}
-      <div
-        aria-hidden
-        className="fixed inset-0 md:hidden pointer-events-none overflow-hidden"
-        style={{ zIndex: 0 }}
-      >
-        <div
-          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-15"
-          style={{ background: `radial-gradient(circle, ${C.accent} 0%, transparent 60%)` }}
-        />
-        <div
-          className="absolute top-1/3 -right-20 w-[300px] h-[300px] rounded-full opacity-10"
-          style={{ background: `radial-gradient(circle, ${C.green} 0%, transparent 60%)` }}
-        />
-      </div>
 
       <div
         className="md:hidden h-full w-full overflow-y-auto hide-scrollbar relative"
@@ -180,22 +162,19 @@ const MobileTimelineView: React.FC<Props> = ({
         }}
       >
         <div className="flex flex-col gap-5 px-5 pt-5">
+        <section className="timeline-mobile-hero rounded-[28px] p-4">
         {/* Header */}
         <MobileHeader
-          kicker="Časová osa"
-          title="Přehled sálů"
+          kicker="Živý operační program"
+          title="Operační timeline"
           right={
             <div
-              className="text-right rounded-xl px-3 py-1.5"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
+              className="timeline-mobile-clock text-right px-1 py-1"
             >
-              <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 leading-none">
-                Čas
+              <p className="text-[9px] uppercase tracking-[0.18em] leading-none" style={{ color: '#9AA7BF' }}>
+                {currentTime.toLocaleDateString('cs-CZ', { weekday: 'short', day: '2-digit', month: '2-digit' })}
               </p>
-              <p className="text-sm font-semibold text-white tabular-nums mt-1">
+              <p className="text-lg font-bold tabular-nums mt-1 tracking-tight" style={{ color: '#17233F' }}>
                 {currentTime.toLocaleTimeString('cs-CZ', {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -205,8 +184,8 @@ const MobileTimelineView: React.FC<Props> = ({
           }
         />
 
-        {/* KPI chipy - enhanced design */}
-        <div className="flex gap-2.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-1">
+        {/* KPI grid — skutečný provozní souhrn bez horizontálního ořezu */}
+        <div className="mt-4 grid grid-cols-2 gap-2">
           {kpis.map((k, idx) => {
             const Icon = k.icon;
             return (
@@ -215,20 +194,17 @@ const MobileTimelineView: React.FC<Props> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="flex items-center gap-2.5 shrink-0 rounded-2xl px-4 py-3"
+                className="timeline-mobile-metric flex items-center gap-2.5 rounded-2xl px-3 py-2.5"
                 style={{
-                  background: `linear-gradient(135deg, ${k.color}12 0%, ${C.surface} 100%)`,
-                  border: `1px solid ${k.color}30`,
-                  backdropFilter: 'blur(16px)',
-                  boxShadow: `0 4px 20px rgba(0,0,0,0.2), 0 0 20px ${k.color}10`,
+                  background: `linear-gradient(135deg, ${k.color}13 0%, ${C.surface} 100%)`,
+                  border: `1px solid ${k.color}24`,
                 }}
               >
                 <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                  className="w-8 h-8 rounded-[11px] flex items-center justify-center shrink-0"
                   style={{ 
-                    background: `${k.color}20`, 
-                    border: `1px solid ${k.color}40`,
-                    boxShadow: `0 0 12px ${k.color}20`,
+                    background: `${k.color}17`,
+                    border: `1px solid ${k.color}28`,
                   }}
                 >
                   <Icon className="w-4 h-4" style={{ color: k.color }} strokeWidth={2.25} />
@@ -243,6 +219,7 @@ const MobileTimelineView: React.FC<Props> = ({
             );
           })}
         </div>
+        </section>
 
         {/* Toggle Seznam / Osa */}
         <MobilePillTabs
@@ -252,6 +229,7 @@ const MobileTimelineView: React.FC<Props> = ({
           ]}
           value={mobileView}
           onChange={onViewChange}
+          className="timeline-mobile-tabs"
         />
 
         {mobileView === 'list' ? (
@@ -270,15 +248,21 @@ const MobileTimelineView: React.FC<Props> = ({
                 const statusName = step?.title || step?.name || 'Status';
                 const remaining = getRemainingTime(room);
                 const stepIndex = room.currentStepIndex;
-                const isFree = stepIndex >= totalSteps - 1;
-                const progress = ((stepIndex + 1) / totalSteps) * 100;
+                const isFree = stepIndex === 0;
+                const progress = isFree ? 0 : ((stepIndex + 1) / totalSteps) * 100;
 
                 return (
                   <MobileCard
                     key={room.id}
                     accent={color}
                     onClick={() => onSelectRoom(room)}
+                    className="timeline-mobile-room-card relative overflow-hidden"
                   >
+                    <span
+                      aria-hidden
+                      className="absolute left-0 top-5 bottom-5 w-[3px] rounded-full"
+                      style={{ background: color, boxShadow: `0 0 12px ${color}55` }}
+                    />
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1.5">
@@ -289,11 +273,11 @@ const MobileTimelineView: React.FC<Props> = ({
                               boxShadow: `0 0 8px ${color}aa`,
                             }}
                           />
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50 leading-none truncate">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none truncate" style={{ color: '#7C8AA5' }}>
                             {statusName}
                           </p>
                         </div>
-                        <h3 className="text-lg font-semibold text-white leading-tight truncate">
+                        <h3 className="text-[17px] font-extrabold tracking-[-0.02em] leading-tight truncate" style={{ color: '#17233F' }}>
                           {room.name}
                         </h3>
                       </div>
@@ -305,7 +289,7 @@ const MobileTimelineView: React.FC<Props> = ({
                           </span>
                         ) : remaining ? (
                           <>
-                            <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 leading-none">
+                            <p className="text-[9px] uppercase tracking-[0.2em] leading-none" style={{ color: '#9AA7BF' }}>
                               Zbývá
                             </p>
                             <p
@@ -337,7 +321,7 @@ const MobileTimelineView: React.FC<Props> = ({
                         </span>
                       )}
                       {room.staff?.doctor?.name && (
-                        <span className="text-[11px] text-white/60 truncate">
+                        <span className="text-[11px] truncate" style={{ color: '#7C8AA5' }}>
                           {room.staff.doctor.name}
                         </span>
                       )}
@@ -345,7 +329,7 @@ const MobileTimelineView: React.FC<Props> = ({
 
                     {/* Progress - enhanced */}
                     <div
-                      className="h-2 rounded-full overflow-hidden"
+                      className="h-1.5 rounded-full overflow-hidden"
                       style={{ background: C.surface2 }}
                     >
                       <motion.div
@@ -363,8 +347,8 @@ const MobileTimelineView: React.FC<Props> = ({
                     {/* Footer */}
                     {room.estimatedEndTime && !isFree && (
                       <div className="mt-3 flex items-center justify-between text-[11px]">
-                        <span className="text-white/40">Plánované ukončení</span>
-                        <span className="text-white/80 font-medium tabular-nums">
+                        <span style={{ color: '#9AA7BF' }}>Plánované ukončení</span>
+                        <span className="font-bold tabular-nums" style={{ color: '#17233F' }}>
                           {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -500,11 +484,10 @@ const AxisView: React.FC<{
         Provoz · {fmt(viewStartMs)} – {fmt(viewEndMs)} · teď {fmt(nowMs)}
       </MobileSectionLabel>
       <div
-        className="rounded-3xl p-3 overflow-hidden"
+        className="timeline-mobile-axis rounded-[26px] p-3 overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(16px)',
+          background: '#FFFFFF',
+          boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
         }}
       >
         {/* Pravítko hodin — vejde se na šířku, žádné rolování */}
@@ -514,8 +497,8 @@ const AxisView: React.FC<{
             {hourMarks.map((m) => (
               <span
                 key={m.ms}
-                className="absolute -translate-x-1/2 text-[9px] tabular-nums text-white/55 font-medium"
-                style={{ left: `${pctOf(m.ms)}%` }}
+                className="absolute -translate-x-1/2 text-[9px] tabular-nums font-semibold"
+                style={{ left: `${pctOf(m.ms)}%`, color: '#7C8AA5' }}
               >
                 {m.label}
               </span>
@@ -577,7 +560,7 @@ const AxisView: React.FC<{
               <button
                 key={room.id}
                 onClick={() => onSelectRoom(room)}
-                className="flex items-center gap-0 outline-none active:opacity-80 transition-opacity w-full"
+                className="timeline-mobile-axis-row flex items-center gap-0 rounded-xl outline-none active:opacity-80 transition-all w-full"
               >
                 {/* Název sálu (pevný levý sloupec) */}
                 <div className="shrink-0 pr-2 text-left flex items-center gap-1.5" style={{ width: LABEL_W }}>
@@ -585,29 +568,29 @@ const AxisView: React.FC<{
                     className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: currentColor, boxShadow: `0 0 6px ${currentColor}99` }}
                   />
-                  <span className="text-[10px] font-semibold text-white/90 truncate leading-tight">
+                  <span className="text-[10px] font-bold truncate leading-tight" style={{ color: '#17233F' }}>
                     {room.name}
                   </span>
                 </div>
 
                 {/* Dráha — celých 24 h na šířku */}
                 <div
-                  className="flex-1 relative rounded-md overflow-hidden"
-                  style={{ height: 30, background: 'rgba(255,255,255,0.025)' }}
+                  className="flex-1 relative rounded-[10px] overflow-hidden"
+                  style={{ height: 36, background: '#EDF1F8', border: '1px solid #E1E8F3' }}
                 >
                   {/* hodinová mřížka */}
                   {hourMarks.map((m) => (
                     <div
                       key={m.ms}
                       className="absolute top-0 bottom-0 w-px"
-                      style={{ left: `${pctOf(m.ms)}%`, background: 'rgba(255,255,255,0.06)' }}
+                      style={{ left: `${pctOf(m.ms)}%`, background: 'rgba(23,43,99,0.07)' }}
                     />
                   ))}
                   {/* segmenty statusů */}
                   {segments.map((seg, i) => (
                     <div
                       key={i}
-                      className="absolute top-1 bottom-1 rounded-[3px]"
+                      className="absolute top-1.5 bottom-1.5 rounded-[7px]"
                       style={{
                         left: `${seg.leftPct}%`,
                         width: `${seg.widthPct}%`,
@@ -620,14 +603,14 @@ const AxisView: React.FC<{
                   ))}
                   {/* prázdný sál — jemný text */}
                   {!isActive && (
-                    <span className="absolute inset-0 flex items-center pl-2 text-[9px] text-white/25 pointer-events-none">
+                    <span className="absolute inset-0 flex items-center pl-2 text-[9px] pointer-events-none" style={{ color: '#9AA7BF' }}>
                       volný
                     </span>
                   )}
-                  {/* linka „teď" — oranžová jako na desktopu */}
+                  {/* Linka „teď" — shodný modrotyrkysový jazyk jako desktop */}
                   <div
                     className="absolute top-0 bottom-0 w-[2px]"
-                    style={{ left: `${nowPct}%`, background: '#FF9800' }}
+                    style={{ left: `${nowPct}%`, background: `linear-gradient(to bottom, ${C.now}, ${C.accent})`, boxShadow: `0 0 8px ${C.now}66` }}
                   />
                 </div>
               </button>
@@ -637,11 +620,11 @@ const AxisView: React.FC<{
 
         {/* legenda času pod osou */}
         <div className="flex items-center justify-between mt-2 px-1" style={{ paddingLeft: LABEL_W }}>
-          <span className="text-[8px] text-white/30 tabular-nums">{fmt(viewStartMs)}</span>
-          <span className="text-[8px] font-semibold tabular-nums" style={{ color: '#FF9800' }}>
+          <span className="text-[8px] tabular-nums" style={{ color: '#9AA7BF' }}>{fmt(viewStartMs)}</span>
+          <span className="text-[8px] font-semibold tabular-nums" style={{ color: C.now }}>
             teď {fmt(nowMs)}
           </span>
-          <span className="text-[8px] text-white/30 tabular-nums">{fmt(viewEndMs)}</span>
+          <span className="text-[8px] tabular-nums" style={{ color: '#9AA7BF' }}>{fmt(viewEndMs)}</span>
         </div>
       </div>
     </div>

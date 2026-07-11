@@ -11,6 +11,7 @@ interface NotificationRequest {
   roomId: string;
   roomName: string;
   customReason?: string;
+  hospitalId: string;
 }
 
 const NOTIFICATION_TYPE_MAP: Record<string, { name: string; field: string; subject: string }> = {
@@ -66,7 +67,8 @@ export async function POST(request: NextRequest) {
   const supabase = getSupabaseAdmin();
 
   try {
-    const { type, roomId, roomName, customReason }: NotificationRequest = await request.json();
+    const { type, roomId, roomName, customReason, hospitalId }: NotificationRequest = await request.json();
+    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId || '')) return NextResponse.json({ error: 'Neplatné zařízení' }, { status: 400 });
 
     const notificationType = NOTIFICATION_TYPE_MAP[type];
     if (!notificationType) {
@@ -85,6 +87,7 @@ export async function POST(request: NextRequest) {
     const { data: contacts, error: contactsError } = await supabase
       .from('management_contacts')
       .select('email, name, position')
+      .eq('hospital_id', hospitalId)
       .eq(notificationType.field, true)
       .eq('is_active', true);
 
@@ -99,6 +102,7 @@ export async function POST(request: NextRequest) {
         const { error: logError } = await supabase
           .from('notifications_log')
           .insert({
+            hospital_id: hospitalId,
             room_id: roomId,
             room_name: roomName,
             notification_type: type,
@@ -161,6 +165,7 @@ export async function POST(request: NextRequest) {
       const { error: logError } = await supabase
         .from('notifications_log')
         .insert({
+          hospital_id: hospitalId,
           room_id: roomId,
           room_name: roomName,
           notification_type: type,

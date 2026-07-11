@@ -6,6 +6,11 @@ interface NavigatorWithStandalone extends Navigator {
   standalone?: boolean;
 }
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 // Generate or get device ID from localStorage
 function getOrCreateDeviceId(): string {
   if (typeof window === 'undefined') return '';
@@ -71,7 +76,7 @@ async function registerDevice(isPWAInstalled: boolean = false) {
 
 export const usePWAInstall = () => {
   const [isInstallable, setIsInstallable] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [deviceId, setDeviceId] = useState<string>('');
 
@@ -111,7 +116,7 @@ export const usePWAInstall = () => {
     // Listen for install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
 
@@ -135,7 +140,7 @@ export const usePWAInstall = () => {
 
   const handleInstall = useCallback(async () => {
     if (!deferredPrompt) return false;
-    deferredPrompt.prompt();
+    await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     setDeferredPrompt(null);
     setIsInstallable(false);

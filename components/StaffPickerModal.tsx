@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Stethoscope, Heart, Check, UserX, ShieldPlus, Star, MapPin, Percent, AlertTriangle, Ban, LogOut } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel, OperatingRoom } from '../types';
+import { useHospital } from '../contexts/HospitalContext';
 
 export type StaffRole = 'DOCTOR' | 'NURSE';
 
@@ -61,6 +62,7 @@ export default function StaffPickerModal({
   allRooms = [],
   currentRoomId,
 }: StaffPickerModalProps) {
+  const { activeHospitalId } = useHospital();
   const [searchQuery, setSearchQuery] = useState('');
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,7 @@ export default function StaffPickerModal({
         const { data, error } = await supabase
           .from('staff')
           .select('*')
+          .eq('hospital_id', activeHospitalId || 'default')
           .eq('is_active', true)
           .order('name');
         if (error) throw error;
@@ -121,7 +124,7 @@ export default function StaffPickerModal({
 
     fetchStaff();
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [isOpen]);
+  }, [isOpen, activeHospitalId]);
 
   // Free staff — not assigned to any room, not on leave
   const freeStaff = useMemo(() => {

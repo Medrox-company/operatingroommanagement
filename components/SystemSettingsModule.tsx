@@ -42,24 +42,28 @@ import {
   Tablet,
   ChevronDown,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
+import { useHospital, type Hospital } from '../contexts/HospitalContext';
+import { logger } from '../lib/logger';
 import { usePWAInstall } from './PWAInstaller';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 
-interface FacilityInfo {
-  facility_name?: string | null;
-  facility_short_name?: string | null;
-  facility_address?: string | null;
-  facility_city?: string | null;
-  facility_zip?: string | null;
-  facility_country?: string | null;
-  facility_ico?: string | null;
-  facility_contact_phone?: string | null;
-  facility_contact_email?: string | null;
-  facility_notes?: string | null;
+interface HospitalInfo {
+  id?: string;
+  hospital_name?: string | null;
+  hospital_short_name?: string | null;
+  hospital_address?: string | null;
+  hospital_city?: string | null;
+  hospital_zip?: string | null;
+  hospital_country?: string | null;
+  hospital_ico?: string | null;
+  hospital_contact_phone?: string | null;
+  hospital_contact_email?: string | null;
+  hospital_notes?: string | null;
 }
 
-type TabId = 'facility' | 'modules' | 'database' | 'access';
+type TabId = 'hospital' | 'modules' | 'database' | 'access';
 
 const COLORS = {
   cyan: '#36D9EC',
@@ -72,15 +76,16 @@ const COLORS = {
 
 const SystemSettingsModule: React.FC = () => {
   const { user, isAdmin, logout, modules, toggleModule, toggleModuleRole } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabId>('facility');
+  const { hospitals, activeHospital, activeHospitalId, selectHospital, refreshHospitals, loading: hospitalsLoading } = useHospital();
+  const [activeTab, setActiveTab] = useState<TabId>('hospital');
   const { isInstallable, isInstalled, handleInstall } = usePWAInstall();
   const [installLoading, setInstallLoading] = useState(false);
 
-  // Facility state
-  const [facility, setFacility] = useState<FacilityInfo>({});
-  const [facilityLoading, setFacilityLoading] = useState(true);
-  const [facilitySaving, setFacilitySaving] = useState(false);
-  const [facilityMessage, setFacilityMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  // Hospital state
+  const [hospital, setHospital] = useState<HospitalInfo>({});
+  const [hospitalLoading, setHospitalLoading] = useState(true);
+  const [hospitalSaving, setHospitalSaving] = useState(false);
+  const [hospitalMessage, setHospitalMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Database reset state
   const [resetMode, setResetMode] = useState<'operational' | 'full' | null>(null);
@@ -96,7 +101,7 @@ const SystemSettingsModule: React.FC = () => {
     version?: string;
     exportedAt?: string;
     exportedBy?: string;
-    facility?: { name?: string | null; ico?: string | null };
+    hospital?: { name?: string | null; ico?: string | null };
     totalRows: number;
     tableCount: number;
   } | null>(null);
@@ -105,61 +110,54 @@ const SystemSettingsModule: React.FC = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  // Load facility info
+  // Aktivní zařízení spravuje globální kontext, aby se současně přepnuly i sály.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/admin/facility', { credentials: 'include' });
-        const data = await res.json();
-        if (!cancelled && res.ok) {
-          setFacility(data.facility || {});
-        }
-      } catch {
-        // silent
-      } finally {
-        if (!cancelled) setFacilityLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    if (activeHospital) setHospital(activeHospital);
+    setHospitalLoading(hospitalsLoading);
+  }, [activeHospital, hospitalsLoading]);
+
+  const handleNewHospital = useCallback(() => {
+    setHospital({ hospital_country: 'Česká republika' });
+    setHospitalMessage(null);
   }, []);
 
-  const handleFacilityChange = useCallback((key: keyof FacilityInfo, value: string) => {
-    setFacility(prev => ({ ...prev, [key]: value }));
-    setFacilityMessage(null);
+  const handleHospitalChange = useCallback((key: keyof HospitalInfo, value: string) => {
+    setHospital(prev => ({ ...prev, [key]: value }));
+    setHospitalMessage(null);
   }, []);
 
-  const handleFacilitySave = useCallback(async () => {
-    setFacilitySaving(true);
-    setFacilityMessage(null);
+  const handleHospitalSave = useCallback(async () => {
+    setHospitalSaving(true);
+    setHospitalMessage(null);
     try {
-      const res = await fetch('/api/admin/facility', {
+      const res = await fetch('/api/admin/hospital', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(facility),
+        body: JSON.stringify(hospital),
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setFacilityMessage({ type: 'success', text: 'Informace o zařízení byly uloženy.' });
+        await refreshHospitals();
+        if (data.hospital?.id) selectHospital(data.hospital.id);
+        setHospital(data.hospital || hospital);
+        setHospitalMessage({ type: 'success', text: hospital.id ? 'Informace o zařízení byly uloženy.' : 'Nové zařízení bylo přidáno.' });
       } else {
-        setFacilityMessage({ type: 'error', text: data.error || 'Uložení se nezdařilo.' });
+        setHospitalMessage({ type: 'error', text: data.error || 'Uložení se nezdařilo.' });
       }
     } catch (e: unknown) {
-      setFacilityMessage({ type: 'error', text: e instanceof Error ? e.message : 'Síťová chyba při ukládání.' });
+      setHospitalMessage({ type: 'error', text: e instanceof Error ? e.message : 'Síťová chyba při ukládání.' });
     } finally {
-      setFacilitySaving(false);
+      setHospitalSaving(false);
     }
-  }, [facility]);
+  }, [hospital, refreshHospitals, selectHospital]);
 
   const handlePWAInstall = useCallback(async () => {
     setInstallLoading(true);
     try {
       const success = await handleInstall();
       if (success) {
-        console.log('[v0] PWA installation completed');
+        logger.info('[v0] PWA installation completed');
       }
     } catch (error) {
       console.error('[v0] PWA installation error:', error);
@@ -182,6 +180,7 @@ const SystemSettingsModule: React.FC = () => {
         body: JSON.stringify({
           mode: resetMode,
           confirmation: resetConfirmText,
+          hospitalId: activeHospitalId,
         }),
       });
       const data = await res.json();
@@ -221,7 +220,7 @@ const SystemSettingsModule: React.FC = () => {
     setExportLoading(true);
     setExportMessage(null);
     try {
-      const res = await fetch('/api/admin/export-data', { credentials: 'include' });
+      const res = await fetch(`/api/admin/export-data?hospitalId=${encodeURIComponent(activeHospitalId || '')}`, { credentials: 'include' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Export selhal (${res.status})`);
@@ -264,7 +263,7 @@ const SystemSettingsModule: React.FC = () => {
         version?: string;
         exportedAt?: string;
         exportedBy?: string;
-        facility?: { name?: string | null; ico?: string | null };
+        hospital?: { name?: string | null; ico?: string | null };
         tables?: Record<string, unknown[]>;
       };
 
@@ -282,7 +281,7 @@ const SystemSettingsModule: React.FC = () => {
         version: parsed.version,
         exportedAt: parsed.exportedAt,
         exportedBy: parsed.exportedBy,
-        facility: parsed.facility,
+        hospital: parsed.hospital,
         totalRows,
         tableCount,
       });
@@ -315,6 +314,7 @@ const SystemSettingsModule: React.FC = () => {
         body: JSON.stringify({
           confirmation: importConfirmText,
           backup,
+          hospitalId: activeHospitalId,
         }),
       });
       const data = await res.json();
@@ -355,13 +355,13 @@ const SystemSettingsModule: React.FC = () => {
     ).size;
 
     return {
-      facility: facility.facility_name?.trim() ? 1 : 0,
+      hospital: hospital.hospital_name?.trim() ? 1 : 0,
       enabledModules,
       disabledModules,
       configuredRoles,
       pwa: isInstalled ? 1 : 0,
     };
-  }, [facility.facility_name, isInstalled, modules]);
+  }, [hospital.hospital_name, isInstalled, modules]);
 
   // ==========================================================================
   // RENDER
@@ -403,7 +403,7 @@ const SystemSettingsModule: React.FC = () => {
         />
         <div className="grid grid-cols-2 gap-1.5 md:grid-cols-5">
           {[
-            { label: 'Zařízení', value: systemStats.facility, suffix: 'konfigurace', color: systemStats.facility ? COLORS.green : COLORS.amber, icon: Building2 },
+            { label: 'Zařízení', value: systemStats.hospital, suffix: 'konfigurace', color: systemStats.hospital ? COLORS.green : COLORS.amber, icon: Building2 },
             { label: 'Aktivní moduly', value: systemStats.enabledModules, suffix: 'modulů', color: COLORS.cyan, icon: LayoutGrid },
             { label: 'Vypnuté moduly', value: systemStats.disabledModules, suffix: 'modulů', color: systemStats.disabledModules ? COLORS.amber : COLORS.green, icon: ShieldOff },
             { label: 'Nastavené role', value: systemStats.configuredRoles, suffix: 'rolí', color: COLORS.blue, icon: UserCog },
@@ -432,7 +432,7 @@ const SystemSettingsModule: React.FC = () => {
         style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
       >
 {([
-  { id: 'facility' as const, label: 'Zdravotnické zařízení', icon: Building2 },
+  { id: 'hospital' as const, label: 'Zdravotnické zařízení', icon: Building2 },
   { id: 'modules' as const,  label: 'Správa modulů',         icon: SlidersHorizontal },
   { id: 'database' as const, label: 'Administrace databáze', icon: Database },
   { id: 'access' as const,   label: 'Přihlášení a přístup',  icon: UserCog },
@@ -466,22 +466,26 @@ const SystemSettingsModule: React.FC = () => {
       >
 
         <AnimatePresence mode="wait">
-          {activeTab === 'facility' && (
+          {activeTab === 'hospital' && (
             <motion.div
-              key="facility"
+              key="hospital"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
               className="relative"
             >
-        <FacilityPanel
-          facility={facility}
-          loading={facilityLoading}
-          saving={facilitySaving}
-          message={facilityMessage}
-          onChange={handleFacilityChange}
-          onSave={handleFacilitySave}
+            <HospitalPanel
+              hospital={hospital}
+              hospitals={hospitals}
+              activeHospitalId={activeHospitalId}
+              onSelectHospital={selectHospital}
+              onNewHospital={handleNewHospital}
+          loading={hospitalLoading}
+          saving={hospitalSaving}
+          message={hospitalMessage}
+          onChange={handleHospitalChange}
+          onSave={handleHospitalSave}
           isAdmin={isAdmin}
           isInstallable={isInstallable}
           isInstalled={isInstalled}
@@ -555,7 +559,7 @@ const SystemSettingsModule: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="relative"
             >
-              <AccessPanel user={user} isAdmin={isAdmin} onLogout={logout} facilityName={facility.facility_name} />
+              <AccessPanel user={user} isAdmin={isAdmin} onLogout={logout} hospitalName={hospital.hospital_name} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -595,15 +599,19 @@ const SystemSettingsModule: React.FC = () => {
 };
 
 // ============================================================================
-// Panel: Facility
+// Panel: Hospital
 // ============================================================================
 
-interface FacilityPanelProps {
-  facility: FacilityInfo;
+interface HospitalPanelProps {
+  hospital: HospitalInfo;
+  hospitals: Hospital[];
+  activeHospitalId: string | null;
+  onSelectHospital: (id: string) => void;
+  onNewHospital: () => void;
   loading: boolean;
   saving: boolean;
   message: { type: 'success' | 'error'; text: string } | null;
-  onChange: (key: keyof FacilityInfo, value: string) => void;
+  onChange: (key: keyof HospitalInfo, value: string) => void;
   onSave: () => void;
   isAdmin: boolean;
   isInstallable?: boolean;
@@ -612,7 +620,7 @@ interface FacilityPanelProps {
   pwInstallLoading?: boolean;
 }
 
-const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving, message, onChange, onSave, isAdmin, isInstallable, isInstalled, onPWAInstall, pwInstallLoading }) => {
+const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospitals, activeHospitalId, onSelectHospital, onNewHospital, loading, saving, message, onChange, onSave, isAdmin, isInstallable, isInstalled, onPWAInstall, pwInstallLoading }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -631,13 +639,42 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
         </p>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.05] p-4">
+        <div className="flex-1">
+          <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200/60 mb-2">
+            Aktivní nemocniční zařízení
+          </label>
+          <select
+            value={hospital.id || activeHospitalId || ''}
+            onChange={e => onSelectHospital(e.target.value)}
+            disabled={!hospital.id}
+            className="w-full bg-[#10151d] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500/50 disabled:opacity-50"
+          >
+            {!hospital.id && <option value="">Nové zařízení</option>}
+            {hospitals.map(item => (
+              <option key={item.id} value={item.id}>{item.hospital_name}</option>
+            ))}
+          </select>
+        </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={onNewHospital}
+            className="self-end flex items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-bold text-cyan-200 hover:bg-cyan-400/15"
+          >
+            <Building2 className="w-4 h-4" />
+            Přidat zařízení
+          </button>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field
           label="Název nemocnice"
           icon={Building2}
           placeholder="Např. Nemocnice Jihlava, p.o."
-          value={facility.facility_name ?? ''}
-          onChange={v => onChange('facility_name', v)}
+          value={hospital.hospital_name ?? ''}
+          onChange={v => onChange('hospital_name', v)}
           disabled={!isAdmin}
           fullWidth
         />
@@ -645,24 +682,24 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
           label="Zkrácený název"
           icon={Hash}
           placeholder="Např. NJ"
-          value={facility.facility_short_name ?? ''}
-          onChange={v => onChange('facility_short_name', v)}
+          value={hospital.hospital_short_name ?? ''}
+          onChange={v => onChange('hospital_short_name', v)}
           disabled={!isAdmin}
         />
         <Field
           label="IČO"
           icon={Hash}
           placeholder="00000000"
-          value={facility.facility_ico ?? ''}
-          onChange={v => onChange('facility_ico', v)}
+          value={hospital.hospital_ico ?? ''}
+          onChange={v => onChange('hospital_ico', v)}
           disabled={!isAdmin}
         />
         <Field
           label="Adresa"
           icon={MapPin}
           placeholder="Ulice a číslo popisné"
-          value={facility.facility_address ?? ''}
-          onChange={v => onChange('facility_address', v)}
+          value={hospital.hospital_address ?? ''}
+          onChange={v => onChange('hospital_address', v)}
           disabled={!isAdmin}
           fullWidth
         />
@@ -670,24 +707,24 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
           label="Město"
           icon={MapPin}
           placeholder="Jihlava"
-          value={facility.facility_city ?? ''}
-          onChange={v => onChange('facility_city', v)}
+          value={hospital.hospital_city ?? ''}
+          onChange={v => onChange('hospital_city', v)}
           disabled={!isAdmin}
         />
         <Field
           label="PSČ"
           icon={MapPin}
           placeholder="586 01"
-          value={facility.facility_zip ?? ''}
-          onChange={v => onChange('facility_zip', v)}
+          value={hospital.hospital_zip ?? ''}
+          onChange={v => onChange('hospital_zip', v)}
           disabled={!isAdmin}
         />
         <Field
           label="Kontaktní telefon"
           icon={Phone}
           placeholder="+420 ..."
-          value={facility.facility_contact_phone ?? ''}
-          onChange={v => onChange('facility_contact_phone', v)}
+          value={hospital.hospital_contact_phone ?? ''}
+          onChange={v => onChange('hospital_contact_phone', v)}
           disabled={!isAdmin}
           type="tel"
         />
@@ -695,8 +732,8 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
           label="Kontaktní e-mail"
           icon={Mail}
           placeholder="info@nemocnice.cz"
-          value={facility.facility_contact_email ?? ''}
-          onChange={v => onChange('facility_contact_email', v)}
+          value={hospital.hospital_contact_email ?? ''}
+          onChange={v => onChange('hospital_contact_email', v)}
           disabled={!isAdmin}
           type="email"
         />
@@ -705,8 +742,8 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
             Poznámky
           </label>
           <textarea
-            value={facility.facility_notes ?? ''}
-            onChange={e => onChange('facility_notes', e.target.value)}
+            value={hospital.hospital_notes ?? ''}
+            onChange={e => onChange('hospital_notes', e.target.value)}
             rows={3}
             disabled={!isAdmin}
             placeholder="Interní poznámky ke konfiguraci zařízení..."
@@ -739,7 +776,7 @@ const FacilityPanel: React.FC<FacilityPanelProps> = ({ facility, loading, saving
           }}
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          <span>Uložit informace</span>
+          <span>{hospital.id ? 'Uložit informace' : 'Vytvořit zařízení'}</span>
         </button>
       </div>
 
@@ -821,7 +858,7 @@ interface ImportPreview {
   version?: string;
   exportedAt?: string;
   exportedBy?: string;
-  facility?: { name?: string | null; ico?: string | null };
+  hospital?: { name?: string | null; ico?: string | null };
   totalRows: number;
   tableCount: number;
 }
@@ -1098,10 +1135,10 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
                         <dd className="text-white text-right font-mono">{importPreview.tableCount}</dd>
                         <dt className="text-white/40">Záznamů:</dt>
                         <dd className="text-white text-right font-mono">{importPreview.totalRows.toLocaleString('cs-CZ')}</dd>
-                        {importPreview.facility?.name && (
+                        {importPreview.hospital?.name && (
                           <>
                             <dt className="text-white/40">Zařízení:</dt>
-                            <dd className="text-white text-right truncate">{importPreview.facility.name}</dd>
+                            <dd className="text-white text-right truncate">{importPreview.hospital.name}</dd>
                           </>
                         )}
                         {importPreview.exportedAt && (
@@ -1168,10 +1205,10 @@ interface AccessPanelProps {
   user: { email: string; name: string; role: string } | null;
   isAdmin: boolean;
   onLogout: () => void;
-  facilityName?: string | null;
+  hospitalName?: string | null;
 }
 
-const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, facilityName }) => {
+const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, hospitalName }) => {
   return (
     <div className="space-y-6">
       <div>
@@ -1218,7 +1255,7 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, faci
           </button>
         </div>
 
-        {/* Facility context */}
+        {/* Hospital context */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/20 flex items-center justify-center">
@@ -1228,7 +1265,7 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, faci
           </div>
 
           <dl className="space-y-3 text-sm">
-            <InfoRow label="Připojeno k" value={facilityName || 'Nenakonfigurováno'} />
+            <InfoRow label="Připojeno k" value={hospitalName || 'Nenakonfigurováno'} />
             <InfoRow label="Instance" value="Produkční (single-tenant)" />
           </dl>
 
@@ -1423,7 +1460,7 @@ const ROLE_DEFS: Array<{ id: UserRole; label: string; icon: React.FC<{ className
   { id: 'user',       label: 'Uživatel',   icon: UserIcon,      color: '#64748B' },
 ];
 
-const MODULE_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
+const MODULE_ICON_MAP: Record<string, LucideIcon> = {
   LayoutGrid,
   Calendar: SlidersHorizontal, // fallback
   BarChart3: SlidersHorizontal,
@@ -1723,10 +1760,10 @@ const ImportConfirmModal: React.FC<ImportConfirmModalProps> = ({
             <span className="text-white/40">Celkem záznamů:</span>
             <span className="text-white font-mono">{preview.totalRows.toLocaleString('cs-CZ')}</span>
           </div>
-          {preview.facility?.name && (
+          {preview.hospital?.name && (
             <div className="flex justify-between text-xs">
               <span className="text-white/40">Zdroj:</span>
-              <span className="text-white truncate">{preview.facility.name}</span>
+              <span className="text-white truncate">{preview.hospital.name}</span>
             </div>
           )}
         </div>

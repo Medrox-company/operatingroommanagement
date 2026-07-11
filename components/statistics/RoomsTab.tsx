@@ -30,6 +30,7 @@ import {
   DeltaBadge, formatMinutes, formatPercent, formatNumber,
   seededPreviousValue, computeDelta
 } from './shared';
+import type { IconComponent } from './shared';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & Props
@@ -83,7 +84,7 @@ StatusBadge.displayName = 'StatusBadge';
 
 /** Mini metric row inside room cards */
 const MetricRow = memo(({ icon: Icon, label, value, color, unit }: {
-  icon: React.ComponentType<any>;
+  icon: IconComponent;
   label: string;
   value: number | string;
   color?: string;
@@ -259,7 +260,7 @@ const SummaryKPI = memo(({
   value: number;
   total: number;
   color: string;
-  icon: React.ComponentType<any>;
+  icon: IconComponent;
   trend?: number;
 }) => {
   const pct = total > 0 ? (value / total) * 100 : 0;

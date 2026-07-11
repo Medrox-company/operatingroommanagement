@@ -122,26 +122,12 @@ const MobileStaffView: React.FC<Props> = ({
 
   return (
     <>
-      {/* Mobile background — unified with RoomDetail / NotificationOverlay */}
+      {/* Mobile background — světlý podklad shodný s detailem sálu */}
       <div
         aria-hidden
         className="fixed inset-0 md:hidden pointer-events-none"
-        style={{
-          zIndex: 0,
-          background:
-            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
-        }}
+        style={{ zIndex: 0, background: '#EDF1F8' }}
       />
-      <div
-        aria-hidden
-        className="fixed inset-0 md:hidden pointer-events-none overflow-hidden"
-        style={{ zIndex: 0 }}
-      >
-        <div
-          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
-        />
-      </div>
 
       <div className="md:hidden w-full relative" style={{ zIndex: 1 }}>
         <div className="flex flex-col gap-5">
@@ -155,9 +141,9 @@ const MobileStaffView: React.FC<Props> = ({
               aria-label="Přidat personál"
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform active:scale-95"
               style={{
-                background: 'linear-gradient(135deg, rgba(251,191,36,0.25), rgba(251,191,36,0.1))',
-                border: '1px solid rgba(251,191,36,0.35)',
-                color: '#FBBF24',
+                background: '#2952C8',
+                boxShadow: '0 8px 20px -6px rgba(41,82,200,0.5)',
+                color: '#FFFFFF',
               }}
             >
               <Plus className="w-4.5 h-4.5" strokeWidth={2.25} />
@@ -178,16 +164,15 @@ const MobileStaffView: React.FC<Props> = ({
                 key={k.label}
                 className="rounded-2xl p-3 flex flex-col"
                 style={{
-                  background: `linear-gradient(135deg, ${k.color}14 0%, rgba(255,255,255,0.02) 100%)`,
-                  border: `1px solid ${k.color}2b`,
-                  backdropFilter: 'blur(12px)',
+                  background: '#FFFFFF',
+                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
               >
                 <Icon className="w-3.5 h-3.5" style={{ color: k.color }} strokeWidth={2.25} />
-                <p className="text-[9px] uppercase tracking-[0.2em] text-white/50 mt-1.5 leading-none">
+                <p className="text-[9px] uppercase tracking-[0.2em] mt-1.5 leading-none" style={{ color: '#7C8AA5' }}>
                   {k.label}
                 </p>
-                <p className="text-xl font-semibold text-white mt-1 tabular-nums">{k.value}</p>
+                <p className="text-xl font-extrabold mt-1 tabular-nums" style={{ color: '#17233F' }}>{k.value}</p>
               </div>
             );
           })}
@@ -214,13 +199,13 @@ const MobileStaffView: React.FC<Props> = ({
         {/* List */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-white/50 animate-spin" />
+            <div className="w-8 h-8 rounded-full border-2 border-[#C7D4E8] border-t-[#2952C8] animate-spin" />
           </div>
         ) : filteredStaff.length === 0 ? (
           <MobileCard>
             <div className="flex flex-col items-center justify-center gap-3 py-6">
-              <Users className="w-10 h-10 text-white/20" />
-              <p className="text-sm text-white/50 text-center">
+              <Users className="w-10 h-10" style={{ color: '#C9D5E8' }} />
+              <p className="text-sm text-center" style={{ color: '#7C8AA5' }}>
                 {searchQuery
                   ? `Nenalezeno pro "${searchQuery}"`
                   : 'V této kategorii zatím nikdo nen��.'}
@@ -260,10 +245,10 @@ const MobileStaffView: React.FC<Props> = ({
 
                       {/* Name + role */}
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45 leading-none">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none" style={{ color: '#9AA7BF' }}>
                           {m.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
                         </p>
-                        <h3 className="text-base font-semibold text-white mt-1 leading-tight truncate">
+                        <h3 className="text-base font-extrabold mt-1 leading-tight truncate" style={{ color: '#17233F' }}>
                           {m.name}
                         </h3>
                       </div>
@@ -379,10 +364,10 @@ const MobileStaffView: React.FC<Props> = ({
             {/* Notes */}
             {sheetStaff.notes && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40 mb-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-1.5" style={{ color: '#9AA7BF' }}>
                   Poznámky
                 </p>
-                <p className="text-sm text-white/80 leading-relaxed">
+                <p className="text-sm leading-relaxed" style={{ color: '#41506B' }}>
                   {sheetStaff.notes}
                 </p>
               </div>
@@ -396,11 +381,11 @@ const MobileStaffView: React.FC<Props> = ({
                   setSheetStaffId(null);
                   onEditStaff(id);
                 }}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold"
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08))',
-                  border: '1px solid rgba(251,191,36,0.35)',
-                  color: '#FBBF24',
+                  background: '#2952C8',
+                  boxShadow: '0 10px 24px -8px rgba(41,82,200,0.55)',
+                  color: '#FFFFFF',
                 }}
               >
                 <Pencil className="w-4 h-4" strokeWidth={2.25} />
@@ -440,19 +425,19 @@ const AttrBox: React.FC<{
   <div
     className="rounded-2xl p-3.5"
     style={{
-      background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      background: '#FFFFFF',
+      boxShadow: '0 4px 12px rgba(23,43,99,0.06)',
     }}
   >
-    <div className="flex items-center gap-1.5 text-white/40">
+    <div className="flex items-center gap-1.5" style={{ color: '#9AA7BF' }}>
       {icon}
       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none">
         {label}
       </p>
     </div>
     <p
-      className="text-base font-semibold mt-2 leading-none tabular-nums"
-      style={{ color: color || '#ffffff' }}
+      className="text-base font-bold mt-2 leading-none tabular-nums"
+      style={{ color: color || '#17233F' }}
     >
       {value}
     </p>
@@ -468,9 +453,9 @@ const FlagPill: React.FC<{
   <span
     className="text-[11px] font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5"
     style={{
-      background: active ? `${color}1f` : 'rgba(255,255,255,0.04)',
-      border: `1px solid ${active ? `${color}44` : 'rgba(255,255,255,0.08)'}`,
-      color: active ? color : 'rgba(255,255,255,0.4)',
+      background: active ? `${color}1a` : '#FFFFFF',
+      border: `1px solid ${active ? `${color}44` : '#E1E8F3'}`,
+      color: active ? color : '#9AA7BF',
     }}
   >
     {icon}

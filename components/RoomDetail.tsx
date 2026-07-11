@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
-  Plus, Minus, X, QrCode, User, Video, Cast, 
+  Plus, Minus, X, QrCode, User, Video, Cast, ArrowLeft, ArrowRight, Clock,
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone
@@ -13,6 +13,7 @@ import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, Backgr
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
+import { useHospital } from '../contexts/HospitalContext';
 
 // Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
 const formatElapsed = (totalSeconds: number): string => {
@@ -24,6 +25,22 @@ const formatElapsed = (totalSeconds: number): string => {
   }
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
+
+// Kontrastní barva textu k barvě pozadí — světlé barvy fáze (tyrkys, žlutá…)
+// dostanou tmavý text, tmavé barvy bílý (výpočet z relativní luminance).
+const contrastText = (hex: string): string => {
+  const m = /^#?([0-9a-f]{6})/i.exec(hex || '');
+  if (!m) return '#FFFFFF';
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b; // 0–255
+  return lum > 145 ? '#17233F' : '#FFFFFF';
+};
+
+const CLEANING_WARNING_THRESHOLD_MS = 30 * 60 * 1000;
+const CLEANING_WARNING_VISIBLE_MS = 10 * 1000;
 
 const resolvePhaseStartTime = (room: OperatingRoom): Date => {
   const latestSegment = room.statusHistory?.[room.statusHistory.length - 1];
@@ -46,7 +63,7 @@ interface RoomDetailProps {
 }
 
 const usePrevious = (value: number) => {
-  const ref = useRef<number>();
+  const ref = useRef<number | undefined>(undefined);
   useEffect(() => {
     ref.current = value;
   });
@@ -54,6 +71,7 @@ const usePrevious = (value: number) => {
 };
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange, onClearNotice }) => {
+  const { activeHospitalId } = useHospital();
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -397,7 +415,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
     if (!isCleaningStatus || isPaused || cleaningWarningRef.current.handled) return;
 
-    const THRESHOLD_MS = 30 * 60 * 1000;
     // Skutečný začátek úklidu z historie statusů (fallback na lokální časovač fáze)
     const seg = room.statusHistory && room.statusHistory.length > 0
       ? room.statusHistory[room.statusHistory.length - 1]
@@ -408,20 +425,25 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
     const check = () => {
       if (cleaningWarningRef.current.handled) return;
-      if (Date.now() - startMs >= THRESHOLD_MS) {
-        cleaningWarningRef.current.handled = true;
-        setShowCleaningWarning(true);
-        // Upozornění zmizí po 10 s; samotné přepnutí statusu řeší globální
-        // watcher v App (funguje i bez otevřeného detailu) → žádné dvojí přepnutí.
-        cleaningTimeoutRef.current = window.setTimeout(() => {
-          setShowCleaningWarning(false);
-        }, 10000);
-      }
+      cleaningWarningRef.current.handled = true;
+      setShowCleaningWarning(true);
+      // Upozornění zmizí po 10 s; samotné přepnutí statusu řeší globální
+      // watcher v App (funguje i bez otevřeného detailu) → žádné dvojí přepnutí.
+      cleaningTimeoutRef.current = window.setTimeout(() => {
+        setShowCleaningWarning(false);
+      }, CLEANING_WARNING_VISIBLE_MS);
     };
 
-    check();
-    const id = window.setInterval(check, 1000);
-    return () => clearInterval(id);
+    const elapsedMs = Date.now() - startMs;
+    const remainingMs = Math.max(0, CLEANING_WARNING_THRESHOLD_MS - elapsedMs);
+    cleaningTimeoutRef.current = window.setTimeout(check, remainingMs);
+
+    return () => {
+      if (cleaningTimeoutRef.current) {
+        clearTimeout(cleaningTimeoutRef.current);
+        cleaningTimeoutRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCleaningStatus, isPaused, safeStepIndex, nextStepIndex, room.statusHistory, phaseStartTime]);
 
@@ -579,210 +601,185 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         )}
       </AnimatePresence>
 
-      {/* ========== MOBILE LAYOUT (md:hidden) — původní boxový/kartový design ========== */}
+      {/* ========== MOBILE LAYOUT (md:hidden) — světlý design dle předlohy ========== */}
       <div
         className="flex md:hidden w-full h-full flex-col relative overflow-hidden"
-        style={{
-          background:
-            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
-        }}
+        style={{ background: '#EDF1F8' }}
       >
-        {/* Ambient glow — subtle */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div
-            className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25 transition-colors duration-500"
-            style={{ background: `radial-gradient(circle, ${activeColor} 0%, transparent 65%)` }}
-          />
-        </div>
 
         {/* Content */}
         <div
           className="relative z-10 flex flex-col h-full px-5 pt-4 overflow-y-auto hide-scrollbar"
           style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
-          {/* Header — minimal */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Header — zpět · název + podtitul · zvonek s badge */}
+          <div className="flex items-center gap-3.5 mb-6">
             <button
               onClick={onClose}
-              className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
+              className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+              style={{ background: '#FFFFFF', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
             >
-              <ChevronLeft className="w-[18px] h-[18px] text-white/70" strokeWidth={2} />
+              <ArrowLeft className="w-[19px] h-[19px]" style={{ color: '#17233F' }} strokeWidth={2.25} />
             </button>
-            <div className="flex flex-col items-center flex-1 min-w-0 px-3">
-              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/40 leading-none">
-                Operační sál
-              </p>
-              <h1 className="text-lg font-semibold text-white truncate mt-1.5 leading-none">
+            <div className="flex flex-col flex-1 min-w-0">
+              <h1 className="text-[17px] font-extrabold truncate leading-none" style={{ color: '#17233F' }}>
                 {room.name}
               </h1>
+              <p className="text-[12px] font-medium mt-1.5 leading-none" style={{ color: '#7C8AA5' }}>
+                Operační sál
+              </p>
             </div>
             <button
               onClick={() => setNotificationOverlayOpen(true)}
-              className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
+              className="relative shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+              style={{ background: '#FFFFFF', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
             >
-              <Bell className="w-[18px] h-[18px] text-white/70" strokeWidth={2} />
+              <Bell className="w-[19px] h-[19px]" style={{ color: '#17233F' }} strokeWidth={2} />
+              <span
+                className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white"
+                style={{ background: '#E5484D' }}
+              />
             </button>
           </div>
 
-          {/* Hero: Current phase card with integrated play button */}
+          {/* Řádek sekce — „Aktuální fáze" vlevo modře, krok vpravo šedě */}
+          <div className="flex items-center justify-between mb-3.5 px-0.5">
+            <h2 className="text-[14px] font-bold" style={{ color: activeColor }}>Aktuální fáze</h2>
+            <span className="text-[13px] font-semibold tabular-nums" style={{ color: '#7C8AA5' }}>
+              krok {safeStepIndex + 1} / {validStepCount}
+            </span>
+          </div>
+
+          {/* Hero „karta" — plná barva fáze, tmavý text (jako VISA karta) */}
           <motion.div
             key={currentStep?.name}
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="rounded-3xl p-6 relative overflow-hidden mb-6"
+            className="rounded-[24px] p-6 mb-5 relative overflow-hidden"
             style={{
-              background: `linear-gradient(135deg, ${activeColor}14 0%, rgba(255,255,255,0.03) 55%, ${activeColor}0a 100%)`,
-              border: `1px solid ${activeColor}33`,
-              backdropFilter: 'blur(16px)',
-              boxShadow: `0 12px 40px -10px ${activeColor}26, inset 0 1px 0 rgba(255,255,255,0.06)`,
+              // Pastelový tint v barvě AKTUÁLNÍ FÁZE nad bílým podkladem
+              background: `linear-gradient(135deg, ${activeColor}40 0%, ${activeColor}24 100%), #FFFFFF`,
+              boxShadow: `0 14px 34px ${activeColor}2E`,
             }}
           >
-            {/* Horní akcentní linka v barvě fáze */}
-            <div className="absolute inset-x-8 top-0 h-px pointer-events-none" style={{ background: `linear-gradient(90deg, transparent, ${activeColor}, transparent)`, opacity: 0.7 }} />
-            {/* Ambient accent behind text */}
-            <div
-              className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-25"
-              style={{ background: `radial-gradient(circle, ${activeColor} 0%, transparent 65%)` }}
-            />
-
-            {/* Header row: Label + step counter */}
-            <div className="relative flex items-start justify-between gap-3 mb-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40 leading-none">
-                Aktuální fáze
-              </p>
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{
-                    background: activeColor,
-                    boxShadow: `0 0 12px ${activeColor}`,
-                  }}
-                />
-                <span className="text-[10px] font-mono font-semibold tabular-nums text-white/60 leading-none">
-                  {safeStepIndex + 1}/{validStepCount}
-                </span>
-              </div>
-            </div>
-
-            {/* Content row: Phase name + play button */}
-            <div className="relative flex items-end justify-between gap-4">
-              <div className="flex-1">
-                <p
-                  className="text-[32px] font-bold leading-[1.1] tracking-tight text-balance"
-                  style={{ color: '#ffffff' }}
-                >
+            <div className="relative flex items-stretch gap-4">
+              {/* Levá polovina — název fáze + uplynulý čas */}
+              <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
+                <p className="text-[24px] font-extrabold leading-tight tracking-tight" style={{ color: '#17233F' }}>
                   {room.isEmergency
                     ? 'Stav nouze'
                     : room.isLocked
                     ? 'Uzamčen'
                     : currentStep?.name || 'Status'}
+                  {isPaused && <span className="text-[14px] font-bold" style={{ color: '#7C8AA5' }}> · Pauza</span>}
                 </p>
-                <p className="text-sm font-mono tabular-nums text-white/50 mt-3 leading-none">
-                  Uplynulo: {elapsedTime}
-                </p>
+
+                <div className="flex items-center gap-1.5 mt-3">
+                  <Clock className="w-4 h-4" style={{ color: '#17233F' }} strokeWidth={2.25} />
+                  <span className="text-[16px] font-bold tabular-nums" style={{ color: '#17233F' }}>
+                    {elapsedTime}
+                  </span>
+                </div>
               </div>
 
-              {/* Play button — circular, integrated into card */}
-              {!isInteractionBlocked && (
-                <motion.button
-                  onClick={handleNextStep}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all shadow-lg"
-                  style={{
-                    background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}dd 100%)`,
-                    boxShadow: `0 12px 32px -8px ${activeColor}40`,
-                  }}
-                >
-                  <Play className="w-7 h-7 text-black/90 ml-0.5" strokeWidth={1.5} fill="currentColor" />
-                </motion.button>
-              )}
-            </div>
-
-            {/* Progress bar — thin, integrated at bottom */}
-            <div className="relative mt-5 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{
-                  background: `linear-gradient(90deg, ${activeColor} 0%, ${activeColor}aa 100%)`,
-                  boxShadow: `0 0 16px ${activeColor}60`,
-                }}
-                animate={{ width: `${((safeStepIndex + 1) / validStepCount) * 100}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
+              {/* Pravá polovina boxu — velké tlačítko „Další fáze" se šipkou */}
+              {!isInteractionBlocked && (() => {
+                const nextIdx = validStepCount > 0 ? (safeStepIndex + 1) % validStepCount : 0;
+                const nextName = nextIdx === 0
+                  ? 'Nový cyklus'
+                  : (activeDbStatuses[nextIdx]?.name || 'Další krok');
+                const ctaText = contrastText(activeColor);
+                return (
+                  <motion.button
+                    onClick={handleNextStep}
+                    whileTap={{ scale: 0.97 }}
+                    className="w-1/2 shrink-0 min-h-[128px] rounded-[18px] flex flex-col items-center justify-center gap-2 px-3 py-4 outline-none select-none relative overflow-hidden"
+                    style={{
+                      background: `linear-gradient(150deg, ${activeColor} 0%, ${activeColor}D9 100%)`,
+                      boxShadow: `0 14px 30px -8px ${activeColor}80, inset 0 1px 0 rgba(255,255,255,0.28)`,
+                    }}
+                  >
+                    {/* Jemný diagonální lesk */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.18) 0%, transparent 42%)' }}
+                    />
+                    {/* Šipka v bílém kroužku — jemně se posouvá směrem k dalšímu kroku */}
+                    <motion.span
+                      className="relative w-12 h-12 rounded-full flex items-center justify-center"
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{
+                        // Na světlých barvách fáze tmavý kroužek s bílou šipkou, jinak naopak
+                        background: ctaText === '#17233F' ? '#17233F' : '#FFFFFF',
+                        boxShadow: '0 4px 14px rgba(23,43,99,0.20)',
+                      }}
+                    >
+                      <ArrowRight
+                        className="w-6 h-6"
+                        style={{ color: ctaText === '#17233F' ? '#FFFFFF' : activeColor }}
+                        strokeWidth={2.5}
+                      />
+                    </motion.span>
+                    <span className="relative text-[14px] font-bold leading-none mt-1" style={{ color: ctaText }}>
+                      Další fáze
+                    </span>
+                    <span
+                      className="relative text-[10.5px] font-medium truncate max-w-full px-1 leading-none"
+                      style={{ color: ctaText, opacity: 0.82 }}
+                    >
+                      {nextName}
+                    </span>
+                  </motion.button>
+                );
+              })()}
             </div>
           </motion.div>
 
-          {/* End Time Card — improved design */}
+          {/* Odhadovaný konec — bílá karta, modrý čas, kruhová ± */}
           <div
-            className="rounded-3xl p-6 mb-6 relative overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, ${activeColor}10 0%, rgba(255,255,255,0.02) 60%, ${activeColor}08 100%)`,
-              border: `1px solid ${activeColor}2e`,
-              backdropFilter: 'blur(16px)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-            }}
+            className="rounded-[24px] px-5 py-4 mb-6 flex items-center justify-between gap-3"
+            style={{ background: '#FFFFFF', boxShadow: '0 10px 26px rgba(23,43,99,0.07)' }}
           >
-            <div className="absolute inset-x-8 top-0 h-px pointer-events-none" style={{ background: `linear-gradient(90deg, transparent, ${activeColor}, transparent)`, opacity: 0.6 }} />
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40 leading-none">
-                  Odhadovaný konec
-                </p>
-                <p className="text-[40px] font-bold text-white font-mono tabular-nums mt-3 leading-none tracking-tight">
-                  {estimatedEndTime && shouldShowTime
-                    ? estimatedEndTime.toLocaleTimeString('cs-CZ', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '--:--'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <motion.button
-                  onClick={handleDecreaseTime}
-                  disabled={isInteractionBlocked || !estimatedEndTime}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-30 outline-none select-none transition-all"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                  }}
-                >
-                  <Minus className="w-5 h-5 text-white/70" strokeWidth={2.25} />
-                </motion.button>
-                <motion.button
-                  onClick={handleIncreaseTime}
-                  disabled={isInteractionBlocked}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center disabled:opacity-30 outline-none select-none transition-all shadow-lg"
-                  style={{
-                    background: `linear-gradient(135deg, ${activeColor} 0%, ${activeColor}dd 100%)`,
-                    boxShadow: `0 8px 24px -6px ${activeColor}4d`,
-                  }}
-                >
-                  <Plus className="w-5 h-5 text-black/90" strokeWidth={2.5} />
-                </motion.button>
-              </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium leading-none" style={{ color: '#7C8AA5' }}>
+                Odhadovaný konec
+              </p>
+              <p className="text-[30px] font-extrabold tabular-nums mt-2 leading-none tracking-tight" style={{ color: '#2952C8' }}>
+                {estimatedEndTime && shouldShowTime
+                  ? estimatedEndTime.toLocaleTimeString('cs-CZ', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : '--:--'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <motion.button
+                onClick={handleDecreaseTime}
+                disabled={isInteractionBlocked || !estimatedEndTime}
+                whileTap={{ scale: 0.94 }}
+                className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-30 outline-none select-none"
+                style={{ background: '#FFFFFF', border: '1px solid #E1E8F3', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
+              >
+                <Minus className="w-5 h-5" strokeWidth={2.25} style={{ color: '#17233F' }} />
+              </motion.button>
+              <motion.button
+                onClick={handleIncreaseTime}
+                disabled={isInteractionBlocked}
+                whileTap={{ scale: 0.94 }}
+                className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-30 outline-none select-none"
+                style={{ background: '#FFFFFF', border: '1px solid #E1E8F3', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
+              >
+                <Plus className="w-5 h-5" strokeWidth={2.25} style={{ color: '#17233F' }} />
+              </motion.button>
             </div>
           </div>
 
           {/* Categories — action tiles section */}
           <div className="mb-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40 mb-4 px-1">
-              Akce
-            </p>
+            <h2 className="text-[15px] font-bold mb-3.5 px-0.5" style={{ color: '#17233F' }}>Akce</h2>
             <div className="grid grid-cols-4 gap-3">
               {/* Pause */}
               <motion.button
@@ -804,23 +801,24 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 whileTap={{ scale: 0.96 }}
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
                 style={{
-                  background: isPaused
-                    ? `linear-gradient(135deg, #00d4ff 0%, #00d4ffdd 100%)`
-                    : 'rgba(255,255,255,0.04)',
-                  border: isPaused
-                    ? `1px solid #00d4ff`
-                    : '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: isPaused ? `0 8px 24px -6px rgba(0,212,255,0.3)` : 'none',
+                  background: isPaused ? '#E7EEFB' : '#FFFFFF',
+                  border: isPaused ? '1px solid rgba(41,82,200,0.45)' : '1px solid transparent',
+                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
               >
-                {isPaused ? (
-                  <Play className="w-6 h-6 text-black/90" strokeWidth={1.75} fill="currentColor" />
-                ) : (
-                  <Pause className="w-6 h-6 text-white/70" strokeWidth={1.75} />
-                )}
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{ background: '#EEF3FC', border: '1.5px solid rgba(41,82,200,0.35)' }}
+                >
+                  {isPaused ? (
+                    <Play className="w-6 h-6" strokeWidth={2} style={{ color: '#2952C8' }} />
+                  ) : (
+                    <Pause className="w-6 h-6" strokeWidth={2} style={{ color: '#2952C8' }} />
+                  )}
+                </div>
                 <span
-                  className="text-[10px] font-semibold tracking-tight leading-tight"
-                  style={{ color: isPaused ? '#062720' : 'rgba(255,255,255,0.6)' }}
+                  className="text-[12px] font-semibold tracking-tight leading-tight"
+                  style={{ color: isPaused ? '#2952C8' : '#17233F' }}
                 >
                   {isPaused ? 'Pokračovat' : 'Pauza'}
                 </span>
@@ -843,27 +841,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 whileTap={{ scale: 0.96 }}
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
                 style={{
-                  background: room.isEnhancedHygiene
-                    ? 'linear-gradient(135deg, rgba(251,146,60,0.22) 0%, rgba(251,146,60,0.08) 100%)'
-                    : 'rgba(255,255,255,0.04)',
-                  border: room.isEnhancedHygiene
-                    ? '1px solid rgba(251,146,60,0.55)'
-                    : '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: room.isEnhancedHygiene ? '0 8px 24px -8px rgba(251,146,60,0.4), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
+                  background: room.isEnhancedHygiene ? '#E7EEFB' : '#FFFFFF',
+                  border: room.isEnhancedHygiene ? '1px solid rgba(41,82,200,0.45)' : '1px solid transparent',
+                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
               >
-                <ShieldAlert
-                  className="w-6 h-6"
-                  style={{
-                    color: room.isEnhancedHygiene ? '#fb923c' : 'rgba(255,255,255,0.7)',
-                  }}
-                  strokeWidth={1.75}
-                />
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{ background: '#EEF3FC', border: '1.5px solid rgba(41,82,200,0.35)' }}
+                >
+                  <ShieldAlert className="w-6 h-6" style={{ color: '#2952C8' }} strokeWidth={2} />
+                </div>
                 <span
-                  className="text-[10px] font-semibold tracking-tight leading-tight"
-                  style={{
-                    color: room.isEnhancedHygiene ? '#fb923c' : 'rgba(255,255,255,0.6)',
-                  }}
+                  className="text-[12px] font-semibold tracking-tight leading-tight"
+                  style={{ color: room.isEnhancedHygiene ? '#2952C8' : '#17233F' }}
                 >
                   Hygiena
                 </span>
@@ -894,24 +885,20 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 whileTap={{ scale: 0.96 }}
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
                 style={{
-                  background: patientCalledTime
-                    ? 'linear-gradient(135deg, rgba(0,212,255,0.20) 0%, rgba(0,212,255,0.07) 100%)'
-                    : 'rgba(255,255,255,0.04)',
-                  border: patientCalledTime
-                    ? '1px solid rgba(0,212,255,0.55)'
-                    : '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: patientCalledTime ? '0 8px 24px -8px rgba(0,212,255,0.4), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
+                  background: patientCalledTime ? '#E7EEFB' : '#FFFFFF',
+                  border: patientCalledTime ? '1px solid rgba(41,82,200,0.45)' : '1px solid transparent',
+                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
               >
-                <Phone
-                  className="w-6 h-6"
-                style={{
-                  color: patientCalledTime ? '#00d4ff' : 'rgba(255,255,255,0.7)' }}
-                  strokeWidth={1.75}
-                />
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{ background: '#EEF3FC', border: '1.5px solid rgba(41,82,200,0.35)' }}
+                >
+                  <Phone className="w-6 h-6" style={{ color: '#2952C8' }} strokeWidth={2} />
+                </div>
                 <span
-                  className="text-[10px] font-semibold tracking-tight tabular-nums leading-tight"
-                  style={{ color: patientCalledTime ? '#00d4ff' : 'rgba(255,255,255,0.6)' }}
+                  className="text-[12px] font-semibold tracking-tight tabular-nums leading-tight"
+                  style={{ color: patientCalledTime ? '#2952C8' : '#17233F' }}
                 >
                   {patientCalledTime ? patientCallElapsedTime : 'Volat'}
                 </span>
@@ -947,24 +934,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 whileTap={{ scale: 0.96 }}
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
                 style={{
-                  background: patientArrivedTime
-                    ? 'linear-gradient(135deg, rgba(168,85,247,0.22) 0%, rgba(168,85,247,0.08) 100%)'
-                    : 'rgba(255,255,255,0.04)',
-                  border: patientArrivedTime
-                    ? '1px solid rgba(168,85,247,0.55)'
-                    : '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: patientArrivedTime ? '0 8px 24px -8px rgba(168,85,247,0.4), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
-                  opacity: !patientCalledTime ? 0.5 : 1,
+                  background: patientArrivedTime ? '#E7EEFB' : '#FFFFFF',
+                  border: patientArrivedTime ? '1px solid rgba(41,82,200,0.45)' : '1px solid transparent',
+                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
+                  opacity: !patientCalledTime ? 0.55 : 1,
                 }}
               >
-                <BedDouble
-                  className="w-6 h-6"
-                  style={{ color: patientArrivedTime ? '#c084fc' : 'rgba(255,255,255,0.7)' }}
-                  strokeWidth={1.75}
-                />
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{ background: '#EEF3FC', border: '1.5px solid rgba(41,82,200,0.35)' }}
+                >
+                  <BedDouble className="w-6 h-6" style={{ color: '#2952C8' }} strokeWidth={2} />
+                </div>
                 <span
-                  className="text-[10px] font-semibold tracking-tight leading-tight"
-                  style={{ color: patientArrivedTime ? '#c084fc' : 'rgba(255,255,255,0.6)' }}
+                  className="text-[12px] font-semibold tracking-tight leading-tight"
+                  style={{ color: patientArrivedTime ? '#2952C8' : '#17233F' }}
                 >
                   Příjezd
                 </span>
@@ -972,66 +956,41 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             </div>
           </div>
 
-          {/* Staff — clean rows */}
+          {/* Staff — bílé řádky se jménem a rolí */}
           <div className="mb-4">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/40 mb-3 px-1">
-              Tým
-            </p>
-            <div className="flex flex-row gap-2">
-              <button
-                onClick={() => {
-                  setStaffPickerRole('doctor');
-                  setStaffPickerOpen(true);
-                }}
-                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left flex-1 outline-none select-none transition-all"
-                style={{
-                  background: room?.staff?.doctor?.name ? 'linear-gradient(135deg, rgba(167,139,250,0.10) 0%, rgba(255,255,255,0.02) 100%)' : 'rgba(255,255,255,0.025)',
-                  border: room?.staff?.doctor?.name ? '1px solid rgba(167,139,250,0.28)' : '1px solid rgba(255,255,255,0.06)',
-                }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(167,139,250,0.14)', border: '1px solid rgba(167,139,250,0.3)' }}
+            <h2 className="text-[15px] font-bold mb-3 px-0.5" style={{ color: '#17233F' }}>Tým</h2>
+            <div className="flex flex-col gap-2.5">
+              {([
+                {
+                  role: 'doctor' as const,
+                  label: 'Lékař',
+                  name: room?.staff?.doctor?.name,
+                  fallback: 'Nepřiřazen',
+                },
+                {
+                  role: 'nurse' as const,
+                  label: 'Sestra',
+                  name: room?.staff?.nurse?.name,
+                  fallback: 'Nepřiřazena',
+                },
+              ]).map(({ role, label, name, fallback }) => (
+                <button
+                  key={role}
+                  onClick={() => {
+                    setStaffPickerRole(role);
+                    setStaffPickerOpen(true);
+                  }}
+                  className="flex items-center gap-3.5 px-4 py-3.5 rounded-[18px] active:scale-[0.99] text-left w-full outline-none select-none transition-all"
+                  style={{ background: '#FFFFFF', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
                 >
-                  <Stethoscope className="w-[18px] h-[18px]" style={{ color: '#A78BFA' }} strokeWidth={1.75} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
-                    Lékař
+                  <User className="w-5 h-5 shrink-0" style={{ color: '#17233F' }} strokeWidth={2} />
+                  <p className="flex-1 min-w-0 text-[14px] font-bold truncate leading-none" style={{ color: '#17233F' }}>
+                    {name || fallback}
+                    <span className="font-medium" style={{ color: '#7C8AA5' }}> — {label}</span>
                   </p>
-                  <p className="text-sm font-semibold text-white truncate mt-1.5 leading-none">
-                    {room?.staff?.doctor?.name || 'Nepřiřazen'}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-white/30 shrink-0" strokeWidth={2} />
-              </button>
-              <button
-                onClick={() => {
-                  setStaffPickerRole('nurse');
-                  setStaffPickerOpen(true);
-                }}
-                className="flex items-center gap-3 p-3.5 rounded-2xl active:scale-[0.99] text-left flex-1 outline-none select-none transition-all"
-                style={{
-                  background: room?.staff?.nurse?.name ? 'linear-gradient(135deg, rgba(52,211,153,0.10) 0%, rgba(255,255,255,0.02) 100%)' : 'rgba(255,255,255,0.025)',
-                  border: room?.staff?.nurse?.name ? '1px solid rgba(52,211,153,0.28)' : '1px solid rgba(255,255,255,0.06)',
-                }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(52,211,153,0.14)', border: '1px solid rgba(52,211,153,0.3)' }}
-                >
-                  <Heart className="w-[18px] h-[18px]" style={{ color: '#34D399' }} strokeWidth={1.75} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 leading-none">
-                    Sestra
-                  </p>
-                  <p className="text-sm font-semibold text-white truncate mt-1.5 leading-none">
-                    {room?.staff?.nurse?.name || 'Nepřiřazena'}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-white/30 shrink-0" strokeWidth={2} />
-              </button>
+                  <ChevronRight className="w-4 h-4 shrink-0" style={{ color: '#9AA7BF' }} strokeWidth={2.25} />
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -1802,6 +1761,7 @@ const prevStep = activeDbStatuses.length > 0
                 roomId: room.id,
                 roomName: room.name,
                 customReason,
+                hospitalId: activeHospitalId,
               }),
             });
             const result = await response.json().catch(() => ({}));

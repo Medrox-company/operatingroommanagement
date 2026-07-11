@@ -54,22 +54,22 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-black border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl"
+            className="bg-white md:bg-black border border-transparent md:border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl"
           >
-            <h3 className="text-2xl font-bold text-white mb-2">Zadejte důvod</h3>
-            <p className="text-white/40 text-sm mb-6">Popište důvod notifikace pro management</p>
+            <h3 className="text-2xl font-bold text-[#17233F] md:text-white mb-2">Zadejte důvod</h3>
+            <p className="text-[#7C8AA5] md:text-white/40 text-sm mb-6">Popište důvod notifikace pro management</p>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Napište důvod notifikace..."
-              className="w-full px-5 py-4 rounded-2xl bg-white/[0.03] border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 transition-all resize-none mb-6 text-lg"
+              className="w-full px-5 py-4 rounded-2xl bg-[#F2F5FA] md:bg-white/[0.03] border border-[#E1E8F3] md:border-white/10 text-[#17233F] md:text-white placeholder:text-[#9AA7BF] md:placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 transition-all resize-none mb-6 text-lg"
               rows={4}
               autoFocus
             />
             <div className="flex gap-4">
               <button
                 onClick={onClose}
-                className="flex-1 px-6 py-4 bg-white/5 border border-white/10 text-white font-semibold rounded-2xl hover:bg-white/10 transition-all"
+                className="flex-1 px-6 py-4 bg-[#F2F5FA] md:bg-white/5 border border-[#E1E8F3] md:border-white/10 text-[#17233F] md:text-white font-semibold rounded-2xl hover:bg-black/5 md:hover:bg-white/10 transition-all"
               >
                 Zrušit
               </button>
@@ -165,50 +165,34 @@ export default function NotificationOverlay({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="md:hidden fixed inset-0 z-[200] flex flex-col overflow-hidden"
-            style={{
-              background:
-                'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
-            }}
+            style={{ background: '#EDF1F8' }}
           >
-            {/* Ambient glow — matching RoomDetail mobile */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <div
-                className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-25"
-                style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
-              />
-            </div>
-
             {/* Content */}
             <div
               className="relative z-10 flex flex-col h-full px-5 pt-4 overflow-y-auto hide-scrollbar"
               style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
             >
-              {/* Header — ChevronLeft + centered title (same pattern as RoomDetail) */}
-              <div className="flex items-center justify-between mb-6">
+              {/* Header — zpět · název + podtitul (stejný vzor jako detail sálu) */}
+              <div className="flex items-center gap-3.5 mb-6">
                 <button
                   onClick={onClose}
-                  className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                  }}
+                  className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+                  style={{ background: '#FFFFFF', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
                 >
-                  <ChevronLeft className="w-[18px] h-[18px] text-white/70" strokeWidth={2} />
+                  <ChevronLeft className="w-[19px] h-[19px]" style={{ color: '#17233F' }} strokeWidth={2.25} />
                 </button>
-                <div className="flex flex-col items-center flex-1 min-w-0 px-3">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/40 leading-none">
-                    Poslat notifikaci
-                  </p>
-                  <h1 className="text-lg font-semibold text-white truncate mt-1.5 leading-none">
+                <div className="flex flex-col flex-1 min-w-0">
+                  <h1 className="text-[17px] font-extrabold truncate leading-none" style={{ color: '#17233F' }}>
                     {roomName}
                   </h1>
+                  <p className="text-[12px] font-medium mt-1.5 leading-none" style={{ color: '#7C8AA5' }}>
+                    Poslat notifikaci
+                  </p>
                 </div>
-                {/* Spacer to keep title perfectly centered */}
-                <div className="w-11 h-11 shrink-0" aria-hidden="true" />
               </div>
 
               {/* Section label */}
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40 mb-3 px-1">
+              <p className="text-[14px] font-bold mb-3 px-0.5" style={{ color: '#2952C8' }}>
                 Typ notifikace
               </p>
 
@@ -229,39 +213,36 @@ export default function NotificationOverlay({
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.05 * index, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full flex items-center gap-4 rounded-3xl p-5 outline-none select-none transition-all disabled:opacity-60"
+                      className="w-full flex items-center gap-4 rounded-[20px] p-4 outline-none select-none transition-all disabled:opacity-60"
                       style={{
-                        background: `linear-gradient(135deg, ${notif.color}14 0%, rgba(255,255,255,0.02) 100%)`,
-                        border: `1px solid ${notif.color}33`,
-                        backdropFilter: 'blur(16px)',
+                        background: '#FFFFFF',
+                        boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                         cursor: isDisabled ? 'not-allowed' : 'pointer',
                       }}
                     >
-                      {/* Colored icon tile */}
+                      {/* Tintovaný kroužek s ikonou v barvě notifikace */}
                       <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-                        style={{
-                          background: `linear-gradient(135deg, ${notif.color} 0%, ${notif.color}cc 100%)`,
-                          boxShadow: `0 8px 24px -6px ${notif.color}55`,
-                        }}
+                        className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: `${notif.color}16`, border: `1.5px solid ${notif.color}45` }}
                       >
                         {isLoading ? (
-                          <Loader2 className="w-5 h-5 text-black/80 animate-spin" strokeWidth={2.25} />
+                          <Loader2 className="w-5 h-5 animate-spin" style={{ color: notif.color }} strokeWidth={2.25} />
                         ) : (
-                          <Icon className="w-5 h-5 text-black/80" strokeWidth={2} />
+                          <Icon className="w-5 h-5" style={{ color: notif.color }} strokeWidth={2} />
                         )}
                       </div>
 
                       {/* Label */}
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="text-[15px] font-semibold text-white leading-tight text-balance">
+                        <p className="text-[15px] font-bold leading-tight text-balance" style={{ color: '#17233F' }}>
                           {label}
                         </p>
                       </div>
 
                       <ChevronRight
-                        className="w-5 h-5 text-white/30 shrink-0"
-                        strokeWidth={2}
+                        className="w-5 h-5 shrink-0"
+                        style={{ color: '#9AA7BF' }}
+                        strokeWidth={2.25}
                       />
                     </motion.button>
                   );

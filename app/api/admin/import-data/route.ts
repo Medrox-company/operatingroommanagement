@@ -20,10 +20,15 @@ export const runtime = 'nodejs';
 // Wipe pořadí — od listů ke kořenům kvůli FK
 const WIPE_ORDER = [
   'notifications_log',
+  'safety_checklists',
+  'operating_procedures',
   'room_status_history',
   'shift_schedules',
   'schedules',
   'equipment',
+  'patients',
+  'procedures',
+  'devices',
   'operating_rooms',
   'management_contacts',
   'staff',
@@ -41,13 +46,18 @@ const INSERT_ORDER = [
   'departments',
   'sub_departments',
   'staff',
+  'patients',
+  'procedures',
   'management_contacts',
   'operating_rooms',
+  'operating_procedures',
+  'safety_checklists',
   'equipment',
   'schedules',
   'shift_schedules',
   'room_status_history',
   'notifications_log',
+  'devices',
 ] as const;
 
 export async function POST(req: NextRequest) {
@@ -64,6 +74,7 @@ export async function POST(req: NextRequest) {
 
   let body: {
     confirmation?: string;
+    hospitalId?: string;
     backup?: { version?: string; tables?: Record<string, unknown[]> };
   };
   try {
@@ -73,6 +84,10 @@ export async function POST(req: NextRequest) {
   }
 
   const { confirmation, backup } = body;
+  const hospitalId = body.hospitalId || '';
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) {
+    return NextResponse.json({ error: 'Neplatné zařízení' }, { status: 400 });
+  }
 
   if (confirmation !== 'OBNOVIT DATA') {
     return NextResponse.json(
@@ -98,7 +113,7 @@ export async function POST(req: NextRequest) {
     const { error, count } = await admin
       .from(table)
       .delete({ count: 'exact' })
-      .not('id', 'is', null);
+      .eq('hospital_id', hospitalId);
     if (error) {
       wipeCounts[table] = `ERROR: ${error.message}`;
     } else {
@@ -114,9 +129,13 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
+    const scopedRows = (rows as Record<string, unknown>[]).map(row => ({ ...row, hospital_id: hospitalId }));
+    const conflictColumns = table === 'app_modules' || table === 'workflow_statuses'
+      ? 'id,hospital_id'
+      : 'id';
     const { error, count } = await admin
       .from(table)
-      .upsert(rows as never[], { onConflict: 'id', count: 'exact' });
+      .upsert(scopedRows as never[], { onConflict: conflictColumns, count: 'exact' });
     if (error) {
       insertCounts[table] = `ERROR: ${error.message}`;
     } else {

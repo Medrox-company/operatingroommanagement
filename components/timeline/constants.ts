@@ -3,8 +3,11 @@
 // plocha, teplý žlutý primární akcent, perwinkle modrá pro informace a měkké
 // pastelové statusové barvy, které na tmavém podkladu krásně září.
 export const C = {
-  // Primary accent — Medical Teal-Cyan (dle referenčního screenshotu)
-  accent: '#36D9EC',
+  // Scheduler accents — periwinkle pro navigaci, cyan pro živý provoz.
+  accent: '#7181FF',
+  primary: '#7181FF',
+  primarySoft: '#9AA5FF',
+  now: '#4DD9F5',
   cyan: '#36D9EC', // alias ponechán kvůli rozsáhlému použití v kódu
 
   // Status colors — chladné pastely ladící s teal podkladem
@@ -18,7 +21,10 @@ export const C = {
   slate: '#7E93A8',       // Completed — chladný slate
 
   // Surface & Glass Effects — navy „flow editor" podklad (dle referenčního obrázku)
-  bgDeep: '#0d1428',                        // Deep navy black
+  bgDeep: '#080D1A',                        // Deep navy black
+  bgCanvas: '#0B1120',                      // Scheduler canvas
+  bgRail: '#11182A',                        // Timeline rows / rails
+  bgToolbar: 'rgba(17, 24, 42, 0.88)',      // Pill toolbar
   bgSurface: 'rgba(7, 10, 20, 0.99)',       // Navy surface — téměř černá (popup)
   bgElevated: 'rgba(17, 23, 46, 0.98)',     // Elevated cards — hluboká navy (popup)
   bgCard: 'rgba(13, 18, 38, 0.97)',         // Card background
@@ -50,10 +56,10 @@ export const TIMELINE_START_HOUR = 7;
 export const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
 export const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 export const ROOM_LABEL_WIDTH = 320;
-export const MIN_ROW_HEIGHT = 24; // Absolutní spodní hranice — pod tím už není čitelné (1 line truncate)
-export const MAX_ROW_HEIGHT = 72; // Maximum row height (when few rooms)
-export const ROW_GAP_PX = 6;      // gap-1.5 mezi řádky (Tailwind: 0.375rem = 6px) — musí korespondovat s `gap-1.5` v JSX
-export const ROW_PADDING_PX = 8;  // py-2 vertikální padding kolem všech řádků (Tailwind: 0.5rem = 8px)
+export const MIN_ROW_HEIGHT = 24; // Bezpečné minimum pro 15 sálů na 720px displeji
+export const MAX_ROW_HEIGHT = 76; // Vzdušnější řádky při menším počtu sálů
+export const ROW_GAP_PX = 6;      // gap-1.5 mezi řádky — musí korespondovat s JSX
+export const ROW_PADDING_PX = 10; // py-2.5 vertikální padding kolem řádků
 export const TIME_MARKERS = Array.from({ length: 25 }, (_, i) => i); // 0-24 for 24 hour markers
 
 export const ROOM_COLOR_ORDER = ['orange', 'purple', 'pink', 'blue', 'green', 'red', 'cyan'] as const;
