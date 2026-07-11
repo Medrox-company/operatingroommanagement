@@ -82,7 +82,7 @@ const mapDBToStatus = (db: WorkflowStatusDBRow): WorkflowStatus => ({
 });
 
 export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { activeHospitalId } = useHospital();
+  const { activeHospitalId, loading: hospitalLoading } = useHospital();
   const [statuses, setStatuses] = useState<WorkflowStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +91,12 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   const [isInitialized, setIsInitialized] = useState(false);
 
   const fetchStatuses = useCallback(async (isInitialLoad = false) => {
+    if (hospitalLoading || !activeHospitalId) {
+      setStatuses([]);
+      setLoading(true);
+      setError(null);
+      return;
+    }
     try {
       // Only show loading on initial load, not on refreshes (to prevent flickering)
       if (isInitialLoad) {
@@ -100,17 +106,14 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
       const { data, error: fetchError } = await supabase
         .from('workflow_statuses')
         .select('*')
-        .eq('hospital_id', activeHospitalId || 'default')
+        .eq('hospital_id', activeHospitalId)
         .order('sort_order', { ascending: true });
 
       if (fetchError) throw fetchError;
       
       const mappedStatuses = (data || []).map(mapDBToStatus);
       
-      // Only update if we have data - prevents flickering when refresh returns empty temporarily
-      if (mappedStatuses.length > 0) {
-        setStatuses(mappedStatuses);
-      }
+      setStatuses(mappedStatuses);
       setError(null);
       setIsInitialized(true);
     } catch (err) {
@@ -121,9 +124,10 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
         setLoading(false);
       }
     }
-  }, [activeHospitalId]);
+  }, [activeHospitalId, hospitalLoading]);
 
   const updateStatus = useCallback(async (id: string, updates: Partial<WorkflowStatus>) => {
+    if (!activeHospitalId) return;
     // IMMEDIATELY update local state for responsive UI
     // Make sure both color and accent_color are updated together
     const localUpdates = { ...updates };
@@ -154,7 +158,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
         .from('workflow_statuses')
         .update(dbUpdates)
         .eq('id', id)
-        .eq('hospital_id', activeHospitalId || 'default')
+        .eq('hospital_id', activeHospitalId)
         .select();
 
       if (updateError) throw updateError;

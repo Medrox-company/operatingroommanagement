@@ -68,19 +68,25 @@ const mapStatusToDB = (updates: Partial<WorkflowStatus>): Partial<WorkflowStatus
 };
 
 export const useWorkflowStatuses = () => {
-  const { activeHospitalId } = useHospital();
+  const { activeHospitalId, loading: hospitalLoading } = useHospital();
   const [statuses, setStatuses] = useState<WorkflowStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch statuses from database
   const fetchStatuses = useCallback(async () => {
+    if (hospitalLoading || !activeHospitalId) {
+      setStatuses([]);
+      setLoading(true);
+      setError(null);
+      return;
+    }
     try {
       setLoading(true);
       const { data, error: fetchError } = await supabase
         .from('workflow_statuses')
         .select('*')
-        .eq('hospital_id', activeHospitalId || 'default')
+        .eq('hospital_id', activeHospitalId)
         .order('sort_order', { ascending: true });
 
       if (fetchError) throw fetchError;
@@ -94,10 +100,11 @@ export const useWorkflowStatuses = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeHospitalId]);
+  }, [activeHospitalId, hospitalLoading]);
 
   // Update status
   const updateStatus = async (id: string, updates: Partial<WorkflowStatus>) => {
+    if (!activeHospitalId) return;
     try {
       const dbUpdates = mapStatusToDB(updates);
       
@@ -105,7 +112,7 @@ export const useWorkflowStatuses = () => {
         .from('workflow_statuses')
         .update(dbUpdates)
         .eq('id', id)
-        .eq('hospital_id', activeHospitalId || 'default');
+        .eq('hospital_id', activeHospitalId);
 
       if (updateError) throw updateError;
       
