@@ -93,29 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Ignore — žádná session
       } finally {
         if (!cancelled) setIsLoading(false);
-        refreshModules();
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [refreshModules]);
-
-  // Realtime subscription for app_modules changes
-  useEffect(() => {
-    if (!supabase) return;
-    
-    const channel = supabase
-      .channel('app-modules-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_modules' }, () => {
-        refreshModules();
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refreshModules]);
+  }, []);
 
   const login = useCallback(
     async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
@@ -134,7 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
         setUser(json.user as User);
-        await refreshModules();
         window.dispatchEvent(new Event('authenticationChanged'));
         return { success: true };
       } catch (error) {
@@ -142,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: 'Chyba při komunikaci se serverem' };
       }
     },
-    [refreshModules],
+    [],
   );
 
   const logout = useCallback(async () => {
@@ -152,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Ignore
     }
     setUser(null);
+    setModules([]);
     window.dispatchEvent(new Event('authenticationChanged'));
   }, []);
 
