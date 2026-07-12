@@ -9,11 +9,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "ios:sync": "npm run build && npm exec cap sync ios",
+    "mobile:build": "vite build --config vite.mobile.config.ts",
+    "ios:sync": "npm run mobile:build && npm exec cap sync ios",
+    "ios:verify": "npm run ios:sync && xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug -derivedDataPath /tmp/orm-derived-data CODE_SIGNING_ALLOWED=NO build",
     "ios:open": "npm exec cap open ios",
     "ios:build": "npm run ios:sync && npm run ios:open"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -44,8 +50,10 @@
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
     "postcss": "^8.5.16",
     "tailwindcss": "^4.3.2",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "vite": "^8.1.4"
   }
 }

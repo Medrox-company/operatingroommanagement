@@ -144,7 +144,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             ? { background: '#E5484D', color: '#FFFFFF' }
             : room.isLocked
             ? { background: '#F59E0B', color: '#FFFFFF' }
-            : { background: `${themeColor}16`, color: themeColor }}
+            : { background: room.isPaused ? '#DDF7FA' : `${themeColor}16`, color: '#1E3560', border: `1px solid ${room.isPaused ? '#A9E8EE' : `${themeColor}30`}` }}
         >
           <span
             className="w-1.5 h-1.5 rounded-full shrink-0"

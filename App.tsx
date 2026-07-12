@@ -115,8 +115,9 @@ const AppContent: React.FC = () => {
   }, []);
 
   // Generate CSS gradient from settings - memoized
-  // Emergency alert sound — siréna při aktivaci stavu nouze (isEmergency=true).
-  useEmergencyAlert(rooms);
+  // Emergency audio je směrované pouze na stanici s otevřeným příslušným sálem.
+  // Globální přehledy zachovají vizuální upozornění, ale zvuk nepřehrávají.
+  useEmergencyAlert(rooms, selectedRoomId);
 
   // Track recent local updates to ignore the realtime UPDATE event echo from
   // our own DB write (Supabase broadcasts UPDATE events back to the originating
@@ -856,7 +857,7 @@ const AppContent: React.FC = () => {
 
             {/* Tok pacienta — živý monitorovací modul */}
             {currentView === 'flow' && (
-              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:pt-2 md:pb-6 pb-mobile-nav">
+              <div className="w-full h-full overflow-hidden p-0 md:pl-28 md:pr-6 md:pt-2 md:pb-6 pb-mobile-nav">
                 <FlowMonitorModule rooms={rooms} />
               </div>
             )}
@@ -867,7 +868,7 @@ const AppContent: React.FC = () => {
                 okraj obrazovky. Mobilní odsazení řeší `pb-20` na <main> + interní
                 spodní padding v MobileTimelineView. */}
             {currentView === 'timeline' && (
-              <div className="w-full h-full overflow-hidden p-3 md:pl-28 md:pr-6 md:pt-2 md:pb-6">
+              <div className="w-full h-full overflow-hidden p-0 md:pl-28 md:pr-6 md:pt-2 md:pb-6">
                 <TimelineModule rooms={rooms} onRefresh={refreshRooms} />
               </div>
             )}

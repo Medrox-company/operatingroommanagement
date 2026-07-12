@@ -216,6 +216,8 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
+  const [selectedDetailTime, setSelectedDetailTime] = useState<Date | null>(null);
+  const [selectedPhaseEndTime, setSelectedPhaseEndTime] = useState<Date | null>(null);
   const [showLegend, setShowLegend] = useState(false);
   // Mobilní přepínač: list = karty se statusem a progressem; axis = horizontální 24h osa
   const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
@@ -263,6 +265,35 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   const moduleRootRef = useRef<HTMLDivElement>(null);
   // TV / fullscreen režim — pro nástěnnou obrazovku na operačním traktu
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const openHistoricalPhase = useCallback((
+    room: OperatingRoom,
+    history: NonNullable<OperatingRoom['statusHistory']>,
+    phaseIndex: number,
+    operationStartedAt: string,
+    phaseEndedAt: string,
+    cycleEndedAt: string = phaseEndedAt,
+  ) => {
+    const phase = history[phaseIndex];
+    if (!phase) return;
+
+    setSelectedDetailTime(new Date(cycleEndedAt));
+    setSelectedPhaseEndTime(new Date(phaseEndedAt));
+    setSelectedRoom({
+      ...room,
+      // Historický snímek nesmí být nahrazen aktuálním sálem při živém refetchi.
+      id: `${room.id}:history:${operationStartedAt}:${phaseIndex}`,
+      currentStepIndex: phase.stepIndex,
+      operationStartedAt,
+      phaseStartedAt: phase.startedAt,
+      estimatedEndTime: phaseEndedAt,
+      // Procenta vždy vycházejí z celého dostupného cyklu; zvýrazněná fáze
+      // má samostatný konec pro správný údaj „ve fázi“.
+      statusHistory: history,
+      isPaused: false,
+      pausedAt: null,
+    });
+  }, []);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -550,6 +581,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
       let occupiedMs = 0;
       let operations = 0;
+      let pausedMs = 0;
       const phaseMs: Record<number, number> = {}; // stepIndex (pozice) → ms
 
       // Akumulace času po fázích z historie statusů jedné operace
@@ -581,8 +613,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       if (isRunning && isToday(room.operationStartedAt)) {
         operations++;
         const s = new Date(room.operationStartedAt as string).getTime();
-        if (!room.isPaused && now > s) occupiedMs += now - s;
-        accumulatePhases(room.statusHistory, now);
+        const pauseStart = room.isPaused && room.pausedAt ? new Date(room.pausedAt).getTime() : NaN;
+        const measuredEnd = Number.isFinite(pauseStart) ? Math.min(now, pauseStart) : now;
+        if (measuredEnd > s) occupiedMs += measuredEnd - s;
+        accumulatePhases(room.statusHistory, measuredEnd);
+        if (Number.isFinite(pauseStart) && now > pauseStart) pausedMs = now - pauseStart;
       }
 
       const occupiedMinutes = Math.round(occupiedMs / 60000);
@@ -616,10 +651,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         .sort((a, b) => a.stepIndex - b.stepIndex);
       const phaseTotalMs = phases.reduce((acc, p) => acc + p.ms, 0);
 
-      // Doba pauzy — aktuálně probíhající pauza (od pausedAt do teď).
-      const pausedMs = room.isPaused && room.pausedAt
-        ? Math.max(0, now - new Date(room.pausedAt).getTime())
-        : 0;
+      // Doba pauzy je samostatná část cyklu a nezvětšuje poslední aktivní fázi.
       const pausedMinutes = Math.round(pausedMs / 60000);
 
       return {
@@ -1014,7 +1046,16 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       {/* Room Detail Popup */}
       <AnimatePresence>
         {selectedRoom && (
-          <RoomDetailPopup room={selectedRoom} onClose={() => setSelectedRoom(null)} currentTime={currentTime} />
+          <RoomDetailPopup
+            room={rooms.find((room) => room.id === selectedRoom.id) ?? selectedRoom}
+            onClose={() => {
+              setSelectedRoom(null);
+              setSelectedDetailTime(null);
+              setSelectedPhaseEndTime(null);
+            }}
+            currentTime={selectedDetailTime ?? currentTime}
+            selectedPhaseEndTime={selectedPhaseEndTime}
+          />
         )}
         {showAroPopup && (
           <AroOvertimePopup
@@ -1041,6 +1082,31 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
             { label: 'Ø délka operace', value: sr.avgOpMin > 0 ? fmtMin(sr.avgOpMin) : '—', color: C.textHi },
             { label: 'Pauza', value: sr.pausedMinutes > 0 ? fmtMin(sr.pausedMinutes) : '—', color: sr.pausedMinutes > 0 ? C.cyan : 'rgba(255,255,255,0.4)' },
           ];
+          const measuredByStep = new Map(sr.phases.map((phase) => [phase.stepIndex, phase]));
+          const summaryPhases = [
+            ...activeStatuses.map((status, index) => {
+              const measured = measuredByStep.get(index);
+              return {
+                name: status.name || `Fáze ${index + 1}`,
+                color: status.accent_color || status.color || '#6b7280',
+                ms: measured?.ms || 0,
+                minutes: measured?.minutes || 0,
+              };
+            }),
+            { name: 'Pauza', color: C.cyan, ms: sr.pausedMs, minutes: sr.pausedMinutes },
+          ];
+          const summaryTotalMs = summaryPhases.reduce((sum, phase) => sum + phase.ms, 0);
+          let gradientCursor = 0;
+          const gradientStops = summaryPhases.flatMap((phase) => {
+            const share = summaryTotalMs > 0 ? (phase.ms / summaryTotalMs) * 100 : 0;
+            if (share <= 0) return [];
+            const start = gradientCursor;
+            gradientCursor += share;
+            return [`${phase.color} ${start.toFixed(2)}% ${gradientCursor.toFixed(2)}%`];
+          });
+          const summaryGradient = gradientStops.length > 0
+            ? `conic-gradient(from -90deg, ${gradientStops.join(', ')})`
+            : 'conic-gradient(rgba(255,255,255,.08) 0% 100%)';
           return (
             <motion.div
               className="fixed inset-0 z-[120] flex items-center justify-center p-4"
@@ -1051,7 +1117,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               style={{ background: 'rgba(5,8,16,0.72)', backdropFilter: 'blur(6px)' }}
             >
               <motion.div
-                className="w-full max-w-2xl rounded-2xl overflow-hidden"
+                className="w-full max-w-5xl max-h-[calc(100vh-32px)] overflow-y-auto rounded-2xl"
                 initial={{ scale: 0.96, y: 12 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.96, y: 12 }}
@@ -1089,51 +1155,69 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   ))}
                 </div>
 
-                {/* Timeline operačního cyklu (dnes) */}
-                <div className="px-5 pt-4">
-                  <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/45">Timeline operačního cyklu (dnes)</span>
-                  <div className="flex items-center h-10 rounded-xl overflow-hidden mt-2" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                    {sr.phases.length > 0 ? (
-                      sr.phases.map((p, pi) => {
-                        const w = sr.phaseTotalMs > 0 ? (p.ms / sr.phaseTotalMs) * 100 : 0;
-                        return (
-                          <div
-                            key={pi}
-                            className="relative h-full group flex items-center justify-center transition-all hover:brightness-110"
-                            style={{ width: `${w}%`, minWidth: w > 0 ? 4 : 0, background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}cc 100%)`, borderRight: pi < sr.phases.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
-                          >
-                            {w > 10 && <span className="text-[10px] font-bold text-white/95 tabular-nums px-1 truncate">{p.minutes}m</span>}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <span className="text-[11px] text-white/30 px-3">Žádné operace v tento den</span>
-                    )}
+                {/* Cesta výkonu — stejné grafické vyjádření jako detail fáze. */}
+                <div className="px-5 py-5">
+                  <div className="flex items-end justify-between mb-3">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-[0.22em] font-bold text-white/40">Cesta výkonu</span>
+                      <p className="text-sm font-bold text-white mt-1">Celodenní zastoupení fází včetně pauzy</p>
+                    </div>
+                    <span className="text-[10px] font-mono text-white/35">100 %</span>
                   </div>
-                </div>
 
-                {/* Rozpad času po fázích */}
-                <div className="px-5 py-4 mt-2 max-h-64 overflow-y-auto">
-                  <span className="text-[10px] uppercase tracking-[0.16em] font-bold text-white/45">Čas po fázích</span>
-                  <div className="flex flex-col gap-1.5 mt-2">
-                    {sr.phases.length > 0 ? (
-                      sr.phases.map((p, pi) => {
-                        const pct = sr.phaseTotalMs > 0 ? Math.round((p.ms / sr.phaseTotalMs) * 100) : 0;
+                  <div className="flex w-full h-11 rounded-xl overflow-hidden gap-[2px] bg-white/[0.035] p-[2px] mb-5">
+                    {summaryPhases.map((phase, index) => {
+                      const share = summaryTotalMs > 0 ? (phase.ms / summaryTotalMs) * 100 : 0;
+                      return (
+                        <motion.div
+                          key={`${phase.name}-${index}`}
+                          title={`${phase.name} · ${share.toFixed(1)} % · ${phase.minutes} min`}
+                          className="h-full flex items-center justify-center overflow-hidden hover:brightness-125"
+                          style={{ width: `${share}%`, minWidth: share > 0 ? 5 : 0, background: `linear-gradient(180deg, ${phase.color}, ${phase.color}b8)` }}
+                          initial={{ scaleX: 0, opacity: 0 }} animate={{ scaleX: 1, opacity: 1 }}
+                          transition={{ delay: index * .06, duration: .5 }}
+                        >
+                          {share >= 6 && <span className="text-[11px] font-black text-[#071019] whitespace-nowrap">{share.toFixed(1)} %</span>}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_210px_1fr] gap-3 items-center">
+                    <div className="flex flex-col gap-2">
+                      {summaryPhases.slice(0, Math.ceil(summaryPhases.length / 2)).map((phase) => {
+                        const share = summaryTotalMs > 0 ? (phase.ms / summaryTotalMs) * 100 : 0;
                         return (
-                          <div key={pi} className="flex items-center gap-2.5">
-                            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: p.color }} />
-                            <span className="text-xs text-white/70 truncate" style={{ width: 150, flexShrink: 0 }}>{p.name}</span>
-                            <div className="flex-1 h-2 rounded-full overflow-hidden min-w-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: p.color }} />
-                            </div>
-                            <span className="text-xs font-semibold tabular-nums text-right flex-shrink-0" style={{ width: 56, color: C.textHi }}>{p.minutes} min</span>
-                            <span className="text-[10px] tabular-nums text-white/40 text-right flex-shrink-0" style={{ width: 36 }}>{pct}%</span>
+                          <div key={phase.name} className="rounded-xl px-3 py-2.5 flex items-center gap-3" style={{ background: `${phase.color}12`, border: `1px solid ${phase.color}35` }}>
+                            <span className="w-2.5 h-9 rounded-full" style={{ background: phase.color }} />
+                            <span className="min-w-0 flex-1 text-[13px] font-bold text-white truncate">{phase.name}</span>
+                            <span className="text-right"><strong className="block text-lg font-black" style={{ color: phase.color }}>{share.toFixed(1)} %</strong><small className="text-[9px] text-white/35">{phase.minutes} min</small></span>
                           </div>
                         );
-                      })
-                    ) : (
-                      <span className="text-[11px] text-white/30">Pro tento den nejsou k dispozici žádná data fází.</span>
-                    )}
+                      })}
+                    </div>
+
+                    <motion.div className="w-[190px] h-[190px] rounded-full p-[14px] mx-auto" style={{ background: summaryGradient }} initial={{ scale: .9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+                      <div className="w-full h-full rounded-full flex flex-col items-center justify-center text-center" style={{ background: 'radial-gradient(circle at 40% 30%, #172238, #080e1b 72%)' }}>
+                        <span className="text-[9px] uppercase tracking-[.2em] text-white/35">Celý den</span>
+                        <strong className="text-[38px] font-black text-white mt-1">{sr.operations}</strong>
+                        <span className="text-[10px] text-white/45">{sr.operations === 1 ? 'cyklus' : 'cykly'}</span>
+                        <span className="text-[10px] font-bold mt-2" style={{ color: C.cyan }}>{fmtMin(Math.round(summaryTotalMs / 60000))}</span>
+                      </div>
+                    </motion.div>
+
+                    <div className="flex flex-col gap-2">
+                      {summaryPhases.slice(Math.ceil(summaryPhases.length / 2)).map((phase) => {
+                        const share = summaryTotalMs > 0 ? (phase.ms / summaryTotalMs) * 100 : 0;
+                        return (
+                          <div key={phase.name} className="rounded-xl px-3 py-2.5 flex items-center gap-3" style={{ background: `${phase.color}12`, border: `1px solid ${phase.color}35` }}>
+                            <span className="w-2.5 h-9 rounded-full" style={{ background: phase.color }} />
+                            <span className="min-w-0 flex-1 text-[13px] font-bold text-white truncate">{phase.name}</span>
+                            <span className="text-right"><strong className="block text-lg font-black" style={{ color: phase.color }}>{share.toFixed(1)} %</strong><small className="text-[9px] text-white/35">{phase.minutes} min</small></span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -2231,8 +2315,22 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     }}
                   >
                     <div 
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Celodenní souhrn sálu ${room.name}`}
                       className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-[14px]"
                       style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(10,14,26,0.97)' }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setStatsRoomId(room.id);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setStatsRoomId(room.id);
+                        }
+                      }}
                     >
                       <div 
                         className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -2319,6 +2417,9 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   
                   {/* Room Label - Premium glass panel (sticky při zoomu, aby zůstal vlevo) */}
                   <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Celodenní souhrn sálu ${room.name}`}
                     className="flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-all duration-200 sticky left-0 z-20"
                     style={{
                       width: ROOM_LABEL_WIDTH,
@@ -2328,6 +2429,17 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                         : 'linear-gradient(90deg, rgba(9,13,24,0.99), rgba(11,15,28,0.94))',
                       borderRight: `1px solid ${isActive ? `${stepColor}20` : 'rgba(160,174,220,0.08)'}`,
                       boxShadow: '12px 0 28px -24px rgba(0,0,0,0.95)',
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setStatsRoomId(room.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setStatsRoomId(room.id);
+                      }
                     }}
                   >
                     <div
@@ -2915,7 +3027,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                       return (
                                         <motion.div
                                           key={`seg-${idx}`}
-                                          className="absolute top-0 bottom-0 transition-all duration-300 hover:brightness-105"
+                                          role="button"
+                                          tabIndex={0}
+                                          aria-label={`Zobrazit fázi ${entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}`}
+                                          className="absolute top-0 bottom-0 cursor-pointer transition-all duration-300 hover:brightness-125 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/80"
                                           style={{
                                             left: `${Math.max(0, segLeftPct)}%`,
                                             width: `${Math.max(0.5, segWidthPct)}%`,
@@ -2925,6 +3040,17 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
                                           }}
                                           title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            openHistoricalPhase(room, operation.statusHistory, idx, operation.startedAt, new Date(segEnd).toISOString(), operation.endedAt);
+                                          }}
+                                          onKeyDown={(event) => {
+                                            if (event.key === 'Enter' || event.key === ' ') {
+                                              event.preventDefault();
+                                              event.stopPropagation();
+                                              openHistoricalPhase(room, operation.statusHistory, idx, operation.startedAt, new Date(segEnd).toISOString(), operation.endedAt);
+                                            }
+                                          }}
                                           initial={{ opacity: 0 }}
                                           animate={{ opacity: 1 }}
                                           transition={{ delay: 0.03 * idx }}
@@ -3200,6 +3326,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                     return (
                                       <div
                                         key={`active-seg-${idx}`}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={`Zobrazit fázi ${entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}`}
+                                        className="cursor-pointer transition-[filter] hover:brightness-125 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/80"
                                         style={{
                                           position: 'absolute',
                                           top: 0,
@@ -3214,6 +3344,19 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                             : 'inset 0 1px 0 rgba(255,255,255,0.1)',
                                         }}
                                         title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          const historicalEnd = nextEntry?.startedAt ?? currentTime.toISOString();
+                                          openHistoricalPhase(room, history, idx, new Date(operationStart).toISOString(), historicalEnd, currentTime.toISOString());
+                                        }}
+                                        onKeyDown={(event) => {
+                                          if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            const historicalEnd = nextEntry?.startedAt ?? currentTime.toISOString();
+                                            openHistoricalPhase(room, history, idx, new Date(operationStart).toISOString(), historicalEnd, currentTime.toISOString());
+                                          }
+                                        }}
                                       >
                                       </div>
                                     );
@@ -3617,7 +3760,6 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
           </div>
         </div>
       </div>
-
 
       </div>{/* end desktop wrapper */}
     </div>

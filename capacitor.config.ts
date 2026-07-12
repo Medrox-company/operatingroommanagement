@@ -1,9 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
+import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'com.operatingroom.app',
   appName: 'Operating Room Management',
-  webDir: 'public',
+  // Complete local application bundle; this must never point at a hosted URL.
+  webDir: 'mobile-dist',
   server: {
     // For development: use local server
     // url: 'https://operatingroom.eu',
@@ -17,6 +19,15 @@ const config: CapacitorConfig = {
     backgroundColor: '#000000',
   },
   plugins: {
+    // Use URLSession for fetch and keep HttpOnly sessions in the native jar.
+    CapacitorHttp: {
+      enabled: true,
+    },
+    Keyboard: {
+      resize: KeyboardResize.Body,
+      style: KeyboardStyle.Dark,
+      resizeOnFullScreen: true,
+    },
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,
@@ -24,7 +35,7 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
     StatusBar: {
-      style: 'DARK',
+      style: 'LIGHT',
       backgroundColor: '#000000',
     },
   },

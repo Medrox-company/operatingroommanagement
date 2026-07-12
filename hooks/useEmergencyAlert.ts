@@ -63,41 +63,52 @@ function playEmergencyAlert(): void {
 
     const audioContext = sharedAudioContext;
 
-    // Create a more urgent alarm sound pattern
+    // Čistý nemocniční alarm: měkký náběh, krátké třípulzní upozornění
+    // a jemná harmonická vrstva. Je výrazný, ale nepůsobí jako agresivní siréna.
+    const masterGain = audioContext.createGain();
+    const compressor = audioContext.createDynamicsCompressor();
+    masterGain.gain.setValueAtTime(0.32, audioContext.currentTime);
+    compressor.threshold.setValueAtTime(-18, audioContext.currentTime);
+    compressor.knee.setValueAtTime(12, audioContext.currentTime);
+    compressor.ratio.setValueAtTime(5, audioContext.currentTime);
+    masterGain.connect(compressor);
+    compressor.connect(audioContext.destination);
+
     const playTone = (startTime: number, frequency: number, duration: number) => {
       const oscillator = audioContext.createOscillator();
+      const harmonic = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.type = 'square';
+      harmonic.connect(gainNode);
+      gainNode.connect(masterGain);
+
+      oscillator.type = 'sine';
+      harmonic.type = 'triangle';
       oscillator.frequency.setValueAtTime(frequency, startTime);
-      
-      // Quick attack, sustain, quick release
+      harmonic.frequency.setValueAtTime(frequency * 2, startTime);
+
       gainNode.gain.setValueAtTime(0, startTime);
-      gainNode.gain.linearRampToValueAtTime(0.4, startTime + 0.02);
-      gainNode.gain.setValueAtTime(0.4, startTime + duration - 0.02);
+      gainNode.gain.linearRampToValueAtTime(0.72, startTime + 0.035);
+      gainNode.gain.setValueAtTime(0.62, startTime + duration * 0.58);
       gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
-      
+
       oscillator.start(startTime);
+      harmonic.start(startTime);
       oscillator.stop(startTime + duration);
+      harmonic.stop(startTime + duration);
     };
 
-    const now = audioContext.currentTime;
-    
-    // Play alternating high-low emergency pattern (5 cycles for more urgency)
-    for (let i = 0; i < 5; i++) {
-      const cycleStart = now + i * 0.35;
-      playTone(cycleStart, 880, 0.12);        // High tone (A5)
-      playTone(cycleStart + 0.17, 440, 0.12); // Low tone (A4)
-    }
+    const now = audioContext.currentTime + 0.02;
+    playTone(now, 659.25, 0.2);        // E5
+    playTone(now + 0.29, 783.99, 0.2); // G5
+    playTone(now + 0.58, 987.77, 0.34);// B5 — delší potvrzovací pulz
   } catch (error) {
     console.error('[EmergencyAlert] Failed to play sound:', error);
   }
 }
 
-export function useEmergencyAlert(rooms: OperatingRoom[]) {
+export function useEmergencyAlert(rooms: OperatingRoom[], openedRoomId: string | null) {
   const previousEmergencyStates = useRef<Map<string, boolean>>(new Map());
   const isInitialized = useRef(false);
 
@@ -116,15 +127,17 @@ export function useEmergencyAlert(rooms: OperatingRoom[]) {
       const wasEmergency = previousEmergencyStates.current.get(room.id) || false;
       const isNowEmergency = room.isEmergency || false;
 
-      // If emergency was just activated (changed from false to true)
-      if (!wasEmergency && isNowEmergency) {
+      // Zvuk je lokální alarm konkrétního sálu: zazní pouze na klientovi,
+      // který má v okamžiku aktivace otevřený právě tento sál. Ostatní
+      // stanice dál obdrží a zobrazí vizuální nouzový stav, ale zůstanou tiché.
+      if (!wasEmergency && isNowEmergency && room.id === openedRoomId) {
         playEmergencyAlert();
       }
 
       // Update stored state
       previousEmergencyStates.current.set(room.id, isNowEmergency);
     }
-  }, []);
+  }, [openedRoomId]);
 
   // Check for emergency changes whenever rooms update
   useEffect(() => {

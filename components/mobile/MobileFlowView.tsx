@@ -101,16 +101,17 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
         style={{ zIndex: 1, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div
-          className="flex flex-col gap-4 px-5"
+          className="flex flex-col gap-4 px-4"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}
         >
           {/* Titulek */}
-          <h1 className="text-[24px] font-extrabold leading-none" style={{ color: NAVY }}>
+          <h1 className="flex items-center gap-2.5 text-[22px] font-extrabold uppercase tracking-tight leading-none" style={{ color: NAVY }}>
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: GREEN }} />
             Tok pacienta
           </h1>
 
           {/* Filtr pilulky — horizontální scroll */}
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-1">
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-1">
             {[{ id: 'all', label: 'Všechny' }, ...flowRooms.map(r => ({ id: r.id, label: r.name }))].map(p => {
               const active = filter === p.id;
               return (

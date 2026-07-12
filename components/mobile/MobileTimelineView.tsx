@@ -162,7 +162,7 @@ const MobileTimelineView: React.FC<Props> = ({
         }}
       >
         <div
-          className="flex flex-col gap-5 px-5"
+          className="flex flex-col gap-5 px-4"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}
         >
         <section className="timeline-mobile-hero rounded-[28px] p-4">
@@ -319,7 +319,10 @@ const MobileTimelineView: React.FC<Props> = ({
                         </span>
                       )}
                       {room.isPaused && !room.isEmergency && !room.isLocked && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
+                        <span
+                          className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                          style={{ background: '#DDF7FA', color: '#176777', border: '1px solid #A9E8EE' }}
+                        >
                           Pauza
                         </span>
                       )}

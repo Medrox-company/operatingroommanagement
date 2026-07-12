@@ -5,6 +5,7 @@ node_modules
 dist
 .next
 out
+mobile-dist
 
 # Environment variables - NEVER commit these
 .env

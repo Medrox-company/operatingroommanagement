@@ -49,7 +49,7 @@ export const MobileHeader: React.FC<{
       <p className="text-[11px] font-semibold leading-none" style={{ color: '#7C8AA5' }}>
         {kicker}
       </p>
-      <h1 className="text-2xl font-extrabold mt-2 leading-tight text-balance" style={{ color: '#17233F' }}>
+      <h1 className="text-[22px] font-extrabold uppercase tracking-tight mt-2 leading-none text-balance" style={{ color: '#1E3560' }}>
         {title}
       </h1>
     </div>

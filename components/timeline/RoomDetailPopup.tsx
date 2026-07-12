@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { motion, useSpring, useMotionValueEvent } from 'framer-motion';
 import { OperatingRoom } from '../../types';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
-import { Check, ChevronLeft, Clock, Flag, Stethoscope, Timer, Users, X } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, ChevronLeft, Clock, Flag, Lightbulb, Stethoscope, Timer, TrendingUp, Users, X } from 'lucide-react';
 import { C } from './constants';
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -15,6 +15,7 @@ interface RoomDetailPopupProps {
   room: OperatingRoom;
   onClose: () => void;
   currentTime: Date;
+  selectedPhaseEndTime?: Date | null;
 }
 
 // Geometrie tachometru (viewBox souřadnice)
@@ -32,7 +33,7 @@ const polar = (angleDeg: number, radius: number) => {
   return { x: CX + radius * Math.cos(rad), y: CY - radius * Math.sin(rad) };
 };
 
-const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime }) => {
+const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime, selectedPhaseEndTime }) => {
   const { workflowStatuses } = useWorkflowStatusesContext();
   const activeStatuses = workflowStatuses;
   const [hoverDot, setHoverDot] = useState<number | null>(null);
@@ -64,21 +65,91 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         ? new Date(hist[idx + 1].startedAt).getTime()
         : currentTime.getTime();
       if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
-        mins[entry.stepIndex] = (mins[entry.stepIndex] || 0) + Math.round((e - s) / 60000);
+        // Nezaokrouhlujeme jednotlivé úseky před výpočtem procent. Krátké fáze
+        // dokončených cyklů by jinak zmizely nebo změnily poměr celého cyklu.
+        mins[entry.stepIndex] = (mins[entry.stepIndex] || 0) + ((e - s) / 60000);
       }
     });
     return mins;
   }, [room.statusHistory, currentTime]);
 
+  // Procentuální zastoupení jednotlivých fází. Jakmile existuje historie,
+  // počítáme výhradně reálné naměřené časy (budoucí fáze mají 0 %).
+  // Výchozí délky slouží pouze jako fallback před prvním měřením.
+  const phaseShares = useMemo(() => {
+    const measuredWeights = activeStatuses.map((_, index) => Math.max(0, phaseMinutes[index] || 0));
+    const measuredTotal = measuredWeights.reduce((sum, value) => sum + value, 0);
+    const weights = measuredTotal > 0
+      ? measuredWeights
+      : activeStatuses.map(status => Math.max(1, Number(status.default_duration) || 1));
+    const total = weights.reduce((sum, value) => sum + value, 0) || 1;
+    return weights.map(value => (value / total) * 100);
+  }, [activeStatuses, phaseMinutes]);
+
+  const phaseGradient = useMemo(() => {
+    let cursor = 0;
+    const stops = activeStatuses.map((status, index) => {
+      const color = status.accent_color || status.color || '#6B7280';
+      const start = cursor;
+      cursor += phaseShares[index] || 0;
+      return `${color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+    });
+    return stops.length > 0
+      ? `conic-gradient(from -90deg, ${stops.join(', ')})`
+      : 'conic-gradient(rgba(255,255,255,.08) 0% 100%)';
+  }, [activeStatuses, phaseShares]);
+
+  const recommendations = useMemo(() => {
+    const normalize = (value: string) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isSurgical = (name: string) => {
+      const normalized = normalize(name);
+      return normalized.includes('chirurg') || normalized.includes('operac') || normalized.includes('vykon');
+    };
+    const measured = activeStatuses.flatMap((status, index) => {
+      const minutes = phaseMinutes[index] || 0;
+      const baseline = Math.max(0, Number(status.default_duration) || 0);
+      const name = status.name || `Fáze ${index + 1}`;
+      if (minutes <= 0 || baseline <= 0 || isSurgical(name)) return [];
+      const over = minutes - baseline;
+      if (over < 3 || minutes <= baseline * 1.15) return [];
+      return [{ name, minutes, baseline, over, color: status.accent_color || status.color || C.yellow }];
+    }).sort((a, b) => b.over - a.over);
+
+    if (measured.length > 0) {
+      return measured.slice(0, 2).map(item => {
+        const normalized = normalize(item.name);
+        const action = normalized.includes('prijezd')
+          ? 'Prověřte včasné zavolání pacienta a koordinaci transportu.'
+          : normalized.includes('uklid')
+            ? 'Připravte úklidový tým ještě před ukončením výkonu.'
+            : normalized.includes('odjezd')
+              ? 'Koordinujte předání pacienta s dospávacím pokojem předem.'
+              : 'Prověřte návaznost personálu, materiálu a předání mezi fázemi.';
+        return {
+          tone: 'warn' as const,
+          title: `${item.name} lze urychlit`,
+          text: `Skutečnost ${Math.round(item.minutes)} min, obvykle ${Math.round(item.baseline)} min. Potenciál úspory přibližně ${Math.round(item.over)} min. ${action}`,
+          color: item.color,
+        };
+      });
+    }
+
+    const hasMeasuredData = Object.values(phaseMinutes).some(value => value > 0);
+    return hasMeasuredData
+      ? [{ tone: 'good' as const, title: 'Průběh odpovídá očekávání', text: 'U zrychlitelných fází nebylo zjištěno významné překročení obvyklé doby.', color: C.green }]
+      : [{ tone: 'info' as const, title: 'Sbíráme data pro doporučení', text: 'Doporučení se zobrazí po dokončení prvních měřených fází. Chirurgický výkon se do návrhů na zkrácení nezahrnuje.', color: C.cyan }];
+  }, [activeStatuses, phaseMinutes]);
+
   // Uplynulý čas v aktuální fázi
   const elapsedInPhase = useMemo(() => {
     if (!room.phaseStartedAt) return null;
-    const ms = currentTime.getTime() - new Date(room.phaseStartedAt).getTime();
+    const phaseEnd = selectedPhaseEndTime?.getTime() ?? currentTime.getTime();
+    const ms = phaseEnd - new Date(room.phaseStartedAt).getTime();
     if (ms < 0) return null;
     const m = Math.floor(ms / 60000);
     const h = Math.floor(m / 60);
     return h > 0 ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`;
-  }, [room.phaseStartedAt, currentTime]);
+  }, [room.phaseStartedAt, currentTime, selectedPhaseEndTime]);
 
   // Začátek operace + zbývá/skluz
   const operationStart = room.operationStartedAt
@@ -300,7 +371,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               const isCurrent = i === stepIndex && !room.isPaused;
               const mins = phaseMinutes[i];
               const sub = mins !== undefined
-                ? `${mins} min`
+                ? `${mins < 1 ? '< 1' : Math.round(mins)} min`
                 : done ? 'dokončeno' : isCurrent ? 'probíhá' : (s.default_duration ? `~${s.default_duration} min` : 'čeká');
               return (
                 <motion.div
@@ -350,14 +421,14 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         </div>
       </motion.div>
 
-      {/* ════════ DESKTOPOVÁ VARIANTA — tachometr (beze změny) ════════ */}
+      {/* ════════ DESKTOPOVÁ VARIANTA — operační puls + cesta fází ════════ */}
       <motion.div
         initial={{ scale: 0.94, opacity: 0, y: 24 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.94, opacity: 0, y: 24 }}
         transition={{ type: 'spring', stiffness: 300, damping: 26 }}
         onClick={(e) => e.stopPropagation()}
-        className="hidden md:block rounded-3xl overflow-hidden max-w-3xl w-full relative"
+        className="hidden md:block rounded-3xl overflow-y-auto hide-scrollbar max-h-[calc(100vh-32px)] max-w-4xl w-full relative"
         style={{
           background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
           border: `1px solid ${C.borderStrong}`,
@@ -402,8 +473,278 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           </button>
         </div>
 
-        {/* ── Tachometr ── */}
-        <div className="relative z-10 px-6">
+        {/* ── Cesta výkonu — jediná hlavní vizualizace detailu ── */}
+        <div className="relative z-10 px-6 pt-5 pb-5">
+          <div className="hidden">
+            {/* Jemné orbitální kružnice */}
+            <div className="absolute w-[306px] h-[306px] rounded-full border border-dashed border-white/10">
+              {activeStatuses.slice(0, 8).map((s, i) => {
+                const angle = (i / Math.max(1, Math.min(activeStatuses.length, 8))) * Math.PI * 2;
+                const col = s.accent_color || s.color || '#6B7280';
+                return (
+                  <span
+                    key={s.id || i}
+                    className="absolute w-2.5 h-2.5 rounded-full"
+                    style={{
+                      left: `calc(50% + ${Math.cos(angle) * 148}px - 5px)`,
+                      top: `calc(50% + ${Math.sin(angle) * 148}px - 5px)`,
+                      background: i <= stepIndex ? col : 'rgba(255,255,255,.14)',
+                      boxShadow: i === stepIndex ? `0 0 15px ${col}` : 'none',
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="absolute w-[270px] h-[270px] rounded-full border border-white/[0.06]" />
+            <div className="relative w-[244px] h-[244px]">
+              <svg viewBox="0 0 244 244" className="w-full h-full -rotate-90">
+                <circle cx="122" cy="122" r="105" fill="rgba(255,255,255,.018)" stroke="rgba(255,255,255,.065)" strokeWidth="14" />
+                {/* Tenký vícebarevný prstenec ukazuje zastoupení všech fází. */}
+                {activeStatuses.map((status, index) => {
+                  const radius = 116;
+                  const circumference = 2 * Math.PI * radius;
+                  const before = phaseShares.slice(0, index).reduce((sum, value) => sum + value, 0);
+                  const share = phaseShares[index] || 0;
+                  const gap = Math.min(1.2, share * .16);
+                  const color = status.accent_color || status.color || '#6B7280';
+                  return (
+                    <circle
+                      key={status.id || index}
+                      cx="122" cy="122" r={radius} fill="none" stroke={color} strokeWidth={index === stepIndex ? 4 : 2.5}
+                      strokeLinecap="round"
+                      strokeDasharray={`${Math.max(0, ((share - gap) / 100) * circumference)} ${circumference}`}
+                      strokeDashoffset={-(before / 100) * circumference}
+                      opacity={index <= stepIndex ? 1 : .32}
+                      style={index === stepIndex ? { filter: `drop-shadow(0 0 4px ${color})` } : undefined}
+                    />
+                  );
+                })}
+                <circle
+                  cx="122" cy="122" r="105" fill="none" stroke={stepColor} strokeWidth="14" strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 105}
+                  strokeDashoffset={2 * Math.PI * 105 * (1 - Math.max(progress, 0.008))}
+                  style={{ filter: `drop-shadow(0 0 12px ${stepColor}80)` }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <p className="text-[50px] font-black tabular-nums leading-none text-white mt-2" style={{ textShadow: `0 0 35px ${stepColor}45` }}>
+                  {progressPercent}<span className="text-[22px] text-white/40">%</span>
+                </p>
+                <p className="text-[11px] mt-2 font-semibold" style={{ color: stepColor }}>
+                  {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
+                </p>
+                {elapsedInPhase && <p className="text-[10px] text-white/40 mt-1 tabular-nums">{elapsedInPhase} v této fázi</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className="min-w-0 w-full">
+            <div className="flex items-end justify-between mb-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.28em] text-white/35 font-semibold">Cesta výkonu</p>
+                <p className="text-sm font-bold text-white mt-1">Průběh jednotlivých fází</p>
+              </div>
+              <span className="text-[10px] text-white/35 tabular-nums">{stepIndex + 1} / {totalSteps}</span>
+            </div>
+
+            {/* Souhrnná linka přes celou šířku — zastoupení všech fází */}
+            <div className="mb-5 rounded-2xl p-3.5" style={{ background: 'rgba(255,255,255,.022)', border: '1px solid rgba(255,255,255,.075)' }}>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-[9px] uppercase tracking-[.22em] font-semibold text-white/35">Procentuální zastoupení všech fází</span>
+                <span className="text-[9px] font-mono text-white/30">100 %</span>
+              </div>
+              <div className="flex w-full h-11 rounded-xl overflow-hidden gap-[2px] bg-white/[0.035] p-[2px]">
+                {activeStatuses.map((status, index) => {
+                  const share = phaseShares[index] || 0;
+                  const color = status.accent_color || status.color || '#6B7280';
+                  const current = index === stepIndex;
+                  return (
+                    <motion.div
+                      key={`${status.id || index}-${stepIndex}`}
+                      title={`${status.name || `Fáze ${index + 1}`} · ${share.toFixed(1)} %`}
+                      className="relative h-full flex items-center justify-center overflow-hidden transition-[filter] duration-200 hover:brightness-125"
+                      style={{
+                        width: `${share}%`,
+                        minWidth: share > 0 ? 5 : 0,
+                        transformOrigin: 'left center',
+                        background: `linear-gradient(180deg, ${color}, ${color}b8)`,
+                        boxShadow: current ? `inset 0 0 0 2px rgba(255,255,255,.55), 0 0 14px ${color}55` : 'inset 0 1px 0 rgba(255,255,255,.18)',
+                      }}
+                      initial={{ scaleX: 0, opacity: 0 }}
+                      animate={{ scaleX: 1, opacity: 1 }}
+                      transition={{ delay: .08 + index * .08, duration: .55, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      {share >= 7 && (
+                        <span className="text-[11px] font-black tabular-nums text-[#071019] drop-shadow-sm whitespace-nowrap">
+                          {share.toFixed(1)} %
+                        </span>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="relative h-[390px] w-full overflow-hidden rounded-[26px] border border-white/[0.055] bg-white/[0.012]">
+              <motion.div
+                key={`phase-flash-${stepIndex}`}
+                className="absolute inset-0 pointer-events-none z-20"
+                initial={{ opacity: .32 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 1.15, ease: 'easeOut' }}
+                style={{ background: `radial-gradient(circle at 50% 50%, ${stepColor}38 0%, ${stepColor}0d 28%, transparent 66%)` }}
+              />
+              {/* Proudící spojnice dávají radiálnímu diagramu jasnou strukturu. */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 840 390" preserveAspectRatio="none" aria-hidden="true">
+                {[58, 195, 332].map((y, index) => (
+                  <React.Fragment key={y}>
+                    <motion.path
+                      d={`M 236 ${y} C 300 ${y}, 314 195, 345 195`}
+                      fill="none" stroke={stepColor} strokeOpacity=".38" strokeWidth="1.5" strokeDasharray="6 7"
+                      animate={{ strokeDashoffset: [0, -26], opacity: [.3, .9, .3] }}
+                      transition={{ duration: 2.6 + index * .28, repeat: Infinity, ease: 'linear' }}
+                    />
+                    <motion.path
+                      d={`M 495 195 C 526 195, 540 ${y}, 604 ${y}`}
+                      fill="none" stroke={stepColor} strokeOpacity=".38" strokeWidth="1.5" strokeDasharray="6 7"
+                      animate={{ strokeDashoffset: [0, 26], opacity: [.3, .9, .3] }}
+                      transition={{ duration: 2.7 + index * .28, repeat: Infinity, ease: 'linear' }}
+                    />
+                  </React.Fragment>
+                ))}
+              </svg>
+
+              {/* Centrální kruhový graf všech fází */}
+              <motion.div
+                key={`center-phase-${stepIndex}`}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[190px] h-[190px] rounded-full p-[14px]"
+                style={{ background: phaseGradient, boxShadow: `0 0 45px ${stepColor}18, inset 0 0 0 1px rgba(255,255,255,.15)` }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, boxShadow: [`0 0 28px ${stepColor}12`, `0 0 58px ${stepColor}30`, `0 0 28px ${stepColor}12`] }}
+                transition={{ opacity: { duration: .45 }, boxShadow: { duration: 3.2, repeat: Infinity, ease: 'easeInOut' } }}
+              >
+                <div className="w-full h-full rounded-full flex flex-col items-center justify-center text-center" style={{ background: 'radial-gradient(circle at 40% 30%, #172238, #080e1b 72%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.08)' }}>
+                  <span className="text-[9px] uppercase tracking-[.24em] text-white/30 font-semibold">Celkový průběh</span>
+                  <motion.span
+                    key={`progress-value-${stepIndex}`}
+                    className="text-[42px] font-black text-white tabular-nums leading-none mt-2"
+                    style={{ textShadow: `0 0 28px ${stepColor}45` }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 20, delay: .08 }}
+                  >
+                    {progressPercent}<span className="text-[18px] text-white/40"> %</span>
+                  </motion.span>
+                  <span className="text-[10px] font-bold mt-2 max-w-[130px] truncate" style={{ color: stepColor }}>
+                    {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
+                  </span>
+                  <span className="text-[9px] text-white/30 mt-1">{stepIndex + 1}. fáze z {totalSteps}</span>
+                </div>
+              </motion.div>
+
+              {activeStatuses.map((s, i) => {
+                const col = s.accent_color || s.color || '#6B7280';
+                const done = i < stepIndex;
+                const current = i === stepIndex;
+                const mins = phaseMinutes[i];
+                const share = phaseShares[i] || 0;
+                const highlighted = hoverDot === i;
+                const leftCount = Math.ceil(activeStatuses.length / 2);
+                const onLeft = i < leftCount;
+                const localIndex = onLeft ? i : i - leftCount;
+                const groupCount = onLeft ? leftCount : Math.max(1, activeStatuses.length - leftCount);
+                const left = onLeft ? 15 : 85;
+                const top = groupCount <= 1 ? 50 : 15 + (localIndex / (groupCount - 1)) * 70;
+                return (
+                  <motion.button
+                    type="button"
+                    key={`${s.id || i}-${stepIndex}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: .15 + i * .09, duration: .45 }}
+                    onMouseEnter={() => setHoverDot(i)}
+                    onMouseLeave={() => setHoverDot(null)}
+                    className="absolute z-10 w-[238px] rounded-2xl p-4 min-h-[88px] text-left backdrop-blur-md transition-[filter,box-shadow,border-color] duration-200 hover:brightness-115"
+                    style={{
+                      left: `${left}%`,
+                      top: `${top}%`,
+                      transform: 'translate(-50%, -50%)',
+                      background: current || highlighted ? `${col}1f` : 'rgba(10,17,31,.88)',
+                      border: `1px solid ${current || highlighted ? `${col}55` : 'rgba(255,255,255,.075)'}`,
+                      boxShadow: current ? `0 12px 38px ${col}2c, inset 0 1px 0 rgba(255,255,255,.08)` : '0 10px 26px rgba(0,0,0,.2)',
+                      opacity: i > stepIndex && !highlighted ? .48 : 1,
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black"
+                        style={{ background: done || current ? col : 'rgba(255,255,255,.07)', color: done || current ? '#071019' : 'rgba(255,255,255,.4)' }}
+                      >
+                        {done ? <Check className="w-4 h-4" /> : i + 1}
+                        {current && <span className="absolute -inset-1 rounded-full border animate-ping opacity-25" style={{ borderColor: col }} />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[14px] font-bold leading-tight text-white/95 whitespace-normal line-clamp-2">{s.name || `Fáze ${i + 1}`}</span>
+                        <span className="block text-[10px] mt-1.5 tabular-nums" style={{ color: current ? col : 'rgba(255,255,255,.35)' }}>
+                          {mins !== undefined ? `${mins < 1 ? '< 1' : Math.round(mins)} min` : current ? (elapsedInPhase || 'probíhá') : done ? 'dokončeno' : (s.default_duration ? `odhad ${s.default_duration} min` : 'čeká')}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-right leading-none">
+                        <strong className="block text-[22px] font-black tabular-nums tracking-tight" style={{ color: col }}>{share.toFixed(1)} %</strong>
+                        <span className="block text-[8px] uppercase tracking-[.18em] text-white/25 mt-1.5">Zastoupení</span>
+                      </span>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {/* Textová doporučení podle skutečného průběhu měřených fází. */}
+            <motion.section
+              key={`recommendations-${stepIndex}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: .32, duration: .5, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-4 rounded-2xl p-4"
+              style={{ background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.08)' }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${stepColor}16`, border: `1px solid ${stepColor}35` }}>
+                  <TrendingUp className="w-4 h-4" style={{ color: stepColor }} />
+                </span>
+                <div>
+                  <h3 className="text-[12px] uppercase tracking-[.18em] font-bold text-white/85">Co zlepšit a urychlit</h3>
+                  <p className="text-[9px] text-white/35 mt-0.5">Doporučení z reálných časů · chirurgický výkon se nezkracuje</p>
+                </div>
+              </div>
+              <div className={`grid gap-2.5 ${recommendations.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {recommendations.map((recommendation, index) => {
+                  const Icon = recommendation.tone === 'warn' ? AlertTriangle : recommendation.tone === 'good' ? CheckCircle2 : Lightbulb;
+                  return (
+                    <motion.div
+                      key={`${recommendation.title}-${index}`}
+                      initial={{ opacity: 0, x: index % 2 === 0 ? -10 : 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: .44 + index * .1, duration: .4 }}
+                      className="rounded-xl p-3 flex items-start gap-2.5"
+                      style={{ background: `${recommendation.color}0e`, border: `1px solid ${recommendation.color}30` }}
+                    >
+                      <Icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: recommendation.color }} />
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-white leading-tight">{recommendation.title}</p>
+                        <p className="text-[10px] text-white/55 leading-relaxed mt-1">{recommendation.text}</p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.section>
+          </div>
+        </div>
+
+        {/* Původní tachometr je ponechán pouze jako skrytá historická implementace. */}
+        <div className="hidden" aria-hidden="true">
           <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="w-full select-none" aria-hidden="true">
             <defs>
               <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -472,7 +813,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               const isCurrent = i === stepIndex;
               const mins = phaseMinutes[i];
               const value = mins !== undefined
-                ? `${mins} min`
+                ? `${mins < 1 ? '< 1' : Math.round(mins)} min`
                 : done ? '✓' : isCurrent ? '·' : (s.default_duration ? `~${s.default_duration}m` : '—');
               const dim = !done && !isCurrent;
               const isHover = hoverDot === i;
