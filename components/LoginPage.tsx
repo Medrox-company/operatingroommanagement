@@ -255,7 +255,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </section>
 
           <footer className="pt-[25px] text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em]" style={{ color: '#BCC7D9' }}>Medrox</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: '#BCC7D9' }}>MEDROX Czech Republic and Canada</p>
           </footer>
         </main>
       </div>
