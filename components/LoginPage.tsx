@@ -175,7 +175,92 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   );
 
   return (
-    <div className="min-h-screen w-full text-white relative overflow-hidden flex flex-col font-sans bg-[#050d18]">
+    <>
+      {/* ═════════════════ MOBILE — přesně podle OR Mobile prototypu ═════════════════ */}
+      <div className="md:hidden min-h-[100dvh] w-full overflow-y-auto font-sans" style={{ background: '#F3F6FC', color: '#12346F' }}>
+        <main className="mx-auto min-h-[100dvh] w-full max-w-[430px] px-[40px] pb-8 flex flex-col" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + clamp(86px, 14vh, 126px))' }}>
+          <header className="flex flex-col items-center text-center">
+            <div
+              className="w-[116px] h-[82px]"
+              role="img"
+              aria-label="OperatingRoom Manager"
+              style={{
+                backgroundImage: "url('/images/or-mobile-login-reference.png')",
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: '446px 938px',
+                backgroundPosition: '-167px -163px',
+              }}
+            >
+            </div>
+            <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.34em] whitespace-nowrap" style={{ color: '#91A0B9' }}>OperatingRoom Manager</p>
+            <h1 className="mt-[18px] text-[31px] font-extrabold tracking-[-0.035em] leading-none" style={{ color: '#12346F' }}>Operační sály</h1>
+            <p className="mt-[17px] text-[15px] font-medium" style={{ color: '#6F7F9C' }}>Zadejte přihlašovací údaje</p>
+          </header>
+
+          <form onSubmit={handleSubmit} className="mt-[36px] space-y-[14px]">
+            {error && (
+              <div className="px-3.5 py-3 rounded-[14px] flex items-start gap-2.5" style={{ background: '#FDEBEC', border: '1px solid #F5C8CB', color: '#B93840' }}>
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="text-[12px] font-semibold leading-snug">{error}</span>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="mobile-login-hospital" className="block text-[10px] font-bold uppercase tracking-[0.22em] mb-[7px]" style={{ color: '#91A0B9' }}>Nemocniční zařízení</label>
+              <div className="relative">
+                <Building2 className="absolute left-[17px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] pointer-events-none" strokeWidth={2.2} style={{ color: '#123F7C' }} />
+                <select id="mobile-login-hospital" value={selectedHospitalId} onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }} disabled={hospitalsLoading || hospitals.length === 0} required className="w-full h-[51px] appearance-none rounded-[14px] pl-[44px] pr-11 text-[15px] font-bold outline-none disabled:opacity-50 focus:ring-2 focus:ring-[#17457F]/15" style={{ background: '#FFFFFF', color: '#12346F', border: '1px solid #D5DFEE' }}>
+                  {hospitals.length === 0 && <option value="">Žádné zařízení není dostupné</option>}
+                  {hospitals.map(hospital => <option key={hospital.id} value={hospital.id}>{hospital.hospital_name}</option>)}
+                </select>
+                {hospitalsLoading ? <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] animate-spin" style={{ color: '#91A0B9' }} /> : <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] pointer-events-none" strokeWidth={2.3} style={{ color: '#91A0B9' }} />}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="mobile-login-email" className="block text-[10px] font-bold uppercase tracking-[0.22em] mb-[7px]" style={{ color: '#91A0B9' }}>Uživatelské jméno</label>
+              <input id="mobile-login-email" type="text" inputMode="email" autoCapitalize="none" autoComplete="username" value={email} onChange={event => setEmail(event.target.value)} placeholder="jmeno.prijmeni" required className="w-full h-[51px] rounded-[14px] px-[17px] text-[15px] font-medium outline-none placeholder:text-[#9BA9C0] focus:ring-2 focus:ring-[#17457F]/15" style={{ background: '#FFFFFF', color: '#12346F', border: '1px solid #D5DFEE' }} />
+            </div>
+
+            <div>
+              <label htmlFor="mobile-login-password" className="block text-[10px] font-bold uppercase tracking-[0.22em] mb-[7px]" style={{ color: '#91A0B9' }}>Heslo</label>
+              <input id="mobile-login-password" type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••" required className="w-full h-[51px] rounded-[14px] px-[17px] text-[15px] font-semibold outline-none placeholder:text-[#9BA9C0] focus:ring-2 focus:ring-[#17457F]/15" style={{ background: '#FFFFFF', color: '#12346F', border: '1px solid #D5DFEE' }} />
+            </div>
+
+            <button type="submit" disabled={isLoading || !selectedHospitalId} className="mt-[8px] w-full h-[52px] rounded-full flex items-center justify-center gap-2 text-[16px] font-extrabold text-white active:scale-[0.99] transition-transform disabled:opacity-50" style={{ background: '#17457F', boxShadow: '0 10px 22px rgba(23,69,127,0.15)' }}>
+              {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Přihlašování…</> : 'Přihlásit se'}
+            </button>
+          </form>
+
+          <section className="mt-[22px]">
+            <p className="text-center text-[9px] font-bold uppercase tracking-[0.22em] mb-2.5" style={{ color: '#91A0B9' }}>Rychlé přihlášení podle role</p>
+            <div className="grid grid-cols-3 gap-2">
+              {QUICK_ROLES.map(role => {
+                const Icon = role.icon;
+                return (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => void handleQuickLogin(role.id)}
+                    disabled={isLoading || !selectedHospitalId}
+                    className="min-w-0 h-[54px] rounded-[14px] px-1.5 flex flex-col items-center justify-center gap-1 active:scale-[0.98] transition-transform disabled:opacity-40"
+                    style={{ background: '#FFFFFF', border: '1px solid #D5DFEE' }}
+                  >
+                    <Icon className="w-[16px] h-[16px]" style={{ color: '#17457F' }} />
+                    <span className="block w-full text-[8.5px] font-extrabold truncate text-center" style={{ color: '#12346F' }}>{role.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <footer className="pt-[25px] text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.32em]" style={{ color: '#BCC7D9' }}>Medrox</p>
+          </footer>
+        </main>
+      </div>
+
+    <div className="hidden md:flex min-h-screen w-full text-white relative overflow-hidden flex-col font-sans bg-[#050d18]">
       {/* Static radial background */}
       <div
         aria-hidden
@@ -496,6 +581,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </p>
       </footer>
     </div>
+    </>
   );
 };
 
