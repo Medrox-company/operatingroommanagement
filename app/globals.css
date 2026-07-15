@@ -184,9 +184,9 @@ html.capacitor-native select {
 .timeline-mobile-hero {
   position: relative;
   overflow: hidden;
-  background: #FFFFFF;
-  border: 1px solid transparent;
-  box-shadow: 0 8px 20px rgba(23, 43, 99, 0.06);
+  background: var(--m-card);
+  border: 1px solid var(--m-border);
+  box-shadow: var(--m-card-shadow);
 }
 
 .timeline-mobile-clock {
@@ -194,19 +194,19 @@ html.capacitor-native select {
 }
 
 .timeline-mobile-metric {
-  box-shadow: 0 4px 12px rgba(23, 43, 99, 0.05);
+  box-shadow: var(--m-card-shadow);
 }
 
 .timeline-mobile-tabs {
-  background: #E3E9F4 !important;
+  background: var(--m-chip-track) !important;
   border-color: transparent !important;
   box-shadow: none;
 }
 
 .timeline-mobile-room-card {
-  background: #FFFFFF !important;
-  border-color: transparent !important;
-  box-shadow: 0 8px 20px rgba(23, 43, 99, 0.06);
+  background: var(--m-card) !important;
+  border-color: var(--m-border) !important;
+  box-shadow: var(--m-card-shadow);
 }
 
 .timeline-mobile-axis-row {
@@ -214,7 +214,7 @@ html.capacitor-native select {
 }
 
 .timeline-mobile-axis-row:hover {
-  background: rgba(23, 43, 99, 0.03);
+  background: var(--m-card-2);
 }
 
 .timeline-card {
@@ -333,6 +333,7 @@ html.capacitor-native select {
    do tmavé varianty dle návrhu (deep navy, glass karty, akcent dle fáze). */
 :root {
   --m-bg: #EDF1F8;
+  --m-page-bg: radial-gradient(120% 78% at 50% -8%, #FFFFFF 0%, #EDF1F8 58%, #E7EDF7 100%);
   --m-card: #FFFFFF;                       /* karty (plocha) */
   --m-card-solid: #FFFFFF;                 /* neprůhledný podklad (disky, sheety) */
   --m-card-2: #F2F5FA;                     /* sekundární plocha / ghost tlačítka */
@@ -350,27 +351,285 @@ html.capacitor-native select {
   --m-nav-bg: #1E3560;
   --m-nav-fg: rgba(255, 255, 255, 0.45);
   --m-nav-active: #FFFFFF;
+  --m-on-accent: #FFFFFF;
+  --m-card-shadow: 0 8px 20px rgba(23, 43, 99, 0.07);
+  --m-card-shadow-strong: 0 16px 38px rgba(23, 43, 99, 0.12);
+  --m-card-highlight: rgba(255, 255, 255, 0.86);
+  --m-purple-glow: rgba(139, 92, 246, 0.12);
+  --m-teal-glow: rgba(20, 184, 166, 0.08);
+
+  /* Statistiky mají na desktopu vlastní tmavý vizuální jazyk. Mobilní
+     světlá varianta tyto tokeny přepisuje níže pouze uvnitř modulu. */
+  --stats-bg: #0A0A0A;
+  --stats-surface: rgba(255, 255, 255, 0.025);
+  --stats-surface-2: rgba(255, 255, 255, 0.04);
+  --stats-surface-3: rgba(255, 255, 255, 0.06);
+  --stats-surface-hover: rgba(255, 255, 255, 0.08);
+  --stats-surface-active: rgba(255, 255, 255, 0.10);
+  --stats-border: rgba(255, 255, 255, 0.06);
+  --stats-border-hover: rgba(255, 255, 255, 0.12);
+  --stats-border-active: rgba(255, 255, 255, 0.18);
+  --stats-text: rgba(255, 255, 255, 0.88);
+  --stats-text-strong: rgba(255, 255, 255, 0.95);
+  --stats-muted: rgba(255, 255, 255, 0.50);
+  --stats-faint: rgba(255, 255, 255, 0.25);
+  --stats-ghost: rgba(255, 255, 255, 0.08);
 }
 
 .m-dark {
-  --m-bg: #0B0D17;
-  --m-card: rgba(255, 255, 255, 0.045);
-  --m-card-solid: #161A2B;
-  --m-card-2: rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+  --m-bg: #050A15;
+  --m-page-bg:
+    radial-gradient(88% 42% at 50% -5%, rgba(111, 78, 255, 0.38) 0%, rgba(64, 43, 151, 0.16) 42%, transparent 72%),
+    radial-gradient(70% 30% at 50% 104%, rgba(16, 185, 129, 0.13) 0%, transparent 72%),
+    linear-gradient(180deg, #0A1023 0%, #07101E 48%, #040A14 100%);
+  --m-card: linear-gradient(145deg, rgba(27, 35, 65, 0.92) 0%, rgba(10, 18, 34, 0.96) 100%);
+  --m-card-solid: #10182B;
+  --m-card-2: rgba(255, 255, 255, 0.055);
   --m-track: rgba(255, 255, 255, 0.10);
-  --m-border: rgba(255, 255, 255, 0.09);
+  --m-border: rgba(158, 137, 255, 0.22);
   --m-gridline: rgba(255, 255, 255, 0.07);
   --m-text: #F2F4FA;
   --m-text-strong: #FFFFFF;
   --m-muted: rgba(255, 255, 255, 0.55);
   --m-faint: rgba(255, 255, 255, 0.35);
-  --m-accent: #8B7CF8;
-  --m-accent-rgb: 139, 124, 248;
-  --m-accent-soft: rgba(139, 124, 248, 0.16);
+  --m-accent: #925CFF;
+  --m-accent-rgb: 146, 92, 255;
+  --m-accent-soft: rgba(146, 92, 255, 0.18);
   --m-chip-track: rgba(255, 255, 255, 0.07);
-  --m-nav-bg: rgba(13, 16, 28, 0.97);
+  --m-nav-bg: linear-gradient(180deg, rgba(15, 25, 42, 0.94), rgba(8, 18, 30, 0.98));
   --m-nav-fg: rgba(255, 255, 255, 0.40);
   --m-nav-active: #5EEAD4;
+  --m-on-accent: #090B15;
+  --m-card-shadow: 0 14px 34px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --m-card-shadow-strong: 0 22px 56px rgba(0, 0, 0, 0.46), 0 0 28px rgba(139, 92, 246, 0.08);
+  --m-card-highlight: rgba(255, 255, 255, 0.08);
+  --m-purple-glow: rgba(154, 108, 255, 0.24);
+  --m-teal-glow: rgba(45, 212, 191, 0.16);
+}
+
+@media (max-width: 767px) {
+  .mobile-theme-surface {
+    background: var(--m-page-bg) !important;
+    transition: background 240ms ease;
+  }
+
+  .m-dark .mobile-glass-card {
+    border-color: var(--m-border) !important;
+    box-shadow: var(--m-card-shadow) !important;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  /* Detail sálu — tmavý vizuální jazyk dle referenčního návrhu. Spodní
+     navigace je záměrně mimo tento scope a zůstává beze změny. */
+  .m-dark .mobile-room-detail {
+    background: var(--m-page-bg) !important;
+  }
+
+  .m-dark .mobile-room-detail-header > button {
+    border-radius: 18px !important;
+    background: rgba(18, 28, 50, 0.82) !important;
+    border: 1px solid rgba(158, 137, 255, 0.16) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.055), 0 12px 30px rgba(0,0,0,0.28) !important;
+  }
+
+  .m-dark .mobile-room-detail-title {
+    text-align: center;
+    align-items: center;
+  }
+
+  .m-dark .mobile-room-phase-card {
+    background:
+      radial-gradient(80% 120% at 82% 30%, rgba(146, 92, 255, 0.25), transparent 66%),
+      linear-gradient(145deg, rgba(43, 44, 94, 0.96), rgba(19, 27, 51, 0.96)) !important;
+    border: 1px solid rgba(160, 126, 255, 0.34) !important;
+    box-shadow: 0 0 0 1px rgba(137, 96, 255, 0.06), 0 24px 54px rgba(0,0,0,0.38), 0 0 40px rgba(116, 74, 255, 0.10) !important;
+    padding: 22px !important;
+  }
+
+  .m-dark .mobile-room-phase-card p {
+    color: #FFFFFF !important;
+  }
+
+  .m-dark .mobile-room-phase-card .mobile-room-phase-meta h2,
+  .m-dark .mobile-room-phase-card .mobile-room-phase-meta span {
+    color: rgba(255,255,255,0.58) !important;
+  }
+
+  .m-dark .mobile-room-elapsed-icon {
+    display: none;
+  }
+
+  .m-dark .mobile-room-elapsed-label {
+    display: inline !important;
+    color: rgba(255,255,255,0.55) !important;
+  }
+
+  .m-dark .mobile-room-estimate-card > div:first-child > p:first-child,
+  .m-dark .mobile-room-detail h2 {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 10px !important;
+    color: rgba(255,255,255,0.55) !important;
+  }
+
+  .m-dark .mobile-room-next-button {
+    width: 78px !important;
+    height: 78px !important;
+    min-height: 78px !important;
+    flex-basis: 78px !important;
+    border-radius: 999px !important;
+    padding: 0 !important;
+    background: linear-gradient(145deg, #A56AFF, #7B45F2) !important;
+    box-shadow: 0 15px 34px rgba(126, 71, 242, 0.40), inset 0 1px 0 rgba(255,255,255,0.28) !important;
+  }
+
+  .m-dark .mobile-room-next-icon {
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .m-dark .mobile-room-next-icon svg {
+    color: #080B14 !important;
+    fill: #080B14;
+  }
+
+  .m-dark .mobile-room-next-label {
+    display: none !important;
+  }
+
+  .m-dark .mobile-room-estimate-card {
+    background: linear-gradient(145deg, rgba(18, 28, 49, 0.92), rgba(8, 17, 31, 0.96)) !important;
+    border: 1px solid rgba(151, 132, 232, 0.18) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.045), 0 18px 38px rgba(0,0,0,0.28) !important;
+  }
+
+  .m-dark .mobile-room-estimate-card > div:last-child button:last-child {
+    background: linear-gradient(145deg, #A56AFF, #7B45F2) !important;
+    border-color: rgba(174, 138, 255, 0.45) !important;
+  }
+
+  .m-dark .mobile-room-action {
+    background: rgba(14, 23, 41, 0.84) !important;
+    border: 1px solid rgba(153, 139, 208, 0.18) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.045), 0 14px 30px rgba(0,0,0,0.22) !important;
+  }
+
+  .m-dark .mobile-room-team-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px !important;
+  }
+
+  .m-dark .mobile-room-team-card {
+    min-width: 0;
+    padding: 15px 13px !important;
+    border: 1px solid transparent;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.055), 0 16px 34px rgba(0,0,0,0.24) !important;
+  }
+
+  .m-dark .mobile-room-team-doctor {
+    background: linear-gradient(145deg, rgba(67, 47, 125, 0.64), rgba(19, 24, 48, 0.94)) !important;
+    border-color: rgba(155, 119, 255, 0.34) !important;
+  }
+
+  .m-dark .mobile-room-team-nurse {
+    background: linear-gradient(145deg, rgba(15, 78, 67, 0.60), rgba(8, 30, 34, 0.94)) !important;
+    border-color: rgba(52, 211, 153, 0.30) !important;
+  }
+
+  .m-dark .mobile-room-team-card p {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+  }
+
+  .mobile-glass-card,
+  .mobile-module-header,
+  .timeline-mobile-hero,
+  .timeline-mobile-room-card {
+    transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  }
+
+  .mobile-module-header {
+    background: var(--m-card);
+    border: 1px solid var(--m-border);
+    box-shadow: var(--m-card-shadow);
+  }
+
+  :root:not(.m-dark) .mobile-statistics {
+    --stats-bg: #EDF1F8;
+    --stats-surface: rgba(255, 255, 255, 0.92);
+    --stats-surface-2: #F5F7FB;
+    --stats-surface-3: #FFFFFF;
+    --stats-surface-hover: #F1F5FA;
+    --stats-surface-active: #E8EEF7;
+    --stats-border: #DDE5F0;
+    --stats-border-hover: #CCD8E8;
+    --stats-border-active: #B9C9DE;
+    --stats-text: #33415F;
+    --stats-text-strong: #17233F;
+    --stats-muted: #74829C;
+    --stats-faint: #9AA7BB;
+    --stats-ghost: #E8EDF5;
+  }
+
+  :root:not(.m-dark) .mobile-statistics [class*="text-white"] {
+    color: var(--stats-text) !important;
+  }
+
+  .mobile-statistics.is-light [class*="text-white"] {
+    color: #33415F !important;
+  }
+
+  .mobile-statistics.is-light input::placeholder,
+  .mobile-statistics.is-light textarea::placeholder {
+    color: #8795AB !important;
+  }
+
+  :root:not(.m-dark) .mobile-statistics .recharts-cartesian-axis-tick-value {
+    fill: var(--stats-muted) !important;
+  }
+
+  :root:not(.m-dark) .mobile-staff-overview {
+    color: var(--m-text);
+  }
+
+  :root:not(.m-dark) .mobile-staff-overview [class*="text-white"] {
+    color: var(--m-text) !important;
+  }
+
+  :root:not(.m-dark) .mobile-staff-overview .mobile-staff-panel,
+  :root:not(.m-dark) .mobile-staff-overview .mobile-staff-room-card {
+    background: var(--m-card) !important;
+    border-color: var(--m-border) !important;
+    box-shadow: var(--m-card-shadow) !important;
+  }
+
+  .mobile-staff-overview.is-light {
+    color: #17233F;
+  }
+
+  .mobile-staff-overview.is-light [class*="text-white"] {
+    color: #33415F !important;
+  }
+
+  .mobile-staff-overview.is-light [class*="placeholder:text-white"]::placeholder {
+    color: #8795AB !important;
+  }
+
+  .mobile-staff-overview.is-light .mobile-staff-panel,
+  .mobile-staff-overview.is-light .mobile-staff-room-card {
+    background: #FFFFFF !important;
+    border-color: #D7E1EE !important;
+    box-shadow: 0 10px 28px rgba(23, 43, 99, 0.08) !important;
+  }
+
+  .mobile-staff-overview.is-light .mobile-staff-room-card > div:last-child > div:first-child {
+    color: #17233F;
+  }
 }
 
 /* Potvrzení přechodu — mobilní barvy přes téma, desktop zůstává tmavý */

@@ -2,7 +2,7 @@
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -98,109 +98,153 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   const totalStepsAll = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const safeIdxMobile = Math.min(Math.max(0, room.currentStepIndex || 0), totalStepsAll - 1);
   const progressPct = ((safeIdxMobile + 1) / totalStepsAll) * 100;
+  const mobileRoomNumber = room.name.match(/\d+/)?.[0] || room.name.slice(0, 2).toUpperCase();
 
   return (
     <>
-    {/* ===== MOBILE — kompaktní box dle prototypu (2 sloupce, bez středového čísla) ===== */}
+    {/* ===== MOBILE — prémiová karta sálu ===== */}
     <div
       onClick={onClick}
-      className="md:hidden relative w-full rounded-[16px] px-3.5 pt-3.5 pb-3 cursor-pointer active:scale-[0.99] transition-transform select-none"
+      className="mobile-dashboard-room-card md:hidden relative w-full rounded-[20px] p-3 cursor-pointer active:scale-[0.985] transition-all duration-200 select-none overflow-hidden"
       style={{
         background: 'var(--m-card)',
-        boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
+        boxShadow: room.isEmergency ? '0 12px 28px rgba(229,72,77,0.18)' : 'var(--m-card-shadow-strong)',
         border: room.isEmergency
-          ? '1.5px solid rgba(229,72,77,0.6)'
+          ? '1.5px solid rgba(229,72,77,0.55)'
           : room.isLocked
-          ? '1.5px solid rgba(245,158,11,0.6)'
-          : '1px solid transparent',
+          ? '1.5px solid rgba(245,158,11,0.5)'
+          : '1px solid var(--m-border)',
       }}
     >
-      {/* Název + oddělení (dle prototypu název nahoře, oddělení pod ním) */}
-      <div className="flex items-start justify-between gap-1.5">
-        <div className="min-w-0">
-          <h3 className="text-[14px] font-extrabold uppercase truncate leading-tight tracking-tight" style={{ color: 'var(--m-text-strong)' }}>
+      <div
+        aria-hidden
+        className="absolute inset-x-9 top-0 h-[2px] rounded-full"
+        style={{ background: `linear-gradient(90deg, transparent, ${themeColor}CC, transparent)` }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-y-4 left-0 w-[3px] rounded-r-full"
+        style={{ background: themeColor, boxShadow: `0 0 16px ${themeColor}80` }}
+      />
+      <div
+        aria-hidden
+        className="absolute -right-9 -top-11 w-24 h-24 rounded-full blur-2xl pointer-events-none"
+        style={{ background: themeColor, opacity: 0.11 }}
+      />
+
+      {/* Identita sálu */}
+      <div className="relative flex items-start gap-2.5">
+        <span
+          className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 text-[12px] font-extrabold tabular-nums"
+          style={{
+            color: themeColor,
+            background: `${themeColor}1A`,
+            border: `1px solid ${themeColor}42`,
+            boxShadow: `inset 0 1px 0 var(--m-card-highlight)`,
+          }}
+        >
+          {mobileRoomNumber}
+        </span>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <h3 className="text-[13px] font-extrabold uppercase truncate leading-tight tracking-tight" style={{ color: 'var(--m-text-strong)' }}>
             {room.name}
           </h3>
-          <p className="text-[11px] font-medium truncate mt-0.5" style={{ color: 'var(--m-muted)' }}>
-            {room.department}
+          <p className="text-[8px] font-bold uppercase tracking-[0.12em] truncate mt-0.5" style={{ color: 'var(--m-muted)' }}>
+            {room.department || 'Bez oddělení'}
           </p>
         </div>
-        {room.noticeMessage && (
+        <div className="flex items-center gap-1 shrink-0">
+          {room.noticeMessage && (
           <span
-            className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+            className="relative w-6 h-6 rounded-[9px] flex items-center justify-center shrink-0"
             style={{ background: 'rgba(var(--m-accent-rgb),0.10)' }}
             title="Čeká zpráva — otevři detail sálu"
           >
             <Megaphone className="w-3 h-3" style={{ color: 'var(--m-accent)' }} />
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full" style={{ background: '#E5484D' }} />
           </span>
-        )}
+          )}
+          <ChevronRight className="w-4 h-4" style={{ color: 'var(--m-faint)' }} strokeWidth={2.2} />
+        </div>
       </div>
 
-      {/* Status chip s tečkou */}
-      <div className="mt-2.5">
-        <span
-          className="inline-flex max-w-full items-center gap-1.5 px-2.5 h-6 rounded-full text-[9.5px] font-bold uppercase tracking-wide"
-          style={room.isEmergency
-            ? { background: '#E5484D', color: '#FFFFFF' }
-            : room.isLocked
-            ? { background: '#F59E0B', color: '#FFFFFF' }
-            : { background: room.isPaused ? '#DDF7FA' : `${themeColor}16`, color: 'var(--m-text-strong)', border: `1px solid ${room.isPaused ? '#A9E8EE' : `${themeColor}30`}` }}
-        >
-          <span
-            className="w-1.5 h-1.5 rounded-full shrink-0"
-            style={{ background: room.isEmergency || room.isLocked ? '#FFFFFF' : themeColor }}
-          />
-          <span className="truncate">
-            {room.isEmergency
-              ? 'STAV NOUZE'
-              : room.isLocked
-              ? 'SÁL UZAMČEN'
-              : room.isPaused
-              ? `${currentStep.title} · Pauza`
-              : currentStep.title}
-          </span>
-        </span>
-      </div>
-
-      {/* Tenký progress kroků — nahrazuje středové číslo */}
-      <div className="mt-2.5 h-1 rounded-full overflow-hidden" style={{ background: 'var(--m-track)' }}>
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${room.isPaused ? 100 : progressPct}%`, background: themeColor }}
-        />
-      </div>
-
-      {/* Spodní řádek — lékař · čas | indikátory · (i) | zámek */}
-      <div className="mt-2.5 pt-2.5 flex items-center justify-between gap-1.5" style={{ borderTop: '1px solid var(--m-track)' }}>
-        <div className="flex items-center gap-1 min-w-0">
-          <User className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--m-muted)' }} strokeWidth={2.25} />
-          <span className="text-[9.5px] font-bold uppercase tracking-wide truncate" style={{ color: 'var(--m-muted)' }}>
-            {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
-          </span>
-          {room.estimatedEndTime && shouldShowTime && (
-            <span className="text-[12px] font-bold tabular-nums shrink-0 ml-0.5" style={{ color: 'var(--m-accent)' }}>
-              {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+      {/* Stav + průběh */}
+      <div
+        className="relative mt-2.5 rounded-[13px] px-2.5 py-2"
+        style={{ background: `${themeColor}10`, border: `1px solid ${themeColor}30` }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-[8.5px] font-extrabold uppercase tracking-[0.1em]" style={{ color: room.isEmergency || room.isLocked ? themeColor : 'var(--m-text-strong)' }}>
+            <span className="relative flex w-2 h-2 shrink-0">
+              {(room.isEmergency || (!room.isLocked && safeIdxMobile > 0)) && (
+                <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ background: themeColor }} />
+              )}
+              <span className="relative w-2 h-2 rounded-full" style={{ background: themeColor }} />
             </span>
+            <span className="truncate">
+              {room.isEmergency
+                ? 'Stav nouze'
+                : room.isLocked
+                ? 'Sál uzamčen'
+                : room.isPaused
+                ? `${currentStep.title} · Pauza`
+                : currentStep.title}
+            </span>
+          </span>
+          <span className="text-[9px] font-bold tabular-nums shrink-0" style={{ color: themeColor }}>
+            {safeIdxMobile + 1}/{totalStepsAll}
+          </span>
+        </div>
+
+        <div className="mt-1.5 flex gap-1" aria-label={`Průběh ${Math.round(progressPct)} %`}>
+          {Array.from({ length: totalStepsAll }, (_, index) => (
+            <span
+              key={index}
+              className="h-[3px] flex-1 rounded-full transition-colors duration-300"
+              style={{ background: index <= safeIdxMobile ? themeColor : 'var(--m-track)' }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Personál, čas a rychlé akce */}
+      <div className="relative mt-2.5 flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <User className="w-3 h-3 shrink-0" style={{ color: 'var(--m-muted)' }} strokeWidth={2.1} />
+            <span className="text-[8.5px] font-bold uppercase tracking-[0.07em] truncate" style={{ color: 'var(--m-muted)' }}>
+              {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
+            </span>
+          </div>
+          {room.estimatedEndTime && shouldShowTime && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <Clock className="w-3 h-3" style={{ color: themeColor }} strokeWidth={2.2} />
+              <span className="text-[10px] font-extrabold tabular-nums" style={{ color: themeColor }}>
+                {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+
+        <div className="flex items-center gap-1.5 shrink-0">
           {room.isSeptic && <Biohazard className="w-3.5 h-3.5" style={{ color: '#E5484D' }} />}
           {room.patientCalledAt && !room.patientArrivedAt && <Phone className="w-3.5 h-3.5" style={{ color: 'var(--m-accent)' }} />}
           {room.patientArrivedAt && <BedDouble className="w-3.5 h-3.5" style={{ color: '#10B981' }} />}
           <button
             onClick={(e) => handleAction(e, onEmergency)}
             aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
-            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+            className="w-7 h-7 rounded-[10px] flex items-center justify-center active:scale-90 transition-transform"
+            style={{ background: room.isEmergency ? 'rgba(229,72,77,0.14)' : 'var(--m-card-2)', border: `1px solid ${room.isEmergency ? 'rgba(229,72,77,0.3)' : 'var(--m-border)'}` }}
           >
-            <AlertCircle className="w-[17px] h-[17px]" strokeWidth={2} style={{ color: room.isEmergency ? '#E5484D' : 'var(--m-text-strong)' }} />
+            <AlertCircle className="w-3.5 h-3.5" strokeWidth={2} style={{ color: room.isEmergency ? '#E5484D' : 'var(--m-muted)' }} />
           </button>
-          <span className="w-px h-4" style={{ background: 'var(--m-border)' }} />
           <button
             onClick={(e) => handleAction(e, onLock)}
             aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
-            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+            className="w-7 h-7 rounded-[10px] flex items-center justify-center active:scale-90 transition-transform"
+            style={{ background: room.isLocked ? 'rgba(245,158,11,0.14)' : 'var(--m-card-2)', border: `1px solid ${room.isLocked ? 'rgba(245,158,11,0.3)' : 'var(--m-border)'}` }}
           >
-            <Lock className="w-[17px] h-[17px]" strokeWidth={2} style={{ color: room.isLocked ? '#F59E0B' : 'var(--m-text-strong)' }} />
+            <Lock className="w-3.5 h-3.5" strokeWidth={2} style={{ color: room.isLocked ? '#F59E0B' : 'var(--m-muted)' }} />
           </button>
         </div>
       </div>

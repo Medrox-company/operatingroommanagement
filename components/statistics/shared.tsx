@@ -39,24 +39,24 @@ export const C = {
   teal:    '#2DD4BF',  // Teal
   
   // Surface & background - vylepšené glass morphism style s vrstvami
-  bg:        '#0a0a0a',      // Pure black background
-  surface:   'rgba(255,255,255,0.025)',  // Subtle surface
-  surface2:  'rgba(255,255,255,0.04)',   // Mid surface
-  surface3:  'rgba(255,255,255,0.06)',   // Elevated surface
-  surfaceHover: 'rgba(255,255,255,0.08)',  // Hover state
-  surfaceActive: 'rgba(255,255,255,0.10)',  // Active state
+  bg:        'var(--stats-bg)',
+  surface:   'var(--stats-surface)',
+  surface2:  'var(--stats-surface-2)',
+  surface3:  'var(--stats-surface-3)',
+  surfaceHover: 'var(--stats-surface-hover)',
+  surfaceActive: 'var(--stats-surface-active)',
   
   // Border & dividers - více viditelné a lépe strukturované
-  border:      'rgba(255,255,255,0.06)',
-  borderHover: 'rgba(255,255,255,0.12)',
-  borderActive: 'rgba(255,255,255,0.18)',
+  border:      'var(--stats-border)',
+  borderHover: 'var(--stats-border-hover)',
+  borderActive: 'var(--stats-border-active)',
   
   // Text hierarchy - optimalizované pro readability
-  text:    'rgba(255,255,255,0.88)',   // Primary text
-  textHi:  'rgba(255,255,255,0.95)',   // High emphasis text
-  muted:   'rgba(255,255,255,0.50)',   // Muted text
-  faint:   'rgba(255,255,255,0.25)',   // Faint text
-  ghost:   'rgba(255,255,255,0.08)',   // Ghost text (very subtle)
+  text:    'var(--stats-text)',
+  textHi:  'var(--stats-text-strong)',
+  muted:   'var(--stats-muted)',
+  faint:   'var(--stats-faint)',
+  ghost:   'var(--stats-ghost)',
   
   // Semantic colors
   success: '#00F5A0',

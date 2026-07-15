@@ -9,6 +9,7 @@ import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEE
 // Step durations now calculated from real database history
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { useHospital } from '../contexts/HospitalContext';
+import { useIsMobileDark } from '../hooks/useIsMobileDark';
 import {
   fetchRoomStatistics,
   fetchStatusHistory,
@@ -36,8 +37,9 @@ import {
   ScatterChart, Scatter, ZAxis,
 } from 'recharts';
 import {
-  MobileHeader,
   MobileCard,
+  MobileHeaderMetrics,
+  MobileModuleHeader,
   MobilePillTabs,
   MobileSectionLabel,
 } from './mobile/MobileShell';
@@ -65,12 +67,12 @@ const C = {
   orange:  '#F97316',
   yellow:  '#FBBF24',
   red:     '#EF4444',
-  border:  'rgba(255,255,255,0.07)',
-  surface: 'rgba(255,255,255,0.025)',
-  muted:   'rgba(255,255,255,0.35)',
-  faint:   'rgba(255,255,255,0.15)',
-  ghost:   'rgba(255,255,255,0.07)',
-  text:    'rgba(255,255,255,0.85)',
+  border:  'var(--stats-border)',
+  surface: 'var(--stats-surface)',
+  muted:   'var(--stats-muted)',
+  faint:   'var(--stats-faint)',
+  ghost:   'var(--stats-ghost)',
+  text:    'var(--stats-text)',
 };
 
 const DEPT_COLORS: Record<string,string> = {
@@ -1319,6 +1321,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
 // ══════════════════════════════════════════════════════════════════════════════
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms }) => {
   const { activeHospitalId } = useHospital();
+  const isMobileDark = useIsMobileDark();
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -1750,11 +1753,9 @@ const TABS:{ id:Tab; label:string }[]=[
       {/* Mobile background — unified with RoomDetail / Timeline / Staff */}
       <div
         aria-hidden
-        className="fixed inset-0 md:hidden pointer-events-none"
+        className="mobile-theme-surface fixed inset-0 md:hidden pointer-events-none"
         style={{
           zIndex: 0,
-          background:
-            'radial-gradient(120% 80% at 50% 0%, #0f1f3a 0%, #0a1528 45%, #050d18 100%)',
         }}
       />
       <div
@@ -1764,12 +1765,34 @@ const TABS:{ id:Tab; label:string }[]=[
       >
         <div
           className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #00d4ff 0%, transparent 65%)' }}
+          style={{ background: 'radial-gradient(circle, var(--m-accent) 0%, transparent 65%)' }}
         />
       </div>
 
       {/* ========== MOBILE (md:hidden) ========== */}
-      <div className="md:hidden w-full relative" style={{ zIndex: 1 }} data-print-area="statistics">
+      <div
+        className={`mobile-statistics ${isMobileDark ? 'is-dark' : 'is-light'} md:hidden w-full relative`}
+        style={{
+          zIndex: 1,
+          ...(!isMobileDark ? {
+            '--stats-bg': '#EDF1F8',
+            '--stats-surface': 'rgba(255, 255, 255, 0.94)',
+            '--stats-surface-2': '#F5F7FB',
+            '--stats-surface-3': '#FFFFFF',
+            '--stats-surface-hover': '#F1F5FA',
+            '--stats-surface-active': '#E8EEF7',
+            '--stats-border': '#D7E1EE',
+            '--stats-border-hover': '#C5D3E4',
+            '--stats-border-active': '#AFC1D8',
+            '--stats-text': '#33415F',
+            '--stats-text-strong': '#17233F',
+            '--stats-muted': '#687792',
+            '--stats-faint': '#8795AB',
+            '--stats-ghost': '#E5EBF3',
+          } as React.CSSProperties : {}),
+        }}
+        data-print-area="statistics"
+      >
         {/* ── Print-only hlavička pro mobilní export ── */}
         <div className="print-only mb-4" style={{ pageBreakAfter: 'avoid' }}>
           <div className="flex items-baseline justify-between border-b-2 border-black pb-2 mb-2">
@@ -1787,10 +1810,26 @@ const TABS:{ id:Tab; label:string }[]=[
 
         <div className="flex flex-col gap-5 print-section">
           <div className="print-hide">
-            <MobileHeader
-              kicker="Statistiky"
-              title="Provozní přehled"
-            />
+            <MobileModuleHeader kicker="Statistiky" title="Provozní přehled">
+              <MobileHeaderMetrics
+                items={[
+                  {
+                    label: 'Využití',
+                    value: avgUtil,
+                    suffix: '%',
+                    color: C.green,
+                    icon: <Activity className="w-5 h-5" strokeWidth={2.2} />,
+                  },
+                  {
+                    label: 'Výkony',
+                    value: totalOps,
+                    suffix: 'celkem',
+                    color: C.accent,
+                    icon: <BarChart3 className="w-5 h-5" strokeWidth={2.2} />,
+                  },
+                ]}
+              />
+            </MobileModuleHeader>
           </div>
 
           {/* Export buttons (mobile) */}

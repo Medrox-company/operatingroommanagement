@@ -23,6 +23,8 @@ import {
 import { fetchAllStaff, StaffRow } from '../lib/db';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { useHospital } from '../contexts/HospitalContext';
+import { MobileHeaderMetrics, MobileModuleHeader } from './mobile/MobileShell';
+import { useIsMobileDark } from '../hooks/useIsMobileDark';
 
 interface RoomWithStaff {
   id: string;
@@ -145,7 +147,7 @@ const RoomNetworkCard: React.FC<{
     <motion.button
       type="button"
       onClick={onSelect}
-      className="group relative w-full min-h-[154px] rounded-[22px] p-3 text-left overflow-hidden font-sans focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+      className="mobile-staff-room-card group relative w-full min-h-[154px] rounded-[22px] p-3 text-left overflow-hidden font-sans focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
       style={{
         background: isSelected
           ? `linear-gradient(125deg, ${accent}16 0%, rgba(54,217,236,0.035) 55%, rgba(251,191,36,0.025) 100%)`
@@ -280,6 +282,7 @@ const AvailablePerson: React.FC<{ staff: StaffRow }> = ({ staff }) => {
 };
 
 const StaffOverviewModule: React.FC = () => {
+  const isMobileDark = useIsMobileDark();
   const { activeHospitalId } = useHospital();
   const [staffList, setStaffList] = useState<StaffRow[]>([]);
   const [rooms, setRooms] = useState<RoomWithStaff[]>([]);
@@ -420,8 +423,39 @@ const StaffOverviewModule: React.FC = () => {
   }), [availableStaff]);
 
   return (
-    <div className="w-full min-h-full pb-8 font-sans">
-      <header className="mb-7 space-y-3">
+    <div
+      className={`mobile-staff-overview ${isMobileDark ? 'is-dark' : 'is-light'} relative w-full min-h-full pb-8 font-sans`}
+      style={{ zIndex: 1 }}
+    >
+      <div
+        aria-hidden
+        className="mobile-theme-surface fixed inset-0 md:hidden pointer-events-none"
+        style={{ zIndex: -1 }}
+      />
+      <div className="md:hidden mb-5">
+        <MobileModuleHeader kicker="Živý operační program" title="Přehled personálu">
+          <MobileHeaderMetrics
+            items={[
+              {
+                label: 'V provozu',
+                value: stats.activeRooms,
+                suffix: 'sálů',
+                color: COLORS.cyan,
+                icon: <Activity className="w-5 h-5" strokeWidth={2.2} />,
+              },
+              {
+                label: 'Chybí obsadit',
+                value: stats.missingSlots,
+                suffix: 'pozic',
+                color: stats.missingSlots ? COLORS.red : COLORS.green,
+                icon: <AlertTriangle className="w-5 h-5" strokeWidth={2.2} />,
+              },
+            ]}
+          />
+        </MobileModuleHeader>
+      </div>
+
+      <header className="hidden md:block mb-7 space-y-3">
         <div className="flex items-center gap-3">
           <Users className="w-4 h-4 text-[#FBBF24]" />
           <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">REAL-TIME OVERVIEW</p>
@@ -444,7 +478,7 @@ const StaffOverviewModule: React.FC = () => {
       </header>
 
       <section
-        className="relative rounded-[26px] p-2.5 mb-4 overflow-hidden"
+        className="hidden md:block relative rounded-[26px] p-2.5 mb-4 overflow-hidden"
         style={{
           background: 'rgba(255,255,255,0.024)',
           border: '1px solid rgba(125,165,185,0.18)',
@@ -483,7 +517,7 @@ const StaffOverviewModule: React.FC = () => {
       </section>
 
       <section
-        className="rounded-[22px] p-2 mb-5 flex flex-col xl:flex-row xl:items-center gap-2"
+        className="mobile-staff-panel rounded-[22px] p-2 mb-5 flex flex-col xl:flex-row xl:items-center gap-2"
         style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
       >
         <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
@@ -501,7 +535,7 @@ const StaffOverviewModule: React.FC = () => {
                 className="h-9 px-3 rounded-xl flex items-center gap-2 text-xs font-semibold whitespace-nowrap transition-colors"
                 style={active
                   ? { background: 'rgba(54,217,236,0.12)', color: COLORS.cyan, border: '1px solid rgba(54,217,236,0.22)' }
-                  : { color: 'rgba(255,255,255,0.42)', border: '1px solid transparent' }}
+                  : { color: isMobileDark ? 'rgba(255,255,255,0.42)' : 'var(--m-muted)', border: '1px solid transparent' }}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {label}
@@ -519,6 +553,7 @@ const StaffOverviewModule: React.FC = () => {
               onChange={event => setDepartment(event.target.value)}
               aria-label="Filtrovat podle oddělení"
               className="h-9 min-w-[160px] px-3 rounded-xl bg-white/[0.025] border border-white/[0.07] text-xs font-semibold text-white/60 focus:outline-none focus:border-cyan-300/35"
+              style={!isMobileDark ? { background: 'var(--m-card-2)', borderColor: 'var(--m-border)', color: 'var(--m-text)' } : undefined}
             >
               <option value="all" className="bg-slate-950">Všechna oddělení</option>
               {departments.map(item => (
@@ -534,6 +569,7 @@ const StaffOverviewModule: React.FC = () => {
               onChange={event => setSearch(event.target.value)}
               placeholder="Hledat sál nebo člena týmu…"
               className="w-full h-9 pl-10 pr-10 rounded-xl bg-white/[0.025] border border-white/[0.07] text-xs font-semibold text-white/85 placeholder:text-white/24 focus:outline-none focus:border-cyan-300/35"
+              style={!isMobileDark ? { background: 'var(--m-card-2)', borderColor: 'var(--m-border)', color: 'var(--m-text)' } : undefined}
             />
             {search && (
               <button
@@ -569,7 +605,7 @@ const StaffOverviewModule: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_290px] gap-5 items-start">
           <section
-            className="relative rounded-[28px] p-3 sm:p-4 overflow-hidden"
+            className="mobile-staff-panel relative rounded-[28px] p-3 sm:p-4 overflow-hidden"
             style={{
               background: 'linear-gradient(180deg, rgba(5,16,25,0.56) 0%, rgba(5,11,18,0.32) 100%)',
               border: '1px solid rgba(125,165,185,0.15)',
@@ -637,7 +673,7 @@ const StaffOverviewModule: React.FC = () => {
 
           <aside className="xl:sticky xl:top-4 space-y-4">
             <section
-              className="rounded-[26px] p-4 overflow-hidden"
+              className="mobile-staff-panel rounded-[26px] p-4 overflow-hidden"
               style={{
                 background: 'linear-gradient(155deg, rgba(54,217,236,0.08), rgba(255,255,255,0.018) 48%, rgba(251,191,36,0.045))',
                 border: '1px solid rgba(54,217,236,0.17)',
@@ -689,7 +725,7 @@ const StaffOverviewModule: React.FC = () => {
             </section>
 
             <section
-              className="rounded-[22px] p-4"
+              className="mobile-staff-panel rounded-[22px] p-4"
               style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.13)' }}
             >
               <div className="flex items-center gap-2 mb-3">

@@ -4,8 +4,9 @@ import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { OperatingRoom } from '../../types';
 import {
-  MobileHeader,
   MobileCard,
+  MobileHeaderMetrics,
+  MobileModuleHeader,
   MobilePillTabs,
   MobileSectionLabel,
 } from './MobileShell';
@@ -28,7 +29,7 @@ const C = {
   orange: '#EA8A2C',
   red: '#E5484D',
   purple: '#8B5CF6',
-  surface: '#FFFFFF',
+  surface: 'var(--m-card-solid)',
   surface2: 'var(--m-bg)',
   border: 'var(--m-border)',
   borderHover: 'var(--m-border)',
@@ -145,13 +146,22 @@ const MobileTimelineView: React.FC<Props> = ({
       : []),
   ];
 
+  const headerMetrics = kpis.map(kpi => {
+    const Icon = kpi.icon;
+    return {
+      label: kpi.label,
+      value: kpi.value,
+      color: kpi.color,
+      icon: <Icon className="w-5 h-5" strokeWidth={2.2} />,
+    };
+  });
+
   return (
     <>
-      {/* Mobile background — světlý podklad shodný s detailem sálu */}
       <div
         aria-hidden
-        className="fixed inset-0 md:hidden pointer-events-none"
-        style={{ zIndex: 0, background: 'var(--m-bg)' }}
+        className="mobile-theme-surface fixed inset-0 md:hidden pointer-events-none"
+        style={{ zIndex: 0 }}
       />
 
       <div
@@ -165,9 +175,7 @@ const MobileTimelineView: React.FC<Props> = ({
           className="flex flex-col gap-5 px-4"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}
         >
-        <section className="timeline-mobile-hero rounded-[28px] p-4">
-        {/* Header */}
-        <MobileHeader
+        <MobileModuleHeader
           kicker="Živý operační program"
           title="Operační timeline"
           right={
@@ -185,44 +193,9 @@ const MobileTimelineView: React.FC<Props> = ({
               </p>
             </div>
           }
-        />
-
-        {/* KPI grid — skutečný provozní souhrn bez horizontálního ořezu */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          {kpis.map((k, idx) => {
-            const Icon = k.icon;
-            return (
-              <motion.div
-                key={k.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="timeline-mobile-metric flex items-center gap-2.5 rounded-2xl px-3 py-2.5"
-                style={{
-                  background: `linear-gradient(135deg, ${k.color}13 0%, ${C.surface} 100%)`,
-                  border: `1px solid ${k.color}24`,
-                }}
-              >
-                <div
-                  className="w-8 h-8 rounded-[11px] flex items-center justify-center shrink-0"
-                  style={{ 
-                    background: `${k.color}17`,
-                    border: `1px solid ${k.color}28`,
-                  }}
-                >
-                  <Icon className="w-4 h-4" style={{ color: k.color }} strokeWidth={2.25} />
-                </div>
-                <div className="min-w-0 leading-tight">
-                  <p className="text-[9px] uppercase tracking-[0.2em] font-semibold" style={{ color: C.muted }}>
-                    {k.label}
-                  </p>
-                  <p className="text-lg font-bold tabular-nums" style={{ color: k.color }}>{k.value}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-        </section>
+        >
+          <MobileHeaderMetrics items={headerMetrics} />
+        </MobileModuleHeader>
 
         {/* Toggle Seznam / Osa */}
         <MobilePillTabs
@@ -321,7 +294,7 @@ const MobileTimelineView: React.FC<Props> = ({
                       {room.isPaused && !room.isEmergency && !room.isLocked && (
                         <span
                           className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                          style={{ background: '#DDF7FA', color: '#176777', border: '1px solid #A9E8EE' }}
+                          style={{ background: 'var(--m-accent-soft)', color: 'var(--m-accent)', border: '1px solid var(--m-border)' }}
                         >
                           Pauza
                         </span>

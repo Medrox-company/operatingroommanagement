@@ -16,8 +16,9 @@ import {
   Plus,
 } from 'lucide-react';
 import {
-  MobileHeader,
   MobileCard,
+  MobileHeaderMetrics,
+  MobileModuleHeader,
   MobilePillTabs,
   MobileSectionLabel,
   MobileSearchInput,
@@ -122,18 +123,16 @@ const MobileStaffView: React.FC<Props> = ({
 
   return (
     <>
-      {/* Mobile background — světlý podklad shodný s detailem sálu */}
       <div
         aria-hidden
-        className="fixed inset-0 md:hidden pointer-events-none"
-        style={{ zIndex: 0, background: 'var(--m-bg)' }}
+        className="mobile-theme-surface fixed inset-0 md:hidden pointer-events-none"
+        style={{ zIndex: 0 }}
       />
 
       <div className="md:hidden w-full relative" style={{ zIndex: 1 }}>
         <div className="flex flex-col gap-5">
-        {/* Header */}
-        <MobileHeader
-          kicker="Personál"
+        <MobileModuleHeader
+          kicker="Živý operační program"
           title="Tým a dostupnost"
           right={
             <button
@@ -149,7 +148,24 @@ const MobileStaffView: React.FC<Props> = ({
               <Plus className="w-4.5 h-4.5" strokeWidth={2.25} />
             </button>
           }
-        />
+        >
+          <MobileHeaderMetrics
+            items={[
+              {
+                label: 'Lékaři',
+                value: counts.doctors,
+                color: '#8B5CF6',
+                icon: <Stethoscope className="w-5 h-5" strokeWidth={2.2} />,
+              },
+              {
+                label: 'Sestry',
+                value: counts.nurses,
+                color: '#10B981',
+                icon: <Heart className="w-5 h-5" strokeWidth={2.2} />,
+              },
+            ]}
+          />
+        </MobileModuleHeader>
 
         {/* KPI */}
         <div className="grid grid-cols-3 gap-2">
@@ -367,7 +383,7 @@ const MobileStaffView: React.FC<Props> = ({
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-1.5" style={{ color: 'var(--m-faint)' }}>
                   Poznámky
                 </p>
-                <p className="text-sm leading-relaxed" style={{ color: '#41506B' }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--m-muted)' }}>
                   {sheetStaff.notes}
                 </p>
               </div>
@@ -453,7 +469,7 @@ const FlagPill: React.FC<{
   <span
     className="text-[11px] font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5"
     style={{
-      background: active ? `${color}1a` : '#FFFFFF',
+      background: active ? `${color}1a` : 'var(--m-card)',
       border: `1px solid ${active ? `${color}44` : 'var(--m-border)'}`,
       color: active ? color : 'var(--m-faint)',
     }}

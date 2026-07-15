@@ -3,6 +3,8 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { OperatingRoom } from '../../types';
+import { Activity, Workflow } from 'lucide-react';
+import { MobileHeaderMetrics, MobileModuleHeader } from './MobileShell';
 
 /* =============================================================================
    MobileFlowView — „Tok pacienta" (mobil)
@@ -90,11 +92,14 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
 
   const visible = filter === 'all' ? flowRooms : flowRooms.filter(r => r.id === filter);
   const expanded = expandedId ?? visible[0]?.id ?? null;
+  const activeCount = flowRooms.filter(room => {
+    const { currentIdx } = buildFlow(room);
+    return currentIdx >= 0 && currentIdx < 3;
+  }).length;
 
   return (
     <>
-      {/* Světlý podklad */}
-      <div aria-hidden className="fixed inset-0 md:hidden pointer-events-none" style={{ zIndex: 0, background: 'var(--m-bg)' }} />
+      <div aria-hidden className="mobile-theme-surface fixed inset-0 md:hidden pointer-events-none" style={{ zIndex: 0 }} />
 
       <div
         className="md:hidden h-full w-full overflow-y-auto hide-scrollbar relative"
@@ -104,11 +109,26 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
           className="flex flex-col gap-4 px-4"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}
         >
-          {/* Titulek */}
-          <h1 className="flex items-center gap-2.5 text-[22px] font-extrabold uppercase tracking-tight leading-none" style={{ color: NAVY }}>
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: GREEN }} />
-            Tok pacienta
-          </h1>
+          <MobileModuleHeader kicker="Živý operační program" title="Tok pacienta">
+            <MobileHeaderMetrics
+              items={[
+                {
+                  label: 'Aktivní',
+                  value: activeCount,
+                  suffix: 'pacientů',
+                  color: GREEN,
+                  icon: <Activity className="w-5 h-5" strokeWidth={2.2} />,
+                },
+                {
+                  label: 'Sledováno',
+                  value: flowRooms.length,
+                  suffix: 'sálů',
+                  color: BLUE,
+                  icon: <Workflow className="w-5 h-5" strokeWidth={2.2} />,
+                },
+              ]}
+            />
+          </MobileModuleHeader>
 
           {/* Filtr pilulky — horizontální scroll */}
           <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-1">
@@ -121,7 +141,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                   className="shrink-0 h-9 px-4 rounded-full text-[12px] font-bold whitespace-nowrap transition-colors"
                   style={active
                     ? { background: 'var(--m-accent)', color: '#FFFFFF' }
-                    : { background: 'var(--m-card)', color: NAVY, border: '1px solid #DCE4F0' }}
+                    : { background: 'var(--m-card)', color: NAVY, border: '1px solid var(--m-border)' }}
                 >
                   {p.label}
                 </button>
@@ -144,8 +164,8 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                   className="rounded-[18px] overflow-hidden"
                   style={{
                     background: 'var(--m-card)',
-                    boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
-                    border: isOpen ? '1px solid #C9D8F2' : '1px solid transparent',
+                    boxShadow: 'var(--m-card-shadow)',
+                    border: isOpen ? '1px solid var(--m-accent)' : '1px solid var(--m-border)',
                   }}
                 >
                   {/* Hlavička karty */}

@@ -47,7 +47,8 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
         style={{
           background: 'var(--m-nav-bg)',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
-          boxShadow: '0 -8px 24px rgba(0,0,0,0.25)',
+          boxShadow: '0 -12px 34px rgba(0,0,0,0.28), inset 0 1px 0 var(--m-card-highlight)',
+          borderTop: '1px solid var(--m-border)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
         }}

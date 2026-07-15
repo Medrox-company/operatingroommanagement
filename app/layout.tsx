@@ -40,6 +40,11 @@ export default function RootLayout({
   return (
     <html lang="cs" className="bg-background">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{if(localStorage.getItem('or-mobile-theme')==='dark')document.documentElement.classList.add('m-dark')}catch(e){}",
+          }}
+        />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

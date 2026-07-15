@@ -2,7 +2,8 @@
 
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Moon, Sun, X } from 'lucide-react';
+import { useMobileTheme } from '../../hooks/useIsMobileDark';
 
 /* =============================================================================
    Mobile Shell — sdílené primitivy pro mobilní redesign modulů
@@ -43,18 +44,104 @@ export const MobileHeader: React.FC<{
   kicker: string;
   title: string;
   right?: React.ReactNode;
-}> = ({ kicker, title, right }) => (
-  <header className="flex items-end justify-between gap-4">
+  embedded?: boolean;
+  showThemeToggle?: boolean;
+}> = ({ kicker, title, right, embedded = false, showThemeToggle = true }) => (
+  <header className={`${embedded ? '' : 'mobile-module-header mobile-glass-card rounded-[24px] px-5 py-4'} flex items-center justify-between gap-4`}>
     <div className="min-w-0">
-      <p className="text-[11px] font-semibold leading-none" style={{ color: 'var(--m-muted)' }}>
+      <p className="text-[10px] font-bold uppercase tracking-[0.22em] leading-none" style={{ color: 'var(--m-muted)' }}>
         {kicker}
       </p>
-      <h1 className="text-[22px] font-extrabold uppercase tracking-tight mt-2 leading-none text-balance" style={{ color: 'var(--m-text-strong)' }}>
+      <h1 className="text-[clamp(19px,5.8vw,24px)] font-extrabold uppercase tracking-tight mt-2 leading-[1.05] text-balance" style={{ color: 'var(--m-text-strong)' }}>
         {title}
       </h1>
     </div>
-    {right && <div className="shrink-0 flex items-center gap-2">{right}</div>}
+    {(right || showThemeToggle) && (
+      <div className="shrink-0 flex items-center gap-2">
+        {right}
+        {showThemeToggle && <MobileThemeToggle />}
+      </div>
+    )}
   </header>
+);
+
+export const MobileThemeToggle: React.FC<{ className?: string }> = ({ className = '' }) => {
+  const { isDark, toggle } = useMobileTheme();
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={isDark ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'}
+      aria-pressed={isDark}
+      className={`w-10 h-10 rounded-[14px] flex items-center justify-center active:scale-95 transition-transform ${className}`}
+      style={{
+        color: 'var(--m-text)',
+        background: 'var(--m-card-2)',
+        border: '1px solid var(--m-border)',
+        boxShadow: 'inset 0 1px 0 var(--m-card-highlight)',
+      }}
+    >
+      {isDark
+        ? <Sun className="w-[18px] h-[18px]" strokeWidth={2.1} />
+        : <Moon className="w-[18px] h-[18px]" strokeWidth={2.1} />}
+    </button>
+  );
+};
+
+export const MobileModuleHeader: React.FC<{
+  kicker: string;
+  title: string;
+  right?: React.ReactNode;
+  children?: React.ReactNode;
+  className?: string;
+}> = ({ kicker, title, right, children, className = '' }) => (
+  <section className={`timeline-mobile-hero mobile-glass-card rounded-[28px] p-4 ${className}`}>
+    <MobileHeader embedded kicker={kicker} title={title} right={right} />
+    {children && <div className="mt-4">{children}</div>}
+  </section>
+);
+
+export interface MobileHeaderMetric {
+  label: string;
+  value: React.ReactNode;
+  suffix?: string;
+  color: string;
+  icon: React.ReactNode;
+}
+
+export const MobileHeaderMetrics: React.FC<{
+  items: MobileHeaderMetric[];
+}> = ({ items }) => (
+  <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2.5">
+    {items.map(item => (
+      <div
+        key={item.label}
+        className="rounded-[18px] px-3.5 py-3.5 flex items-center gap-3 min-w-0"
+        style={{
+          background: `linear-gradient(135deg, ${item.color}12 0%, var(--m-card-solid) 100%)`,
+          border: `1px solid ${item.color}24`,
+          boxShadow: 'inset 0 1px 0 var(--m-card-highlight)',
+        }}
+      >
+        <span
+          className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0"
+          style={{ background: `${item.color}18`, border: `1px solid ${item.color}30`, color: item.color }}
+        >
+          {item.icon}
+        </span>
+        <div className="min-w-0">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] truncate" style={{ color: 'var(--m-faint)' }}>
+            {item.label}
+          </p>
+          <p className="mt-0.5 leading-none whitespace-nowrap">
+            <span className="text-[22px] font-extrabold tabular-nums" style={{ color: item.color }}>{item.value}</span>
+            {item.suffix && <span className="ml-1.5 text-[12px] font-medium" style={{ color: 'var(--m-muted)' }}>{item.suffix}</span>}
+          </p>
+        </div>
+      </div>
+    ))}
+  </div>
 );
 
 /**
@@ -71,17 +158,17 @@ export const MobileCard: React.FC<{
   const style: React.CSSProperties = {
     // Světlý medicínský styl — bílá karta, jemný stín, volitelný barevný tint
     background: accent
-      ? `linear-gradient(135deg, ${accent}14 0%, var(--m-card-solid) 55%)`
-      : '#FFFFFF',
-    border: `1px solid ${accent ? `${accent}33` : 'transparent'}`,
-    boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
+      ? `linear-gradient(135deg, ${accent}18 0%, var(--m-card-solid) 58%)`
+      : 'var(--m-card)',
+    border: `1px solid ${accent ? `${accent}44` : 'var(--m-border)'}`,
+    boxShadow: 'var(--m-card-shadow)',
   };
 
   if (as === 'button' || onClick) {
     return (
       <button
         onClick={onClick}
-        className={`w-full text-left rounded-3xl p-5 outline-none select-none active:scale-[0.99] transition-transform ${className}`}
+        className={`mobile-glass-card w-full text-left rounded-3xl p-5 outline-none select-none active:scale-[0.99] transition-transform ${className}`}
         style={style}
       >
         {children}
@@ -89,7 +176,7 @@ export const MobileCard: React.FC<{
     );
   }
   return (
-    <div className={`rounded-3xl p-5 ${className}`} style={style}>
+    <div className={`mobile-glass-card rounded-3xl p-5 ${className}`} style={style}>
       {children}
     </div>
   );

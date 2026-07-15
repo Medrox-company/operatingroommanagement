@@ -14,6 +14,7 @@ import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
 import { useHospital } from '../contexts/HospitalContext';
+import { MobileThemeToggle } from './mobile/MobileShell';
 
 // Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
 const formatElapsed = (totalSeconds: number): string => {
@@ -81,6 +82,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
   const [phaseStartTime, setPhaseStartTime] = useState(() => resolvePhaseStartTime(room));
   const [elapsedTime, setElapsedTime] = useState('00:00');
+  const [liveNowMs, setLiveNowMs] = useState(() => Date.now());
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
   const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
   const [showEndTime, setShowEndTime] = useState(false);
@@ -141,6 +143,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     
     const updateElapsedTime = () => {
       const now = new Date();
+      setLiveNowMs(now.getTime());
       const diff = now.getTime() - phaseStartTime.getTime();
       const totalSeconds = Math.floor(diff / 1000);
       setElapsedTime(formatElapsed(totalSeconds));
@@ -279,6 +282,67 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const validStepCount = activeDbStatuses.length > 0 ? activeDbStatuses.length : 1;
   const isFinalStep = activeDbStatuses.length > 0 && safeStepIndex === activeDbStatuses.length - 1;
   const isInteractionBlocked = isPaused || (room.isLocked && isFinalStep);
+
+  // Reálné procentuální zastoupení fází aktuálního cyklu. Historické úseky
+  // končí začátkem následující fáze, poslední aktivní úsek průběžně roste.
+  const livePhaseShares = useMemo(() => {
+    if (activeDbStatuses.length === 0) return [];
+
+    const history = (room.statusHistory || [])
+      .map(segment => ({ ...segment, startedMs: new Date(segment.startedAt).getTime() }))
+      .filter(segment => Number.isFinite(segment.startedMs))
+      .sort((a, b) => a.startedMs - b.startedMs);
+
+    let cycleStart = 0;
+    for (let index = history.length - 1; index >= 0; index -= 1) {
+      if (history[index].stepIndex === 0) {
+        cycleStart = index;
+        break;
+      }
+    }
+
+    const cycle = history.slice(cycleStart);
+    const durations = new Array(activeDbStatuses.length).fill(0) as number[];
+
+    cycle.forEach((segment, index) => {
+      if (segment.stepIndex < 0 || segment.stepIndex >= durations.length) return;
+      const nextStart = cycle[index + 1]?.startedMs;
+      const endMs = Number.isFinite(nextStart) ? nextStart : liveNowMs;
+      durations[segment.stepIndex] += Math.max(0, endMs - segment.startedMs);
+    });
+
+    // Při chybějícím nebo opožděném realtime záznamu stále zobrazujeme
+    // aktuální fázi z lokálního phaseStartedAt.
+    const latestCycleSegment = cycle[cycle.length - 1];
+    if (!latestCycleSegment || latestCycleSegment.stepIndex !== safeStepIndex) {
+      durations[safeStepIndex] += Math.max(0, liveNowMs - phaseStartTime.getTime());
+    }
+
+    let totalMs = durations.reduce((sum, duration) => sum + duration, 0);
+    if (totalMs <= 0) {
+      durations[safeStepIndex] = 1;
+      totalMs = 1;
+    }
+
+    const rawPercentages = durations.map(duration => (duration / totalMs) * 100);
+    const percentages = rawPercentages.map(value => Math.floor(value));
+    let remainingPoints = 100 - percentages.reduce((sum, value) => sum + value, 0);
+    rawPercentages
+      .map((value, index) => ({ index, remainder: value - Math.floor(value) }))
+      .sort((a, b) => b.remainder - a.remainder)
+      .forEach(item => {
+        if (remainingPoints <= 0) return;
+        percentages[item.index] += 1;
+        remainingPoints -= 1;
+      });
+
+    return activeDbStatuses.map((status, index) => ({
+      name: status.title || status.name || `Fáze ${index + 1}`,
+      color: status.color || '#8B5CF6',
+      percentage: percentages[index],
+      isActive: index === safeStepIndex,
+    }));
+  }, [activeDbStatuses, liveNowMs, phaseStartTime, room.statusHistory, safeStepIndex]);
   
   // Don't show time only for "Sal priprav*" status (ASCII-safe)
   // Normalize string to remove diacritics for comparison
@@ -603,8 +667,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
       {/* ========== MOBILE LAYOUT (md:hidden) — světlý design dle předlohy ========== */}
       <div
-        className="flex md:hidden w-full h-full flex-col relative overflow-hidden"
-        style={{ background: 'var(--m-bg)' }}
+        className="mobile-room-detail flex md:hidden w-full h-full flex-col relative overflow-hidden"
+        style={{ background: 'var(--m-page-bg)' }}
       >
 
         {/* Content */}
@@ -616,7 +680,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           }}
         >
           {/* Header — zpět · název + podtitul · zvonek s badge */}
-          <div className="flex items-center gap-3.5 mb-6">
+          <div className="mobile-room-detail-header flex items-center gap-3.5 mb-6">
             <button
               onClick={onClose}
               className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
@@ -624,14 +688,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             >
               <ArrowLeft className="w-[19px] h-[19px]" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
             </button>
-            <div className="flex flex-col flex-1 min-w-0">
-              <h1 className="text-[17px] font-extrabold truncate leading-none" style={{ color: 'var(--m-text)' }}>
-                {room.name}
-              </h1>
-              <p className="text-[12px] font-medium mt-1.5 leading-none" style={{ color: 'var(--m-muted)' }}>
+            <div className="mobile-room-detail-title flex flex-col flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] leading-none" style={{ color: 'var(--m-muted)' }}>
                 Operační sál
               </p>
+              <h1 className="text-[17px] font-extrabold truncate leading-none mt-1.5" style={{ color: 'var(--m-text)' }}>
+                {room.name}
+              </h1>
             </div>
+            <MobileThemeToggle className="shrink-0" />
             <button
               onClick={() => setNotificationOverlayOpen(true)}
               className="relative shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
@@ -639,18 +704,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             >
               <Bell className="w-[19px] h-[19px]" style={{ color: 'var(--m-text)' }} strokeWidth={2} />
               <span
-                className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white"
-                style={{ background: '#E5484D' }}
+                className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2"
+                style={{ background: '#E5484D', borderColor: 'var(--m-card-solid)' }}
               />
             </button>
-          </div>
-
-          {/* Řádek sekce — „Aktuální fáze" vlevo modře, krok vpravo šedě */}
-          <div className="flex items-center justify-between mb-3.5 px-0.5">
-            <h2 className="text-[14px] font-bold" style={{ color: activeColor }}>Aktuální fáze</h2>
-            <span className="text-[13px] font-semibold tabular-nums" style={{ color: 'var(--m-muted)' }}>
-              krok {safeStepIndex + 1} / {validStepCount}
-            </span>
           </div>
 
           {/* Hero „karta" — plná barva fáze, tmavý text (jako VISA karta) */}
@@ -659,13 +716,21 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="rounded-[24px] p-6 mb-5 relative overflow-hidden"
+            className="mobile-room-phase-card rounded-[24px] p-6 mb-5 relative overflow-hidden"
             style={{
               // Pastelový tint v barvě AKTUÁLNÍ FÁZE nad bílým podkladem
-              background: `linear-gradient(135deg, ${activeColor}40 0%, ${activeColor}24 100%), #FFFFFF`,
-              boxShadow: `0 14px 34px ${activeColor}2E`,
+              background: `linear-gradient(135deg, ${activeColor}40 0%, ${activeColor}20 100%), var(--m-card-solid)`,
+              border: `1px solid ${activeColor}4A`,
+              boxShadow: `0 14px 34px ${activeColor}24, var(--m-card-shadow)`,
             }}
           >
+            <div className="mobile-room-phase-meta relative flex items-center justify-between mb-4">
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--m-muted)' }}>Aktuální fáze</h2>
+              <span className="text-[12px] font-semibold tabular-nums" style={{ color: 'var(--m-muted)' }}>
+                <i className="inline-block w-2 h-2 rounded-full mr-2 not-italic" style={{ background: activeColor }} />
+                {safeStepIndex + 1}/{validStepCount}
+              </span>
+            </div>
             <div className="relative flex items-stretch gap-4">
               {/* Levá polovina — název fáze + uplynulý čas */}
               <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
@@ -679,7 +744,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 </p>
 
                 <div className="flex items-center gap-1.5 mt-3">
-                  <Clock className="w-4 h-4" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
+                  <Clock className="mobile-room-elapsed-icon w-4 h-4" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
+                  <span className="mobile-room-elapsed-label hidden text-[13px] font-medium" style={{ color: 'var(--m-muted)' }}>Uplynulo:</span>
                   <span className="text-[16px] font-bold tabular-nums" style={{ color: 'var(--m-text)' }}>
                     {elapsedTime}
                   </span>
@@ -697,7 +763,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   <motion.button
                     onClick={handleNextStep}
                     whileTap={{ scale: 0.97 }}
-                    className="w-1/2 shrink-0 min-h-[128px] rounded-[18px] flex flex-col items-center justify-center gap-2 px-3 py-4 outline-none select-none relative overflow-hidden"
+                    className="mobile-room-next-button w-1/2 shrink-0 min-h-[128px] rounded-[18px] flex flex-col items-center justify-center gap-2 px-3 py-4 outline-none select-none relative overflow-hidden"
                     style={{
                       background: `linear-gradient(150deg, ${activeColor} 0%, ${activeColor}D9 100%)`,
                       boxShadow: `0 14px 30px -8px ${activeColor}80, inset 0 1px 0 rgba(255,255,255,0.28)`,
@@ -710,7 +776,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     />
                     {/* Šipka v bílém kroužku — jemně se posouvá směrem k dalšímu kroku */}
                     <motion.span
-                      className="relative w-12 h-12 rounded-full flex items-center justify-center"
+                      className="mobile-room-next-icon relative w-12 h-12 rounded-full flex items-center justify-center"
                       animate={{ x: [0, 5, 0] }}
                       transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                       style={{
@@ -719,17 +785,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                         boxShadow: '0 4px 14px rgba(23,43,99,0.20)',
                       }}
                     >
-                      <ArrowRight
+                      <Play
                         className="w-6 h-6"
                         style={{ color: ctaText === '#17233F' ? '#FFFFFF' : activeColor }}
                         strokeWidth={2.5}
                       />
                     </motion.span>
-                    <span className="relative text-[14px] font-bold leading-none mt-1" style={{ color: ctaText }}>
+                    <span className="mobile-room-next-label relative text-[14px] font-bold leading-none mt-1" style={{ color: ctaText }}>
                       Další fáze
                     </span>
                     <span
-                      className="relative text-[10.5px] font-medium truncate max-w-full px-1 leading-none"
+                      className="mobile-room-next-label relative text-[10.5px] font-medium truncate max-w-full px-1 leading-none"
                       style={{ color: ctaText, opacity: 0.82 }}
                     >
                       {nextName}
@@ -740,9 +806,50 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             </div>
           </motion.div>
 
+          {/* Reálný podíl jednotlivých fází aktuálního cyklu */}
+          <section className="mobile-room-phase-shares mb-5">
+            <div className="flex items-center justify-between mb-2.5 px-0.5">
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--m-muted)' }}>
+                Zastoupení fází
+              </h2>
+              <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: '#10B981' }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Živě
+              </span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+              {livePhaseShares.map((phase, index) => (
+                <motion.div
+                  key={`${phase.name}-${index}`}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.035 }}
+                  className="mobile-room-phase-share min-w-[68px] flex-1 rounded-[14px] px-2 py-2.5 text-center overflow-hidden relative"
+                  style={{
+                    background: phase.isActive ? `${phase.color}1A` : 'var(--m-card)',
+                    border: `1px solid ${phase.isActive ? `${phase.color}55` : 'var(--m-border)'}`,
+                    boxShadow: phase.isActive ? `0 8px 20px ${phase.color}18` : 'var(--m-card-shadow)',
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-3 top-0 h-[2px] rounded-full"
+                    style={{ background: phase.color, opacity: phase.isActive ? 1 : 0.45 }}
+                  />
+                  <p className="text-[16px] font-extrabold tabular-nums leading-none" style={{ color: phase.isActive ? phase.color : 'var(--m-text-strong)' }}>
+                    {phase.percentage}<span className="text-[9px] ml-0.5">%</span>
+                  </p>
+                  <p className="mt-1.5 text-[7px] font-bold uppercase tracking-[0.08em] truncate" style={{ color: 'var(--m-muted)' }} title={phase.name}>
+                    {phase.name}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
           {/* Odhadovaný konec — bílá karta, modrý čas, kruhová ± */}
           <div
-            className="rounded-[24px] px-5 py-4 mb-6 flex items-center justify-between gap-3"
+            className="mobile-room-estimate-card rounded-[24px] px-5 py-4 mb-6 flex items-center justify-between gap-3"
             style={{ background: 'var(--m-card)', boxShadow: '0 10px 26px rgba(23,43,99,0.07)' }}
           >
             <div className="min-w-0">
@@ -783,7 +890,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           {/* Categories — action tiles section */}
           <div className="mb-6">
             <h2 className="text-[15px] font-bold mb-3.5 px-0.5" style={{ color: 'var(--m-text)' }}>Akce</h2>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 min-[360px]:grid-cols-4 gap-3">
               {/* Pause */}
               <motion.button
                 onClick={async () => {
@@ -802,9 +909,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
+                className="mobile-room-action aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
                 style={{
-                  background: isPaused ? 'var(--m-accent-soft)' : '#FFFFFF',
+                  background: isPaused ? 'var(--m-accent-soft)' : 'var(--m-card)',
                   border: isPaused ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
@@ -821,7 +928,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 </div>
                 <span
                   className="text-[12px] font-semibold tracking-tight leading-tight"
-                  style={{ color: isPaused ? '#2952C8' : '#17233F' }}
+                  style={{ color: isPaused ? 'var(--m-accent)' : 'var(--m-text)' }}
                 >
                   {isPaused ? 'Pokračovat' : 'Pauza'}
                 </span>
@@ -842,9 +949,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
+                className="mobile-room-action aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
                 style={{
-                  background: room.isEnhancedHygiene ? 'var(--m-accent-soft)' : '#FFFFFF',
+                  background: room.isEnhancedHygiene ? 'var(--m-accent-soft)' : 'var(--m-card)',
                   border: room.isEnhancedHygiene ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
@@ -857,7 +964,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 </div>
                 <span
                   className="text-[12px] font-semibold tracking-tight leading-tight"
-                  style={{ color: room.isEnhancedHygiene ? '#2952C8' : '#17233F' }}
+                  style={{ color: room.isEnhancedHygiene ? 'var(--m-accent)' : 'var(--m-text)' }}
                 >
                   Hygiena
                 </span>
@@ -886,9 +993,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 disabled={!!patientCalledTime}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
+                className="mobile-room-action aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
                 style={{
-                  background: patientCalledTime ? 'var(--m-accent-soft)' : '#FFFFFF',
+                  background: patientCalledTime ? 'var(--m-accent-soft)' : 'var(--m-card)',
                   border: patientCalledTime ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
@@ -901,7 +1008,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 </div>
                 <span
                   className="text-[12px] font-semibold tracking-tight tabular-nums leading-tight"
-                  style={{ color: patientCalledTime ? '#2952C8' : '#17233F' }}
+                  style={{ color: patientCalledTime ? 'var(--m-accent)' : 'var(--m-text)' }}
                 >
                   {patientCalledTime ? patientCallElapsedTime : 'Volat'}
                 </span>
@@ -935,9 +1042,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 disabled={!patientCalledTime || !!patientArrivedTime}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
+                className="mobile-room-action aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
                 style={{
-                  background: patientArrivedTime ? 'var(--m-accent-soft)' : '#FFFFFF',
+                  background: patientArrivedTime ? 'var(--m-accent-soft)' : 'var(--m-card)',
                   border: patientArrivedTime ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                   opacity: !patientCalledTime ? 0.55 : 1,
@@ -951,7 +1058,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 </div>
                 <span
                   className="text-[12px] font-semibold tracking-tight leading-tight"
-                  style={{ color: patientArrivedTime ? '#2952C8' : '#17233F' }}
+                  style={{ color: patientArrivedTime ? 'var(--m-accent)' : 'var(--m-text)' }}
                 >
                   Příjezd
                 </span>
@@ -962,7 +1069,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           {/* Staff — bílé řádky se jménem a rolí */}
           <div className="mb-4">
             <h2 className="text-[15px] font-bold mb-3 px-0.5" style={{ color: 'var(--m-text)' }}>Tým</h2>
-            <div className="flex flex-col gap-2.5">
+            <div className="mobile-room-team-grid flex flex-col gap-2.5">
               {([
                 {
                   role: 'doctor' as const,
@@ -983,7 +1090,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     setStaffPickerRole(role);
                     setStaffPickerOpen(true);
                   }}
-                  className="flex items-center gap-3.5 px-4 py-3.5 rounded-[18px] active:scale-[0.99] text-left w-full outline-none select-none transition-all"
+                  className={`mobile-room-team-card mobile-room-team-${role} flex items-center gap-3.5 px-4 py-3.5 rounded-[18px] active:scale-[0.99] text-left w-full outline-none select-none transition-all`}
                   style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
                 >
                   <User className="w-5 h-5 shrink-0" style={{ color: 'var(--m-text)' }} strokeWidth={2} />

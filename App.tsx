@@ -7,6 +7,7 @@ import RoomNoticeComposer from './components/RoomNoticeComposer';
 import MobileNav from './components/MobileNav';
 import RoomCard from './components/RoomCard';
 import PlaceholderView from './components/PlaceholderView';
+import { MobileHeaderMetrics, MobileModuleHeader } from './components/mobile/MobileShell';
 
 // ── Lazy-load těžkých modulů (nejsou výchozí pohled) → menší úvodní bundle,
 //    rychlejší a stabilnější start. Načtou se až při přepnutí na daný modul. ──
@@ -30,7 +31,7 @@ import AnimatedBackground from './components/AnimatedBackground';
 import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { OperatingRoom, WeeklySchedule } from './types';
-import { Activity, LayoutGrid, Shield, AlertTriangle, Lock, Bell, CalendarDays, ChevronRight, Moon, Sun } from 'lucide-react';
+import { Activity, LayoutGrid, Shield, AlertTriangle, Lock, Bell } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HospitalProvider, useHospital } from './contexts/HospitalContext';
@@ -71,17 +72,6 @@ const AppContent: React.FC = () => {
   const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
-
-  // ── Mobilní téma (světlé/tmavé) — přepíná CSS proměnné třídou .m-dark na <html> ──
-  const [mobileTheme, setMobileTheme] = useState<'light' | 'dark'>('light');
-  useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('or-mobile-theme') : null;
-    if (saved === 'dark') setMobileTheme('dark');
-  }, []);
-  useEffect(() => {
-    document.documentElement.classList.toggle('m-dark', mobileTheme === 'dark');
-    try { localStorage.setItem('or-mobile-theme', mobileTheme); } catch { /* noop */ }
-  }, [mobileTheme]);
 
   useEffect(() => {
     setDatabaseHospitalId(activeHospitalId);
@@ -554,7 +544,6 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleCloseRoomDetail = useCallback(() => setSelectedRoomId(null), []);
-
   // Stabilní RoomDetail callbacky — používají selectedRoomId přímo (zdroj pravdy), takže
   // se NErecreatují při každém update sálů. Bez useCallbacku se po realtime updatu
   // recreate inline arrow funkce → memo na RoomDetailu by selhal a 1745řádková komponenta
@@ -682,7 +671,7 @@ const AppContent: React.FC = () => {
             {currentView === 'dashboard' && !selectedRoom && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
                 {/* Světlý podklad dashboardu na mobilu — ladí s detailem sálu */}
-                <div aria-hidden className="fixed inset-0 -z-10 md:hidden" style={{ background: 'var(--m-bg)' }} />
+                <div aria-hidden className="mobile-theme-surface fixed inset-0 -z-10 md:hidden" />
                 <div className="max-w-[2400px] mx-auto w-full">
                   {/* ── Mobilní hlavička — dle prototypu: ● OPERAČNÍ SÁLY + zvonek ── */}
                   <div className="md:hidden mb-4">
@@ -694,31 +683,13 @@ const AppContent: React.FC = () => {
                       const noticeM = rooms.filter(r => r.noticeMessage).length + emergencyM;
                       return (
                         <>
-                          <div className="flex items-center justify-between mb-4">
-                            <h1 className="flex items-center gap-2.5 text-[22px] font-extrabold uppercase tracking-tight leading-none" style={{ color: 'var(--m-text-strong)' }}>
-                              <span
-                                className="w-2.5 h-2.5 rounded-full shrink-0"
-                                style={{ background: activeM > 0 ? '#10B981' : 'var(--m-accent)' }}
-                              />
-                              Operační sály
-                            </h1>
-                            <span className="flex items-center gap-2">
-                              {/* Přepínač světlého/tmavého mobilního tématu */}
-                              <button
-                                onClick={() => setMobileTheme(t => (t === 'dark' ? 'light' : 'dark'))}
-                                aria-label={mobileTheme === 'dark' ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'}
-                                className="w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-                                style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
-                              >
-                                {mobileTheme === 'dark' ? (
-                                  <Sun className="w-[19px] h-[19px]" style={{ color: 'var(--m-text-strong)' }} strokeWidth={2} />
-                                ) : (
-                                  <Moon className="w-[19px] h-[19px]" style={{ color: 'var(--m-text-strong)' }} strokeWidth={2} />
-                                )}
-                              </button>
+                          <MobileModuleHeader
+                              kicker="Živý operační program"
+                              title="Operační sály"
+                              right={
                               <span
                                 className="relative w-11 h-11 rounded-full flex items-center justify-center"
-                                style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
+                                style={{ background: 'var(--m-card-2)', border: '1px solid var(--m-border)' }}
                               >
                                 <Bell className="w-[19px] h-[19px]" style={{ color: 'var(--m-text-strong)' }} strokeWidth={2} />
                                 {noticeM > 0 && (
@@ -730,37 +701,25 @@ const AppContent: React.FC = () => {
                                   </span>
                                 )}
                               </span>
-                            </span>
-                          </div>
-                          {/* Stat karty — ikona vlevo, popisek + hodnota (dle prototypu) */}
-                          <div className="grid grid-cols-2 gap-3">
-                            {[
-                              { label: 'AKTIVNÍ', value: activeM, unit: activeM === 1 ? 'v provozu' : 'v provozu', color: 'var(--m-accent)', bg: 'var(--m-accent-soft)', Icon: Activity },
-                              { label: 'PŘIPRAVENO', value: readyM, unit: 'sálů', color: '#10B981', bg: 'rgba(16,185,129,0.15)', Icon: LayoutGrid },
-                            ].map(({ label, value, unit, color, bg, Icon }) => (
-                              <div
-                                key={label}
-                                className="rounded-[18px] px-3.5 py-3.5 flex items-center gap-3"
-                                style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
-                              >
-                                <span
-                                  className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0"
-                                  style={{ background: bg, border: `1px solid ${color}33` }}
-                                >
-                                  <Icon className="w-5 h-5" style={{ color }} strokeWidth={2} />
-                                </span>
-                                <div className="min-w-0">
-                                  <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--m-faint)' }}>
-                                    {label}
-                                  </p>
-                                  <p className="mt-0.5 leading-none">
-                                    <span className="text-[22px] font-extrabold tabular-nums" style={{ color: 'var(--m-text-strong)' }}>{value}</span>{' '}
-                                    <span className="text-[12px] font-medium" style={{ color: 'var(--m-muted)' }}>{unit}</span>
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                              }
+                          >
+                            <MobileHeaderMetrics items={[
+                              {
+                                label: 'Aktivní',
+                                value: activeM,
+                                suffix: 'v provozu',
+                                color: '#9A6CFF',
+                                icon: <Activity className="w-5 h-5" strokeWidth={2} />,
+                              },
+                              {
+                                label: 'Připraveno',
+                                value: readyM,
+                                suffix: 'sálů',
+                                color: '#10B981',
+                                icon: <LayoutGrid className="w-5 h-5" strokeWidth={2} />,
+                              },
+                            ]} />
+                          </MobileModuleHeader>
                         </>
                       );
                     })()}
@@ -829,7 +788,7 @@ const AppContent: React.FC = () => {
                         <p className="text-sm text-[#7C8AA5] md:text-white/40">Načítám operační sály…</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-x-5 md:gap-x-6 sm:gap-y-6 md:gap-y-8">
+                      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-x-5 md:gap-x-6 sm:gap-y-6 md:gap-y-8">
                         {rooms.map((room) => (
                           <RoomCard
                             key={room.id}
@@ -842,40 +801,6 @@ const AppContent: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Banner „Dnešní plán" — mobil, dle prototypu */}
-                    {roomsLoaded && (() => {
-                      const now = new Date();
-                      const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
-                      let ops = 0; let durMs = 0;
-                      rooms.forEach(r => (r.completedOperations || []).forEach(op => {
-                        const s = new Date(op.startedAt).getTime();
-                        const e = new Date(op.endedAt).getTime();
-                        if (Number.isFinite(s) && Number.isFinite(e) && e > s && s >= dayStart.getTime()) {
-                          ops++; durMs += e - s;
-                        }
-                      }));
-                      const avgMin = ops > 0 ? Math.round(durMs / ops / 60000) : 0;
-                      return (
-                        <button
-                          onClick={() => handleNavigate('timeline')}
-                          className="md:hidden mt-4 w-full rounded-[18px] px-4 py-3.5 flex items-center gap-3.5 text-left active:scale-[0.99] transition-transform"
-                          style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
-                        >
-                          <span className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0" style={{ background: 'var(--m-accent-soft)' }}>
-                            <CalendarDays className="w-5 h-5" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
-                          </span>
-                          <span className="flex-1 min-w-0">
-                            <span className="block text-[14px] font-bold leading-tight" style={{ color: 'var(--m-text-strong)' }}>
-                              Dnešní plán: <span style={{ color: 'var(--m-accent)' }}>{ops} operací</span>
-                            </span>
-                            <span className="block text-[12px] font-medium mt-0.5" style={{ color: 'var(--m-muted)' }}>
-                              Prům. doba operace: <b style={{ color: 'var(--m-text-strong)' }}>{avgMin} min</b>
-                            </span>
-                          </span>
-                          <ChevronRight className="w-5 h-5 shrink-0" style={{ color: 'var(--m-faint)' }} strokeWidth={2.25} />
-                        </button>
-                      );
-                    })()}
                   </div>
                 </div>
               </div>
@@ -883,7 +808,7 @@ const AppContent: React.FC = () => {
 
             {/* Tok pacienta — živý monitorovací modul */}
             {currentView === 'flow' && (
-              <div className="w-full h-full overflow-hidden p-0 md:pl-28 md:pr-6 md:pt-2 md:pb-6 pb-mobile-nav">
+              <div className="w-full h-full overflow-hidden p-0 md:pl-28 md:pr-6 md:pt-2 md:pb-6">
                 <FlowMonitorModule rooms={rooms} />
               </div>
             )}
