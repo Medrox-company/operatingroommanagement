@@ -734,11 +734,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             transition={{ duration: 0.3 }}
             className="mobile-room-phase-card rounded-[24px] p-6 mb-5 relative overflow-hidden"
             style={{
+              '--room-phase-color': activeColor,
               // Pastelový tint v barvě AKTUÁLNÍ FÁZE nad bílým podkladem
               background: `linear-gradient(135deg, ${activeColor}40 0%, ${activeColor}20 100%), var(--m-card-solid)`,
               border: `1px solid ${activeColor}4A`,
               boxShadow: `0 14px 34px ${activeColor}24, var(--m-card-shadow)`,
-            }}
+            } as React.CSSProperties}
           >
             <div className="mobile-room-phase-meta relative flex items-center justify-between mb-4">
               <h2 className="text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--m-muted)' }}>Aktuální fáze</h2>
@@ -747,9 +748,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 {safeStepIndex + 1}/{validStepCount}
               </span>
             </div>
-            <div className="relative flex items-stretch gap-4">
+            <div className="mobile-room-phase-body relative">
               {/* Levá polovina — název fáze + uplynulý čas */}
-              <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
+              <div className="mobile-room-phase-content min-w-0 flex flex-col justify-center py-1">
                 <p className="text-[24px] font-extrabold leading-tight tracking-tight" style={{ color: 'var(--m-text)' }}>
                   {room.isEmergency
                     ? 'Stav nouze'
