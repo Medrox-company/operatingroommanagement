@@ -117,11 +117,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     >
       <div
         aria-hidden
-        className="absolute inset-x-8 top-0 h-[2px] rounded-full"
-        style={{ background: `linear-gradient(90deg, transparent, ${themeColor}CC, transparent)` }}
-      />
-      <div
-        aria-hidden
         className="absolute inset-y-5 left-0 w-[3px] rounded-r-full"
         style={{ background: themeColor, boxShadow: `0 0 16px ${themeColor}80` }}
       />
@@ -273,11 +268,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                 ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
                 : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06] group-hover:border-white/10')}
       `}>
-        {/* Horní akcentní linka v barvě aktuálního stavu — jemný vizuální podpis sálu */}
-        <div
-          className="absolute inset-x-10 top-0 h-[2px] rounded-full transition-opacity duration-500 opacity-60 group-hover:opacity-100"
-          style={{ background: `linear-gradient(to right, transparent, ${themeColor}, transparent)` }}
-        />
         {room.isEmergency && (
           <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
         )}
