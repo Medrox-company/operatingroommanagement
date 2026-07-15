@@ -604,7 +604,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       {/* ========== MOBILE LAYOUT (md:hidden) — světlý design dle předlohy ========== */}
       <div
         className="flex md:hidden w-full h-full flex-col relative overflow-hidden"
-        style={{ background: '#EDF1F8' }}
+        style={{ background: 'var(--m-bg)' }}
       >
 
         {/* Content */}
@@ -620,24 +620,24 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             <button
               onClick={onClose}
               className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-              style={{ background: '#FFFFFF', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
+              style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
             >
-              <ArrowLeft className="w-[19px] h-[19px]" style={{ color: '#17233F' }} strokeWidth={2.25} />
+              <ArrowLeft className="w-[19px] h-[19px]" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
             </button>
             <div className="flex flex-col flex-1 min-w-0">
-              <h1 className="text-[17px] font-extrabold truncate leading-none" style={{ color: '#17233F' }}>
+              <h1 className="text-[17px] font-extrabold truncate leading-none" style={{ color: 'var(--m-text)' }}>
                 {room.name}
               </h1>
-              <p className="text-[12px] font-medium mt-1.5 leading-none" style={{ color: '#7C8AA5' }}>
+              <p className="text-[12px] font-medium mt-1.5 leading-none" style={{ color: 'var(--m-muted)' }}>
                 Operační sál
               </p>
             </div>
             <button
               onClick={() => setNotificationOverlayOpen(true)}
               className="relative shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-              style={{ background: '#FFFFFF', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
+              style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
             >
-              <Bell className="w-[19px] h-[19px]" style={{ color: '#17233F' }} strokeWidth={2} />
+              <Bell className="w-[19px] h-[19px]" style={{ color: 'var(--m-text)' }} strokeWidth={2} />
               <span
                 className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white"
                 style={{ background: '#E5484D' }}
@@ -648,7 +648,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           {/* Řádek sekce — „Aktuální fáze" vlevo modře, krok vpravo šedě */}
           <div className="flex items-center justify-between mb-3.5 px-0.5">
             <h2 className="text-[14px] font-bold" style={{ color: activeColor }}>Aktuální fáze</h2>
-            <span className="text-[13px] font-semibold tabular-nums" style={{ color: '#7C8AA5' }}>
+            <span className="text-[13px] font-semibold tabular-nums" style={{ color: 'var(--m-muted)' }}>
               krok {safeStepIndex + 1} / {validStepCount}
             </span>
           </div>
@@ -669,18 +669,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             <div className="relative flex items-stretch gap-4">
               {/* Levá polovina — název fáze + uplynulý čas */}
               <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
-                <p className="text-[24px] font-extrabold leading-tight tracking-tight" style={{ color: '#17233F' }}>
+                <p className="text-[24px] font-extrabold leading-tight tracking-tight" style={{ color: 'var(--m-text)' }}>
                   {room.isEmergency
                     ? 'Stav nouze'
                     : room.isLocked
                     ? 'Uzamčen'
                     : currentStep?.name || 'Status'}
-                  {isPaused && <span className="text-[14px] font-bold" style={{ color: '#7C8AA5' }}> · Pauza</span>}
+                  {isPaused && <span className="text-[14px] font-bold" style={{ color: 'var(--m-muted)' }}> · Pauza</span>}
                 </p>
 
                 <div className="flex items-center gap-1.5 mt-3">
-                  <Clock className="w-4 h-4" style={{ color: '#17233F' }} strokeWidth={2.25} />
-                  <span className="text-[16px] font-bold tabular-nums" style={{ color: '#17233F' }}>
+                  <Clock className="w-4 h-4" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
+                  <span className="text-[16px] font-bold tabular-nums" style={{ color: 'var(--m-text)' }}>
                     {elapsedTime}
                   </span>
                 </div>
@@ -743,13 +743,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           {/* Odhadovaný konec — bílá karta, modrý čas, kruhová ± */}
           <div
             className="rounded-[24px] px-5 py-4 mb-6 flex items-center justify-between gap-3"
-            style={{ background: '#FFFFFF', boxShadow: '0 10px 26px rgba(23,43,99,0.07)' }}
+            style={{ background: 'var(--m-card)', boxShadow: '0 10px 26px rgba(23,43,99,0.07)' }}
           >
             <div className="min-w-0">
-              <p className="text-[13px] font-medium leading-none" style={{ color: '#7C8AA5' }}>
+              <p className="text-[13px] font-medium leading-none" style={{ color: 'var(--m-muted)' }}>
                 Odhadovaný konec
               </p>
-              <p className="text-[30px] font-extrabold tabular-nums mt-2 leading-none tracking-tight" style={{ color: '#2952C8' }}>
+              <p className="text-[30px] font-extrabold tabular-nums mt-2 leading-none tracking-tight" style={{ color: 'var(--m-accent)' }}>
                 {estimatedEndTime && shouldShowTime
                   ? estimatedEndTime.toLocaleTimeString('cs-CZ', {
                       hour: '2-digit',
@@ -764,25 +764,25 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 disabled={isInteractionBlocked || !estimatedEndTime}
                 whileTap={{ scale: 0.94 }}
                 className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-30 outline-none select-none"
-                style={{ background: '#FFFFFF', border: '1px solid #E1E8F3', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
+                style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
               >
-                <Minus className="w-5 h-5" strokeWidth={2.25} style={{ color: '#17233F' }} />
+                <Minus className="w-5 h-5" strokeWidth={2.25} style={{ color: 'var(--m-text)' }} />
               </motion.button>
               <motion.button
                 onClick={handleIncreaseTime}
                 disabled={isInteractionBlocked}
                 whileTap={{ scale: 0.94 }}
                 className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-30 outline-none select-none"
-                style={{ background: '#FFFFFF', border: '1px solid #E1E8F3', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
+                style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
               >
-                <Plus className="w-5 h-5" strokeWidth={2.25} style={{ color: '#17233F' }} />
+                <Plus className="w-5 h-5" strokeWidth={2.25} style={{ color: 'var(--m-text)' }} />
               </motion.button>
             </div>
           </div>
 
           {/* Categories — action tiles section */}
           <div className="mb-6">
-            <h2 className="text-[15px] font-bold mb-3.5 px-0.5" style={{ color: '#17233F' }}>Akce</h2>
+            <h2 className="text-[15px] font-bold mb-3.5 px-0.5" style={{ color: 'var(--m-text)' }}>Akce</h2>
             <div className="grid grid-cols-4 gap-3">
               {/* Pause */}
               <motion.button
@@ -804,19 +804,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 whileTap={{ scale: 0.96 }}
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
                 style={{
-                  background: isPaused ? '#E7EEFB' : '#FFFFFF',
-                  border: isPaused ? '1px solid rgba(41,82,200,0.45)' : '1px solid transparent',
+                  background: isPaused ? 'var(--m-accent-soft)' : '#FFFFFF',
+                  border: isPaused ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
               >
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: '#EEF3FC', border: '1.5px solid rgba(41,82,200,0.35)' }}
+                  style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
                 >
                   {isPaused ? (
-                    <Play className="w-6 h-6" strokeWidth={2} style={{ color: '#2952C8' }} />
+                    <Play className="w-6 h-6" strokeWidth={2} style={{ color: 'var(--m-accent)' }} />
                   ) : (
-                    <Pause className="w-6 h-6" strokeWidth={2} style={{ color: '#2952C8' }} />
+                    <Pause className="w-6 h-6" strokeWidth={2} style={{ color: 'var(--m-accent)' }} />
                   )}
                 </div>
                 <span
@@ -844,16 +844,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 whileTap={{ scale: 0.96 }}
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
                 style={{
-                  background: room.isEnhancedHygiene ? '#E7EEFB' : '#FFFFFF',
-                  border: room.isEnhancedHygiene ? '1px solid rgba(41,82,200,0.45)' : '1px solid transparent',
+                  background: room.isEnhancedHygiene ? 'var(--m-accent-soft)' : '#FFFFFF',
+                  border: room.isEnhancedHygiene ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
               >
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: '#EEF3FC', border: '1.5px solid rgba(41,82,200,0.35)' }}
+                  style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
                 >
-                  <ShieldAlert className="w-6 h-6" style={{ color: '#2952C8' }} strokeWidth={2} />
+                  <ShieldAlert className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
                 </div>
                 <span
                   className="text-[12px] font-semibold tracking-tight leading-tight"
@@ -888,16 +888,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 whileTap={{ scale: 0.96 }}
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
                 style={{
-                  background: patientCalledTime ? '#E7EEFB' : '#FFFFFF',
-                  border: patientCalledTime ? '1px solid rgba(41,82,200,0.45)' : '1px solid transparent',
+                  background: patientCalledTime ? 'var(--m-accent-soft)' : '#FFFFFF',
+                  border: patientCalledTime ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
               >
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: '#EEF3FC', border: '1.5px solid rgba(41,82,200,0.35)' }}
+                  style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
                 >
-                  <Phone className="w-6 h-6" style={{ color: '#2952C8' }} strokeWidth={2} />
+                  <Phone className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
                 </div>
                 <span
                   className="text-[12px] font-semibold tracking-tight tabular-nums leading-tight"
@@ -937,17 +937,17 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 whileTap={{ scale: 0.96 }}
                 className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
                 style={{
-                  background: patientArrivedTime ? '#E7EEFB' : '#FFFFFF',
-                  border: patientArrivedTime ? '1px solid rgba(41,82,200,0.45)' : '1px solid transparent',
+                  background: patientArrivedTime ? 'var(--m-accent-soft)' : '#FFFFFF',
+                  border: patientArrivedTime ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                   opacity: !patientCalledTime ? 0.55 : 1,
                 }}
               >
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: '#EEF3FC', border: '1.5px solid rgba(41,82,200,0.35)' }}
+                  style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
                 >
-                  <BedDouble className="w-6 h-6" style={{ color: '#2952C8' }} strokeWidth={2} />
+                  <BedDouble className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
                 </div>
                 <span
                   className="text-[12px] font-semibold tracking-tight leading-tight"
@@ -961,7 +961,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
           {/* Staff — bílé řádky se jménem a rolí */}
           <div className="mb-4">
-            <h2 className="text-[15px] font-bold mb-3 px-0.5" style={{ color: '#17233F' }}>Tým</h2>
+            <h2 className="text-[15px] font-bold mb-3 px-0.5" style={{ color: 'var(--m-text)' }}>Tým</h2>
             <div className="flex flex-col gap-2.5">
               {([
                 {
@@ -984,14 +984,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     setStaffPickerOpen(true);
                   }}
                   className="flex items-center gap-3.5 px-4 py-3.5 rounded-[18px] active:scale-[0.99] text-left w-full outline-none select-none transition-all"
-                  style={{ background: '#FFFFFF', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
+                  style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
                 >
-                  <User className="w-5 h-5 shrink-0" style={{ color: '#17233F' }} strokeWidth={2} />
-                  <p className="flex-1 min-w-0 text-[14px] font-bold truncate leading-none" style={{ color: '#17233F' }}>
+                  <User className="w-5 h-5 shrink-0" style={{ color: 'var(--m-text)' }} strokeWidth={2} />
+                  <p className="flex-1 min-w-0 text-[14px] font-bold truncate leading-none" style={{ color: 'var(--m-text)' }}>
                     {name || fallback}
-                    <span className="font-medium" style={{ color: '#7C8AA5' }}> — {label}</span>
+                    <span className="font-medium" style={{ color: 'var(--m-muted)' }}> — {label}</span>
                   </p>
-                  <ChevronRight className="w-4 h-4 shrink-0" style={{ color: '#9AA7BF' }} strokeWidth={2.25} />
+                  <ChevronRight className="w-4 h-4 shrink-0" style={{ color: 'var(--m-faint)' }} strokeWidth={2.25} />
                 </button>
               ))}
             </div>

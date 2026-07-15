@@ -165,7 +165,7 @@ export default function NotificationOverlay({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="md:hidden fixed inset-0 z-[200] flex flex-col overflow-hidden"
-            style={{ background: '#EDF1F8' }}
+            style={{ background: 'var(--m-bg)' }}
           >
             {/* Content */}
             <div
@@ -180,22 +180,22 @@ export default function NotificationOverlay({
                 <button
                   onClick={onClose}
                   className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-                  style={{ background: '#FFFFFF', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
+                  style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
                 >
-                  <ChevronLeft className="w-[19px] h-[19px]" style={{ color: '#17233F' }} strokeWidth={2.25} />
+                  <ChevronLeft className="w-[19px] h-[19px]" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
                 </button>
                 <div className="flex flex-col flex-1 min-w-0">
-                  <h1 className="text-[17px] font-extrabold truncate leading-none" style={{ color: '#17233F' }}>
+                  <h1 className="text-[17px] font-extrabold truncate leading-none" style={{ color: 'var(--m-text)' }}>
                     {roomName}
                   </h1>
-                  <p className="text-[12px] font-medium mt-1.5 leading-none" style={{ color: '#7C8AA5' }}>
+                  <p className="text-[12px] font-medium mt-1.5 leading-none" style={{ color: 'var(--m-muted)' }}>
                     Poslat notifikaci
                   </p>
                 </div>
               </div>
 
               {/* Section label */}
-              <p className="text-[14px] font-bold mb-3 px-0.5" style={{ color: '#2952C8' }}>
+              <p className="text-[14px] font-bold mb-3 px-0.5" style={{ color: 'var(--m-accent)' }}>
                 Typ notifikace
               </p>
 
@@ -218,7 +218,7 @@ export default function NotificationOverlay({
                       whileTap={{ scale: 0.98 }}
                       className="w-full flex items-center gap-4 rounded-[20px] p-4 outline-none select-none transition-all disabled:opacity-60"
                       style={{
-                        background: '#FFFFFF',
+                        background: 'var(--m-card)',
                         boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                         cursor: isDisabled ? 'not-allowed' : 'pointer',
                       }}
@@ -237,14 +237,14 @@ export default function NotificationOverlay({
 
                       {/* Label */}
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="text-[15px] font-bold leading-tight text-balance" style={{ color: '#17233F' }}>
+                        <p className="text-[15px] font-bold leading-tight text-balance" style={{ color: 'var(--m-text)' }}>
                           {label}
                         </p>
                       </div>
 
                       <ChevronRight
                         className="w-5 h-5 shrink-0"
-                        style={{ color: '#9AA7BF' }}
+                        style={{ color: 'var(--m-faint)' }}
                         strokeWidth={2.25}
                       />
                     </motion.button>

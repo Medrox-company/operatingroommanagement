@@ -64,7 +64,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
         className="absolute inset-0 z-[200] flex items-center justify-center overflow-hidden"
       >
         {/* Background — mobil: světlý dle nového designu, desktop: tmavý */}
-        <div className="absolute inset-0 bg-[#EDF1F8] md:bg-black" />
+        <div className="absolute inset-0 step-confirm-bg" />
         <div className="absolute inset-0 hidden md:block bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.95)_100%)]" />
 
         {/* Atmospheric Edge Glows - matching main circle style */}
@@ -93,7 +93,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
             transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className={`text-center ${isShortInterval ? 'mb-5 md:mb-6' : 'mb-12 md:mb-16'}`}
           >
-            <p className="text-[10px] sm:text-[11px] font-bold text-[#7C8AA5] md:text-white/30 tracking-[0.5em] uppercase mb-4">
+            <p className="text-[10px] sm:text-[11px] font-bold step-confirm-muted tracking-[0.5em] uppercase mb-4">
               POTVRZENÍ PŘECHODU
             </p>
             <AnimatePresence mode="wait">
@@ -102,7 +102,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
                 key={pendingStep?.name}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[#17233F] md:text-white"
+                className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight step-confirm-text"
               >
                 {isReset ? 'Nový cyklus' : pendingStep?.name || 'Další fáze'}
               </motion.h2>
@@ -131,12 +131,12 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-600 md:text-amber-200">
                     Neobvykle krátký interval
                   </p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-[#5B6B85] md:text-white/70">
-                    Fáze <span className="font-semibold text-[#17233F] md:text-white">{currentStep?.name || 'aktuální krok'}</span> trvá pouze{' '}
+                  <p className="mt-1.5 text-sm leading-relaxed step-confirm-muted">
+                    Fáze <span className="font-semibold step-confirm-text">{currentStep?.name || 'aktuální krok'}</span> trvá pouze{' '}
                     <span className="font-bold text-amber-600 md:text-amber-200">{elapsedLabel}</span>. To je méně než 5 minut
                     a kratší než nastavený časový průměr tohoto kroku ({averageMinutes} min).
                   </p>
-                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[#5B6B85] md:text-white/55">
+                  <div className="mt-3 flex items-center gap-2 text-xs font-medium step-confirm-muted">
                     <Clock className="w-3.5 h-3.5 text-amber-600/80 md:text-amber-200/80" />
                     Opravdu chcete přejít na další fázi?
                   </div>
@@ -159,7 +159,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
               className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[240px] md:h-[240px] lg:w-[300px] lg:h-[300px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer"
             >
               {/* Světlý disk na mobilu — kruh působí jako bílá karta */}
-              <div className="absolute inset-2 rounded-full bg-white md:bg-transparent shadow-[0_12px_32px_rgba(23,43,99,0.10)] md:shadow-none" />
+              <div className="absolute inset-2 rounded-full step-confirm-disc" />
               {/* Primary Background Glow - matching main circle */}
               <div
                 className="absolute inset-0 rounded-full blur-[100px] transition-all duration-700 opacity-25 group-hover:opacity-40"
@@ -210,7 +210,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
                 >
                   <X className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-[#E5484D] md:text-white/90 md:group-hover:text-white transition-colors duration-300" strokeWidth={1.5} />
                 </motion.div>
-                <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase text-[#41506B] md:text-white/70 md:group-hover:text-white transition-colors duration-300">
+                <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase step-confirm-muted md:group-hover:text-white transition-colors duration-300">
                   Zrušit
                 </span>
               </div>
@@ -227,7 +227,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
               className="relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] md:w-[240px] md:h-[240px] lg:w-[300px] lg:h-[300px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer"
             >
               {/* Světlý disk na mobilu — kruh působí jako bílá karta */}
-              <div className="absolute inset-2 rounded-full bg-white md:bg-transparent shadow-[0_12px_32px_rgba(23,43,99,0.10)] md:shadow-none" />
+              <div className="absolute inset-2 rounded-full step-confirm-disc" />
               {/* Primary Background Glow - matching main circle */}
               <div
                 className="absolute inset-0 rounded-full blur-[100px] transition-all duration-700 opacity-30 group-hover:opacity-50"
@@ -295,7 +295,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </motion.div>
-                <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase text-[#41506B] md:text-white/70 md:group-hover:text-white transition-colors duration-300">
+                <span className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg font-bold tracking-[0.2em] uppercase step-confirm-muted md:group-hover:text-white transition-colors duration-300">
                   Potvrdit
                 </span>
               </div>

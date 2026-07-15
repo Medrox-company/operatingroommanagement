@@ -30,7 +30,7 @@ import AnimatedBackground from './components/AnimatedBackground';
 import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { OperatingRoom, WeeklySchedule } from './types';
-import { Activity, LayoutGrid, Shield, AlertTriangle, Lock, Bell, CalendarDays, ChevronRight } from 'lucide-react';
+import { Activity, LayoutGrid, Shield, AlertTriangle, Lock, Bell, CalendarDays, ChevronRight, Moon, Sun } from 'lucide-react';
 import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HospitalProvider, useHospital } from './contexts/HospitalContext';
@@ -71,6 +71,17 @@ const AppContent: React.FC = () => {
   const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
   const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
+
+  // ── Mobilní téma (světlé/tmavé) — přepíná CSS proměnné třídou .m-dark na <html> ──
+  const [mobileTheme, setMobileTheme] = useState<'light' | 'dark'>('light');
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('or-mobile-theme') : null;
+    if (saved === 'dark') setMobileTheme('dark');
+  }, []);
+  useEffect(() => {
+    document.documentElement.classList.toggle('m-dark', mobileTheme === 'dark');
+    try { localStorage.setItem('or-mobile-theme', mobileTheme); } catch { /* noop */ }
+  }, [mobileTheme]);
 
   useEffect(() => {
     setDatabaseHospitalId(activeHospitalId);
@@ -671,7 +682,7 @@ const AppContent: React.FC = () => {
             {currentView === 'dashboard' && !selectedRoom && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
                 {/* Světlý podklad dashboardu na mobilu — ladí s detailem sálu */}
-                <div aria-hidden className="fixed inset-0 -z-10 md:hidden" style={{ background: '#EDF1F8' }} />
+                <div aria-hidden className="fixed inset-0 -z-10 md:hidden" style={{ background: 'var(--m-bg)' }} />
                 <div className="max-w-[2400px] mx-auto w-full">
                   {/* ── Mobilní hlavička — dle prototypu: ● OPERAČNÍ SÁLY + zvonek ── */}
                   <div className="md:hidden mb-4">
@@ -684,38 +695,53 @@ const AppContent: React.FC = () => {
                       return (
                         <>
                           <div className="flex items-center justify-between mb-4">
-                            <h1 className="flex items-center gap-2.5 text-[22px] font-extrabold uppercase tracking-tight leading-none" style={{ color: '#1E3560' }}>
+                            <h1 className="flex items-center gap-2.5 text-[22px] font-extrabold uppercase tracking-tight leading-none" style={{ color: 'var(--m-text-strong)' }}>
                               <span
                                 className="w-2.5 h-2.5 rounded-full shrink-0"
-                                style={{ background: activeM > 0 ? '#10B981' : '#2952C8' }}
+                                style={{ background: activeM > 0 ? '#10B981' : 'var(--m-accent)' }}
                               />
                               Operační sály
                             </h1>
-                            <span
-                              className="relative w-11 h-11 rounded-full flex items-center justify-center"
-                              style={{ background: '#FFFFFF', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
-                            >
-                              <Bell className="w-[19px] h-[19px]" style={{ color: '#1E3560' }} strokeWidth={2} />
-                              {noticeM > 0 && (
-                                <span
-                                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white"
-                                  style={{ background: '#1E3560' }}
-                                >
-                                  {noticeM}
-                                </span>
-                              )}
+                            <span className="flex items-center gap-2">
+                              {/* Přepínač světlého/tmavého mobilního tématu */}
+                              <button
+                                onClick={() => setMobileTheme(t => (t === 'dark' ? 'light' : 'dark'))}
+                                aria-label={mobileTheme === 'dark' ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'}
+                                className="w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                                style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
+                              >
+                                {mobileTheme === 'dark' ? (
+                                  <Sun className="w-[19px] h-[19px]" style={{ color: 'var(--m-text-strong)' }} strokeWidth={2} />
+                                ) : (
+                                  <Moon className="w-[19px] h-[19px]" style={{ color: 'var(--m-text-strong)' }} strokeWidth={2} />
+                                )}
+                              </button>
+                              <span
+                                className="relative w-11 h-11 rounded-full flex items-center justify-center"
+                                style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
+                              >
+                                <Bell className="w-[19px] h-[19px]" style={{ color: 'var(--m-text-strong)' }} strokeWidth={2} />
+                                {noticeM > 0 && (
+                                  <span
+                                    className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                                    style={{ background: 'var(--m-accent)', border: '2px solid var(--m-bg)' }}
+                                  >
+                                    {noticeM}
+                                  </span>
+                                )}
+                              </span>
                             </span>
                           </div>
                           {/* Stat karty — ikona vlevo, popisek + hodnota (dle prototypu) */}
                           <div className="grid grid-cols-2 gap-3">
                             {[
-                              { label: 'AKTIVNÍ', value: activeM, unit: activeM === 1 ? 'v provozu' : 'v provozu', color: '#2952C8', bg: '#E7EEFB', Icon: Activity },
-                              { label: 'PŘIPRAVENO', value: readyM, unit: 'sálů', color: '#10B981', bg: '#E3F5EE', Icon: LayoutGrid },
+                              { label: 'AKTIVNÍ', value: activeM, unit: activeM === 1 ? 'v provozu' : 'v provozu', color: 'var(--m-accent)', bg: 'var(--m-accent-soft)', Icon: Activity },
+                              { label: 'PŘIPRAVENO', value: readyM, unit: 'sálů', color: '#10B981', bg: 'rgba(16,185,129,0.15)', Icon: LayoutGrid },
                             ].map(({ label, value, unit, color, bg, Icon }) => (
                               <div
                                 key={label}
                                 className="rounded-[18px] px-3.5 py-3.5 flex items-center gap-3"
-                                style={{ background: '#FFFFFF', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
+                                style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
                               >
                                 <span
                                   className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0"
@@ -724,12 +750,12 @@ const AppContent: React.FC = () => {
                                   <Icon className="w-5 h-5" style={{ color }} strokeWidth={2} />
                                 </span>
                                 <div className="min-w-0">
-                                  <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: '#9AA7BF' }}>
+                                  <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--m-faint)' }}>
                                     {label}
                                   </p>
                                   <p className="mt-0.5 leading-none">
-                                    <span className="text-[22px] font-extrabold tabular-nums" style={{ color: '#1E3560' }}>{value}</span>{' '}
-                                    <span className="text-[12px] font-medium" style={{ color: '#7C8AA5' }}>{unit}</span>
+                                    <span className="text-[22px] font-extrabold tabular-nums" style={{ color: 'var(--m-text-strong)' }}>{value}</span>{' '}
+                                    <span className="text-[12px] font-medium" style={{ color: 'var(--m-muted)' }}>{unit}</span>
                                   </p>
                                 </div>
                               </div>
@@ -833,20 +859,20 @@ const AppContent: React.FC = () => {
                         <button
                           onClick={() => handleNavigate('timeline')}
                           className="md:hidden mt-4 w-full rounded-[18px] px-4 py-3.5 flex items-center gap-3.5 text-left active:scale-[0.99] transition-transform"
-                          style={{ background: '#FFFFFF', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
+                          style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
                         >
-                          <span className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0" style={{ background: '#E7EEFB' }}>
-                            <CalendarDays className="w-5 h-5" style={{ color: '#2952C8' }} strokeWidth={2} />
+                          <span className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0" style={{ background: 'var(--m-accent-soft)' }}>
+                            <CalendarDays className="w-5 h-5" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
                           </span>
                           <span className="flex-1 min-w-0">
-                            <span className="block text-[14px] font-bold leading-tight" style={{ color: '#1E3560' }}>
-                              Dnešní plán: <span style={{ color: '#2952C8' }}>{ops} operací</span>
+                            <span className="block text-[14px] font-bold leading-tight" style={{ color: 'var(--m-text-strong)' }}>
+                              Dnešní plán: <span style={{ color: 'var(--m-accent)' }}>{ops} operací</span>
                             </span>
-                            <span className="block text-[12px] font-medium mt-0.5" style={{ color: '#7C8AA5' }}>
-                              Prům. doba operace: <b style={{ color: '#1E3560' }}>{avgMin} min</b>
+                            <span className="block text-[12px] font-medium mt-0.5" style={{ color: 'var(--m-muted)' }}>
+                              Prům. doba operace: <b style={{ color: 'var(--m-text-strong)' }}>{avgMin} min</b>
                             </span>
                           </span>
-                          <ChevronRight className="w-5 h-5 shrink-0" style={{ color: '#9AA7BF' }} strokeWidth={2.25} />
+                          <ChevronRight className="w-5 h-5 shrink-0" style={{ color: 'var(--m-faint)' }} strokeWidth={2.25} />
                         </button>
                       );
                     })()}

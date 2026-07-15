@@ -45,9 +45,11 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
       <nav
         className="pointer-events-auto flex items-start justify-around gap-0.5 px-2 pt-2.5 relative"
         style={{
-          background: '#1E3560',
+          background: 'var(--m-nav-bg)',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
-          boxShadow: '0 -8px 24px rgba(23,43,99,0.25)',
+          boxShadow: '0 -8px 24px rgba(0,0,0,0.25)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
         }}
         aria-label="Hlavní navigace"
       >
@@ -64,18 +66,18 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
               <item.icon
                 className="w-[21px] h-[21px] transition-colors duration-300"
                 strokeWidth={isActive ? 2.5 : 2}
-                style={{ color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.45)' }}
+                style={{ color: isActive ? 'var(--m-nav-active)' : 'var(--m-nav-fg)' }}
                 aria-hidden
               />
               <span
                 className="text-[8px] font-bold uppercase tracking-wider truncate max-w-[64px] transition-colors duration-300"
-                style={{ color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.45)' }}
+                style={{ color: isActive ? 'var(--m-nav-active)' : 'var(--m-nav-fg)' }}
               >
                 {MOBILE_LABELS[item.id] || item.label}
               </span>
               {/* Aktivní indikátor — krátká linka pod položkou */}
               {isActive && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-[3px] rounded-full bg-white" />
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-[3px] rounded-full" style={{ background: 'var(--m-nav-active)' }} />
               )}
             </button>
           );
@@ -87,8 +89,8 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
           aria-label="Odhlásit se"
           className="relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-0 py-1 transition-all duration-200"
         >
-          <LogOut className="w-[21px] h-[21px]" strokeWidth={2} style={{ color: 'rgba(255,255,255,0.45)' }} aria-hidden />
-          <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.45)' }}>Odhlásit</span>
+          <LogOut className="w-[21px] h-[21px]" strokeWidth={2} style={{ color: 'var(--m-nav-fg)' }} aria-hidden />
+          <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: 'var(--m-nav-fg)' }}>Odhlásit</span>
         </button>
       </nav>
     </div>

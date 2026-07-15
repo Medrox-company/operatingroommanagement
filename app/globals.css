@@ -328,6 +328,63 @@ html.capacitor-native select {
 }
 .timeline-scroll { scrollbar-width: thin; scrollbar-color: rgba(6, 182, 212, 0.3) transparent; }
 
+/* ═══════════ MOBILNÍ TÉMA — světlá/tmavá varianta (CSS proměnné) ═══════════
+   Světlá = výchozí; třída .m-dark na <html> přepne všechny mobilní moduly
+   do tmavé varianty dle návrhu (deep navy, glass karty, akcent dle fáze). */
+:root {
+  --m-bg: #EDF1F8;
+  --m-card: #FFFFFF;                       /* karty (plocha) */
+  --m-card-solid: #FFFFFF;                 /* neprůhledný podklad (disky, sheety) */
+  --m-card-2: #F2F5FA;                     /* sekundární plocha / ghost tlačítka */
+  --m-track: #E7ECF5;                      /* progress track, ztlumené plochy */
+  --m-border: #E1E8F3;
+  --m-gridline: rgba(23, 43, 99, 0.07);
+  --m-text: #17233F;
+  --m-text-strong: #1E3560;
+  --m-muted: #7C8AA5;
+  --m-faint: #9AA7BF;
+  --m-accent: #2952C8;
+  --m-accent-rgb: 41, 82, 200;
+  --m-accent-soft: #E7EEFB;
+  --m-chip-track: #E3E9F4;                 /* drážka segmentových tabů */
+  --m-nav-bg: #1E3560;
+  --m-nav-fg: rgba(255, 255, 255, 0.45);
+  --m-nav-active: #FFFFFF;
+}
+
+.m-dark {
+  --m-bg: #0B0D17;
+  --m-card: rgba(255, 255, 255, 0.045);
+  --m-card-solid: #161A2B;
+  --m-card-2: rgba(255, 255, 255, 0.08);
+  --m-track: rgba(255, 255, 255, 0.10);
+  --m-border: rgba(255, 255, 255, 0.09);
+  --m-gridline: rgba(255, 255, 255, 0.07);
+  --m-text: #F2F4FA;
+  --m-text-strong: #FFFFFF;
+  --m-muted: rgba(255, 255, 255, 0.55);
+  --m-faint: rgba(255, 255, 255, 0.35);
+  --m-accent: #8B7CF8;
+  --m-accent-rgb: 139, 124, 248;
+  --m-accent-soft: rgba(139, 124, 248, 0.16);
+  --m-chip-track: rgba(255, 255, 255, 0.07);
+  --m-nav-bg: rgba(13, 16, 28, 0.97);
+  --m-nav-fg: rgba(255, 255, 255, 0.40);
+  --m-nav-active: #5EEAD4;
+}
+
+/* Potvrzení přechodu — mobilní barvy přes téma, desktop zůstává tmavý */
+.step-confirm-bg { background: var(--m-bg); }
+.step-confirm-text { color: var(--m-text); }
+.step-confirm-muted { color: var(--m-muted); }
+.step-confirm-disc { background: var(--m-card-solid); box-shadow: 0 12px 32px rgba(23, 43, 99, 0.10); }
+@media (min-width: 768px) {
+  .step-confirm-bg { background: #000; }
+  .step-confirm-text { color: #fff; }
+  .step-confirm-muted { color: rgba(255, 255, 255, 0.3); }
+  .step-confirm-disc { background: transparent; box-shadow: none; }
+}
+
 /* Safe area for mobile bottom navigation — plovoucí lišta (~70 px + odsazení) */
 .pb-mobile-nav {
   padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));

@@ -126,7 +126,7 @@ const MobileStaffView: React.FC<Props> = ({
       <div
         aria-hidden
         className="fixed inset-0 md:hidden pointer-events-none"
-        style={{ zIndex: 0, background: '#EDF1F8' }}
+        style={{ zIndex: 0, background: 'var(--m-bg)' }}
       />
 
       <div className="md:hidden w-full relative" style={{ zIndex: 1 }}>
@@ -141,8 +141,8 @@ const MobileStaffView: React.FC<Props> = ({
               aria-label="Přidat personál"
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform active:scale-95"
               style={{
-                background: '#2952C8',
-                boxShadow: '0 8px 20px -6px rgba(41,82,200,0.5)',
+                background: 'var(--m-accent)',
+                boxShadow: '0 8px 20px -6px rgba(var(--m-accent-rgb),0.5)',
                 color: '#FFFFFF',
               }}
             >
@@ -164,15 +164,15 @@ const MobileStaffView: React.FC<Props> = ({
                 key={k.label}
                 className="rounded-2xl p-3 flex flex-col"
                 style={{
-                  background: '#FFFFFF',
+                  background: 'var(--m-card)',
                   boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                 }}
               >
                 <Icon className="w-3.5 h-3.5" style={{ color: k.color }} strokeWidth={2.25} />
-                <p className="text-[9px] uppercase tracking-[0.2em] mt-1.5 leading-none" style={{ color: '#7C8AA5' }}>
+                <p className="text-[9px] uppercase tracking-[0.2em] mt-1.5 leading-none" style={{ color: 'var(--m-muted)' }}>
                   {k.label}
                 </p>
-                <p className="text-xl font-extrabold mt-1 tabular-nums" style={{ color: '#17233F' }}>{k.value}</p>
+                <p className="text-xl font-extrabold mt-1 tabular-nums" style={{ color: 'var(--m-text)' }}>{k.value}</p>
               </div>
             );
           })}
@@ -204,8 +204,8 @@ const MobileStaffView: React.FC<Props> = ({
         ) : filteredStaff.length === 0 ? (
           <MobileCard>
             <div className="flex flex-col items-center justify-center gap-3 py-6">
-              <Users className="w-10 h-10" style={{ color: '#C9D5E8' }} />
-              <p className="text-sm text-center" style={{ color: '#7C8AA5' }}>
+              <Users className="w-10 h-10" style={{ color: 'var(--m-border)' }} />
+              <p className="text-sm text-center" style={{ color: 'var(--m-muted)' }}>
                 {searchQuery
                   ? `Nenalezeno pro "${searchQuery}"`
                   : 'V této kategorii zatím nikdo nen��.'}
@@ -245,10 +245,10 @@ const MobileStaffView: React.FC<Props> = ({
 
                       {/* Name + role */}
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none" style={{ color: '#9AA7BF' }}>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none" style={{ color: 'var(--m-faint)' }}>
                           {m.role === 'DOCTOR' ? 'Lékař' : 'Sestra'}
                         </p>
-                        <h3 className="text-base font-extrabold mt-1 leading-tight truncate" style={{ color: '#17233F' }}>
+                        <h3 className="text-base font-extrabold mt-1 leading-tight truncate" style={{ color: 'var(--m-text)' }}>
                           {m.name}
                         </h3>
                       </div>
@@ -364,7 +364,7 @@ const MobileStaffView: React.FC<Props> = ({
             {/* Notes */}
             {sheetStaff.notes && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-1.5" style={{ color: '#9AA7BF' }}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-1.5" style={{ color: 'var(--m-faint)' }}>
                   Poznámky
                 </p>
                 <p className="text-sm leading-relaxed" style={{ color: '#41506B' }}>
@@ -383,8 +383,8 @@ const MobileStaffView: React.FC<Props> = ({
                 }}
                 className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold"
                 style={{
-                  background: '#2952C8',
-                  boxShadow: '0 10px 24px -8px rgba(41,82,200,0.55)',
+                  background: 'var(--m-accent)',
+                  boxShadow: '0 10px 24px -8px rgba(var(--m-accent-rgb),0.55)',
                   color: '#FFFFFF',
                 }}
               >
@@ -425,11 +425,11 @@ const AttrBox: React.FC<{
   <div
     className="rounded-2xl p-3.5"
     style={{
-      background: '#FFFFFF',
+      background: 'var(--m-card)',
       boxShadow: '0 4px 12px rgba(23,43,99,0.06)',
     }}
   >
-    <div className="flex items-center gap-1.5" style={{ color: '#9AA7BF' }}>
+    <div className="flex items-center gap-1.5" style={{ color: 'var(--m-faint)' }}>
       {icon}
       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none">
         {label}
@@ -437,7 +437,7 @@ const AttrBox: React.FC<{
     </div>
     <p
       className="text-base font-bold mt-2 leading-none tabular-nums"
-      style={{ color: color || '#17233F' }}
+      style={{ color: color || 'var(--m-text)' }}
     >
       {value}
     </p>
@@ -454,8 +454,8 @@ const FlagPill: React.FC<{
     className="text-[11px] font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5"
     style={{
       background: active ? `${color}1a` : '#FFFFFF',
-      border: `1px solid ${active ? `${color}44` : '#E1E8F3'}`,
-      color: active ? color : '#9AA7BF',
+      border: `1px solid ${active ? `${color}44` : 'var(--m-border)'}`,
+      color: active ? color : 'var(--m-faint)',
     }}
   >
     {icon}

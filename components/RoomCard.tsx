@@ -106,7 +106,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       onClick={onClick}
       className="md:hidden relative w-full rounded-[16px] px-3.5 pt-3.5 pb-3 cursor-pointer active:scale-[0.99] transition-transform select-none"
       style={{
-        background: '#FFFFFF',
+        background: 'var(--m-card)',
         boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
         border: room.isEmergency
           ? '1.5px solid rgba(229,72,77,0.6)'
@@ -118,20 +118,20 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       {/* Název + oddělení (dle prototypu název nahoře, oddělení pod ním) */}
       <div className="flex items-start justify-between gap-1.5">
         <div className="min-w-0">
-          <h3 className="text-[14px] font-extrabold uppercase truncate leading-tight tracking-tight" style={{ color: '#1E3560' }}>
+          <h3 className="text-[14px] font-extrabold uppercase truncate leading-tight tracking-tight" style={{ color: 'var(--m-text-strong)' }}>
             {room.name}
           </h3>
-          <p className="text-[11px] font-medium truncate mt-0.5" style={{ color: '#7C8AA5' }}>
+          <p className="text-[11px] font-medium truncate mt-0.5" style={{ color: 'var(--m-muted)' }}>
             {room.department}
           </p>
         </div>
         {room.noticeMessage && (
           <span
             className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: 'rgba(41,82,200,0.10)' }}
+            style={{ background: 'rgba(var(--m-accent-rgb),0.10)' }}
             title="Čeká zpráva — otevři detail sálu"
           >
-            <Megaphone className="w-3 h-3" style={{ color: '#2952C8' }} />
+            <Megaphone className="w-3 h-3" style={{ color: 'var(--m-accent)' }} />
           </span>
         )}
       </div>
@@ -144,7 +144,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             ? { background: '#E5484D', color: '#FFFFFF' }
             : room.isLocked
             ? { background: '#F59E0B', color: '#FFFFFF' }
-            : { background: room.isPaused ? '#DDF7FA' : `${themeColor}16`, color: '#1E3560', border: `1px solid ${room.isPaused ? '#A9E8EE' : `${themeColor}30`}` }}
+            : { background: room.isPaused ? '#DDF7FA' : `${themeColor}16`, color: 'var(--m-text-strong)', border: `1px solid ${room.isPaused ? '#A9E8EE' : `${themeColor}30`}` }}
         >
           <span
             className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -163,7 +163,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       </div>
 
       {/* Tenký progress kroků — nahrazuje středové číslo */}
-      <div className="mt-2.5 h-1 rounded-full overflow-hidden" style={{ background: '#E7ECF5' }}>
+      <div className="mt-2.5 h-1 rounded-full overflow-hidden" style={{ background: 'var(--m-track)' }}>
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${room.isPaused ? 100 : progressPct}%`, background: themeColor }}
@@ -171,36 +171,36 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       </div>
 
       {/* Spodní řádek — lékař · čas | indikátory · (i) | zámek */}
-      <div className="mt-2.5 pt-2.5 flex items-center justify-between gap-1.5" style={{ borderTop: '1px solid #EDF1F8' }}>
+      <div className="mt-2.5 pt-2.5 flex items-center justify-between gap-1.5" style={{ borderTop: '1px solid var(--m-track)' }}>
         <div className="flex items-center gap-1 min-w-0">
-          <User className="w-3.5 h-3.5 shrink-0" style={{ color: '#7C8AA5' }} strokeWidth={2.25} />
-          <span className="text-[9.5px] font-bold uppercase tracking-wide truncate" style={{ color: '#7C8AA5' }}>
+          <User className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--m-muted)' }} strokeWidth={2.25} />
+          <span className="text-[9.5px] font-bold uppercase tracking-wide truncate" style={{ color: 'var(--m-muted)' }}>
             {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
           </span>
           {room.estimatedEndTime && shouldShowTime && (
-            <span className="text-[12px] font-bold tabular-nums shrink-0 ml-0.5" style={{ color: '#2952C8' }}>
+            <span className="text-[12px] font-bold tabular-nums shrink-0 ml-0.5" style={{ color: 'var(--m-accent)' }}>
               {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {room.isSeptic && <Biohazard className="w-3.5 h-3.5" style={{ color: '#E5484D' }} />}
-          {room.patientCalledAt && !room.patientArrivedAt && <Phone className="w-3.5 h-3.5" style={{ color: '#2952C8' }} />}
+          {room.patientCalledAt && !room.patientArrivedAt && <Phone className="w-3.5 h-3.5" style={{ color: 'var(--m-accent)' }} />}
           {room.patientArrivedAt && <BedDouble className="w-3.5 h-3.5" style={{ color: '#10B981' }} />}
           <button
             onClick={(e) => handleAction(e, onEmergency)}
             aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
             className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
           >
-            <AlertCircle className="w-[17px] h-[17px]" strokeWidth={2} style={{ color: room.isEmergency ? '#E5484D' : '#1E3560' }} />
+            <AlertCircle className="w-[17px] h-[17px]" strokeWidth={2} style={{ color: room.isEmergency ? '#E5484D' : 'var(--m-text-strong)' }} />
           </button>
-          <span className="w-px h-4" style={{ background: '#E1E8F3' }} />
+          <span className="w-px h-4" style={{ background: 'var(--m-border)' }} />
           <button
             onClick={(e) => handleAction(e, onLock)}
             aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
             className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
           >
-            <Lock className="w-[17px] h-[17px]" strokeWidth={2} style={{ color: room.isLocked ? '#F59E0B' : '#1E3560' }} />
+            <Lock className="w-[17px] h-[17px]" strokeWidth={2} style={{ color: room.isLocked ? '#F59E0B' : 'var(--m-text-strong)' }} />
           </button>
         </div>
       </div>

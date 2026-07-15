@@ -46,10 +46,10 @@ export const MobileHeader: React.FC<{
 }> = ({ kicker, title, right }) => (
   <header className="flex items-end justify-between gap-4">
     <div className="min-w-0">
-      <p className="text-[11px] font-semibold leading-none" style={{ color: '#7C8AA5' }}>
+      <p className="text-[11px] font-semibold leading-none" style={{ color: 'var(--m-muted)' }}>
         {kicker}
       </p>
-      <h1 className="text-[22px] font-extrabold uppercase tracking-tight mt-2 leading-none text-balance" style={{ color: '#1E3560' }}>
+      <h1 className="text-[22px] font-extrabold uppercase tracking-tight mt-2 leading-none text-balance" style={{ color: 'var(--m-text-strong)' }}>
         {title}
       </h1>
     </div>
@@ -71,7 +71,7 @@ export const MobileCard: React.FC<{
   const style: React.CSSProperties = {
     // Světlý medicínský styl — bílá karta, jemný stín, volitelný barevný tint
     background: accent
-      ? `linear-gradient(135deg, ${accent}14 0%, #FFFFFF 55%)`
+      ? `linear-gradient(135deg, ${accent}14 0%, var(--m-card-solid) 55%)`
       : '#FFFFFF',
     border: `1px solid ${accent ? `${accent}33` : 'transparent'}`,
     boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
@@ -120,7 +120,7 @@ export function MobilePillTabs<T extends string>({
       className={`grid rounded-2xl p-1 gap-1 ${className}`}
       style={{
         gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
-        background: '#E3E9F4',
+        background: 'var(--m-chip-track)',
       }}
     >
       {tabs.map(tab => {
@@ -130,14 +130,14 @@ export function MobilePillTabs<T extends string>({
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className="relative rounded-xl text-xs font-semibold py-2.5 px-1.5 transition-colors outline-none truncate"
-            style={{ color: active ? '#2952C8' : '#7C8AA5' }}
+            style={{ color: active ? 'var(--m-accent)' : 'var(--m-muted)' }}
           >
             {active && (
               <motion.span
                 layoutId="mobile-pill-active"
                 className="absolute inset-0 rounded-xl"
                 style={{
-                  background: '#FFFFFF',
+                  background: 'var(--m-card)',
                   boxShadow: '0 4px 12px rgba(23,43,99,0.10)',
                 }}
                 transition={{ type: 'spring', stiffness: 420, damping: 36 }}
@@ -161,7 +161,7 @@ export const MobileSectionLabel: React.FC<{ children: React.ReactNode; className
 }) => (
   <p
     className={`text-[13px] font-bold px-1 ${className}`}
-    style={{ color: '#2952C8' }}
+    style={{ color: 'var(--m-accent)' }}
   >
     {children}
   </p>
@@ -210,13 +210,13 @@ export const MobileSheet: React.FC<{
             transition={{ type: 'spring', stiffness: 420, damping: 38 }}
             className="relative w-full max-h-[90vh] rounded-t-[28px] overflow-hidden flex flex-col"
             style={{
-              background: '#F7F9FD',
+              background: 'var(--m-card-solid)',
               boxShadow: '0 -20px 60px rgba(23,43,99,0.25)',
             }}
           >
             {/* Drag handle */}
             <div className="pt-2.5 pb-1 flex items-center justify-center shrink-0">
-              <div className="w-10 h-1 rounded-full" style={{ background: '#C9D5E8' }} />
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--m-border)' }} />
             </div>
 
             {/* Header */}
@@ -224,12 +224,12 @@ export const MobileSheet: React.FC<{
               <div className="flex items-start justify-between gap-4 px-6 pt-3 pb-4 shrink-0">
                 <div className="min-w-0">
                   {subtitle && (
-                    <p className="text-[11px] font-semibold leading-none" style={{ color: '#7C8AA5' }}>
+                    <p className="text-[11px] font-semibold leading-none" style={{ color: 'var(--m-muted)' }}>
                       {subtitle}
                     </p>
                   )}
                   {title && (
-                    <h2 className="text-xl font-extrabold mt-1.5 leading-tight text-balance" style={{ color: '#17233F' }}>
+                    <h2 className="text-xl font-extrabold mt-1.5 leading-tight text-balance" style={{ color: 'var(--m-text)' }}>
                       {title}
                     </h2>
                   )}
@@ -238,7 +238,7 @@ export const MobileSheet: React.FC<{
                   onClick={onClose}
                   aria-label="Zavřít"
                   className="w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0"
-                  style={{ background: '#FFFFFF', boxShadow: '0 4px 12px rgba(23,43,99,0.08)', color: '#17233F' }}
+                  style={{ background: 'var(--m-card)', boxShadow: '0 4px 12px rgba(23,43,99,0.08)', color: 'var(--m-text)' }}
                 >
                   <X className="w-4 h-4" strokeWidth={2.25} />
                 </button>
@@ -272,26 +272,26 @@ export const MobileSearchInput: React.FC<{
   <div
     className="flex items-center gap-3 rounded-2xl px-4 py-3"
     style={{
-      background: '#FFFFFF',
-      border: '1px solid #E1E8F3',
+      background: 'var(--m-card)',
+      border: '1px solid var(--m-border)',
       boxShadow: '0 4px 12px rgba(23,43,99,0.05)',
     }}
   >
-    {icon && <div className="shrink-0" style={{ color: '#9AA7BF' }}>{icon}</div>}
+    {icon && <div className="shrink-0" style={{ color: 'var(--m-faint)' }}>{icon}</div>}
     <input
       type="text"
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       className="flex-1 bg-transparent outline-none text-sm placeholder:text-[#9AA7BF]"
-      style={{ color: '#17233F' }}
+      style={{ color: 'var(--m-text)' }}
     />
     {value && (
       <button
         onClick={() => onChange('')}
         aria-label="Smazat"
         className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-        style={{ background: '#EDF1F8', color: '#7C8AA5' }}
+        style={{ background: 'var(--m-bg)', color: 'var(--m-muted)' }}
       >
         <X className="w-3 h-3" strokeWidth={2.5} />
       </button>

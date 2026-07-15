@@ -12,12 +12,12 @@ import type { OperatingRoom } from '../../types';
    AKTUÁLNÍ POLOHA / ODHAD PROPUŠTĚNÍ.
    ========================================================================== */
 
-const NAVY = '#1E3560';
-const BLUE = '#2952C8';
+const NAVY = 'var(--m-text-strong)';
+const BLUE = 'var(--m-accent)';
 const GREEN = '#3BA273';
-const MUTED = '#7C8AA5';
-const FAINT = '#9AA7BF';
-const TRACK = '#E7ECF5';
+const MUTED = 'var(--m-muted)';
+const FAINT = 'var(--m-faint)';
+const TRACK = 'var(--m-track)';
 
 interface Props {
   rooms: OperatingRoom[];
@@ -71,9 +71,9 @@ function buildFlow(room: OperatingRoom): { steps: FlowStep[]; currentIdx: number
 }
 
 const STEP_CHIP: Record<StepState, { label: string; bg: string; color: string }> = {
-  done: { label: 'DOKONČENO', bg: '#DFF2E9', color: GREEN },
-  current: { label: 'PROBÍHÁ', bg: '#E1E9F8', color: BLUE },
-  waiting: { label: 'ČEKÁ', bg: '#EDF1F8', color: FAINT },
+  done: { label: 'DOKONČENO', bg: 'rgba(59,162,115,0.16)', color: GREEN },
+  current: { label: 'PROBÍHÁ', bg: 'var(--m-accent-soft)', color: BLUE },
+  waiting: { label: 'ČEKÁ', bg: 'var(--m-bg)', color: FAINT },
 };
 
 const MobileFlowView: React.FC<Props> = ({ rooms }) => {
@@ -94,7 +94,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
   return (
     <>
       {/* Světlý podklad */}
-      <div aria-hidden className="fixed inset-0 md:hidden pointer-events-none" style={{ zIndex: 0, background: '#EDF1F8' }} />
+      <div aria-hidden className="fixed inset-0 md:hidden pointer-events-none" style={{ zIndex: 0, background: 'var(--m-bg)' }} />
 
       <div
         className="md:hidden h-full w-full overflow-y-auto hide-scrollbar relative"
@@ -120,8 +120,8 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                   onClick={() => setFilter(p.id)}
                   className="shrink-0 h-9 px-4 rounded-full text-[12px] font-bold whitespace-nowrap transition-colors"
                   style={active
-                    ? { background: NAVY, color: '#FFFFFF' }
-                    : { background: '#FFFFFF', color: NAVY, border: '1px solid #DCE4F0' }}
+                    ? { background: 'var(--m-accent)', color: '#FFFFFF' }
+                    : { background: 'var(--m-card)', color: NAVY, border: '1px solid #DCE4F0' }}
                 >
                   {p.label}
                 </button>
@@ -143,7 +143,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                   key={room.id}
                   className="rounded-[18px] overflow-hidden"
                   style={{
-                    background: '#FFFFFF',
+                    background: 'var(--m-card)',
                     boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
                     border: isOpen ? '1px solid #C9D8F2' : '1px solid transparent',
                   }}
@@ -155,7 +155,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                   >
                     <span
                       className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-[13px] font-extrabold tabular-nums"
-                      style={{ background: '#E1E9F8', color: NAVY }}
+                      style={{ background: 'var(--m-accent-soft)', color: NAVY }}
                     >
                       {String(idx + 1).padStart(2, '0')}
                     </span>
@@ -173,7 +173,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                             key={i}
                             className="h-[5px] flex-1 rounded-full"
                             style={{
-                              background: s.state === 'done' ? GREEN : s.state === 'current' ? NAVY : TRACK,
+                              background: s.state === 'done' ? GREEN : s.state === 'current' ? 'var(--m-accent)' : TRACK,
                             }}
                           />
                         ))}
@@ -182,7 +182,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                     <span className="flex flex-col items-end gap-1.5 shrink-0">
                       <span
                         className="px-2.5 h-6 rounded-full inline-flex items-center text-[9.5px] font-bold uppercase tracking-wide"
-                        style={{ background: '#E1E9F8', color: NAVY }}
+                        style={{ background: 'var(--m-accent-soft)', color: NAVY }}
                       >
                         {chip}
                       </span>
@@ -209,12 +209,12 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                               <div
                                 key={i}
                                 className="flex items-center gap-3 py-3"
-                                style={{ borderTop: '1px solid #EDF1F8', opacity: s.state === 'waiting' ? 0.65 : 1 }}
+                                style={{ borderTop: '1px solid var(--m-track)', opacity: s.state === 'waiting' ? 0.65 : 1 }}
                               >
                                 <span
                                   className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 text-[12px] font-bold tabular-nums"
                                   style={{
-                                    background: s.state === 'waiting' ? '#EDF1F8' : '#E1E9F8',
+                                    background: s.state === 'waiting' ? 'var(--m-bg)' : 'var(--m-accent-soft)',
                                     color: s.state === 'waiting' ? FAINT : NAVY,
                                   }}
                                 >
@@ -237,7 +237,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                           })}
 
                           {/* Patička — poloha + odhad propuštění */}
-                          <div className="flex items-end justify-between pt-3" style={{ borderTop: '1px solid #EDF1F8' }}>
+                          <div className="flex items-end justify-between pt-3" style={{ borderTop: '1px solid var(--m-track)' }}>
                             <div>
                               <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: FAINT }}>
                                 Aktuální poloha
@@ -266,7 +266,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
             {visible.length === 0 && (
               <div
                 className="rounded-[18px] px-4 py-8 text-center"
-                style={{ background: '#FFFFFF', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
+                style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
               >
                 <p className="text-sm font-medium" style={{ color: MUTED }}>
                   Žádný aktivní tok pacienta.

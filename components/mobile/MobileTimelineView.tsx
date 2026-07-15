@@ -21,19 +21,19 @@ import { Activity, Stethoscope, Sparkles, CheckCircle2, AlertTriangle, Clock } f
 
 // Design tokens — světlý medicínský styl
 const C = {
-  accent: '#2952C8',
-  now: '#2952C8',
+  accent: 'var(--m-accent)',
+  now: 'var(--m-accent)',
   green: '#10B981',
   yellow: '#D9A407',
   orange: '#EA8A2C',
   red: '#E5484D',
   purple: '#8B5CF6',
   surface: '#FFFFFF',
-  surface2: '#EDF1F8',
-  border: '#E1E8F3',
-  borderHover: '#C9D5E8',
-  muted: '#7C8AA5',
-  text: '#17233F',
+  surface2: 'var(--m-bg)',
+  border: 'var(--m-border)',
+  borderHover: 'var(--m-border)',
+  muted: 'var(--m-muted)',
+  text: 'var(--m-text)',
 };
 
 const TIMELINE_START_HOUR = 7;
@@ -151,7 +151,7 @@ const MobileTimelineView: React.FC<Props> = ({
       <div
         aria-hidden
         className="fixed inset-0 md:hidden pointer-events-none"
-        style={{ zIndex: 0, background: '#EDF1F8' }}
+        style={{ zIndex: 0, background: 'var(--m-bg)' }}
       />
 
       <div
@@ -174,10 +174,10 @@ const MobileTimelineView: React.FC<Props> = ({
             <div
               className="timeline-mobile-clock text-right px-1 py-1"
             >
-              <p className="text-[9px] uppercase tracking-[0.18em] leading-none" style={{ color: '#9AA7BF' }}>
+              <p className="text-[9px] uppercase tracking-[0.18em] leading-none" style={{ color: 'var(--m-faint)' }}>
                 {currentTime.toLocaleDateString('cs-CZ', { weekday: 'short', day: '2-digit', month: '2-digit' })}
               </p>
-              <p className="text-lg font-bold tabular-nums mt-1 tracking-tight" style={{ color: '#17233F' }}>
+              <p className="text-lg font-bold tabular-nums mt-1 tracking-tight" style={{ color: 'var(--m-text)' }}>
                 {currentTime.toLocaleTimeString('cs-CZ', {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -276,11 +276,11 @@ const MobileTimelineView: React.FC<Props> = ({
                               boxShadow: `0 0 8px ${color}aa`,
                             }}
                           />
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none truncate" style={{ color: '#7C8AA5' }}>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none truncate" style={{ color: 'var(--m-muted)' }}>
                             {statusName}
                           </p>
                         </div>
-                        <h3 className="text-[17px] font-extrabold tracking-[-0.02em] leading-tight truncate" style={{ color: '#17233F' }}>
+                        <h3 className="text-[17px] font-extrabold tracking-[-0.02em] leading-tight truncate" style={{ color: 'var(--m-text)' }}>
                           {room.name}
                         </h3>
                       </div>
@@ -292,7 +292,7 @@ const MobileTimelineView: React.FC<Props> = ({
                           </span>
                         ) : remaining ? (
                           <>
-                            <p className="text-[9px] uppercase tracking-[0.2em] leading-none" style={{ color: '#9AA7BF' }}>
+                            <p className="text-[9px] uppercase tracking-[0.2em] leading-none" style={{ color: 'var(--m-faint)' }}>
                               Zbývá
                             </p>
                             <p
@@ -327,7 +327,7 @@ const MobileTimelineView: React.FC<Props> = ({
                         </span>
                       )}
                       {room.staff?.doctor?.name && (
-                        <span className="text-[11px] truncate" style={{ color: '#7C8AA5' }}>
+                        <span className="text-[11px] truncate" style={{ color: 'var(--m-muted)' }}>
                           {room.staff.doctor.name}
                         </span>
                       )}
@@ -353,8 +353,8 @@ const MobileTimelineView: React.FC<Props> = ({
                     {/* Footer */}
                     {room.estimatedEndTime && !isFree && (
                       <div className="mt-3 flex items-center justify-between text-[11px]">
-                        <span style={{ color: '#9AA7BF' }}>Plánované ukončení</span>
-                        <span className="font-bold tabular-nums" style={{ color: '#17233F' }}>
+                        <span style={{ color: 'var(--m-faint)' }}>Plánované ukončení</span>
+                        <span className="font-bold tabular-nums" style={{ color: 'var(--m-text)' }}>
                           {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -492,7 +492,7 @@ const AxisView: React.FC<{
       <div
         className="timeline-mobile-axis rounded-[26px] p-3 overflow-hidden"
         style={{
-          background: '#FFFFFF',
+          background: 'var(--m-card)',
           boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
         }}
       >
@@ -504,7 +504,7 @@ const AxisView: React.FC<{
               <span
                 key={m.ms}
                 className="absolute -translate-x-1/2 text-[9px] tabular-nums font-semibold"
-                style={{ left: `${pctOf(m.ms)}%`, color: '#7C8AA5' }}
+                style={{ left: `${pctOf(m.ms)}%`, color: 'var(--m-muted)' }}
               >
                 {m.label}
               </span>
@@ -574,7 +574,7 @@ const AxisView: React.FC<{
                     className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: currentColor, boxShadow: `0 0 6px ${currentColor}99` }}
                   />
-                  <span className="text-[10px] font-bold truncate leading-tight" style={{ color: '#17233F' }}>
+                  <span className="text-[10px] font-bold truncate leading-tight" style={{ color: 'var(--m-text)' }}>
                     {room.name}
                   </span>
                 </div>
@@ -582,14 +582,14 @@ const AxisView: React.FC<{
                 {/* Dráha — celých 24 h na šířku */}
                 <div
                   className="flex-1 relative rounded-[10px] overflow-hidden"
-                  style={{ height: 36, background: '#EDF1F8', border: '1px solid #E1E8F3' }}
+                  style={{ height: 36, background: 'var(--m-bg)', border: '1px solid var(--m-border)' }}
                 >
                   {/* hodinová mřížka */}
                   {hourMarks.map((m) => (
                     <div
                       key={m.ms}
                       className="absolute top-0 bottom-0 w-px"
-                      style={{ left: `${pctOf(m.ms)}%`, background: 'rgba(23,43,99,0.07)' }}
+                      style={{ left: `${pctOf(m.ms)}%`, background: 'var(--m-gridline)' }}
                     />
                   ))}
                   {/* segmenty statusů */}
@@ -609,7 +609,7 @@ const AxisView: React.FC<{
                   ))}
                   {/* prázdný sál — jemný text */}
                   {!isActive && (
-                    <span className="absolute inset-0 flex items-center pl-2 text-[9px] pointer-events-none" style={{ color: '#9AA7BF' }}>
+                    <span className="absolute inset-0 flex items-center pl-2 text-[9px] pointer-events-none" style={{ color: 'var(--m-faint)' }}>
                       volný
                     </span>
                   )}
@@ -626,11 +626,11 @@ const AxisView: React.FC<{
 
         {/* legenda času pod osou */}
         <div className="flex items-center justify-between mt-2 px-1" style={{ paddingLeft: LABEL_W }}>
-          <span className="text-[8px] tabular-nums" style={{ color: '#9AA7BF' }}>{fmt(viewStartMs)}</span>
+          <span className="text-[8px] tabular-nums" style={{ color: 'var(--m-faint)' }}>{fmt(viewStartMs)}</span>
           <span className="text-[8px] font-semibold tabular-nums" style={{ color: C.now }}>
             teď {fmt(nowMs)}
           </span>
-          <span className="text-[8px] tabular-nums" style={{ color: '#9AA7BF' }}>{fmt(viewEndMs)}</span>
+          <span className="text-[8px] tabular-nums" style={{ color: 'var(--m-faint)' }}>{fmt(viewEndMs)}</span>
         </div>
       </div>
     </div>
