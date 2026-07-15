@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="cs" className="bg-background">
+    <html lang="cs" className="bg-background" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
