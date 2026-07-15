@@ -105,9 +105,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     {/* ===== MOBILE — prémiová karta sálu ===== */}
     <div
       onClick={onClick}
-      className="mobile-dashboard-room-card md:hidden relative w-full rounded-[20px] p-3 cursor-pointer active:scale-[0.985] transition-all duration-200 select-none overflow-hidden"
+      className="mobile-dashboard-room-card md:hidden relative isolate w-full rounded-[24px] p-3.5 cursor-pointer active:scale-[0.98] transition-all duration-200 select-none overflow-hidden"
       style={{
-        background: 'var(--m-card)',
         boxShadow: room.isEmergency ? '0 12px 28px rgba(229,72,77,0.18)' : 'var(--m-card-shadow-strong)',
         border: room.isEmergency
           ? '1.5px solid rgba(229,72,77,0.55)'
@@ -118,12 +117,12 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     >
       <div
         aria-hidden
-        className="absolute inset-x-9 top-0 h-[2px] rounded-full"
+        className="absolute inset-x-8 top-0 h-[2px] rounded-full"
         style={{ background: `linear-gradient(90deg, transparent, ${themeColor}CC, transparent)` }}
       />
       <div
         aria-hidden
-        className="absolute inset-y-4 left-0 w-[3px] rounded-r-full"
+        className="absolute inset-y-5 left-0 w-[3px] rounded-r-full"
         style={{ background: themeColor, boxShadow: `0 0 16px ${themeColor}80` }}
       />
       <div
@@ -133,9 +132,9 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       />
 
       {/* Identita sálu */}
-      <div className="relative flex items-start gap-2.5">
+      <div className="relative z-10 flex items-start gap-3">
         <span
-          className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 text-[12px] font-extrabold tabular-nums"
+          className="w-10 h-10 rounded-[14px] flex items-center justify-center shrink-0 text-[13px] font-black tabular-nums"
           style={{
             color: themeColor,
             background: `${themeColor}1A`,
@@ -146,10 +145,10 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           {mobileRoomNumber}
         </span>
         <div className="min-w-0 flex-1 pt-0.5">
-          <h3 className="text-[13px] font-extrabold uppercase truncate leading-tight tracking-tight" style={{ color: 'var(--m-text-strong)' }}>
+          <h3 className="text-[14px] font-black uppercase truncate leading-tight tracking-[-0.02em]" style={{ color: 'var(--m-text-strong)' }}>
             {room.name}
           </h3>
-          <p className="text-[8px] font-bold uppercase tracking-[0.12em] truncate mt-0.5" style={{ color: 'var(--m-muted)' }}>
+          <p className="text-[9px] font-bold uppercase tracking-[0.13em] truncate mt-1" style={{ color: 'var(--m-muted)' }}>
             {room.department || 'Bez oddělení'}
           </p>
         </div>
@@ -170,11 +169,12 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
 
       {/* Stav + průběh */}
       <div
-        className="relative mt-2.5 rounded-[13px] px-2.5 py-2"
+        className="relative z-10 mt-3 rounded-[16px] px-3 py-2.5 overflow-hidden"
         style={{ background: `${themeColor}10`, border: `1px solid ${themeColor}30` }}
       >
+        <div aria-hidden className="absolute inset-y-0 left-0 w-[2px]" style={{ background: themeColor }} />
         <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex min-w-0 items-center gap-1.5 text-[8.5px] font-extrabold uppercase tracking-[0.1em]" style={{ color: room.isEmergency || room.isLocked ? themeColor : 'var(--m-text-strong)' }}>
+          <span className="inline-flex min-w-0 items-center gap-2 text-[9.5px] font-extrabold uppercase tracking-[0.09em]" style={{ color: room.isEmergency || room.isLocked ? themeColor : 'var(--m-text-strong)' }}>
             <span className="relative flex w-2 h-2 shrink-0">
               {(room.isEmergency || (!room.isLocked && safeIdxMobile > 0)) && (
                 <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ background: themeColor }} />
@@ -191,16 +191,19 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                 : currentStep.title}
             </span>
           </span>
-          <span className="text-[9px] font-bold tabular-nums shrink-0" style={{ color: themeColor }}>
-            {safeIdxMobile + 1}/{totalStepsAll}
+          <span
+            className="min-w-[38px] h-6 px-1.5 rounded-[9px] inline-flex items-center justify-center text-[10px] font-black tabular-nums shrink-0"
+            style={{ color: themeColor, background: `${themeColor}18`, border: `1px solid ${themeColor}2E` }}
+          >
+            {Math.round(progressPct)}%
           </span>
         </div>
 
-        <div className="mt-1.5 flex gap-1" aria-label={`Průběh ${Math.round(progressPct)} %`}>
+        <div className="mt-2 flex gap-1" aria-label={`Průběh ${Math.round(progressPct)} %`}>
           {Array.from({ length: totalStepsAll }, (_, index) => (
             <span
               key={index}
-              className="h-[3px] flex-1 rounded-full transition-colors duration-300"
+              className="h-1 flex-1 rounded-full transition-colors duration-300"
               style={{ background: index <= safeIdxMobile ? themeColor : 'var(--m-track)' }}
             />
           ))}
@@ -208,18 +211,18 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       </div>
 
       {/* Personál, čas a rychlé akce */}
-      <div className="relative mt-2.5 flex items-center justify-between gap-2">
+      <div className="relative z-10 mt-3 pt-2.5 flex items-center justify-between gap-2 border-t" style={{ borderColor: 'var(--m-border)' }}>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <User className="w-3 h-3 shrink-0" style={{ color: 'var(--m-muted)' }} strokeWidth={2.1} />
-            <span className="text-[8.5px] font-bold uppercase tracking-[0.07em] truncate" style={{ color: 'var(--m-muted)' }}>
+            <span className="text-[9.5px] font-bold uppercase tracking-[0.06em] truncate" style={{ color: 'var(--m-muted)' }}>
               {room?.staff?.doctor?.name?.split(' ').pop() || 'Neurčen'}
             </span>
           </div>
           {room.estimatedEndTime && shouldShowTime && (
             <div className="flex items-center gap-1 mt-0.5">
               <Clock className="w-3 h-3" style={{ color: themeColor }} strokeWidth={2.2} />
-              <span className="text-[10px] font-extrabold tabular-nums" style={{ color: themeColor }}>
+              <span className="text-[11px] font-extrabold tabular-nums" style={{ color: themeColor }}>
                 {new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
@@ -233,18 +236,18 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           <button
             onClick={(e) => handleAction(e, onEmergency)}
             aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
-            className="w-7 h-7 rounded-[10px] flex items-center justify-center active:scale-90 transition-transform"
+            className="w-8 h-8 rounded-[11px] flex items-center justify-center active:scale-90 transition-transform"
             style={{ background: room.isEmergency ? 'rgba(229,72,77,0.14)' : 'var(--m-card-2)', border: `1px solid ${room.isEmergency ? 'rgba(229,72,77,0.3)' : 'var(--m-border)'}` }}
           >
-            <AlertCircle className="w-3.5 h-3.5" strokeWidth={2} style={{ color: room.isEmergency ? '#E5484D' : 'var(--m-muted)' }} />
+            <AlertCircle className="w-4 h-4" strokeWidth={2} style={{ color: room.isEmergency ? '#E5484D' : 'var(--m-muted)' }} />
           </button>
           <button
             onClick={(e) => handleAction(e, onLock)}
             aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
-            className="w-7 h-7 rounded-[10px] flex items-center justify-center active:scale-90 transition-transform"
+            className="w-8 h-8 rounded-[11px] flex items-center justify-center active:scale-90 transition-transform"
             style={{ background: room.isLocked ? 'rgba(245,158,11,0.14)' : 'var(--m-card-2)', border: `1px solid ${room.isLocked ? 'rgba(245,158,11,0.3)' : 'var(--m-border)'}` }}
           >
-            <Lock className="w-3.5 h-3.5" strokeWidth={2} style={{ color: room.isLocked ? '#F59E0B' : 'var(--m-muted)' }} />
+            <Lock className="w-4 h-4" strokeWidth={2} style={{ color: room.isLocked ? '#F59E0B' : 'var(--m-muted)' }} />
           </button>
         </div>
       </div>

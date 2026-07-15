@@ -7,7 +7,8 @@ import {
   Plus, Minus, X, QrCode, User, Video, Cast, ArrowLeft, ArrowRight, Clock,
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
-  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone
+  Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone,
+  Utensils,
 } from 'lucide-react';
 import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
@@ -58,6 +59,7 @@ interface RoomDetailProps {
   onStepChange: (index: number, stepColor?: string) => void;
   onEndTimeChange: (newTime: Date | null) => void;
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
+  onPauseChange?: (paused: boolean, pausedAt: string | null) => void;
   onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
   onPatientStatusChange?: (calledAt: string | null, arrivedAt: string | null) => void;
   onClearNotice?: () => void;
@@ -71,7 +73,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onStaffChange, onPatientStatusChange, onClearNotice }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onPauseChange, onStaffChange, onPatientStatusChange, onClearNotice }) => {
   const { activeHospitalId } = useHospital();
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -84,6 +86,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [liveNowMs, setLiveNowMs] = useState(() => Date.now());
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
+  const [pauseStartedAt, setPauseStartedAt] = useState<Date | null>(() => {
+    const parsed = room.pausedAt ? new Date(room.pausedAt) : null;
+    return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+  });
   const [pauseElapsedTime, setPauseElapsedTime] = useState('00:00');
   const [showEndTime, setShowEndTime] = useState(false);
   const endTimeTimeoutRef = useRef<number | null>(null);
@@ -162,7 +168,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       return;
     }
 
-    const pauseStartTime = new Date();
+    const pauseStartTime = pauseStartedAt || new Date();
     const updatePauseTime = () => {
       const now = new Date();
       const diff = now.getTime() - pauseStartTime.getTime();
@@ -174,7 +180,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     const timer = setInterval(updatePauseTime, 1000);
 
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [isPaused, pauseStartedAt]);
 
   // Load background settings and listen for changes
   useEffect(() => {
@@ -224,7 +230,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   // Sync local state with room object (for real-time updates from other devices)
   useEffect(() => {
     setIsPaused(room.isPaused || false);
-  }, [room.isPaused]);
+    if (!room.isPaused) {
+      setPauseStartedAt(null);
+      return;
+    }
+    const parsed = room.pausedAt ? new Date(room.pausedAt) : null;
+    setPauseStartedAt(previous => (
+      parsed && !Number.isNaN(parsed.getTime()) ? parsed : previous || new Date()
+    ));
+  }, [room.isPaused, room.pausedAt]);
 
   useEffect(() => {
     // Don't sync if we're resetting locally
@@ -349,6 +363,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const statusName = (currentStep?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const isReadyStatus = statusName.includes('priprav');
   const isCleaningStatus = statusName.includes('uklid');
+  const isPauseWorkflowStatus = statusName.includes('pauza') || statusName.includes('obed') || statusName.includes('lunch');
+  const isPauseActive = isPaused || isPauseWorkflowStatus;
   const shouldShowTime = !isReadyStatus;
 
   // Dynamic theme color based on status
@@ -740,7 +756,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     : room.isLocked
                     ? 'Uzamčen'
                     : currentStep?.name || 'Status'}
-                  {isPaused && <span className="text-[14px] font-bold" style={{ color: 'var(--m-muted)' }}> · Pauza</span>}
+                  {isPaused && <span className="text-[20px] font-extrabold uppercase tracking-[-0.01em]" style={{ color: '#22D3EE' }}> · PAUZA</span>}
                 </p>
 
                 <div className="flex items-center gap-1.5 mt-3">
@@ -750,10 +766,29 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     {elapsedTime}
                   </span>
                 </div>
+                {isPauseActive && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mobile-room-pause-runtime mt-3 inline-flex self-start items-center gap-2 rounded-[12px] px-2.5 py-2"
+                    style={{
+                      background: 'rgba(6,182,212,0.13)',
+                      border: '1px solid rgba(34,211,238,0.34)',
+                      color: '#22D3EE',
+                    }}
+                  >
+                    <span className="text-[13px] font-extrabold uppercase tracking-[0.11em] leading-none">
+                      {isPauseWorkflowStatus ? (currentStep?.title || currentStep?.name || 'Pauza') : 'Pauza'}
+                    </span>
+                    <span className="text-[12px] font-extrabold tabular-nums leading-none">
+                      {isPaused ? pauseElapsedTime : elapsedTime}
+                    </span>
+                  </motion.div>
+                )}
               </div>
 
               {/* Pravá polovina boxu — velké tlačítko „Další fáze" se šipkou */}
-              {!isInteractionBlocked && (() => {
+              {(!isInteractionBlocked || isPauseActive) && (() => {
                 const nextIdx = validStepCount > 0 ? (safeStepIndex + 1) % validStepCount : 0;
                 const nextName = nextIdx === 0
                   ? 'Nový cyklus'
@@ -761,9 +796,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 const ctaText = contrastText(activeColor);
                 return (
                   <motion.button
-                    onClick={handleNextStep}
+                    onClick={isPaused ? undefined : handleNextStep}
+                    disabled={isPaused}
+                    aria-label={isPauseActive ? 'Probíhá pauza' : 'Přejít na další fázi'}
                     whileTap={{ scale: 0.97 }}
-                    className="mobile-room-next-button w-1/2 shrink-0 min-h-[128px] rounded-[18px] flex flex-col items-center justify-center gap-2 px-3 py-4 outline-none select-none relative overflow-hidden"
+                    className="mobile-room-next-button w-1/2 shrink-0 min-h-[128px] rounded-[18px] flex flex-col items-center justify-center gap-2 px-3 py-4 outline-none select-none relative overflow-hidden disabled:cursor-default"
                     style={{
                       background: `linear-gradient(150deg, ${activeColor} 0%, ${activeColor}D9 100%)`,
                       boxShadow: `0 14px 30px -8px ${activeColor}80, inset 0 1px 0 rgba(255,255,255,0.28)`,
@@ -776,20 +813,34 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     />
                     {/* Šipka v bílém kroužku — jemně se posouvá směrem k dalšímu kroku */}
                     <motion.span
-                      className="mobile-room-next-icon relative w-12 h-12 rounded-full flex items-center justify-center"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                      className={`mobile-room-next-icon relative w-12 h-12 rounded-full flex items-center justify-center${isPauseActive ? ' mobile-room-pause-icon' : ''}`}
+                      animate={isPauseActive
+                        ? { y: [0, -4, 0], rotate: [-6, 6, -6], scale: [1, 1.08, 1] }
+                        : { x: [0, 5, 0] }}
+                      transition={{ duration: isPauseActive ? 1.25 : 1.6, repeat: Infinity, ease: 'easeInOut' }}
                       style={{
                         // Na světlých barvách fáze tmavý kroužek s bílou šipkou, jinak naopak
                         background: ctaText === '#17233F' ? '#17233F' : '#FFFFFF',
                         boxShadow: '0 4px 14px rgba(23,43,99,0.20)',
                       }}
                     >
-                      <Play
-                        className="w-6 h-6"
-                        style={{ color: ctaText === '#17233F' ? '#FFFFFF' : activeColor }}
-                        strokeWidth={2.5}
-                      />
+                      {isPauseActive ? (
+                        <>
+                          <Utensils className="w-8 h-8" strokeWidth={2.35} />
+                          <motion.i
+                            aria-hidden
+                            className="absolute top-3 left-1/2 w-1.5 h-1.5 rounded-full bg-current not-italic"
+                            animate={{ y: [2, -10], opacity: [0, 0.8, 0], scale: [0.7, 1, 0.7] }}
+                            transition={{ duration: 1.15, repeat: Infinity, ease: 'easeOut' }}
+                          />
+                        </>
+                      ) : (
+                        <Play
+                          className="w-6 h-6"
+                          style={{ color: ctaText === '#17233F' ? '#FFFFFF' : activeColor }}
+                          strokeWidth={2.5}
+                        />
+                      )}
                     </motion.span>
                     <span className="mobile-room-next-label relative text-[14px] font-bold leading-none mt-1" style={{ color: ctaText }}>
                       Další fáze
@@ -870,7 +921,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 onClick={handleDecreaseTime}
                 disabled={isInteractionBlocked || !estimatedEndTime}
                 whileTap={{ scale: 0.94 }}
-                className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-30 outline-none select-none"
+                className="mobile-room-time-button w-11 h-11 rounded-[14px] flex items-center justify-center disabled:opacity-30 outline-none select-none"
                 style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
               >
                 <Minus className="w-5 h-5" strokeWidth={2.25} style={{ color: 'var(--m-text)' }} />
@@ -879,7 +930,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 onClick={handleIncreaseTime}
                 disabled={isInteractionBlocked}
                 whileTap={{ scale: 0.94 }}
-                className="w-11 h-11 rounded-full flex items-center justify-center disabled:opacity-30 outline-none select-none"
+                className="mobile-room-time-button mobile-room-time-button-primary w-11 h-11 rounded-[14px] flex items-center justify-center disabled:opacity-30 outline-none select-none"
                 style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
               >
                 <Plus className="w-5 h-5" strokeWidth={2.25} style={{ color: 'var(--m-text)' }} />
@@ -895,10 +946,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               <motion.button
                 onClick={async () => {
                   const newPaused = !isPaused;
+                  const pausedAt = newPaused ? new Date() : null;
+                  const pausedAtIso = pausedAt?.toISOString() || null;
                   setIsPaused(newPaused);
+                  setPauseStartedAt(pausedAt);
+                  onPauseChange?.(newPaused, pausedAtIso);
                   await updateOperatingRoom(room.id, {
                     is_paused: newPaused,
-                    paused_at: newPaused ? new Date().toISOString() : null,
+                    paused_at: pausedAtIso,
                   });
                   await recordStatusEvent({
                     operating_room_id: room.id,
@@ -909,7 +964,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="mobile-room-action aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
+                className={`mobile-room-action mobile-room-action-pause${isPaused ? ' is-active' : ''} relative overflow-hidden aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all`}
                 style={{
                   background: isPaused ? 'var(--m-accent-soft)' : 'var(--m-card)',
                   border: isPaused ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
@@ -917,7 +972,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
               >
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  className="mobile-room-action-icon w-12 h-12 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
                 >
                   {isPaused ? (
@@ -927,7 +982,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   )}
                 </div>
                 <span
-                  className="text-[12px] font-semibold tracking-tight leading-tight"
+                  className="mobile-room-action-label text-[12px] font-semibold tracking-tight leading-tight"
                   style={{ color: isPaused ? 'var(--m-accent)' : 'var(--m-text)' }}
                 >
                   {isPaused ? 'Pokračovat' : 'Pauza'}
@@ -949,7 +1004,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="mobile-room-action aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all"
+                className={`mobile-room-action mobile-room-action-hygiene${room.isEnhancedHygiene ? ' is-active' : ''} relative overflow-hidden aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all`}
                 style={{
                   background: room.isEnhancedHygiene ? 'var(--m-accent-soft)' : 'var(--m-card)',
                   border: room.isEnhancedHygiene ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
@@ -957,13 +1012,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
               >
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  className="mobile-room-action-icon w-12 h-12 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
                 >
                   <ShieldAlert className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
                 </div>
                 <span
-                  className="text-[12px] font-semibold tracking-tight leading-tight"
+                  className="mobile-room-action-label text-[12px] font-semibold tracking-tight leading-tight"
                   style={{ color: room.isEnhancedHygiene ? 'var(--m-accent)' : 'var(--m-text)' }}
                 >
                   Hygiena
@@ -993,7 +1048,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 disabled={!!patientCalledTime}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="mobile-room-action aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
+                className={`mobile-room-action mobile-room-action-call${patientCalledTime ? ' is-active' : ''} relative overflow-hidden aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed`}
                 style={{
                   background: patientCalledTime ? 'var(--m-accent-soft)' : 'var(--m-card)',
                   border: patientCalledTime ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
@@ -1001,13 +1056,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
               >
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  className="mobile-room-action-icon w-12 h-12 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
                 >
                   <Phone className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
                 </div>
                 <span
-                  className="text-[12px] font-semibold tracking-tight tabular-nums leading-tight"
+                  className="mobile-room-action-label text-[12px] font-semibold tracking-tight tabular-nums leading-tight"
                   style={{ color: patientCalledTime ? 'var(--m-accent)' : 'var(--m-text)' }}
                 >
                   {patientCalledTime ? patientCallElapsedTime : 'Volat'}
@@ -1042,7 +1097,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 disabled={!patientCalledTime || !!patientArrivedTime}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="mobile-room-action aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed"
+                className={`mobile-room-action mobile-room-action-arrival${patientArrivedTime ? ' is-active' : ''} relative overflow-hidden aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed`}
                 style={{
                   background: patientArrivedTime ? 'var(--m-accent-soft)' : 'var(--m-card)',
                   border: patientArrivedTime ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
@@ -1051,13 +1106,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 }}
               >
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  className="mobile-room-action-icon w-12 h-12 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
                 >
                   <BedDouble className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
                 </div>
                 <span
-                  className="text-[12px] font-semibold tracking-tight leading-tight"
+                  className="mobile-room-action-label text-[12px] font-semibold tracking-tight leading-tight"
                   style={{ color: patientArrivedTime ? 'var(--m-accent)' : 'var(--m-text)' }}
                 >
                   Příjezd
@@ -1093,11 +1148,19 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   className={`mobile-room-team-card mobile-room-team-${role} flex items-center gap-3.5 px-4 py-3.5 rounded-[18px] active:scale-[0.99] text-left w-full outline-none select-none transition-all`}
                   style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
                 >
-                  <User className="w-5 h-5 shrink-0" style={{ color: 'var(--m-text)' }} strokeWidth={2} />
-                  <p className="flex-1 min-w-0 text-[14px] font-bold truncate leading-none" style={{ color: 'var(--m-text)' }}>
-                    {name || fallback}
-                    <span className="font-medium" style={{ color: 'var(--m-muted)' }}> — {label}</span>
-                  </p>
+                  <span className="mobile-room-team-icon w-10 h-10 rounded-[13px] flex items-center justify-center shrink-0">
+                    {role === 'doctor'
+                      ? <Stethoscope className="w-5 h-5" strokeWidth={2} />
+                      : <Heart className="w-5 h-5" strokeWidth={2} />}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[8px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: 'var(--m-muted)' }}>
+                      {label}
+                    </span>
+                    <span className="block mt-1.5 text-[13px] font-bold truncate leading-none" style={{ color: 'var(--m-text)' }}>
+                      {name || fallback}
+                    </span>
+                  </span>
                   <ChevronRight className="w-4 h-4 shrink-0" style={{ color: 'var(--m-faint)' }} strokeWidth={2.25} />
                 </button>
               ))}
@@ -1410,8 +1473,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             <motion.button
               onClick={async () => {
                 const newPaused = !isPaused;
+                const pausedAt = newPaused ? new Date() : null;
+                const pausedAtIso = pausedAt?.toISOString() || null;
                 setIsPaused(newPaused);
-                await updateOperatingRoom(room.id, { is_paused: newPaused });
+                setPauseStartedAt(pausedAt);
+                onPauseChange?.(newPaused, pausedAtIso);
+                await updateOperatingRoom(room.id, {
+                  is_paused: newPaused,
+                  paused_at: pausedAtIso,
+                });
                 await recordStatusEvent({
                   operating_room_id: room.id,
                   event_type: newPaused ? 'pause' : 'resume',

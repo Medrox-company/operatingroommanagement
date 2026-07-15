@@ -42,7 +42,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: "try{if(localStorage.getItem('or-mobile-theme')==='dark')document.documentElement.classList.add('m-dark')}catch(e){}",
+            __html: "try{if(localStorage.getItem('or-mobile-theme')!=='light')document.documentElement.classList.add('m-dark')}catch(e){document.documentElement.classList.add('m-dark')}",
           }}
         />
         <meta name="mobile-web-app-capable" content="yes" />

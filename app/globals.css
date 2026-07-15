@@ -329,8 +329,8 @@ html.capacitor-native select {
 .timeline-scroll { scrollbar-width: thin; scrollbar-color: rgba(6, 182, 212, 0.3) transparent; }
 
 /* ═══════════ MOBILNÍ TÉMA — světlá/tmavá varianta (CSS proměnné) ═══════════
-   Světlá = výchozí; třída .m-dark na <html> přepne všechny mobilní moduly
-   do tmavé varianty dle návrhu (deep navy, glass karty, akcent dle fáze). */
+   Tmavý motiv se při prvním spuštění aktivuje v layoutu / mobilním entrypointu.
+   Kořenové tokeny níže zůstávají světlou variantou pro ruční přepnutí. */
 :root {
   --m-bg: #EDF1F8;
   --m-page-bg: radial-gradient(120% 78% at 50% -8%, #FFFFFF 0%, #EDF1F8 58%, #E7EDF7 100%);
@@ -409,6 +409,53 @@ html.capacitor-native select {
 }
 
 @media (max-width: 767px) {
+  .mobile-dashboard-room-card {
+    background: linear-gradient(145deg, var(--m-card-solid) 0%, color-mix(in srgb, var(--m-card-solid) 94%, var(--m-accent) 6%) 100%);
+  }
+
+  .mobile-dashboard-room-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(118deg, var(--m-card-highlight) 0%, transparent 28%, transparent 74%, rgba(var(--m-accent-rgb), 0.045) 100%);
+    opacity: 0.55;
+  }
+
+  @media (hover: hover) {
+    .mobile-dashboard-room-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(var(--m-accent-rgb), 0.30) !important;
+    }
+  }
+
+  .m-dark .mobile-dashboard-room-card {
+    background: linear-gradient(145deg, rgba(29, 38, 70, 0.96) 0%, rgba(10, 18, 34, 0.98) 72%, rgba(7, 28, 35, 0.96) 100%);
+  }
+
+  .mobile-timeline-room-detail {
+    color: var(--m-text);
+  }
+
+  .mobile-timeline-detail-header,
+  .mobile-timeline-progress-card,
+  .mobile-timeline-detail-card,
+  .mobile-timeline-phase-card {
+    background: var(--m-card);
+    border: 1px solid var(--m-border);
+    box-shadow: var(--m-card-shadow);
+  }
+
+  .m-dark .mobile-timeline-detail-header,
+  .m-dark .mobile-timeline-progress-card,
+  .m-dark .mobile-timeline-detail-card,
+  .m-dark .mobile-timeline-phase-card {
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
+
   .mobile-theme-surface {
     background: var(--m-page-bg) !important;
     transition: background 240ms ease;
@@ -419,6 +466,126 @@ html.capacitor-native select {
     box-shadow: var(--m-card-shadow) !important;
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+  }
+
+  /* Detail sálu používá v obou motivech stejné rozložení. Níže se pro
+     tmavý režim mění pouze barvy, povrchy a světelné efekty. */
+  .mobile-room-detail-title {
+    text-align: center;
+    align-items: center;
+  }
+
+  .mobile-room-detail-header > button {
+    border-radius: 18px !important;
+    border: 1px solid var(--m-border) !important;
+    box-shadow: var(--m-card-shadow) !important;
+  }
+
+  .mobile-room-phase-card {
+    padding: 22px !important;
+  }
+
+  .mobile-room-elapsed-icon {
+    display: none;
+  }
+
+  .mobile-room-elapsed-label {
+    display: inline !important;
+  }
+
+  .mobile-room-next-button {
+    width: 78px !important;
+    height: 78px !important;
+    min-height: 78px !important;
+    flex-basis: 78px !important;
+    border-radius: 999px !important;
+    padding: 0 !important;
+  }
+
+  .mobile-room-next-icon {
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .mobile-room-next-icon svg {
+    color: var(--m-on-accent) !important;
+    fill: var(--m-on-accent);
+  }
+
+  .mobile-room-next-label {
+    display: none !important;
+  }
+
+  .mobile-room-team-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px !important;
+  }
+
+  .mobile-room-team-card {
+    min-width: 0;
+    padding: 15px 13px !important;
+    border: 1px solid var(--m-border) !important;
+    box-shadow: var(--m-card-shadow) !important;
+  }
+
+  .mobile-room-team-card p {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+  }
+
+  .mobile-room-team-doctor {
+    background: linear-gradient(145deg, rgba(146, 92, 255, 0.12), var(--m-card)) !important;
+    border-color: rgba(146, 92, 255, 0.28) !important;
+  }
+
+  .mobile-room-team-nurse {
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.12), var(--m-card)) !important;
+    border-color: rgba(16, 185, 129, 0.26) !important;
+  }
+
+  .mobile-room-team-icon {
+    border: 1px solid currentColor;
+    box-shadow: inset 0 1px 0 var(--m-card-highlight);
+  }
+
+  .mobile-room-team-doctor .mobile-room-team-icon {
+    color: #925CFF;
+    background: rgba(146, 92, 255, 0.14);
+  }
+
+  .mobile-room-team-nurse .mobile-room-team-icon {
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.14);
+  }
+
+  .mobile-room-time-button {
+    border-radius: 14px !important;
+    border: 1px solid var(--m-border) !important;
+    box-shadow: var(--m-card-shadow) !important;
+  }
+
+  .mobile-room-time-button-primary {
+    background: var(--m-accent) !important;
+    border-color: rgba(var(--m-accent-rgb), 0.42) !important;
+  }
+
+  .mobile-room-time-button-primary svg {
+    color: var(--m-on-accent) !important;
+  }
+
+  .mobile-room-action {
+    border: 1px solid var(--m-border) !important;
+    box-shadow: var(--m-card-shadow) !important;
+  }
+
+  .mobile-room-estimate-card > div:first-child > p:first-child,
+  .mobile-room-detail h2 {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 10px !important;
   }
 
   /* Detail sálu — tmavý vizuální jazyk dle referenčního návrhu. Spodní
@@ -497,6 +664,15 @@ html.capacitor-native select {
     fill: #080B14;
   }
 
+  .m-dark .mobile-room-next-icon.mobile-room-pause-icon {
+    color: #FFFFFF !important;
+  }
+
+  .m-dark .mobile-room-next-icon.mobile-room-pause-icon svg {
+    color: #FFFFFF !important;
+    fill: none !important;
+  }
+
   .m-dark .mobile-room-next-label {
     display: none !important;
   }
@@ -516,6 +692,84 @@ html.capacitor-native select {
     background: rgba(14, 23, 41, 0.84) !important;
     border: 1px solid rgba(153, 139, 208, 0.18) !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.045), 0 14px 30px rgba(0,0,0,0.22) !important;
+  }
+
+  .mobile-room-action-pause {
+    --room-action-color: #A56AFF;
+    --room-action-rgb: 165, 106, 255;
+  }
+
+  .mobile-room-action-hygiene {
+    --room-action-color: #FB923C;
+    --room-action-rgb: 251, 146, 60;
+  }
+
+  .mobile-room-action-call {
+    --room-action-color: #38BDF8;
+    --room-action-rgb: 56, 189, 248;
+  }
+
+  .mobile-room-action-arrival {
+    --room-action-color: #34D399;
+    --room-action-rgb: 52, 211, 153;
+  }
+
+  .m-dark .mobile-room-action:not(.is-active) .mobile-room-action-icon {
+    background: rgba(255,255,255,0.055) !important;
+    border-color: rgba(255,255,255,0.16) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  .m-dark .mobile-room-action:not(.is-active) .mobile-room-action-icon svg,
+  .m-dark .mobile-room-action:not(.is-active) .mobile-room-action-label {
+    color: #FFFFFF !important;
+  }
+
+  .m-dark .mobile-room-action.is-active {
+    background: linear-gradient(145deg, rgba(var(--room-action-rgb),0.24), rgba(10,18,34,0.96) 78%) !important;
+    border-color: rgba(var(--room-action-rgb),0.55) !important;
+    box-shadow: 0 14px 34px rgba(var(--room-action-rgb),0.18), inset 0 1px 0 rgba(255,255,255,0.10) !important;
+  }
+
+  .m-dark .mobile-room-action.is-active::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 22%, rgba(var(--room-action-rgb),0.24), transparent 52%);
+  }
+
+  .m-dark .mobile-room-action.is-active::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--room-action-color);
+    box-shadow: 0 0 12px var(--room-action-color);
+  }
+
+  .m-dark .mobile-room-action.is-active .mobile-room-action-icon {
+    position: relative;
+    z-index: 1;
+    background: rgba(var(--room-action-rgb),0.20) !important;
+    border-color: rgba(var(--room-action-rgb),0.58) !important;
+    box-shadow: 0 0 22px rgba(var(--room-action-rgb),0.24), inset 0 1px 0 rgba(255,255,255,0.12);
+    animation: mobile-room-action-breathe 2.4s ease-in-out infinite;
+  }
+
+  .m-dark .mobile-room-action.is-active .mobile-room-action-icon svg,
+  .m-dark .mobile-room-action.is-active .mobile-room-action-label {
+    position: relative;
+    z-index: 1;
+    color: var(--room-action-color) !important;
+  }
+
+  @keyframes mobile-room-action-breathe {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.045); filter: brightness(1.18); }
   }
 
   .m-dark .mobile-room-team-grid {

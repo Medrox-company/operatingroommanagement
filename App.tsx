@@ -530,6 +530,15 @@ const AppContent: React.FC = () => {
     ));
   }, []);
 
+  const handlePauseChange = useCallback((roomId: string, paused: boolean, pausedAt: string | null) => {
+    recentLocalUpdates.current.set(roomId, Date.now());
+    setRooms(prev => prev.map(room =>
+      room.id === roomId
+        ? { ...room, isPaused: paused, pausedAt }
+        : room
+    ));
+  }, []);
+
   // Stabilní handlery pro Sidebar / MobileNav — bez useCallbacku se recreatují
   // každý render a bustují memo na navigačních komponentách.
   const handleNavigate = useCallback((view: string) => {
@@ -567,6 +576,10 @@ const AppContent: React.FC = () => {
   const handlePatientStatusChangeSelected = useCallback((calledAt: string | null, arrivedAt: string | null) => {
     if (selectedRoomId) handlePatientStatusChange(selectedRoomId, calledAt, arrivedAt);
   }, [selectedRoomId, handlePatientStatusChange]);
+
+  const handlePauseChangeSelected = useCallback((paused: boolean, pausedAt: string | null) => {
+    if (selectedRoomId) handlePauseChange(selectedRoomId, paused, pausedAt);
+  }, [selectedRoomId, handlePauseChange]);
 
   // Admin → odeslat informační zprávu na jeden či více sálů (popup v detailu sálu)
   const handleSendRoomNotice = useCallback(async (roomIds: string[], message: string) => {
@@ -660,6 +673,7 @@ const AppContent: React.FC = () => {
                   onStepChange={handleStepChange}
                   onEndTimeChange={handleEndTimeChange}
                   onEnhancedHygieneToggle={handleEnhancedHygieneToggleSelected}
+                  onPauseChange={handlePauseChangeSelected}
                   onStaffChange={handleStaffChangeSelected}
                   onPatientStatusChange={handlePatientStatusChangeSelected}
                   onClearNotice={() => handleClearRoomNotice(selectedRoom.id)}

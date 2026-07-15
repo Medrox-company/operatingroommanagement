@@ -760,7 +760,9 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.is_septic !== undefined) result.isSeptic = row.is_septic;
   if (row.is_emergency !== undefined) result.isEmergency = row.is_emergency;
   if (row.is_enhanced_hygiene !== undefined) result.isEnhancedHygiene = row.is_enhanced_hygiene;
+  if (row.enhanced_hygiene_at !== undefined) result.enhancedHygieneAt = row.enhanced_hygiene_at;
   if (row.is_paused !== undefined) result.isPaused = row.is_paused;
+  if (row.paused_at !== undefined) result.pausedAt = row.paused_at;
   if (row.patient_called_at !== undefined) result.patientCalledAt = row.patient_called_at;
   if (row.patient_arrived_at !== undefined) result.patientArrivedAt = row.patient_arrived_at;
   if (row.phase_started_at !== undefined) result.phaseStartedAt = row.phase_started_at;

@@ -8,6 +8,16 @@ import App from '../App';
 import '../app/globals.css';
 import { installNativeApiBridge } from './native-api';
 
+// Tmavý motiv je výchozí. Výslovná uživatelská volba světlého režimu
+// zůstává zachována i při dalším spuštění nativní aplikace.
+try {
+  if (localStorage.getItem('or-mobile-theme') !== 'light') {
+    document.documentElement.classList.add('m-dark');
+  }
+} catch {
+  document.documentElement.classList.add('m-dark');
+}
+
 installNativeApiBridge();
 
 if (Capacitor.isNativePlatform()) {

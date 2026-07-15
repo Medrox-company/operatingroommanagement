@@ -4,6 +4,7 @@ import { OperatingRoom } from '../../types';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 import { AlertTriangle, Check, CheckCircle2, ChevronLeft, Clock, Flag, Lightbulb, Stethoscope, Timer, TrendingUp, Users, X } from 'lucide-react';
 import { C } from './constants';
+import { MobileThemeToggle } from '../mobile/MobileShell';
 
 /* ════════════════════════════════════════════════════════════════════════
    Detail sálu — ANIMOVANÝ TACHOMETR dílčích statusů
@@ -203,38 +204,38 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 32 }}
         onClick={(e) => e.stopPropagation()}
-        className="md:hidden fixed inset-0 flex flex-col overflow-hidden"
-        style={{ background: '#0A0C12' }}
+        className="mobile-timeline-room-detail mobile-theme-surface md:hidden fixed inset-0 flex flex-col overflow-hidden"
       >
         {/* Header — zpět · název · oddělení */}
-        <div
-          className="flex items-center justify-between px-5 pb-3 shrink-0"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)' }}
-        >
-          <button
-            onClick={onClose}
-            aria-label="Zavřít detail sálu"
-            className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <ChevronLeft className="w-5 h-5 text-white/80" />
-          </button>
-          <div className="text-center min-w-0 px-3">
-            <h2 className="text-[17px] font-bold text-white leading-tight truncate">{room.name}</h2>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-white/35 mt-0.5 truncate">
-              {room.department || 'Operační sál'}
-            </p>
+        <div className="shrink-0 px-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>
+          <div className="mobile-timeline-detail-header mobile-glass-card rounded-[24px] px-4 py-3 flex items-center justify-between gap-3">
+            <button
+              onClick={onClose}
+              aria-label="Zavřít detail sálu"
+              className="w-10 h-10 rounded-[14px] flex items-center justify-center active:scale-95 transition-transform shrink-0"
+              style={{ background: 'var(--m-card-2)', border: '1px solid var(--m-border)', color: 'var(--m-text)' }}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="text-center min-w-0 px-1">
+              <p className="text-[9px] font-bold uppercase tracking-[0.22em] truncate" style={{ color: 'var(--m-muted)' }}>Operační sál</p>
+              <h2 className="text-[18px] font-extrabold uppercase leading-tight truncate mt-1" style={{ color: 'var(--m-text-strong)' }}>{room.name}</h2>
+              <p className="text-[10px] uppercase tracking-[0.18em] mt-1 truncate" style={{ color: 'var(--m-muted)' }}>
+                {room.department || 'Operační sál'}
+              </p>
+            </div>
+            <MobileThemeToggle />
           </div>
-          <div className="w-10 h-10" aria-hidden />
         </div>
 
         {/* Obsah */}
         <div
-          className="flex-1 overflow-y-auto hide-scrollbar px-5"
+          className="flex-1 overflow-y-auto hide-scrollbar px-5 pt-5"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)' }}
         >
-          {/* Status pill — akcent jako „Day" v referenci */}
-          <div className="flex justify-center mb-6">
+          <section className="mobile-timeline-progress-card rounded-[26px] px-4 pt-5 pb-6 mb-5">
+          {/* Aktivní status */}
+          <div className="flex justify-center mb-4">
             <span
               className="inline-flex items-center gap-2 px-4 h-9 rounded-full text-[12px] font-bold"
               style={{ background: stepColor, color: '#0A0C12', boxShadow: `0 8px 24px ${stepColor}45` }}
@@ -253,7 +254,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div className="flex flex-col items-center mb-2">
             <div className="relative" style={{ width: 216, height: 216 }}>
               <svg width="216" height="216" viewBox="0 0 216 216" className="-rotate-90">
-                <circle cx="108" cy="108" r="94" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="13" />
+                <circle cx="108" cy="108" r="94" fill="none" stroke="var(--m-track)" strokeWidth="13" />
                 <motion.circle
                   cx="108" cy="108" r="94"
                   fill="none"
@@ -268,19 +269,19 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-[12px] font-medium text-white/45">Průběh</p>
-                <p className="text-[44px] font-black tabular-nums leading-none text-white mt-1">
-                  {progressPercent}<span className="text-[22px] font-bold text-white/45">%</span>
+                <p className="text-[12px] font-medium" style={{ color: 'var(--m-muted)' }}>Průběh</p>
+                <p className="text-[44px] font-black tabular-nums leading-none mt-1" style={{ color: 'var(--m-text-strong)' }}>
+                  {progressPercent}<span className="text-[22px] font-bold" style={{ color: 'var(--m-muted)' }}>%</span>
                 </p>
-                <p className="text-[11px] text-white/40 mt-1.5">krok {stepIndex + 1} z {totalSteps}</p>
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--m-muted)' }}>krok {stepIndex + 1} z {totalSteps}</p>
               </div>
               {/* Pilulka cíle — jako „Goal: 10,000" */}
               <div
                 className="absolute left-1/2 -translate-x-1/2 -bottom-2 px-3.5 h-7 rounded-full flex items-center gap-1.5"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(8px)' }}
+                style={{ background: 'var(--m-card-solid)', border: '1px solid var(--m-border)', backdropFilter: 'blur(8px)', boxShadow: 'var(--m-card-shadow)' }}
               >
-                <Flag className="w-3 h-3 text-white/50" />
-                <span className="text-[11px] font-semibold text-white/80 tabular-nums">
+                <Flag className="w-3 h-3" style={{ color: 'var(--m-muted)' }} />
+                <span className="text-[11px] font-semibold tabular-nums" style={{ color: 'var(--m-text)' }}>
                   Cíl: {room.estimatedEndTime
                     ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                     : '—'}
@@ -288,9 +289,10 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               </div>
             </div>
           </div>
+          </section>
 
           {/* ── Tři statistické karty ── */}
-          <div className="grid grid-cols-3 gap-2.5 mt-8 mb-6">
+          <div className="grid grid-cols-3 gap-2.5 mb-6">
             {[
               {
                 icon: Clock,
@@ -320,13 +322,12 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               return (
                 <div
                   key={card.label}
-                  className="rounded-3xl px-3 py-4 flex flex-col items-center text-center"
-                  style={{ background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  className="mobile-timeline-detail-card rounded-[20px] px-3 py-4 flex flex-col items-center text-center"
                 >
                   <Icon className="w-4 h-4 mb-2" style={{ color: card.color }} />
-                  <p className="text-[10px] font-medium text-white/45 mb-1">{card.label}</p>
-                  <p className="text-[15px] font-bold text-white tabular-nums leading-tight">{card.value}</p>
-                  <p className="text-[9px] text-white/30 mt-0.5">{card.unit}</p>
+                  <p className="text-[10px] font-medium mb-1" style={{ color: 'var(--m-muted)' }}>{card.label}</p>
+                  <p className="text-[15px] font-bold tabular-nums leading-tight" style={{ color: 'var(--m-text-strong)' }}>{card.value}</p>
+                  <p className="text-[9px] mt-0.5" style={{ color: 'var(--m-faint)' }}>{card.unit}</p>
                 </div>
               );
             })}
@@ -340,8 +341,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             ].map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
-                className="rounded-3xl px-4 py-3.5 flex items-center gap-3"
-                style={{ background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.06)' }}
+                className="mobile-timeline-detail-card rounded-[20px] px-4 py-3.5 flex items-center gap-3"
               >
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -350,8 +350,8 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                   <Icon className="w-4 h-4" style={{ color: stepColor }} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] text-white/40">{label}</p>
-                  <p className="text-[13px] font-semibold text-white truncate">{value}</p>
+                  <p className="text-[10px]" style={{ color: 'var(--m-muted)' }}>{label}</p>
+                  <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--m-text-strong)' }}>{value}</p>
                 </div>
               </div>
             ))}
@@ -359,7 +359,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
 
           {/* ── Fáze procesu — „Recent Workouts" styl ── */}
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[15px] font-bold text-white">Fáze procesu</h3>
+            <h3 className="text-[15px] font-bold" style={{ color: 'var(--m-text-strong)' }}>Fáze procesu</h3>
             <span className="text-[11px] font-semibold" style={{ color: stepColor }}>
               {stepIndex} / {totalSteps} hotovo
             </span>
@@ -379,10 +379,10 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: done || isCurrent ? 1 : 0.45, y: 0 }}
                   transition={{ delay: 0.25 + i * 0.05 }}
-                  className="rounded-3xl px-4 py-3 flex items-center gap-3"
+                  className="mobile-timeline-phase-card rounded-[20px] px-4 py-3 flex items-center gap-3"
                   style={{
-                    background: isCurrent ? `linear-gradient(120deg, ${col}14, rgba(255,255,255,0.045))` : 'rgba(255,255,255,0.045)',
-                    border: `1px solid ${isCurrent ? `${col}40` : 'rgba(255,255,255,0.06)'}`,
+                    background: isCurrent ? `linear-gradient(120deg, ${col}18, var(--m-card-solid))` : 'var(--m-card)',
+                    border: `1px solid ${isCurrent ? `${col}50` : 'var(--m-border)'}`,
                   }}
                 >
                   <div
@@ -395,8 +395,8 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                     <span className="w-2.5 h-2.5 rounded-full" style={{ background: col, boxShadow: `0 0 8px ${col}99` }} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-white truncate">{s.name || `Fáze ${i + 1}`}</p>
-                    <p className="text-[11px] text-white/40 tabular-nums">{sub}</p>
+                    <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--m-text-strong)' }}>{s.name || `Fáze ${i + 1}`}</p>
+                    <p className="text-[11px] tabular-nums" style={{ color: 'var(--m-muted)' }}>{sub}</p>
                   </div>
                   {done && (
                     <span
