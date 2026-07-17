@@ -15,8 +15,10 @@ import {
   Lock,
   LogIn,
   Mail,
+  Moon,
   Shield,
   Stethoscope,
+  Sun,
   User,
   type LucideIcon,
 } from 'lucide-react';
@@ -62,6 +64,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [hospitals, setHospitals] = useState<LoginHospital[]>([]);
   const [selectedHospitalId, setSelectedHospitalId] = useState('');
   const [hospitalsLoading, setHospitalsLoading] = useState(true);
+  const [mobileDarkMode, setMobileDarkMode] = useState(true);
+
+  useEffect(() => {
+    setMobileDarkMode(document.documentElement.classList.contains('m-dark'));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +129,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     await submitCredentials(role.email, role.password);
   };
 
+  const toggleMobileTheme = () => {
+    const nextDarkMode = !mobileDarkMode;
+    setMobileDarkMode(nextDarkMode);
+    document.documentElement.classList.toggle('m-dark', nextDarkMode);
+    try {
+      localStorage.setItem('or-mobile-theme', nextDarkMode ? 'dark' : 'light');
+    } catch {
+      // Motiv zůstane přepnutý i v prohlížeči, který blokuje lokální úložiště.
+    }
+  };
+
   const hospitalOptions = hospitals.length === 0
     ? <option value="">Žádné zařízení není dostupné</option>
     : hospitals.map(hospital => (
@@ -132,103 +150,74 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <>
-    <div className="min-h-[100dvh] w-full overflow-x-hidden bg-[#F3F6FC] text-[#102D5C] md:hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 hidden md:block"
-        style={{
-          background: 'radial-gradient(circle at 18% 12%, rgba(31,85,137,0.22), transparent 34%), radial-gradient(circle at 82% 82%, rgba(18,119,132,0.12), transparent 30%), linear-gradient(145deg, #091524 0%, #07111F 48%, #050B14 100%)',
-        }}
-      />
+    <div className="mobile-login-page relative min-h-[100dvh] w-full overflow-x-hidden md:hidden">
+      <div aria-hidden className="login-aurora-flow mobile-login-aurora pointer-events-none fixed" />
+      <div aria-hidden className="login-aurora-vignette mobile-login-vignette pointer-events-none fixed inset-0" />
 
-      <main className="relative z-10 mx-auto grid w-full max-w-[1240px] items-center gap-10 px-5 pb-10 pt-10 sm:px-8 md:min-h-[calc(100dvh-158px)] md:grid-cols-[minmax(0,1fr)_470px] md:px-10 md:pb-14 md:pt-2 lg:gap-20">
-        <section className="mx-auto w-full max-w-[560px] text-center md:mx-0 md:text-left">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#8293AC] md:text-[#71BBD1]">Živý operační program</p>
-          <h1 className="mt-4 text-[40px] font-extrabold leading-[0.98] tracking-[-0.045em] text-[#102D5C] sm:text-[48px] md:text-[58px] md:text-white lg:text-[66px]">
-            Operační sály<br />pod kontrolou.
-          </h1>
-          <p className="mx-auto mt-5 max-w-[470px] text-[15px] leading-7 text-[#71819A] md:mx-0 md:text-[16px] md:text-white/48">
-            Bezpečný přístup k aktuálnímu provozu, týmům a harmonogramu vašeho zdravotnického zařízení.
-          </p>
+      <button
+        type="button"
+        onClick={toggleMobileTheme}
+        className="mobile-login-theme-toggle fixed right-5 z-30 grid h-11 w-11 place-items-center rounded-2xl"
+        style={{ top: 'max(18px, env(safe-area-inset-top))' }}
+        aria-label={mobileDarkMode ? 'Přepnout do světlého režimu' : 'Přepnout do tmavého režimu'}
+      >
+        {mobileDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </button>
 
-          <div className="mt-7 hidden grid-cols-3 gap-3 md:grid">
-            {[
-              ['01', 'Vyberte zařízení'],
-              ['02', 'Přihlaste se'],
-              ['03', 'Sledujte provoz'],
-            ].map(([number, label]) => (
-              <div key={number} className="rounded-2xl border border-white/[0.065] bg-white/[0.025] px-4 py-3.5">
-                <span className="text-[10px] font-bold text-[#55BED0]">{number}</span>
-                <p className="mt-1.5 text-[11px] font-medium text-white/48">{label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col px-[clamp(24px,8vw,42px)] pb-[max(28px,env(safe-area-inset-bottom))] pt-[max(68px,calc(env(safe-area-inset-top)+54px))]">
+        <header className="flex flex-col items-center text-center">
+          <h1 className="mobile-login-title mt-5 text-[clamp(2.15rem,10vw,3rem)] font-extrabold leading-none tracking-[-0.045em]">Operatingroom manager</h1>
+          <p className="mobile-login-subtitle mt-3 text-[15px] font-medium">Zadejte přihlašovací údaje</p>
+        </header>
 
-        <section className="mx-auto w-full max-w-[470px] rounded-[28px] border border-[#DCE5F1] bg-white p-5 shadow-[0_24px_70px_rgba(34,60,98,0.13)] sm:p-7 md:border-white/[0.08] md:bg-[#0D1929]/95 md:p-8 md:shadow-[0_28px_80px_rgba(0,0,0,0.34)]">
-          <div className="mb-6">
-            <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#8798B2] md:text-white/35">Vstup do systému</p>
-            <h2 className="mt-2 text-[25px] font-extrabold tracking-[-0.025em] text-[#102D5C] md:text-white">Přihlášení</h2>
-            <p className="mt-1 text-[12px] text-[#8291A8] md:text-white/38">Zadejte své přihlašovací údaje</p>
-          </div>
-
+        <section className="mt-10 sm:mt-12">
           {error && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-[#F0C8CC] bg-[#FFF2F3] px-3.5 py-3 text-[#B53D49] md:border-red-400/20 md:bg-red-400/[0.08] md:text-red-300">
+            <div className="mobile-login-error mb-5 flex items-start gap-2.5 rounded-2xl px-4 py-3.5">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span className="text-[12px] font-semibold leading-snug">{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="login-hospital" className="mb-2 block text-[9px] font-bold uppercase tracking-[0.2em] text-[#8A9AB3] md:text-white/38">
-                Zdravotnické zařízení
-              </label>
-              <div className="group relative">
-                <Building2 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7086A5] transition-colors group-focus-within:text-[#1D6799] md:text-white/30 md:group-focus-within:text-[#55BED0]" />
+              <label htmlFor="login-hospital" className="mobile-login-label mb-2.5 block text-[10px] font-extrabold uppercase tracking-[0.2em]">Nemocniční zařízení</label>
+              <div className="relative">
+                <Building2 className="mobile-login-field-icon absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" strokeWidth={1.8} />
                 <select
                   id="login-hospital"
                   value={selectedHospitalId}
                   onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }}
                   disabled={hospitalsLoading || hospitals.length === 0}
                   required
-                  className="h-[52px] w-full appearance-none rounded-xl border border-[#D8E2EF] bg-[#F8FAFD] pl-11 pr-11 text-[13px] font-semibold text-[#173764] outline-none transition-colors focus:border-[#83ACC9] disabled:opacity-50 md:border-white/[0.08] md:bg-white/[0.035] md:text-white md:focus:border-[#55BED0]/50"
+                  className="mobile-login-field h-[58px] w-full appearance-none rounded-[17px] pl-12 pr-12 text-[15px] font-bold outline-none disabled:opacity-50"
                 >
                   {hospitalOptions}
                 </select>
                 {hospitalsLoading
-                  ? <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#8A9AB3] md:text-white/30" />
-                  : <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A9AB3] md:text-white/30" />}
+                  ? <Loader2 className="mobile-login-field-icon absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin" />
+                  : <ChevronDown className="mobile-login-field-icon pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2" />}
               </div>
             </div>
 
             <div>
-              <label htmlFor="login-email" className="mb-2 block text-[9px] font-bold uppercase tracking-[0.2em] text-[#8A9AB3] md:text-white/38">
-                Uživatelské jméno
-              </label>
-              <div className="group relative">
-                <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7086A5] transition-colors group-focus-within:text-[#1D6799] md:text-white/30 md:group-focus-within:text-[#55BED0]" />
-                <input
-                  id="login-email"
-                  type="text"
-                  inputMode="email"
-                  autoCapitalize="none"
-                  autoComplete="username"
-                  value={email}
-                  onChange={event => setEmail(event.target.value)}
-                  placeholder="jmeno.prijmeni"
-                  required
-                  className="h-[52px] w-full rounded-xl border border-[#D8E2EF] bg-[#F8FAFD] pl-11 pr-4 text-[13px] font-semibold text-[#173764] outline-none transition-colors placeholder:font-medium placeholder:text-[#9DABC0] focus:border-[#83ACC9] md:border-white/[0.08] md:bg-white/[0.035] md:text-white md:placeholder:text-white/22 md:focus:border-[#55BED0]/50"
-                />
-              </div>
+              <label htmlFor="login-email" className="mobile-login-label mb-2.5 block text-[10px] font-extrabold uppercase tracking-[0.2em]">Uživatelské jméno</label>
+              <input
+                id="login-email"
+                type="text"
+                inputMode="email"
+                autoCapitalize="none"
+                autoComplete="username"
+                value={email}
+                onChange={event => setEmail(event.target.value)}
+                placeholder="jmeno.prijmeni"
+                required
+                className="mobile-login-field h-[58px] w-full rounded-[17px] px-4 text-[15px] font-semibold outline-none"
+              />
             </div>
 
             <div>
-              <label htmlFor="login-password" className="mb-2 block text-[9px] font-bold uppercase tracking-[0.2em] text-[#8A9AB3] md:text-white/38">
-                Heslo
-              </label>
-              <div className="group relative">
-                <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7086A5] transition-colors group-focus-within:text-[#1D6799] md:text-white/30 md:group-focus-within:text-[#55BED0]" />
+              <label htmlFor="login-password" className="mobile-login-label mb-2.5 block text-[10px] font-extrabold uppercase tracking-[0.2em]">Heslo</label>
+              <div className="relative">
                 <input
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
@@ -237,15 +226,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   onChange={event => setPassword(event.target.value)}
                   placeholder="••••••••"
                   required
-                  className="h-[52px] w-full rounded-xl border border-[#D8E2EF] bg-[#F8FAFD] pl-11 pr-12 text-[13px] font-semibold text-[#173764] outline-none transition-colors placeholder:text-[#9DABC0] focus:border-[#83ACC9] md:border-white/[0.08] md:bg-white/[0.035] md:text-white md:placeholder:text-white/22 md:focus:border-[#55BED0]/50"
+                  className="mobile-login-field h-[58px] w-full rounded-[17px] px-4 pr-12 text-[15px] font-semibold outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(value => !value)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8090A8] transition-colors hover:text-[#173764] md:text-white/30 md:hover:text-white/65"
+                  className="mobile-login-field-icon absolute right-4 top-1/2 -translate-y-1/2"
                   aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
@@ -253,16 +242,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={isLoading || !selectedHospitalId}
-              className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#174A7E] text-[13px] font-extrabold text-white shadow-[0_12px_26px_rgba(23,74,126,0.18)] transition-[transform,background-color] hover:bg-[#1C568F] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 md:bg-[#E8F2F7] md:text-[#0A2742] md:shadow-none md:hover:bg-white"
+              className="mobile-login-submit mt-1 flex h-[58px] w-full items-center justify-center gap-2 rounded-full text-[16px] font-extrabold disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Přihlašování…</> : 'Přihlásit se'}
+              {isLoading ? <><Loader2 className="h-5 w-5 animate-spin" /> Přihlašování…</> : 'Přihlásit se'}
             </button>
           </form>
 
-          <div className="my-5 flex items-center gap-3">
-            <span className="h-px flex-1 bg-[#E2E9F2] md:bg-white/[0.07]" />
-            <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-[#A0AEC1] md:text-white/25">Rychlý vstup</span>
-            <span className="h-px flex-1 bg-[#E2E9F2] md:bg-white/[0.07]" />
+          <div className="my-6 flex items-center gap-3">
+            <span className="mobile-login-divider h-px flex-1" />
+            <span className="mobile-login-label text-[8px] font-extrabold uppercase tracking-[0.22em]">Rychlý vstup</span>
+            <span className="mobile-login-divider h-px flex-1" />
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -274,24 +263,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   type="button"
                   onClick={() => void handleQuickLogin(role.id)}
                   disabled={isLoading || !selectedHospitalId}
-                  className="group flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-[#E0E8F1] bg-[#FAFBFD] px-1.5 py-2.5 transition-[transform,border-color,background-color] hover:-translate-y-0.5 hover:border-[#C6D5E5] hover:bg-white active:translate-y-0 disabled:opacity-40 md:border-white/[0.065] md:bg-white/[0.025] md:hover:border-white/[0.13] md:hover:bg-white/[0.05]"
+                  className="mobile-login-role flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl px-1.5 py-3 disabled:opacity-40"
                 >
-                  <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ color: role.tone, backgroundColor: `${role.tone}14` }}>
-                    <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
+                  <span className="grid h-8 w-8 place-items-center rounded-[11px]" style={{ color: role.tone, backgroundColor: `${role.tone}18` }}>
+                    <Icon className="h-4 w-4" strokeWidth={1.9} />
                   </span>
-                  <span className="block w-full truncate text-center text-[8px] font-extrabold text-[#536780] md:text-white/58">{role.label}</span>
+                  <span className="block w-full truncate text-center text-[9px] font-extrabold">{role.label}</span>
                 </button>
               );
             })}
           </div>
         </section>
-      </main>
 
-      <footer className="relative z-10 px-5 pb-6 text-center md:px-10 md:pb-7">
-        <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-[#A8B4C6] md:text-white/20">
-          MEDROX Czech Republic and Canada
-        </p>
-      </footer>
+        <footer className="mt-auto pt-10 text-center">
+          <p className="mobile-login-footer text-[8px] font-extrabold uppercase tracking-[0.25em]">MEDROX Czech Republic and Canada</p>
+        </footer>
+      </main>
     </div>
 
     <div className="relative hidden min-h-screen w-full overflow-hidden bg-[#06101D] text-white md:flex md:flex-col">

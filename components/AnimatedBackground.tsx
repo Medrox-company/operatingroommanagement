@@ -45,6 +45,8 @@ const AnimatedBackground: React.FC<Props> = ({ settings, className }) => {
   const grad = useMemo(() => backgroundGradientCSS(settings), [settings]);
   const palette = (settings.colors || []).map((c) => c.color).filter(Boolean);
   const pick = (i: number) => (palette.length ? palette[i % palette.length] : '#8B5CF6');
+  const auroraOffset = palette.length >= 4 ? 1 : 0;
+  const auroraColors = [pick(auroraOffset), pick(auroraOffset + 1), pick(auroraOffset + 2)];
 
   // Vyšší rychlost = kratší doba cyklu.
   const dur = (base: number) => `${((base * 3) / speed).toFixed(1)}s`;
@@ -63,34 +65,16 @@ const AnimatedBackground: React.FC<Props> = ({ settings, className }) => {
       {/* Základní barevná / gradientní vrstva */}
       <div className={`absolute inset-0 transition-all duration-500 ${gradClass}`} style={gradStyle} />
 
-      {/* Aurora — plující barevné orby */}
+      {/* Aurora — jediná kompozitní gradientová vrstva bez blur filtru. */}
       {anim === 'aurora' && (
-        <div className="absolute inset-0 overflow-hidden" style={{ opacity: baseOpacity }}>
-          <div
-            className="bg-orb"
-            style={{
-              width: '55%', height: '55%', top: '-18%', left: '-12%',
-              background: `radial-gradient(circle, ${pick(0)}55 0%, transparent 65%)`,
-              animation: `bg-orb-1 ${dur(26)} ease-in-out infinite`,
-            }}
-          />
-          <div
-            className="bg-orb"
-            style={{
-              width: '48%', height: '48%', bottom: '-16%', right: '-10%',
-              background: `radial-gradient(circle, ${pick(1)}55 0%, transparent 65%)`,
-              animation: `bg-orb-2 ${dur(32)} ease-in-out infinite`,
-            }}
-          />
-          <div
-            className="bg-orb"
-            style={{
-              width: '42%', height: '42%', top: '26%', left: '32%',
-              background: `radial-gradient(circle, ${pick(2)}44 0%, transparent 65%)`,
-              animation: `bg-orb-3 ${dur(38)} ease-in-out infinite`,
-            }}
-          />
-        </div>
+        <div
+          className="bg-aurora-flow"
+          style={{
+            opacity: baseOpacity,
+            background: `radial-gradient(ellipse 36% 25% at 24% 43%, ${auroraColors[0]}AA 0%, ${auroraColors[0]}38 46%, transparent 74%), radial-gradient(ellipse 42% 28% at 53% 48%, ${auroraColors[1]}A8 0%, ${auroraColors[1]}38 50%, transparent 76%), radial-gradient(ellipse 34% 28% at 77% 40%, ${auroraColors[2]}88 0%, ${auroraColors[2]}30 49%, transparent 75%)`,
+            '--bg-dur': dur(22),
+          } as React.CSSProperties}
+        />
       )}
 
       {/* Plovoucí částice / bokeh */}

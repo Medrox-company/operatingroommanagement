@@ -448,6 +448,139 @@ html.capacitor-native select {
   --m-teal-glow: rgba(45, 212, 191, 0.16);
 }
 
+/* Mobilní přihlášení: stejná struktura v obou motivech, pouze barevné tokeny. */
+.mobile-login-page {
+  color-scheme: light;
+  --login-bg: #f3f6fc;
+  --login-title: #123670;
+  --login-copy: #697b9b;
+  --login-muted: #91a0b9;
+  --login-field: rgba(255, 255, 255, 0.96);
+  --login-field-text: #14376f;
+  --login-field-border: #d6e0ef;
+  --login-field-focus: #6289c4;
+  --login-role: rgba(255, 255, 255, 0.72);
+  --login-role-border: #dce5f2;
+  --login-divider: #dce4f0;
+  --login-toggle: rgba(255, 255, 255, 0.82);
+  --login-toggle-border: #d9e2ef;
+  --login-button: linear-gradient(135deg, #123f78 0%, #1d5694 100%);
+  --login-button-shadow: 0 13px 30px rgba(20, 63, 120, 0.19);
+  background: var(--login-bg);
+  color: var(--login-title);
+}
+
+.m-dark .mobile-login-page {
+  color-scheme: dark;
+  --login-bg: linear-gradient(145deg, #07162b 0%, #0a1029 48%, #08091a 100%);
+  --login-title: #ffffff;
+  --login-copy: rgba(231, 238, 255, 0.62);
+  --login-muted: rgba(211, 222, 248, 0.48);
+  --login-field: rgba(10, 19, 38, 0.82);
+  --login-field-text: #f7f9ff;
+  --login-field-border: rgba(139, 152, 212, 0.24);
+  --login-field-focus: #5bc8dc;
+  --login-role: rgba(16, 26, 50, 0.72);
+  --login-role-border: rgba(133, 147, 209, 0.18);
+  --login-divider: rgba(174, 188, 230, 0.16);
+  --login-toggle: rgba(16, 26, 50, 0.74);
+  --login-toggle-border: rgba(151, 165, 220, 0.22);
+  --login-button: linear-gradient(120deg, #237da7 0%, #5657d9 54%, #8a4ed0 100%);
+  --login-button-shadow: 0 15px 34px rgba(66, 83, 205, 0.27);
+}
+
+.mobile-login-aurora {
+  display: none;
+}
+
+.m-dark .mobile-login-aurora {
+  display: block;
+}
+
+.mobile-login-vignette {
+  display: none;
+}
+
+.m-dark .mobile-login-vignette {
+  display: block;
+}
+
+.mobile-login-label,
+.mobile-login-footer {
+  color: var(--login-muted);
+}
+
+.mobile-login-title {
+  color: var(--login-title);
+}
+
+.mobile-login-subtitle {
+  color: var(--login-copy);
+}
+
+.mobile-login-theme-toggle {
+  border: 1px solid var(--login-toggle-border);
+  background: var(--login-toggle);
+  color: var(--login-title);
+  box-shadow: 0 8px 24px rgba(27, 48, 91, 0.08);
+}
+
+.mobile-login-field {
+  border: 1px solid var(--login-field-border);
+  background: var(--login-field);
+  color: var(--login-field-text);
+  box-shadow: 0 7px 22px rgba(24, 49, 91, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.mobile-login-field::placeholder {
+  color: var(--login-muted);
+  font-weight: 500;
+}
+
+.mobile-login-field:focus {
+  border-color: var(--login-field-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--login-field-focus) 14%, transparent);
+}
+
+.mobile-login-field-icon {
+  color: var(--login-muted);
+}
+
+.mobile-login-submit {
+  background: var(--login-button);
+  color: #fff;
+  box-shadow: var(--login-button-shadow);
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+.mobile-login-submit:active {
+  transform: scale(0.985);
+}
+
+.mobile-login-role {
+  border: 1px solid var(--login-role-border);
+  background: var(--login-role);
+  color: var(--login-copy);
+  box-shadow: 0 7px 20px rgba(25, 47, 87, 0.045);
+}
+
+.mobile-login-divider {
+  background: var(--login-divider);
+}
+
+.mobile-login-error {
+  border: 1px solid rgba(238, 99, 119, 0.28);
+  background: rgba(238, 99, 119, 0.09);
+  color: #dc5368;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-login-aurora {
+    animation: none !important;
+  }
+}
+
 @media (max-width: 767px) {
   .mobile-dashboard-room-card {
     background: linear-gradient(145deg, var(--m-card-solid) 0%, color-mix(in srgb, var(--m-card-solid) 94%, var(--m-accent) 6%) 100%);
@@ -994,16 +1127,19 @@ html.capacitor-native select {
   will-change: filter;
 }
 
-/* 3) Aurora — pomalu plující barevné orby */
-@keyframes bg-orb-1 { 0%,100% { transform: translate(-10%, -6%) scale(1);   } 50% { transform: translate(12%, 8%)  scale(1.25); } }
-@keyframes bg-orb-2 { 0%,100% { transform: translate(8%, 10%)  scale(1.1);  } 50% { transform: translate(-12%, -6%) scale(0.9); } }
-@keyframes bg-orb-3 { 0%,100% { transform: translate(0, 0)     scale(1);    } 50% { transform: translate(-8%, 10%) scale(1.3); } }
-.bg-orb {
+/* 3) Aurora — jedna GPU-kompozitní vrstva bez náročného blur filtru */
+@keyframes bg-aurora-drift {
+  0%   { transform: translate3d(-3%, -2%, 0) rotate(-5deg) scale(1.03); }
+  50%  { transform: translate3d(2%, 1.5%, 0) rotate(-1deg) scale(1.08); }
+  100% { transform: translate3d(4%, -1%, 0) rotate(3deg) scale(1.04); }
+}
+.bg-aurora-flow {
   position: absolute;
-  border-radius: 9999px;
-  filter: blur(100px);
+  inset: -24%;
+  contain: paint;
   will-change: transform;
   pointer-events: none;
+  animation: bg-aurora-drift var(--bg-dur, 22s) ease-in-out infinite alternate;
 }
 
 /* 4) Plovoucí částice / bokeh */
@@ -1022,7 +1158,8 @@ html.capacitor-native select {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bg-anim-gradient, .bg-anim-pulse, .bg-orb, .bg-particle { animation: none !important; }
+  .bg-anim-gradient, .bg-anim-pulse, .bg-aurora-flow, .bg-particle { animation: none !important; }
+  .bg-aurora-flow { transform: translate3d(0, 0, 0) rotate(-2deg) scale(1.05); will-change: auto; }
   .bg-particle { display: none !important; }
 }
 

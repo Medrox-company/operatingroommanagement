@@ -78,6 +78,63 @@ const PRESET_COLORS = [
   '#FBBF24', '#F97316', '#EC4899', '#EF4444',
 ];
 
+const AURORA_PRESETS: Array<{
+  id: string;
+  name: string;
+  description: string;
+  colors: BackgroundSettings['colors'];
+}> = [
+  {
+    id: 'clinical-flow',
+    name: 'Clinical Flow',
+    description: 'Modrá · fialová · magenta',
+    colors: [
+      { color: '#061425', position: 0 },
+      { color: '#075985', position: 38 },
+      { color: '#4338CA', position: 70 },
+      { color: '#9D174D', position: 100 },
+    ],
+  },
+  {
+    id: 'arctic-wave',
+    name: 'Arctic Wave',
+    description: 'Navy · cyan · ledová modř',
+    colors: [
+      { color: '#04131F', position: 0 },
+      { color: '#0E7490', position: 40 },
+      { color: '#2563EB', position: 72 },
+      { color: '#5B21B6', position: 100 },
+    ],
+  },
+  {
+    id: 'violet-pulse',
+    name: 'Violet Pulse',
+    description: 'Indigo · violet · růžová',
+    colors: [
+      { color: '#090C24', position: 0 },
+      { color: '#312E81', position: 36 },
+      { color: '#7C3AED', position: 70 },
+      { color: '#BE185D', position: 100 },
+    ],
+  },
+  {
+    id: 'deep-ocean',
+    name: 'Deep Ocean',
+    description: 'Temná modř · teal · indigo',
+    colors: [
+      { color: '#030B18', position: 0 },
+      { color: '#0C4A6E', position: 38 },
+      { color: '#0F766E', position: 68 },
+      { color: '#3730A3', position: 100 },
+    ],
+  },
+];
+
+const auroraPreviewBackground = (colors: BackgroundSettings['colors']) => {
+  const [base, first, second, third] = colors.map(item => item.color);
+  return `radial-gradient(ellipse 55% 70% at 18% 45%, ${first}CC, transparent 72%), radial-gradient(ellipse 55% 75% at 55% 50%, ${second}B8, transparent 74%), radial-gradient(ellipse 48% 70% at 88% 42%, ${third}9E, transparent 74%), ${base}`;
+};
+
 const GALLERY_IMAGES = [
   { url: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000', name: 'Operační sál' },
   { url: 'https://images.unsplash.com/photo-1551190822-a9333d879b1f?auto=format&fit=crop&q=80&w=2000', name: 'Moderní nemocnice' },
@@ -219,6 +276,21 @@ const BackgroundManager: React.FC = () => {
     setSettings(current => ({ ...current, colors: nextColors }));
     setSelectedColorIndex(current => Math.min(current, nextColors.length - 1));
     setHasChanges(true);
+  };
+
+  const applyAuroraPreset = (preset: (typeof AURORA_PRESETS)[number]) => {
+    updateSettings({
+      type: 'linear',
+      colors: preset.colors.map(color => ({ ...color })),
+      direction: 'to bottom right',
+      opacity: 88,
+      imageUrl: '',
+      imageOpacity: 0,
+      imageBlur: 0,
+      animation: 'aurora',
+      animationSpeed: 1,
+    });
+    setSelectedColorIndex(0);
   };
 
   const dispatchSettings = (nextSettings: BackgroundSettings) => {
@@ -704,6 +776,39 @@ const BackgroundManager: React.FC = () => {
 
           {activeTab === 'animation' && (
             <>
+              <SectionPanel title="Aurora předvolby" description="Lehké barevné kompozice bez obrázků a náročného rozostření.">
+                <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                  {AURORA_PRESETS.map(preset => {
+                    const active = settings.animation === 'aurora'
+                      && settings.imageUrl === ''
+                      && settings.colors.map(color => color.color).join('|') === preset.colors.map(color => color.color).join('|');
+
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyAuroraPreset(preset)}
+                        disabled={saving}
+                        className="group overflow-hidden rounded-2xl border text-left transition-colors disabled:opacity-40"
+                        style={{ borderColor: active ? `${COLORS.cyan}70` : 'rgba(255,255,255,0.07)', background: active ? `${COLORS.cyan}0A` : 'rgba(255,255,255,0.015)' }}
+                      >
+                        <span className="relative block h-20" style={{ background: auroraPreviewBackground(preset.colors) }}>
+                          {active && (
+                            <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-200 text-[#061425]">
+                              <Check className="h-3 w-3" strokeWidth={3} />
+                            </span>
+                          )}
+                        </span>
+                        <span className="block px-3 py-2.5">
+                          <span className="block text-[11px] font-bold text-white/75 group-hover:text-white">{preset.name}</span>
+                          <span className="mt-0.5 block text-[8px] text-white/28">{preset.description}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </SectionPanel>
+
               <SectionPanel title="Pohyb pozadí" description="Efekt se aplikuje pouze na atmosférickou vrstvu, obsah zůstává stabilní.">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {ANIMATION_OPTIONS.map(option => {
