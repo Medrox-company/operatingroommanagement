@@ -2252,7 +2252,7 @@ const DevicesSettingsPanel: React.FC = () => {
                           {device.device_name || 'Neznámé zařízení'}
                         </h3>
                         {online && (
-                          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" title="Online" />
+                          <span className="w-2 h-2 rounded-full bg-cyan-400" title="Online" />
                         )}
                         {device.is_pwa_installed && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300">PWA</span>

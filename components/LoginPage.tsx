@@ -299,16 +299,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background: 'radial-gradient(circle at 50% 38%, rgba(39,105,145,0.18) 0%, rgba(10,30,50,0.08) 32%, transparent 58%), radial-gradient(circle at 12% 18%, rgba(29,79,121,0.17), transparent 34%), radial-gradient(circle at 88% 85%, rgba(14,112,119,0.10), transparent 31%), linear-gradient(180deg, #0C1A2E 0%, #081423 48%, #050C16 100%)',
+          background: 'linear-gradient(145deg, #07162B 0%, #0A1029 48%, #08091A 100%)',
         }}
       />
+      <div aria-hidden className="login-aurora-flow pointer-events-none absolute" />
+      <div aria-hidden className="login-aurora-vignette pointer-events-none absolute inset-0" />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.16]"
+        className="pointer-events-none absolute inset-0 opacity-[0.08]"
         style={{
           background: 'linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)',
-          backgroundSize: '72px 72px',
-          maskImage: 'linear-gradient(to bottom, transparent, black 18%, black 72%, transparent)',
+          backgroundSize: '80px 80px',
+          maskImage: 'linear-gradient(to bottom, transparent, black 24%, black 68%, transparent)',
         }}
       />
 

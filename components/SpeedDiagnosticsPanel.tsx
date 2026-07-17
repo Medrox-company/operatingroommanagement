@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity,
   AlertTriangle,
@@ -245,26 +244,13 @@ const SpeedDiagnosticsPanel: React.FC<SpeedDiagnosticsPanelProps> = ({ hospitalN
         <div className="relative grid gap-6 lg:grid-cols-[280px_1fr] lg:items-center">
           <div className="flex flex-col items-center justify-center py-2">
             <div className="relative grid h-52 w-52 place-items-center">
-              {running && (
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ background: 'conic-gradient(from 90deg, transparent 0 58%, rgba(54,217,236,.55) 74%, transparent 86%)', filter: 'blur(1px)' }}
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2.6, ease: 'linear', repeat: Infinity }}
-                />
-              )}
               <div
                 className="absolute inset-3 rounded-full p-[1px]"
                 style={{ background: `conic-gradient(${result ? quality.color : '#36D9EC'} ${progress * 3.6}deg, rgba(255,255,255,.07) 0deg)` }}
               >
                 <div className="h-full w-full rounded-full bg-[#07101c]/95" />
               </div>
-              <motion.div
-                key={`${stage}-${result?.score ?? 0}`}
-                initial={{ opacity: 0.35, scale: 0.93 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="relative z-10 flex flex-col items-center"
-              >
+              <div className="relative z-10 flex flex-col items-center">
                 {running ? (
                   <Activity className="mb-2 h-9 w-9 text-cyan-300" />
                 ) : result ? (
@@ -278,15 +264,11 @@ const SpeedDiagnosticsPanel: React.FC<SpeedDiagnosticsPanelProps> = ({ hospitalN
                 <span className="mt-1 text-[9px] font-bold uppercase tracking-[0.28em]" style={{ color: result ? quality.color : 'rgba(255,255,255,.42)' }}>
                   {result ? quality.label : running ? 'PRŮBĚH %' : 'PŘIPRAVENO'}
                 </span>
-              </motion.div>
+              </div>
             </div>
 
             <div className="mt-1 text-center">
-              <AnimatePresence mode="wait">
-                <motion.p key={stageMeta.label} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="text-sm font-bold text-white">
-                  {stageMeta.label}
-                </motion.p>
-              </AnimatePresence>
+              <p className="text-sm font-bold text-white">{stageMeta.label}</p>
               <p className="mt-1 text-[11px] text-white/35">{stageMeta.detail}</p>
             </div>
           </div>
@@ -348,13 +330,9 @@ const SpeedDiagnosticsPanel: React.FC<SpeedDiagnosticsPanelProps> = ({ hospitalN
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
+      <div>
         {result && recommendation && (
-          <motion.div
-            key="result"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+          <div
             className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center rounded-2xl border p-4"
             style={{ borderColor: `${quality.color}35`, background: `${quality.color}0C`, boxShadow: `0 12px 38px ${quality.glow}` }}
           >
@@ -371,19 +349,19 @@ const SpeedDiagnosticsPanel: React.FC<SpeedDiagnosticsPanelProps> = ({ hospitalN
               <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Poslední test</p>
               <p className="mt-1 text-xs tabular-nums text-white/55">{new Date(result.measuredAt).toLocaleString('cs-CZ')}</p>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {errorMessage && (
-          <motion.div key="error" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-start gap-3 rounded-2xl border border-rose-400/25 bg-rose-400/[0.07] p-4 text-sm text-rose-100/80">
+          <div className="flex items-start gap-3 rounded-2xl border border-rose-400/25 bg-rose-400/[0.07] p-4 text-sm text-rose-100/80">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-300" />
             <div>
               <p className="font-bold text-rose-200">Test se nepodařilo dokončit</p>
               <p className="mt-1 leading-relaxed text-rose-100/60">{errorMessage}</p>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         {[
@@ -414,17 +392,14 @@ interface MetricCardProps {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ icon: Icon, label, value, suffix, color, detail }) => (
-  <motion.div layout className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
-    <div aria-hidden className="absolute -right-7 -top-8 h-24 w-24 rounded-full blur-2xl" style={{ background: `${color}1F` }} />
+  <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
     <div className="relative flex items-start justify-between gap-2">
       <div>
         <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/35">{label}</p>
         <div className="mt-3 flex items-baseline gap-1.5">
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.span key={value === null ? 'empty' : Math.round(value)} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="text-3xl font-semibold tabular-nums tracking-tight text-white">
-              {value === null ? '—' : value < 10 ? value.toFixed(1) : Math.round(value)}
-            </motion.span>
-          </AnimatePresence>
+          <span className="text-3xl font-semibold tabular-nums tracking-tight text-white">
+            {value === null ? '—' : value < 10 ? value.toFixed(1) : Math.round(value)}
+          </span>
           <span className="text-[10px] font-bold" style={{ color }}>{suffix}</span>
         </div>
         <p className="mt-1 text-[9px] text-white/25">{detail}</p>
@@ -433,7 +408,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon: Icon, label, value, suffi
         <Icon className="h-4 w-4" />
       </div>
     </div>
-  </motion.div>
+  </div>
 );
 
 const SampleBars: React.FC<{ samples: number[]; color: string }> = ({ samples, color }) => {
@@ -445,13 +420,10 @@ const SampleBars: React.FC<{ samples: number[]; color: string }> = ({ samples, c
         const sample = samples[index % Math.max(1, samples.length)];
         const height = sample === undefined ? 13 + (index % 4) * 5 : clamp((sample / max) * 28, 8, 28);
         return (
-          <motion.span
+          <span
             key={index}
             className="min-w-0 flex-1 rounded-full"
-            initial={{ height: 4, opacity: 0.16 }}
-            animate={{ height, opacity: sample === undefined ? 0.14 : 0.72 }}
-            transition={{ delay: index * 0.025 }}
-            style={{ background: color }}
+            style={{ background: color, height, opacity: sample === undefined ? 0.14 : 0.72 }}
           />
         );
       })}
