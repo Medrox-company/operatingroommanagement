@@ -296,19 +296,23 @@ const LIGHT_ROOM_COLUMNS = [
   'phase_started_at', 'operation_started_at', 'current_step_index', 'estimated_end_time',
   'doctor_id', 'nurse_id', 'anesthesiologist_id', 'current_patient_id', 'current_procedure_id',
   'weekly_schedule', 'sort_order', 'hourly_operating_cost',
+  'notice_message', 'notice_at', 'notice_sender',
 ].join(', ');
 
-export async function fetchOperatingRoomsLight(): Promise<OperatingRoom[] | null> {
+export async function fetchOperatingRoomsLight(hospitalId: string = getDatabaseHospitalId()): Promise<OperatingRoom[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
   try {
     const [roomsRes, staffRes] = await Promise.all([
       supabase
         .from('operating_rooms')
         .select(LIGHT_ROOM_COLUMNS)
-        .eq('hospital_id', activeHospitalId || 'default')
+        .eq('hospital_id', hospitalId)
         .order('sort_order', { ascending: true, nullsFirst: false })
         .order('name', { ascending: true }),
-      supabase.from('staff').select('*').eq('hospital_id', activeHospitalId || 'default'),
+      supabase
+        .from('staff')
+        .select('id, name, role, skill_level, availability, is_external, is_recommended, is_active, sick_leave_days, vacation_days, notes')
+        .eq('hospital_id', hospitalId),
     ]);
 
     if (roomsRes.error) throw roomsRes.error;

@@ -58,3 +58,5 @@ operatingroom-mobile/Thumbs.db
 
 # Build cache
 tsconfig.tsbuildinfo
+.vercel
+.env*

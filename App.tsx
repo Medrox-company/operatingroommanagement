@@ -32,7 +32,7 @@ import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { Activity, LayoutGrid, Shield, AlertTriangle, Lock, Bell } from 'lucide-react';
-import { fetchOperatingRooms, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
+import { fetchOperatingRooms, fetchOperatingRoomsLight, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HospitalProvider, useHospital } from './contexts/HospitalContext';
 import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts/WorkflowStatusesContext';
@@ -95,6 +95,21 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
+  // Po prvním úspěšném načtení uloží aplikační shell a statické soubory.
+  // Další otevření je rychlejší a při krátkém výpadku serveru se místo
+  // systémové chybové stránky může zobrazit alespoň naposledy načtená aplikace.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' || !('serviceWorker' in navigator)) return;
+    const register = () => {
+      void navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
+        console.warn('[PWA] Service worker registration failed:', error);
+      });
+    };
+    if (document.readyState === 'complete') register();
+    else window.addEventListener('load', register, { once: true });
+    return () => window.removeEventListener('load', register);
+  }, []);
+
   // Load background settings from database
   useEffect(() => {
     const loadBgSettings = async () => {
@@ -147,18 +162,28 @@ const AppContent: React.FC = () => {
 
     const loadRooms = async () => {
       try {
-        // Plný fetch (s timeoutem). Načítá KOMPLETNÍ data včetně status_history a
-        // completed_operations, ze kterých se počítají barvy segmentů na časové ose.
-        const dbRooms = await withTimeout(fetchOperatingRooms());
+        // 1. Lehký dashboard bez velkých JSON historií — uživatel uvidí sály
+        //    výrazně dříve i na pomalé nemocniční síti.
+        const lightRooms = await withTimeout(fetchOperatingRoomsLight(activeHospitalId), 4500);
         if (!isMounted) return;
-        if (!dbRooms || !Array.isArray(dbRooms) || dbRooms.length === 0) {
+        if (lightRooms && Array.isArray(lightRooms) && lightRooms.length > 0) {
+          setRooms(lightRooms);
+          setIsDbConnected(true);
+          setRoomsLoaded(true);
+        }
+
+        // 2. Kompletní historie a dokončené cykly se doplní následně pro
+        //    Timeline a Statistiky, aniž by blokovaly první dashboard.
+        const dbRooms = await withTimeout(fetchOperatingRooms(activeHospitalId), 9000);
+        if (!isMounted) return;
+        if (dbRooms && Array.isArray(dbRooms) && dbRooms.length > 0) {
+          setRooms(dbRooms);
+          setIsDbConnected(true);
+          setRoomsLoaded(true);
+        } else if (!lightRooms || !Array.isArray(lightRooms) || lightRooms.length === 0) {
           setRooms([]);
           setRoomsLoaded(true);
-          return;
         }
-        setRooms(dbRooms);
-        setIsDbConnected(true);
-        setRoomsLoaded(true);
       } catch (error) {
         if (!isMounted) return;
         console.error("[App] Failed to load rooms:", error);
@@ -184,11 +209,16 @@ const AppContent: React.FC = () => {
       requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
       cancelIdleCallback?: (id: number) => void;
     };
+    const connection = (navigator as Navigator & {
+      connection?: { effectiveType?: string; saveData?: boolean };
+    }).connection;
+    const slowConnection = connection?.saveData || connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g';
+    if (slowConnection) return;
+
     const run = () => {
       void import('./components/TimelineModule');
-      void import('./components/StatisticsModule');
     };
-    const id = w.requestIdleCallback ? w.requestIdleCallback(run, { timeout: 4000 }) : window.setTimeout(run, 2000);
+    const id = w.requestIdleCallback ? w.requestIdleCallback(run, { timeout: 10000 }) : window.setTimeout(run, 8000);
     return () => {
       if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(id);
       else clearTimeout(id);

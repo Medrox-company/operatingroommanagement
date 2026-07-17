@@ -1,4 +1,4 @@
-const CACHE_NAME = 'or-control-v2';
+const CACHE_NAME = 'or-control-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -67,23 +67,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Kód aplikace (JS/CSS/JSON/manifest) - NETWORK FIRST.
-  // Důležité: cache-first by trvale servíroval starý build a změny by se
-  // nikdy neprojevily. Síť má proto přednost, cache je jen offline záloha.
+  // Hashované JS/CSS soubory jsou neměnné. Cache-first výrazně urychlí další
+  // start a nemůže držet starou verzi, protože nový build má nový název souboru.
   if (
-    url.pathname.match(/\.(js|css|json)$/i) ||
-    url.pathname === '/manifest.json'
+    url.pathname.match(/\.(js|css)$/i)
   ) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.status === 200 && response.type !== 'error') {
-            const cloned = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request).then((r) => r || new Response('Offline', { status: 503 }))),
+      caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+        if (response && response.status === 200 && response.type !== 'error') {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+        }
+        return response;
+      })),
     );
     return;
   }
@@ -110,9 +106,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML pages - network first
+  // Ostatní požadavky (např. RSC datové streamy) necháme obsloužit prohlížeč
+  // přímo. HTML fallback se nesmí vrátit místo datového formátu Next.js.
+  const acceptsHtml = request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
+  if (!acceptsHtml) return;
+
+  // HTML stránky: síť má přednost, ale při pomalé/neprůchodné nemocniční síti
+  // čekáme nejvýše 3 sekundy a poté použijeme poslední uložený shell.
   event.respondWith(
-    fetch(request)
+    Promise.race([
+      fetch(request),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('network-timeout')), 3000)),
+    ])
       .then((response) => {
         if (!response || response.status !== 200) {
           return response;
@@ -126,7 +131,7 @@ self.addEventListener('fetch', (event) => {
       .catch(() => {
         console.log('[SW] Page request failed, checking cache:', url.pathname);
         return caches.match(request).then((response) => {
-          return response || new Response('Offline - page not available', { status: 503 });
+          return response || caches.match('/').then((root) => root || new Response('Offline - page not available', { status: 503 }));
         });
       }),
   );

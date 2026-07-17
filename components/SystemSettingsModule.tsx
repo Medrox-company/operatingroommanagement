@@ -43,6 +43,7 @@ import {
   ChevronDown,
   UserRoundCheck,
   UserRoundX,
+  Gauge,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
@@ -50,6 +51,7 @@ import { useHospital, type Hospital } from '../contexts/HospitalContext';
 import { logger } from '../lib/logger';
 import { usePWAInstall } from './PWAInstaller';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import SpeedDiagnosticsPanel from './SpeedDiagnosticsPanel';
 
 interface HospitalInfo {
   id?: string;
@@ -65,7 +67,7 @@ interface HospitalInfo {
   hospital_notes?: string | null;
 }
 
-type TabId = 'hospital' | 'modules' | 'database' | 'access';
+type TabId = 'hospital' | 'modules' | 'diagnostics' | 'database' | 'access';
 
 const COLORS = {
   cyan: '#36D9EC',
@@ -436,6 +438,7 @@ const SystemSettingsModule: React.FC = () => {
 {([
   { id: 'hospital' as const, label: 'Zdravotnické zařízení', icon: Building2 },
   { id: 'modules' as const,  label: 'Správa modulů',         icon: SlidersHorizontal },
+  { id: 'diagnostics' as const, label: 'Rychlost a připojení', icon: Gauge },
   { id: 'database' as const, label: 'Administrace databáze', icon: Database },
   { id: 'access' as const,   label: 'Přihlášení a přístup',  icon: UserCog },
   ]).map(tab => {
@@ -511,6 +514,22 @@ const SystemSettingsModule: React.FC = () => {
                 modules={modules}
                 onToggleModule={toggleModule}
                 onToggleRole={toggleModuleRole}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'diagnostics' && (
+            <motion.div
+              key="diagnostics"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="relative"
+            >
+              <SpeedDiagnosticsPanel
+                hospitalId={activeHospitalId}
+                hospitalName={hospital.hospital_name}
               />
             </motion.div>
           )}
