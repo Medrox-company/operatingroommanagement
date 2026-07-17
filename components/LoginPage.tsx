@@ -84,7 +84,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         setHospitals(next);
         const stored = localStorage.getItem('orm-active-hospital');
-        setSelectedHospitalId(next.some(item => item.id === stored) ? stored! : (next[0]?.id || ''));
+        const primaryHospital = next.find(item =>
+          item.hospital_short_name?.trim().toLocaleLowerCase('cs-CZ') === 'knl'
+          || item.hospital_name.toLocaleLowerCase('cs-CZ').includes('krajská nemocnice liberec')
+        );
+        setSelectedHospitalId(
+          primaryHospital?.id
+          || (next.some(item => item.id === stored) ? stored! : (next[0]?.id || ''))
+        );
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'Nemocnice nelze načíst');
       } finally {
