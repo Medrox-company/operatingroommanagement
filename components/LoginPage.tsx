@@ -41,13 +41,14 @@ const QUICK_ROLES: Array<{
   password: string;
   icon: LucideIcon;
   tone: string;
+  description: string;
 }> = [
-  { id: 'admin', label: 'Administrátor', email: 'admin@nemocnice.cz', password: 'admin123', icon: Shield, tone: '#D99C35' },
-  { id: 'aro', label: 'ARO', email: 'aro@nemocnice.cz', password: 'aro123', icon: Activity, tone: '#24A8C8' },
-  { id: 'cos', label: 'COS', email: 'cos@nemocnice.cz', password: 'cos123', icon: Stethoscope, tone: '#2AAE82' },
-  { id: 'management', label: 'Management', email: 'management@nemocnice.cz', password: 'mgmt123', icon: Briefcase, tone: '#8B7AD8' },
-  { id: 'primar', label: 'Primariát', email: 'primar@nemocnice.cz', password: 'primar123', icon: ClipboardList, tone: '#C76F9B' },
-  { id: 'user', label: 'Uživatel', email: 'user@nemocnice.cz', password: 'user123', icon: User, tone: '#70839F' },
+  { id: 'admin', label: 'Administrátor', email: 'admin@nemocnice.cz', password: 'admin123', icon: Shield, tone: '#D99C35', description: 'Plný přístup' },
+  { id: 'aro', label: 'ARO', email: 'aro@nemocnice.cz', password: 'aro123', icon: Activity, tone: '#24A8C8', description: 'Anestezie' },
+  { id: 'cos', label: 'COS', email: 'cos@nemocnice.cz', password: 'cos123', icon: Stethoscope, tone: '#2AAE82', description: 'Operační sály' },
+  { id: 'management', label: 'Management', email: 'management@nemocnice.cz', password: 'mgmt123', icon: Briefcase, tone: '#8B7AD8', description: 'Vedení' },
+  { id: 'primar', label: 'Primariát', email: 'primar@nemocnice.cz', password: 'primar123', icon: ClipboardList, tone: '#C76F9B', description: 'Primář' },
+  { id: 'user', label: 'Uživatel', email: 'user@nemocnice.cz', password: 'user123', icon: User, tone: '#70839F', description: 'Standardní' },
 ];
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
@@ -384,26 +385,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
 
             <div className="mt-6 grid grid-cols-3 gap-3">
-              {QUICK_ROLES.map(role => {
-                const Icon = role.icon;
-                return (
+              {QUICK_ROLES.map(role => (
                   <button
                     key={role.id}
                     type="button"
                     onClick={() => void handleQuickLogin(role.id)}
                     disabled={isLoading || !selectedHospitalId}
-                    className="group flex min-h-[108px] items-center gap-4 rounded-2xl border border-white/[0.065] bg-white/[0.03] px-5 text-left transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-white/[0.13] hover:bg-white/[0.055] disabled:opacity-40"
+                    className="group flex min-h-[104px] flex-col items-center justify-center rounded-2xl border border-white/[0.065] bg-white/[0.03] px-5 text-center transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-white/[0.13] hover:bg-white/[0.055] disabled:opacity-40"
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ color: role.tone, backgroundColor: `${role.tone}15` }}>
-                      <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[13px] font-bold text-white/88">{role.label}</span>
-                      <span className="mt-1 block text-[9px] text-white/30">Rychlý přístup</span>
-                    </span>
+                    <span className="block max-w-full truncate text-[15px] font-bold text-white/90">{role.label}</span>
+                    <span className="mt-2 block text-[10px] text-white/30">{role.description}</span>
                   </button>
-                );
-              })}
+                ))}
             </div>
 
             <button
