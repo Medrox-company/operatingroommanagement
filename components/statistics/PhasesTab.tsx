@@ -8,16 +8,16 @@ import {
   RadialBarChart, RadialBar
 } from 'recharts';
 import {
-  Clock, Timer, AlertTriangle, TrendingUp, TrendingDown,
-  Target, Zap, Activity, ChevronRight, BarChart3, PieChartIcon,
+  Clock, Timer, TrendingUp, TrendingDown,
+  Zap, Activity, ChevronRight, BarChart3, PieChartIcon,
   Layers, ArrowRight, CheckCircle2, XCircle
 } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 import { RoomStatus } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
-  C, Card, KPIBlock, ProgressRing, Sparkline, AnimatedCounter,
-  DeltaBadge, formatMinutes, formatPercent, seededPreviousValue, computeDelta
+  C, Card, KPIBlock, Sparkline, AnimatedCounter,
+  formatMinutes, formatPercent
 } from './shared';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,9 +78,6 @@ const PhaseCard = ({
   roomsInPhase: number;
   totalRooms: number;
 }) => {
-  const prevDuration = seededPreviousValue(`phase-${step.name}-duration`, duration, 0.15);
-  const delta = computeDelta(duration, prevDuration);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -94,13 +91,12 @@ const PhaseCard = ({
         border: `1px solid ${isBottleneck ? 'rgba(239,68,68,0.3)' : C.border}`,
       }}
     >
-      {/* Bottleneck badge */}
+      {/* Longest measured phase badge */}
       {isBottleneck && (
         <div className="absolute top-2 right-2">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase"
             style={{ background: 'rgba(239,68,68,0.15)', color: C.red }}>
-            <AlertTriangle size={9} />
-            Bottleneck
+            Nejdelší fáze
           </span>
         </div>
       )}
@@ -139,9 +135,6 @@ const PhaseCard = ({
             </span>
             <span className="text-xs" style={{ color: C.faint }}>min</span>
           </div>
-          {delta !== 0 && (
-            <DeltaBadge delta={delta} inverted size="xs" className="mt-1" />
-          )}
         </div>
         <div>
           <p className="text-[9px] uppercase tracking-wider mb-1" style={{ color: C.muted }}>
@@ -302,18 +295,6 @@ export function PhasesTab({
     [rooms, workflowSteps]
   );
 
-  // Efficiency score (inverse of bottleneck severity)
-  const efficiencyScore = useMemo(() => {
-    if (avgCycleDuration === 0) return 100;
-    const longestPct = (avgStepDurations[longestPhaseIdx] / avgCycleDuration) * 100;
-    // If longest phase is >40% of cycle = poor efficiency
-    return Math.max(0, Math.min(100, 100 - (longestPct - 25) * 2));
-  }, [avgCycleDuration, avgStepDurations, longestPhaseIdx]);
-
-  // Previous period comparisons
-  const prevCycle = seededPreviousValue(`cycle-${periodLabel}`, avgCycleDuration, 0.12);
-  const cycleDelta = computeDelta(avgCycleDuration, prevCycle);
-
   // Data for charts
   const barChartData = workflowSteps.map((step, i) => ({
     name: step.title.split(' ').slice(-1)[0],
@@ -334,10 +315,21 @@ export function PhasesTab({
     };
   });
 
+  if (!avgStepDurations.some(duration => duration > 0)) {
+    return (
+      <Card className="p-8 text-center">
+        <p className="text-sm font-semibold" style={{ color: C.textHi }}>Bez naměřených dat fází</p>
+        <p className="text-xs mt-1" style={{ color: C.muted }}>
+          Pro zvolené období nejsou v historii zaznamenané délky jednotlivých fází.
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* ── Hero KPI Row ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card className="p-0" noPadding>
           <div className="p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -351,7 +343,7 @@ export function PhasesTab({
                 </p>
               </div>
             </div>
-            <div className="flex items-end justify-between">
+            <div className="flex items-end">
               <div>
                 <AnimatedCounter
                   value={avgCycleDuration}
@@ -361,7 +353,6 @@ export function PhasesTab({
                 />
                 <span className="text-sm ml-1" style={{ color: C.muted }}>min</span>
               </div>
-              <DeltaBadge delta={cycleDelta} inverted hideZero />
             </div>
           </div>
           <div className="h-1" style={{ background: C.accent }} />
@@ -372,11 +363,11 @@ export function PhasesTab({
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ background: `${C.red}15`, border: `1px solid ${C.red}30` }}>
-                <AlertTriangle size={16} color={C.red} />
+                <Clock size={16} color={C.red} />
               </div>
               <div>
                 <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
-                  Bottleneck
+                  Nejdelší fáze
                 </p>
               </div>
             </div>
@@ -417,36 +408,6 @@ export function PhasesTab({
           <div className="h-1" style={{ background: C.green }} />
         </Card>
 
-        <Card className="p-0" noPadding>
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: `${C.purple}15`, border: `1px solid ${C.purple}30` }}>
-                <Target size={16} color={C.purple} />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
-                  Efektivita
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <ProgressRing
-                value={efficiencyScore}
-                size={48}
-                strokeWidth={5}
-                gradient
-                label={`${Math.round(efficiencyScore)}`}
-              />
-              <div>
-                <p className="text-xs" style={{ color: C.muted }}>
-                  {efficiencyScore >= 80 ? 'Vynikající' : efficiencyScore >= 60 ? 'Dobrá' : 'Ke zlepšení'}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="h-1" style={{ background: C.purple }} />
-        </Card>
       </div>
 
       {/* ── Timeline Gantt ── */}
@@ -716,15 +677,14 @@ export function PhasesTab({
                       {isBottleneck && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
                           style={{ background: `${C.red}15`, color: C.red }}>
-                          <AlertTriangle size={9} />
-                          Bottleneck
+                          Nejdelší fáze
                         </span>
                       )}
                       {isFastest && !isBottleneck && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
                           style={{ background: `${C.green}15`, color: C.green }}>
                           <CheckCircle2 size={9} />
-                          Optimální
+                          Nejkratší fáze
                         </span>
                       )}
                       {!isBottleneck && !isFastest && (

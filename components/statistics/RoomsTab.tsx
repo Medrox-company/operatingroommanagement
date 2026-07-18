@@ -15,8 +15,7 @@ import React, { useMemo, useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, Clock, Users, Zap, AlertTriangle, CheckCircle2,
-  ArrowUpRight, ArrowDownRight, Minus, ChevronRight, Filter,
-  LayoutGrid, List, TrendingUp, Timer, Target, Sparkles
+  ChevronRight, Filter, LayoutGrid, List, TrendingUp, Sparkles
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -26,9 +25,8 @@ import {
 import type { OperatingRoom } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
-  C, Card, KPIBlock, ProgressRing, Sparkline, AnimatedCounter,
-  DeltaBadge, formatMinutes, formatPercent, formatNumber,
-  seededPreviousValue, computeDelta
+  C, Card, ProgressRing, Sparkline, AnimatedCounter,
+  formatMinutes, formatPercent, formatNumber
 } from './shared';
 import type { IconComponent } from './shared';
 
@@ -115,7 +113,7 @@ const RoomCard = memo(({
   room: OperatingRoom;
   utilization: number;
   opsCount: number;
-  avgOpTime: number;
+  avgOpTime: number | null;
   onClick: () => void;
   index: number;
   statusHistory?: StatusHistoryRow[];
@@ -134,8 +132,7 @@ const RoomCard = memo(({
   // Calculate trend data from REAL statusHistory (last 12 periods/hours)
   const trend = useMemo(() => {
     if (!statusHistory || statusHistory.length === 0) {
-      // Fallback if no history available
-      return Array.from({ length: 12 }, () => utilization);
+      return [];
     }
 
     // Filter status history for this room and group by hour (last 12 hours)
@@ -171,10 +168,8 @@ const RoomCard = memo(({
       }
     }
 
-    return hourlyUtilization.length === 12 
-      ? hourlyUtilization 
-      : Array.from({ length: 12 }, () => utilization);
-  }, [room.id, statusHistory, utilization]);
+    return hourlyUtilization;
+  }, [room.id, statusHistory]);
 
   return (
     <motion.div
@@ -220,13 +215,15 @@ const RoomCard = memo(({
 
         {/* Sparkline */}
         <div className="mb-3">
-          <Sparkline data={trend} width={180} height={28} color={utilColor} />
+          {trend.length >= 2
+            ? <Sparkline data={trend} width={180} height={28} color={utilColor} />
+            : <p className="text-[10px] py-2" style={{ color: C.muted }}>Bez historických dat</p>}
         </div>
 
         {/* Metrics */}
         <div className="space-y-0">
           <MetricRow icon={Activity} label="Výkony" value={opsCount} color={C.accent} />
-          <MetricRow icon={Clock} label="Prům. čas" value={formatMinutes(avgOpTime)} />
+          <MetricRow icon={Clock} label="Prům. čas" value={avgOpTime === null ? '—' : formatMinutes(avgOpTime)} />
           <MetricRow icon={Users} label="Fronta" value={room.queueCount ?? 0} unit="pac." />
           {room.hourlyOperatingCost && (
             <MetricRow
@@ -254,14 +251,13 @@ RoomCard.displayName = 'RoomCard';
 
 /** Summary KPI card */
 const SummaryKPI = memo(({
-  label, value, total, color, icon: Icon, trend
+  label, value, total, color, icon: Icon
 }: {
   label: string;
   value: number;
   total: number;
   color: string;
   icon: IconComponent;
-  trend?: number;
 }) => {
   const pct = total > 0 ? (value / total) * 100 : 0;
 
@@ -276,7 +272,6 @@ const SummaryKPI = memo(({
         >
           <Icon size={18} color={color} strokeWidth={2} />
         </div>
-        {trend !== undefined && <DeltaBadge delta={trend} />}
       </div>
 
       <p className="text-4xl font-bold leading-none mb-1" style={{ color }}>{value}</p>
@@ -340,7 +335,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
         .map(h => h.duration_seconds ?? 0);
       const avgOpTime = opDurations.length > 0
         ? (opDurations.reduce((a, b) => a + b, 0) / opDurations.length) / 60
-        : 45; // Default 45 min
+        : null;
 
       return { room: r, utilization: util, operations: ops, avgOpTime };
     });
@@ -400,7 +395,6 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
           total={rooms.length}
           color={C.orange}
           icon={Activity}
-          trend={5}
         />
         <SummaryKPI
           label="Volno"
@@ -408,7 +402,6 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
           total={rooms.length}
           color={C.green}
           icon={CheckCircle2}
-          trend={-2}
         />
         <SummaryKPI
           label="Úklid"
@@ -448,11 +441,6 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               sublabel="%"
             />
           </div>
-          <div className="flex items-center gap-2 text-[10px]" style={{ color: C.muted }}>
-            <Target size={12} />
-            <span>Cíl: 75% využití kapacity</span>
-            {avgUtilization >= 75 && <CheckCircle2 size={12} color={C.green} />}
-          </div>
         </Card>
 
         {/* Total operations */}
@@ -471,12 +459,6 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}
             >
               <TrendingUp size={24} color={C.accent} />
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-[10px]">
-            <div className="flex items-center gap-1" style={{ color: C.green }}>
-              <ArrowUpRight size={12} />
-              <span>+12% oproti minulému období</span>
             </div>
           </div>
         </Card>
@@ -703,7 +685,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums" style={{ color: C.text }}>{data.operations}</td>
-                    <td className="px-4 py-2.5 text-right" style={{ color: C.muted }}>{formatMinutes(data.avgOpTime)}</td>
+                    <td className="px-4 py-2.5 text-right" style={{ color: C.muted }}>{data.avgOpTime === null ? '—' : formatMinutes(data.avgOpTime)}</td>
                     <td className="px-4 py-2.5 text-right">
                       <span
                         className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold"

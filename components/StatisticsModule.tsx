@@ -5,7 +5,7 @@ import {
   AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
   Printer, FileDown,
 } from 'lucide-react';
-import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
+import { OperatingRoom, RoomStatus, DayWorkingHours } from '../types';
 // Step durations now calculated from real database history
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { useHospital } from '../contexts/HospitalContext';
@@ -14,7 +14,6 @@ import {
   fetchRoomStatistics,
   fetchStatusHistory,
   fetchAllStaff,
-  fetchPeriodComparison,
   fetchNotificationsLog,
   fetchShiftSchedules,
   fetchDepartments,
@@ -23,7 +22,6 @@ import {
   type RoomStatistics,
   type StatusHistoryRow,
   type StaffRow,
-  type PeriodComparisonStats,
   type NotificationLogRow,
   type ShiftScheduleRow,
   type DepartmentRow,
@@ -43,9 +41,6 @@ import {
   MobilePillTabs,
   MobileSectionLabel,
 } from './mobile/MobileShell';
-import { ExecutiveScorecard } from './statistics/ExecutiveScorecard';
-import { SmartRecommendations } from './statistics/SmartRecommendations';
-import { EfficiencyTab } from './statistics/EfficiencyTab';
 import { StaffTab } from './statistics/StaffTab';
 import { FinanceTab } from './statistics/FinanceTab';
 import { RoomsTab } from './statistics/RoomsTab';
@@ -57,7 +52,7 @@ import { DevicesTab } from './statistics/DevicesTab';
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'efektivita' | 'finance' | 'personal'
+type Tab    = 'prehled' | 'finance' | 'personal'
             | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'zarizeni';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
@@ -86,15 +81,21 @@ const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'satur
 
 // ── Helper: Get working hours for a specific day from room schedule ────────────
 function getRoomWorkingHours(room: OperatingRoom, dayIndex: number): DayWorkingHours {
-  const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
   const dayKey = DAY_KEYS[dayIndex];
-  return schedule[dayKey];
+  return room.weeklySchedule?.[dayKey] ?? {
+    enabled: false,
+    startHour: 0,
+    startMinute: 0,
+    endHour: 0,
+    endMinute: 0,
+    breakMinutes: 0,
+  };
 }
 
-// ── Helper: Get break minutes for a day (defaults to 30 when unset) ────────────
+// ── Helper: Get only an explicitly configured break duration ─────────────────
 function getDayBreakMinutes(hours: DayWorkingHours): number {
   const raw = hours.breakMinutes;
-  if (typeof raw !== 'number' || isNaN(raw) || raw < 0) return 30;
+  if (typeof raw !== 'number' || isNaN(raw) || raw < 0) return 0;
   return Math.min(raw, Number.MAX_SAFE_INTEGER);
 }
 
@@ -646,41 +647,29 @@ function heatColor(v:number){
   if(v>=25) return 'rgba(16,185,129,0.62)';
   return 'rgba(30,41,59,0.45)';
 }
-const UPS_DEPTS=['EMERGENCY','CÉVNÍ','ROBOT'];
-function isUPS(r:OperatingRoom){ return r.isEmergency||UPS_DEPTS.includes(r.department); }
+function isUPS(r:OperatingRoom){ return r.isEmergency === true; }
 // Calculate working minutes for today based on room's schedule
 function dayMinutes(r:OperatingRoom){ 
-  if (isUPS(r)) return 1440; // 24 hours for UPS rooms
-  
   // Get today's day index (Monday=0)
   const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-  const workingMins = getRoomWorkingMinutes(r, todayIndex);
-  
-  // Return actual working minutes, or fallback to 720 (12 hours) if not configured
-  return workingMins > 0 ? workingMins : 720;
+  return getRoomWorkingMinutes(r, todayIndex);
 }
 
 type Seg={color:string;title:string;pct:number;min:number};
 type WorkflowStep={name:string;title:string;color:string;organizer:string;status:string};
 
-// Build timeline using room's actual data (operations count and current procedure if any)
+// Build a phase distribution exclusively from measured durations.
 function buildTimeline(r:OperatingRoom,workflowSteps:WorkflowStep[], stepDurations?: number[]):Seg[]{
   const dm=dayMinutes(r);
-  const passes=Math.max(1,Math.floor(r.operations24h*(dm/1440)));
-  // Use provided step durations from real data, or fallback to even distribution
-  const durs=workflowSteps.map((_,i)=> stepDurations?.[i] || Math.round(dm / workflowSteps.length / passes));
-  const ct=durs.reduce((s,d)=>s+d,0) || 1;
-  const mpp=Math.floor(dm/Math.max(1,passes));
-  const raw:Seg[]=[];
-  for(let p=0;p<passes;p++){
-    workflowSteps.forEach((step,si)=>{
-      const m=Math.round((durs[si]/ct)*mpp);
-      if(m>0) raw.push({color:step.color,title:step.title,pct:(m/dm)*100,min:m});
-    });
-    if(p<passes-1) raw.push({color:'rgba(255,255,255,0.04)',title:'Pauza',pct:(5/dm)*100,min:5});
-  }
-  const tot=raw.reduce((s,sg)=>s+sg.pct,0) || 1;
-  return raw.map(sg=>({...sg,pct:(sg.pct/tot)*100}));
+  const durs=workflowSteps.map((_,i)=>Math.max(0, stepDurations?.[i] ?? 0));
+  const total=durs.reduce((sum,duration)=>sum+duration,0);
+  if (dm <= 0 || total <= 0) return [];
+  return workflowSteps.flatMap((step,index) => {
+    const duration = durs[index];
+    return duration > 0
+      ? [{ color: step.color, title: step.title, pct: (duration / total) * 100, min: duration }]
+      : [];
+  });
 }
 
 // Build distribution using actual step durations from real data
@@ -870,6 +859,14 @@ function Card({children,className='',style={}}:{children:React.ReactNode;classNa
 }
 function SectionLabel({children}:{children:React.ReactNode}){
   return <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-4" style={{color:C.muted}}>{children}</p>;
+}
+function EmptyState({title,desc}:{title:string;desc:string}){
+  return (
+    <div className="h-40 flex flex-col items-center justify-center text-center px-4">
+      <p className="text-sm font-semibold" style={{color:C.text}}>{title}</p>
+      <p className="text-xs mt-1" style={{color:C.muted}}>{desc}</p>
+    </div>
+  );
 }
 function TrendBadge({v}:{v:number}){
   if(v>0) return(
@@ -1344,7 +1341,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
   const [dbStats, setDbStats] = useState<RoomStatistics | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
-  const [periodComparison, setPeriodComparison] = useState<PeriodComparisonStats | null>(null);
   // ── REÁLNÁ DB DATA pro tab moduly (Staff) ──
   // null = načítá se / DB nedostupná; [] = načteno, žádný záznam.
   const [staffList, setStaffList] = useState<StaffRow[] | null>(null);
@@ -1421,7 +1417,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   };
   const tabLabelMap: Record<Tab, string> = {
 'prehled':    'Přehled',
-'efektivita': 'Efektivita',
 'finance':    'Finance',
 'personal':   'Personál',
 'saly':       'Sály',
@@ -1454,11 +1449,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           break;
       }
 
-const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, subDeptRows, deviceRows] = await Promise.all([
+const [stats, history, staffRows, notifRows, shiftRows, deptRows, subDeptRows, deviceRows] = await Promise.all([
   fetchRoomStatistics(fromDate, now),
   fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
   fetchAllStaff(),
-  fetchPeriodComparison(period),
   fetchNotificationsLog({ fromDate, toDate: now, limit: 1000 }),
   fetchShiftSchedules({ fromDate, toDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) }),
   fetchDepartments(),
@@ -1469,7 +1463,6 @@ const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, su
   if (stats) setDbStats(stats);
   setStatusHistory(history ?? []);
   setStaffList(staffRows);
-  setPeriodComparison(comparison);
   setNotifications(notifRows);
   setShifts(shiftRows);
   setDepartments(deptRows);
@@ -1508,11 +1501,11 @@ const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, su
     return Math.round(totalUtil / rooms.length);
   }, [rooms, statusHistory, period]);
   
-  const avgUtil   = avgUtilFromWorkingHours || Math.round(utilData.reduce((s,d)=>s+d.v,0)/Math.max(1, utilData.length));
+  const avgUtil   = avgUtilFromWorkingHours;
   const utilValues = utilData.length > 0 ? utilData.map(d=>d.v) : [0];
   const peakUtil  = Math.max(...utilValues);
   const minUtil   = Math.min(...utilValues);
-  const totalOps  = totalOpsInWorkingHours || (dbStats?.totalOperations ?? 0);
+  const totalOps  = totalOpsInWorkingHours;
   // Determine busy/free based on currentStepIndex (0 or 7 = ready/free, anything else = busy)
   // This matches the logic in App.tsx header stats
   const isRoomBusy = (r: OperatingRoom) => r.currentStepIndex !== 0 && r.currentStepIndex !== 7;
@@ -1524,66 +1517,6 @@ const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, su
   const septicCnt = rooms.filter(r=>r.isSeptic).length;
   const emergCnt  = dbStats?.emergencyCount ?? rooms.filter(r=>r.isEmergency).length;
   const upsCnt    = rooms.filter(isUPS).length;
-
-  // ── REÁLNÉ DELTY a TRENDY z period comparison ──
-  const realDeltas = useMemo(() => {
-    if (!periodComparison) {
-      return { utilDelta: 0, opsDelta: 0, queueDelta: 0, durationDelta: 0 };
-    }
-    const { currentPeriod: curr, previousPeriod: prev } = periodComparison;
-    const calcDelta = (c: number, p: number) => p === 0 ? 0 : Math.round(((c - p) / p) * 100);
-    return {
-      utilDelta: calcDelta(curr.avgUtilization, prev.avgUtilization),
-      opsDelta: calcDelta(curr.totalOperations, prev.totalOperations),
-      queueDelta: calcDelta(curr.totalQueue, prev.totalQueue),
-      durationDelta: calcDelta(curr.avgOpDuration, prev.avgOpDuration),
-    };
-  }, [periodComparison]);
-
-  // Reálné trendy pro sparklines
-  const realTrends = useMemo(() => {
-    if (!periodComparison || !periodComparison.trendData.length) {
-      return { operations: [] as number[], utilization: [] as number[] };
-    }
-    return {
-      operations: periodComparison.trendData.map(d => d.operations),
-      utilization: periodComparison.trendData.map(d => d.utilization),
-    };
-  }, [periodComparison]);
-
-  // ── Scorecard data construction (pro ExecutiveScorecard hero kartu) ──
-  const scorecardData = useMemo(() => {
-    // Průměrná délka výkonu — váženě dle workflow steps
-    const opDuration = avgStepDurations.reduce((s, v) => s + v, 0);
-    // Recent events — posledních 8 záznamů z status history pro live ticker.
-    // StatusHistoryRow má `operating_room_id`, `event_type`, `step_name`, `timestamp`.
-    const recentEvents = (statusHistory ?? [])
-      .slice(0, 8)
-      .map((row) => {
-        const room = rooms.find(r => r.id === row.operating_room_id);
-        return {
-          timestamp: row.timestamp,
-          roomName: room?.name ?? 'Neznámý sál',
-          eventLabel: row.step_name ?? row.event_type ?? 'Změna stavu',
-          color: room ? roomStatusColor(room) : undefined,
-        };
-      });
-    return {
-      utilization: avgUtil,
-      totalOps,
-      activeRooms: busyCount,
-      totalQueue,
-      septicCount: septicCnt,
-      upsCount: upsCnt,
-      avgOpDuration: opDuration,
-      recentEvents,
-      rooms,
-      periodLabel: period,
-      // Předání REÁLNÝCH delt a trendů z databáze
-      realDeltas,
-      realTrends,
-    };
-  }, [avgUtil, totalOps, busyCount, totalQueue, septicCnt, upsCnt, avgStepDurations, statusHistory, rooms, period, realDeltas, realTrends]);
 
   const deptMap = useMemo(()=>{
     const m:Record<string,number>={};
@@ -1627,11 +1560,7 @@ const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, su
         v: count,
       }));
     }
-    // Empty data - no operations recorded yet
-    return [
-      {t:'T-6',v:0},{t:'T-5',v:0},{t:'T-4',v:0},
-      {t:'T-3',v:0},{t:'T-2',v:0},{t:'T-1',v:0},{t:'Dnes',v:0},
-    ];
+    return [];
   }, [dbStats]);
 
   // Status pie data
@@ -1669,11 +1598,7 @@ const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, su
       }));
     }
     
-    // Fallback
-    return [
-      {t:'Pondělí', v:0},{t:'Úterý',  v:0},{t:'Středa',  v:0},
-      {t:'Čtvrtek', v:0},{t:'Pátek',  v:0},{t:'Sobota',  v:0},{t:'Neděle', v:0},
-    ];
+    return [];
   }, [dbStats]);
 
   // Scatter: ops vs utilPct per room using real data within working hours
@@ -1704,7 +1629,6 @@ const [stats, history, staffRows, comparison, notifRows, shiftRows, deptRows, su
 
 const TABS:{ id:Tab; label:string }[]=[
 {id:'prehled',    label:'Přehled'},
-{id:'efektivita', label:'Efektivita'},
 {id:'finance',    label:'Finance'},
 {id:'personal',   label:'Personál'},
 {id:'saly',       label:'Sály'},
@@ -1878,7 +1802,6 @@ const TABS:{ id:Tab; label:string }[]=[
             <MobilePillTabs<Tab>
 tabs={[
 { id: 'prehled', label: 'Přehled' },
-{ id: 'efektivita', label: 'Efektivita' },
 { id: 'finance', label: 'Finance' },
 { id: 'personal', label: 'Personál' },
 { id: 'saly', label: 'Sály' },
@@ -1896,18 +1819,6 @@ tabs={[
           {(tab === 'prehled' || isPrinting) && (
             <div className="flex flex-col gap-3 print-section">
               {isPrinting && <h2 className="print-tab-header print-only">Přehled</h2>}
-              {/* Executive scorecard hero (mobile/print verze) */}
-              <ExecutiveScorecard data={scorecardData} />
-
-              {/* Smart recommendations based on real data */}
-              <SmartRecommendations
-                rooms={rooms}
-                statusHistory={statusHistory}
-                totalOps={totalOps}
-                avgUtilization={avgUtil}
-                periodLabel={period}
-              />
-
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   { l: 'Obsazeno', v: `${busyCount}/${rooms.length}`, c: C.orange },
@@ -2011,21 +1922,6 @@ tabs={[
                 workflowSteps={WORKFLOW_STEPS}
                 avgStepDurations={avgStepDurations}
                 workflowAgg={workflowAgg}
-              />
-            </div>
-          )}
-
-          {/* ── Efektivita & KPI dashboard ── */}
-          {(tab === 'efektivita' || isPrinting) && (
-            <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Efektivita</h2>}
-              <EfficiencyTab
-                rooms={rooms}
-                totalOps={totalOps}
-                avgUtilization={avgUtil}
-                avgStepDurations={avgStepDurations}
-                periodLabel={period}
-                statusHistory={statusHistory}
               />
             </div>
           )}
@@ -2303,9 +2199,6 @@ tabs={[
               </h2>
             )}
 
-            {/* Executive scorecard hero — celkové hodnocení A-F + AI insighty + live ticker */}
-            <ExecutiveScorecard data={scorecardData} />
-
             {/* KPI strip */}
             <div className="grid grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
               style={{border:`1px solid ${C.border}`}}>
@@ -2512,7 +2405,7 @@ tabs={[
               </Card>
               <Card className="p-5">
                 <SectionLabel>Trend výkonů — 7 dní</SectionLabel>
-                <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
+                {opsTrend.length > 0 ? <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                   <ComposedChart data={opsTrend} margin={{top:4,right:4,bottom:0,left:-24}}>
                     <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
                     <XAxis dataKey="t" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
@@ -2522,7 +2415,7 @@ tabs={[
                     <Line type="monotone" dataKey="v" stroke={C.green} strokeWidth={2}
                       dot={{fill:C.green,strokeWidth:0,r:3}}/>
                   </ComposedChart>
-                </ResponsiveContainer>
+                </ResponsiveContainer> : <EmptyState title="Bez historických dat" desc="Pro zvolené období nejsou zaznamenané výkony." />}
               </Card>
             </div>
 
@@ -2543,19 +2436,19 @@ tabs={[
                 </ResponsiveContainer>
               </Card>
               <Card className="p-5">
-                <SectionLabel>Využití dle dne v týdnu (%)</SectionLabel>
-                <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
+                <SectionLabel>Průměrný počet výkonů dle dne v týdnu</SectionLabel>
+                {intervalCompare.length > 0 ? <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                   <BarChart data={intervalCompare} margin={{top:0,right:0,bottom:0,left:-24}} barSize={16}>
                     <XAxis dataKey="t" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
-                    <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v:number)=>`${v}%`}/>
-                    <Tooltip {...TIP} formatter={(v:number)=>[`${v}%`,'Využití']}/>
+                    <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
+                    <Tooltip {...TIP} formatter={(v:number)=>[v,'Průměr výkonů']}/>
                     <Bar dataKey="v" radius={[2,2,0,0]}>
                       {intervalCompare.map((e,i)=>(
                         <Cell key={i} fill={e.v>=80?C.green:e.v>=60?C.accent:e.v>=40?C.yellow:C.orange} opacity={0.75}/>
                       ))}
                     </Bar>
                   </BarChart>
-                </ResponsiveContainer>
+                </ResponsiveContainer> : <EmptyState title="Bez historických dat" desc="Pro zvolené období nejsou zaznamenané výkony." />}
               </Card>
               <Card className="p-5">
                 <SectionLabel>Fronta a kapacita</SectionLabel>
@@ -2648,30 +2541,6 @@ tabs={[
               </div>
             </Card>
 
-          </motion.div>
-        )}
-
-        {/* ── Efektivita & KPI ── (nová záložka) */}
-        {(tab==='efektivita' || isPrinting) && (
-          <motion.div key="efektivita"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5 print-section">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Efektivita & KPI
-              </h2>
-            )}
-            <EfficiencyTab
-              rooms={rooms}
-              totalOps={totalOps}
-              avgUtilization={avgUtil}
-              avgStepDurations={avgStepDurations}
-              periodLabel={period}
-              statusHistory={statusHistory}
-            />
           </motion.div>
         )}
 
