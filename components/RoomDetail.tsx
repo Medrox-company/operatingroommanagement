@@ -16,6 +16,7 @@ import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
 import { useHospital } from '../contexts/HospitalContext';
 import { MobileThemeToggle } from './mobile/MobileShell';
+import { RapidSurgeryWarning } from './room/RapidSurgeryWarning';
 
 // Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
 const formatElapsed = (totalSeconds: number): string => {
@@ -726,6 +727,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             </button>
           </div>
 
+          <RapidSurgeryWarning
+            room={room}
+            statuses={activeDbStatuses}
+            className="mb-5"
+          />
+
           {/* Hero „karta" — plná barva fáze, tmavý text (jako VISA karta) */}
           <motion.div
             key={currentStep?.name}
@@ -1245,6 +1252,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           <p className="text-[clamp(8px,0.8vw,11px)] font-black text-white/30 tracking-[0.5em] uppercase mt-[clamp(0.75rem,1.5vw,1.25rem)]">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
       </header>
+
+      <div className="absolute left-1/2 top-[clamp(6.5rem,15vh,10rem)] z-50 w-[min(560px,58vw)] -translate-x-1/2">
+        <RapidSurgeryWarning
+          room={room}
+          statuses={activeDbStatuses}
+          variant="desktop"
+        />
+      </div>
 
 
       {/* Right Column Action Buttons - Absolute Positioning */}

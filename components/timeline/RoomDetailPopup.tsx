@@ -5,6 +5,7 @@ import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesConte
 import { AlertTriangle, Check, CheckCircle2, ChevronLeft, Clock, Flag, Lightbulb, Stethoscope, Timer, TrendingUp, Users, X } from 'lucide-react';
 import { C } from './constants';
 import { MobileThemeToggle } from '../mobile/MobileShell';
+import { RapidSurgeryWarning } from '../room/RapidSurgeryWarning';
 
 /* ════════════════════════════════════════════════════════════════════════
    Detail sálu — ANIMOVANÝ TACHOMETR dílčích statusů
@@ -233,6 +234,8 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           className="flex-1 overflow-y-auto hide-scrollbar px-5 pt-5"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)' }}
         >
+          <RapidSurgeryWarning room={room} statuses={activeStatuses} className="mb-5" />
+
           <section className="mobile-timeline-progress-card rounded-[26px] px-4 pt-5 pb-6 mb-5">
           {/* Aktivní status */}
           <div className="flex justify-center mb-4">
@@ -471,6 +474,10 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           >
             <X className="w-4 h-4 text-white/60" />
           </button>
+        </div>
+
+        <div className="relative z-10 px-6 pt-4">
+          <RapidSurgeryWarning room={room} statuses={activeStatuses} variant="desktop" />
         </div>
 
         {/* ── Cesta výkonu — jediná hlavní vizualizace detailu ── */}
