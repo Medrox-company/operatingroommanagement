@@ -49,5 +49,8 @@ export async function POST(request: NextRequest) {
     aud: 'authenticated',
   });
   const signature = createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
-  return NextResponse.json({ token: `${header}.${payload}.${signature}`, expiresIn: 3600 });
+  return NextResponse.json(
+    { token: `${header}.${payload}.${signature}`, expiresIn: 3600 },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
 }

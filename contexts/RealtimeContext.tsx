@@ -49,7 +49,7 @@ interface RealtimeContextValue {
 const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
-  const { activeHospitalId } = useHospital();
+  const { activeHospitalId, tokenRevision } = useHospital();
   const listenersRef = useRef(new Map<RealtimeTable, Set<RealtimeListener>>());
   const [connected, setConnected] = useState(false);
 
@@ -74,6 +74,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
     setConnected(false);
     let disposed = false;
+    let recoveryRequested = false;
     let realtimeClient: Awaited<ReturnType<typeof getHospitalRealtimeClient>> = null;
     let channel: ReturnType<NonNullable<typeof realtimeClient>['channel']> | null = null;
 
@@ -82,7 +83,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         realtimeClient = await getHospitalRealtimeClient();
         if (disposed || !realtimeClient) return;
 
-        channel = realtimeClient.channel(`hospital-realtime:${activeHospitalId}`);
+        channel = realtimeClient.channel(`hospital-realtime:${activeHospitalId}:${tokenRevision}`);
 
         PUBLISHED_REALTIME_TABLES.forEach((table) => {
           channel = channel!.on(
@@ -123,8 +124,16 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           if (disposed) return;
           const isConnected = status === 'SUBSCRIBED';
           setConnected(isConnected);
+          if (isConnected) recoveryRequested = false;
+          if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && !recoveryRequested) {
+            recoveryRequested = true;
+            window.dispatchEvent(new Event('hospitalAccessRefreshRequested'));
+          }
           if (error) {
-            logger.error('[Realtime] Central hospital channel error:', error);
+            // A dropped hospital network or a sleeping browser is recoverable.
+            // Keep it out of the Next.js error overlay; token renewal and a new
+            // channel revision are requested immediately above.
+            logger.warn('[Realtime] Central hospital channel interrupted:', error);
           } else {
             logger.debug('[Realtime] Central hospital channel:', status);
           }
@@ -132,7 +141,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         if (disposed) return;
         setConnected(false);
-        logger.error('[Realtime] Failed to authorize hospital channel:', error);
+        logger.warn('[Realtime] Failed to authorize hospital channel; requesting a fresh token.', error);
+        window.dispatchEvent(new Event('hospitalAccessRefreshRequested'));
       }
     };
 
@@ -143,7 +153,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       setConnected(false);
       if (channel && realtimeClient) void realtimeClient.removeChannel(channel);
     };
-  }, [activeHospitalId]);
+  }, [activeHospitalId, tokenRevision]);
 
   const value = useMemo<RealtimeContextValue>(() => ({ connected, subscribe }), [connected, subscribe]);
 
