@@ -3,14 +3,15 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { OperatingRoom } from '../../types';
+import type { WorkflowStatus } from '../../contexts/WorkflowStatusesContext';
 import { Activity, Workflow } from 'lucide-react';
 import { MobileHeaderMetrics, MobileModuleHeader } from './MobileShell';
 
 /* =============================================================================
    MobileFlowView — „Tok pacienta" (mobil)
    Věrná implementace prototypu: světlý podklad, filtr pilulky, karty pacientů
-   s kruhovým číslem, 4segmentový progress (Příjem → Příprava → Sál →
-   Propuštění), rozbalený detail s časy, status chipy a patičkou
+   s kruhovým číslem, dynamickým průběhem skutečných nemocničních fází,
+   rozbaleným detailem s časy, status chipy a patičkou
    AKTUÁLNÍ POLOHA / ODHAD PROPUŠTĚNÍ.
    ========================================================================== */
 
@@ -23,12 +24,16 @@ const TRACK = 'var(--m-track)';
 
 interface Props {
   rooms: OperatingRoom[];
+  statuses: WorkflowStatus[];
+  statusesLoading?: boolean;
 }
 
 type StepState = 'done' | 'current' | 'waiting';
 
 interface FlowStep {
+  id: string;
   label: string;
+  color: string;
   time: string | null;
   state: StepState;
 }
@@ -41,35 +46,38 @@ const fmt = (iso?: string | null): string | null => {
     : d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 };
 
-/** Odvodí 4 kroky toku pacienta z dat sálu. */
-function buildFlow(room: OperatingRoom): { steps: FlowStep[]; currentIdx: number } {
-  const called = !!room.patientCalledAt;
-  const arrived = !!room.patientArrivedAt;
-  const inOr = room.currentStepIndex > 0 && room.currentStepIndex < 6;
-  const discharged = room.currentStepIndex >= 6;
+/** Sestaví tok výhradně ze skutečných workflow fází zvoleného zařízení. */
+function buildFlow(room: OperatingRoom, statuses: WorkflowStatus[]): { steps: FlowStep[]; currentIdx: number } {
+  if (statuses.length === 0) return { steps: [], currentIdx: -1 };
 
-  // Index aktuálního kroku (0-3); -1 = nic nezačalo
-  let currentIdx = -1;
-  if (called) currentIdx = 0;
-  if (arrived) currentIdx = 1;
-  if (inOr) currentIdx = 2;
-  if (discharged) currentIdx = 3;
+  const exactCurrentIdx = statuses.findIndex(status => status.order_index === room.currentStepIndex);
+  const currentIdx = exactCurrentIdx >= 0
+    ? exactCurrentIdx
+    : Math.min(Math.max(0, room.currentStepIndex || 0), statuses.length - 1);
+  const history = [...(room.statusHistory || [])]
+    .filter(entry => Number.isFinite(new Date(entry.startedAt).getTime()))
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
 
-  const mk = (i: number, label: string, time: string | null): FlowStep => ({
-    label,
-    time,
-    state: i < currentIdx ? 'done' : i === currentIdx ? 'current' : 'waiting',
+  const steps = statuses.map((status, index): FlowStep => {
+    const statusIndex = status.order_index ?? index;
+    const matchingEntries = history.filter(entry =>
+      entry.stepIndex === statusIndex || (statusIndex !== index && entry.stepIndex === index)
+    );
+    const historyTime = matchingEntries.at(-1)?.startedAt;
+    const startedAt = index === currentIdx
+      ? room.phaseStartedAt || historyTime
+      : historyTime;
+
+    return {
+      id: status.id,
+      label: status.name || status.title || `Fáze ${index + 1}`,
+      color: status.accent_color || status.color || BLUE,
+      time: index <= currentIdx ? fmt(startedAt) : null,
+      state: index < currentIdx ? 'done' : index === currentIdx ? 'current' : 'waiting',
+    };
   });
 
-  return {
-    steps: [
-      mk(0, 'Příjem', fmt(room.patientCalledAt)),
-      mk(1, 'Příprava', fmt(room.patientArrivedAt)),
-      mk(2, 'Sál', fmt(room.operationStartedAt)),
-      mk(3, 'Propuštění', discharged ? fmt(room.estimatedEndTime) : null),
-    ],
-    currentIdx,
-  };
+  return { steps, currentIdx };
 }
 
 const STEP_CHIP: Record<StepState, { label: string; bg: string; color: string }> = {
@@ -78,14 +86,21 @@ const STEP_CHIP: Record<StepState, { label: string; bg: string; color: string }>
   waiting: { label: 'ČEKÁ', bg: 'var(--m-bg)', color: FAINT },
 };
 
-const MobileFlowView: React.FC<Props> = ({ rooms }) => {
+const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = false }) => {
   const [filter, setFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const realStatuses = useMemo(
+    () => [...statuses]
+      .filter(status => status.is_active && !status.is_special)
+      .sort((a, b) => a.order_index - b.order_index),
+    [statuses],
+  );
 
   // Sály s aktivitou pacienta první, pak ostatní aktivní
   const flowRooms = useMemo(() => {
     const withFlow = rooms.filter(
-      r => r.patientCalledAt || r.patientArrivedAt || r.currentStepIndex > 0,
+      r => r.patientCalledAt || r.patientArrivedAt || r.currentStepIndex > 0 || (r.statusHistory?.length ?? 0) > 0,
     );
     return withFlow.length > 0 ? withFlow : rooms;
   }, [rooms]);
@@ -93,8 +108,8 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
   const visible = filter === 'all' ? flowRooms : flowRooms.filter(r => r.id === filter);
   const expanded = expandedId ?? visible[0]?.id ?? null;
   const activeCount = flowRooms.filter(room => {
-    const { currentIdx } = buildFlow(room);
-    return currentIdx >= 0 && currentIdx < 3;
+    const { currentIdx } = buildFlow(room, realStatuses);
+    return currentIdx > 0 && currentIdx < realStatuses.length - 1;
   }).length;
 
   return (
@@ -151,11 +166,28 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
 
           {/* Karty pacientů/sálů */}
           <div className="flex flex-col gap-3">
+            {!statusesLoading && realStatuses.length === 0 && (
+              <div
+                className="rounded-[18px] px-5 py-6 text-center"
+                style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', color: MUTED }}
+              >
+                Pro toto zdravotnické zařízení nejsou nastavené žádné aktivní fáze toku.
+              </div>
+            )}
+            {statusesLoading && realStatuses.length === 0 && (
+              <div
+                className="rounded-[18px] px-5 py-6 text-center"
+                style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', color: MUTED }}
+              >
+                Načítám skutečné fáze toku…
+              </div>
+            )}
             {visible.map((room, idx) => {
-              const { steps, currentIdx } = buildFlow(room);
+              const { steps, currentIdx } = buildFlow(room, realStatuses);
               const isOpen = expanded === room.id;
               const posLabel = currentIdx >= 0 ? steps[currentIdx].label : 'Čeká';
               const chip = currentIdx >= 0 ? steps[currentIdx].label : '—';
+              const currentColor = currentIdx >= 0 ? steps[currentIdx].color : BLUE;
               const eta = fmt(room.estimatedEndTime);
 
               return (
@@ -186,14 +218,14 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                       <span className="block text-[12px] font-medium mt-0.5 truncate" style={{ color: MUTED }}>
                         {room.name}
                       </span>
-                      {/* 4segmentový progress */}
+                      {/* Skutečné workflow fáze zařízení */}
                       <span className="mt-2 flex gap-1.5">
                         {steps.map((s, i) => (
                           <span
-                            key={i}
+                            key={s.id}
                             className="h-[5px] flex-1 rounded-full"
                             style={{
-                              background: s.state === 'done' ? GREEN : s.state === 'current' ? 'var(--m-accent)' : TRACK,
+                              background: s.state === 'waiting' ? TRACK : s.color,
                             }}
                           />
                         ))}
@@ -202,12 +234,12 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                     <span className="flex flex-col items-end gap-1.5 shrink-0">
                       <span
                         className="px-2.5 h-6 rounded-full inline-flex items-center text-[9.5px] font-bold uppercase tracking-wide"
-                        style={{ background: 'var(--m-accent-soft)', color: NAVY }}
+                        style={{ background: `${currentColor}20`, color: currentColor }}
                       >
                         {chip}
                       </span>
                       <span className="text-[11px] font-medium tabular-nums" style={{ color: FAINT }}>
-                        krok {Math.max(1, currentIdx + 1)} / 4
+                        krok {Math.max(1, currentIdx + 1)} / {Math.max(1, steps.length)}
                       </span>
                     </span>
                   </button>
@@ -227,15 +259,15 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                             const meta = STEP_CHIP[s.state];
                             return (
                               <div
-                                key={i}
+                                key={s.id}
                                 className="flex items-center gap-3 py-3"
                                 style={{ borderTop: '1px solid var(--m-track)', opacity: s.state === 'waiting' ? 0.65 : 1 }}
                               >
                                 <span
                                   className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 text-[12px] font-bold tabular-nums"
                                   style={{
-                                    background: s.state === 'waiting' ? 'var(--m-bg)' : 'var(--m-accent-soft)',
-                                    color: s.state === 'waiting' ? FAINT : NAVY,
+                                    background: s.state === 'waiting' ? 'var(--m-bg)' : `${s.color}20`,
+                                    color: s.state === 'waiting' ? FAINT : s.color,
                                   }}
                                 >
                                   {i + 1}
@@ -248,7 +280,9 @@ const MobileFlowView: React.FC<Props> = ({ rooms }) => {
                                 </span>
                                 <span
                                   className="px-2 h-6 rounded-full inline-flex items-center text-[9px] font-bold uppercase tracking-wide shrink-0"
-                                  style={{ background: meta.bg, color: meta.color }}
+                                  style={s.state === 'current'
+                                    ? { background: `${s.color}20`, color: s.color }
+                                    : { background: meta.bg, color: meta.color }}
                                 >
                                   {meta.label}
                                 </span>

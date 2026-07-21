@@ -105,7 +105,7 @@ const roomSegments = (room: OperatingRoom, now: number) => {
 };
 
 const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
-  const { workflowStatuses } = useWorkflowStatusesContext();
+  const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
   const statuses = (workflowStatuses || []) as WStatus[];
 
   const [now, setNow] = useState(() => Date.now());
@@ -254,7 +254,11 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
   return (
     <div className="w-full h-full overflow-hidden">
       {/* ── MOBILE — Tok pacienta dle prototypu ── */}
-      <MobileFlowView rooms={rooms} />
+      <MobileFlowView
+        rooms={rooms}
+        statuses={workflowStatuses || []}
+        statusesLoading={statusesLoading}
+      />
 
       <div className="relative w-full h-full overflow-hidden hidden md:block" style={{ background: 'transparent' }}>
 
