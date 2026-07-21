@@ -4,6 +4,7 @@ import { OperatingRoom } from '../../types';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 import { AlertTriangle, Check, CheckCircle2, ChevronLeft, Clock, Flag, Lightbulb, Stethoscope, Timer, TrendingUp, Users, X } from 'lucide-react';
 import { C } from './constants';
+import { getReadableTextColor } from './utils';
 import { MobileThemeToggle } from '../mobile/MobileShell';
 import { RapidSurgeryWarning } from '../room/RapidSurgeryWarning';
 
@@ -39,6 +40,18 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   const { workflowStatuses } = useWorkflowStatusesContext();
   const activeStatuses = workflowStatuses;
   const [hoverDot, setHoverDot] = useState<number | null>(null);
+  const [liveTimeMs, setLiveTimeMs] = useState(() => Date.now());
+  const isHistoricalSnapshot = selectedPhaseEndTime != null;
+
+  // Živý čas běží pouze uvnitř otevřeného detailu. Timeline ani ostatní sály
+  // se kvůli sekundám nepřekreslují a nevzniká další dotaz či subscription.
+  useEffect(() => {
+    if (isHistoricalSnapshot) return;
+    const interval = window.setInterval(() => setLiveTimeMs(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [isHistoricalSnapshot]);
+
+  const displayTimeMs = isHistoricalSnapshot ? currentTime.getTime() : liveTimeMs;
 
   // Zavření klávesou Escape
   useEffect(() => {
@@ -53,6 +66,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   const stepColor = room.isPaused
     ? C.cyan
     : (currentStatus?.accent_color || currentStatus?.color || '#6B7280');
+  const stepTextColor = getReadableTextColor(stepColor);
   const progress = totalSteps > 1 ? stepIndex / (totalSteps - 1) : 0;
   const progressPercent = Math.round(progress * 100);
   const isActive = stepIndex > 0 && !room.isPaused;
@@ -65,7 +79,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
       const s = new Date(entry.startedAt).getTime();
       const e = idx + 1 < hist.length
         ? new Date(hist[idx + 1].startedAt).getTime()
-        : currentTime.getTime();
+        : displayTimeMs;
       if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
         // Nezaokrouhlujeme jednotlivé úseky před výpočtem procent. Krátké fáze
         // dokončených cyklů by jinak zmizely nebo změnily poměr celého cyklu.
@@ -73,7 +87,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
       }
     });
     return mins;
-  }, [room.statusHistory, currentTime]);
+  }, [room.statusHistory, displayTimeMs]);
 
   // Procentuální zastoupení jednotlivých fází. Jakmile existuje historie,
   // počítáme výhradně reálné naměřené časy (budoucí fáze mají 0 %).
@@ -145,13 +159,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   // Uplynulý čas v aktuální fázi
   const elapsedInPhase = useMemo(() => {
     if (!room.phaseStartedAt) return null;
-    const phaseEnd = selectedPhaseEndTime?.getTime() ?? currentTime.getTime();
+    const phaseEnd = selectedPhaseEndTime?.getTime() ?? displayTimeMs;
     const ms = phaseEnd - new Date(room.phaseStartedAt).getTime();
     if (ms < 0) return null;
     const m = Math.floor(ms / 60000);
     const h = Math.floor(m / 60);
     return h > 0 ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`;
-  }, [room.phaseStartedAt, currentTime, selectedPhaseEndTime]);
+  }, [room.phaseStartedAt, displayTimeMs, selectedPhaseEndTime]);
 
   // Začátek operace + zbývá/skluz
   const operationStart = room.operationStartedAt
@@ -159,7 +173,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
     : room.phaseStartedAt ? new Date(room.phaseStartedAt) : null;
   const remainingInfo = (() => {
     if (!room.estimatedEndTime) return null;
-    const diffMs = new Date(room.estimatedEndTime).getTime() - currentTime.getTime();
+    const diffMs = new Date(room.estimatedEndTime).getTime() - displayTimeMs;
     const abs = Math.abs(diffMs);
     const h = Math.floor(abs / 3600_000);
     const m = Math.floor((abs % 3600_000) / 60_000);
@@ -241,12 +255,12 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div className="flex justify-center mb-4">
             <span
               className="inline-flex items-center gap-2 px-4 h-9 rounded-full text-[12px] font-bold"
-              style={{ background: stepColor, color: '#0A0C12', boxShadow: `0 8px 24px ${stepColor}45` }}
+              style={{ background: stepColor, color: stepTextColor, boxShadow: `0 8px 24px ${stepColor}45` }}
             >
               {isActive && (
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#0A0C12' }} />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: '#0A0C12' }} />
+                  <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: stepTextColor }} />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: stepTextColor }} />
                 </span>
               )}
               {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
@@ -406,7 +420,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                       className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                       style={{ background: col }}
                     >
-                      <Check className="w-4 h-4" strokeWidth={3} style={{ color: '#0A0C12' }} />
+                      <Check className="w-4 h-4" strokeWidth={3} style={{ color: getReadableTextColor(col) }} />
                     </span>
                   )}
                   {isCurrent && (
@@ -565,6 +579,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 {activeStatuses.map((status, index) => {
                   const share = phaseShares[index] || 0;
                   const color = status.accent_color || status.color || '#6B7280';
+                  const labelColor = getReadableTextColor(color);
                   const current = index === stepIndex;
                   return (
                     <motion.div
@@ -583,7 +598,10 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                       transition={{ delay: .08 + index * .08, duration: .55, ease: [0.22, 1, 0.36, 1] }}
                     >
                       {share >= 7 && (
-                        <span className="text-[11px] font-black tabular-nums text-[#071019] drop-shadow-sm whitespace-nowrap">
+                        <span
+                          className="text-[11px] font-black tabular-nums whitespace-nowrap"
+                          style={{ color: labelColor, textShadow: labelColor === '#FFFFFF' ? '0 1px 2px rgba(0,0,0,.65)' : '0 1px 1px rgba(255,255,255,.2)' }}
+                        >
                           {share.toFixed(1)} %
                         </span>
                       )}
@@ -652,6 +670,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
 
               {activeStatuses.map((s, i) => {
                 const col = s.accent_color || s.color || '#6B7280';
+                const colText = getReadableTextColor(col);
                 const done = i < stepIndex;
                 const current = i === stepIndex;
                 const mins = phaseMinutes[i];
@@ -686,7 +705,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                     <div className="flex items-center gap-3">
                       <span
                         className="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black"
-                        style={{ background: done || current ? col : 'rgba(255,255,255,.07)', color: done || current ? '#071019' : 'rgba(255,255,255,.4)' }}
+                        style={{ background: done || current ? col : 'rgba(255,255,255,.07)', color: done || current ? colText : 'rgba(255,255,255,.4)' }}
                       >
                         {done ? <Check className="w-4 h-4" /> : i + 1}
                         {current && <span className="absolute -inset-1 rounded-full border animate-ping opacity-25" style={{ borderColor: col }} />}

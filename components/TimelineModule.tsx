@@ -39,6 +39,7 @@ import {
   hourLabelCompact,
   isOperationInWindow,
   exceedsT24Hours,
+  getReadableTextColor,
   getTimePercentForTimeline as getTimePercentForTimelineRaw,
   getOperationPosition as getOperationPositionRaw,
 } from './timeline/utils';
@@ -266,6 +267,29 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
   // TV / fullscreen režim — pro nástěnnou obrazovku na operačním traktu
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Živý popup ukládá pouze ID. Aktuální objekt sálu se při každém renderu
+  // vezme z centrálního SWR/Realtime pole `rooms`, takže nevzniká další dotaz
+  // ani samostatná subscription a detail nikdy nedrží zastaralý snapshot.
+  const openLiveRoom = useCallback((roomOrId: OperatingRoom | string) => {
+    setSelectedRoom(null);
+    setSelectedRoomId(typeof roomOrId === 'string' ? roomOrId : roomOrId.id);
+    setSelectedDetailTime(null);
+    setSelectedPhaseEndTime(null);
+  }, []);
+
+  const closeRoomDetail = useCallback(() => {
+    setSelectedRoomId(null);
+    setSelectedRoom(null);
+    setSelectedDetailTime(null);
+    setSelectedPhaseEndTime(null);
+  }, []);
+
+  const detailRoom = useMemo(() => {
+    if (selectedRoom) return selectedRoom;
+    if (!selectedRoomId) return null;
+    return rooms.find(room => room.id === selectedRoomId) ?? null;
+  }, [rooms, selectedRoom, selectedRoomId]);
+
   const openHistoricalPhase = useCallback((
     room: OperatingRoom,
     history: NonNullable<OperatingRoom['statusHistory']>,
@@ -277,6 +301,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     const phase = history[phaseIndex];
     if (!phase) return;
 
+    setSelectedRoomId(null);
     setSelectedDetailTime(new Date(cycleEndedAt));
     setSelectedPhaseEndTime(new Date(phaseEndedAt));
     setSelectedRoom({
@@ -1045,14 +1070,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
 
       {/* Room Detail Popup */}
       <AnimatePresence>
-        {selectedRoom && (
+        {detailRoom && (
           <RoomDetailPopup
-            room={rooms.find((room) => room.id === selectedRoom.id) ?? selectedRoom}
-            onClose={() => {
-              setSelectedRoom(null);
-              setSelectedDetailTime(null);
-              setSelectedPhaseEndTime(null);
-            }}
+            key={detailRoom.id}
+            room={detailRoom}
+            onClose={closeRoomDetail}
             currentTime={selectedDetailTime ?? currentTime}
             selectedPhaseEndTime={selectedPhaseEndTime}
           />
@@ -1168,6 +1190,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                   <div className="flex w-full h-11 rounded-xl overflow-hidden gap-[2px] bg-white/[0.035] p-[2px] mb-5">
                     {summaryPhases.map((phase, index) => {
                       const share = summaryTotalMs > 0 ? (phase.ms / summaryTotalMs) * 100 : 0;
+                      const labelColor = getReadableTextColor(phase.color);
                       return (
                         <motion.div
                           key={`${phase.name}-${index}`}
@@ -1177,7 +1200,14 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                           initial={{ scaleX: 0, opacity: 0 }} animate={{ scaleX: 1, opacity: 1 }}
                           transition={{ delay: index * .06, duration: .5 }}
                         >
-                          {share >= 6 && <span className="text-[11px] font-black text-[#071019] whitespace-nowrap">{share.toFixed(1)} %</span>}
+                          {share >= 6 && (
+                            <span
+                              className="text-[11px] font-black whitespace-nowrap"
+                              style={{ color: labelColor, textShadow: labelColor === '#FFFFFF' ? '0 1px 2px rgba(0,0,0,.42)' : '0 1px 1px rgba(255,255,255,.18)' }}
+                            >
+                              {share.toFixed(1)} %
+                            </span>
+                          )}
                         </motion.div>
                       );
                     })}
@@ -1251,7 +1281,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         onClose={() => setShowAttention(false)}
         rooms={rooms}
         currentTime={currentTime}
-        onSelectRoom={(id) => { setShowAttention(false); const room = rooms.find((r) => r.id === id); if (room) setSelectedRoom(room); }}
+        onSelectRoom={(id) => { setShowAttention(false); openLiveRoom(id); }}
       />
       <PhaseOptimizer
         isOpen={showPhaseOptimizer}
@@ -1263,7 +1293,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
         rooms={rooms}
-        onSelectRoom={(id) => { setShowHistory(false); const room = rooms.find((r) => r.id === id); if (room) setSelectedRoom(room); }}
+        onSelectRoom={(id) => { setShowHistory(false); openLiveRoom(id); }}
       />
       <DelaySimulator
         isOpen={showSimulator}
@@ -1401,7 +1431,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
         stats={stats}
         mobileView={mobileView}
         onViewChange={setMobileView}
-        onSelectRoom={setSelectedRoom}
+        onSelectRoom={openLiveRoom}
         getRemainingTime={getRemainingTime}
       />
 
@@ -2306,11 +2336,11 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                     aria-label={`${room.name} — ${bannerLabel}`}
                     className="timeline-room-row flex items-stretch cursor-pointer transition-all duration-200 group rounded-[14px] overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70"
                     style={{ height: rowHeight }}
-                    onClick={() => setSelectedRoom(room)}
+                    onClick={() => openLiveRoom(room.id)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        setSelectedRoom(room);
+                        openLiveRoom(room.id);
                       }
                     }}
                   >
@@ -2392,12 +2422,12 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       ? `inset 0 1px 0 rgba(255,255,255,0.055), 0 10px 26px ${stepColor}0c`
                       : 'inset 0 1px 0 rgba(255,255,255,0.025)',
                   }}
-                  onClick={() => (showSummary ? setStatsRoomId(room.id) : setSelectedRoom(room))}
+                  onClick={() => (showSummary ? setStatsRoomId(room.id) : openLiveRoom(room.id))}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
                       if (showSummary) setStatsRoomId(room.id);
-                      else setSelectedRoom(room);
+                      else openLiveRoom(room.id);
                     }
                   }}
                 >
@@ -3346,6 +3376,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                         title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
                                         onClick={(event) => {
                                           event.stopPropagation();
+                                          if (isCurrentSegment) {
+                                            openLiveRoom(room.id);
+                                            return;
+                                          }
                                           const historicalEnd = nextEntry?.startedAt ?? currentTime.toISOString();
                                           openHistoricalPhase(room, history, idx, new Date(operationStart).toISOString(), historicalEnd, currentTime.toISOString());
                                         }}
@@ -3353,6 +3387,10 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                                           if (event.key === 'Enter' || event.key === ' ') {
                                             event.preventDefault();
                                             event.stopPropagation();
+                                            if (isCurrentSegment) {
+                                              openLiveRoom(room.id);
+                                              return;
+                                            }
                                             const historicalEnd = nextEntry?.startedAt ?? currentTime.toISOString();
                                             openHistoricalPhase(room, history, idx, new Date(operationStart).toISOString(), historicalEnd, currentTime.toISOString());
                                           }

@@ -1,6 +1,25 @@
 import { TIMELINE_START_HOUR, TIMELINE_HOURS } from './constants';
 
 // ========== HELPER FUNCTIONS ==========
+/**
+ * Returns a readable foreground for a solid workflow color. Hospital admins
+ * can configure arbitrary phase colors, so a fixed black/white label is not
+ * safe. YIQ intentionally favors white on saturated reds, blues and purples.
+ */
+export const getReadableTextColor = (color: string): '#FFFFFF' | '#071019' => {
+  const normalized = color.trim().replace(/^#/, '');
+  const hex = normalized.length === 3
+    ? normalized.split('').map(character => character + character).join('')
+    : normalized.slice(0, 6);
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return '#FFFFFF';
+
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  const perceivedBrightness = (red * 299 + green * 587 + blue * 114) / 1000;
+  return perceivedBrightness >= 165 ? '#071019' : '#FFFFFF';
+};
+
 export const getTimePercent = (date: Date, totalHours: number = TIMELINE_HOURS): number => {
   const hours = date.getHours() + date.getMinutes() / 60;
   let percent = ((hours - TIMELINE_START_HOUR) / totalHours) * 100;
