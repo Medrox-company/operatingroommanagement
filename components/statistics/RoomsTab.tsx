@@ -12,7 +12,6 @@
 'use client';
 
 import React, { useMemo, useState, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, Clock, Users, Zap, AlertTriangle, CheckCircle2,
   ChevronRight, Filter, LayoutGrid, List, TrendingUp, Sparkles
@@ -74,7 +73,7 @@ const StatusBadge = memo(({ status, color }: { status: string; color: string }) 
     className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
     style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}
   >
-    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: color }} />
+    <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
     {status}
   </div>
 ));
@@ -107,7 +106,6 @@ const RoomCard = memo(({
   opsCount,
   avgOpTime,
   onClick,
-  index,
   statusHistory,
 }: {
   room: OperatingRoom;
@@ -115,7 +113,6 @@ const RoomCard = memo(({
   opsCount: number;
   avgOpTime: number | null;
   onClick: () => void;
-  index: number;
   statusHistory?: StatusHistoryRow[];
 }) => {
   const statusMap: Record<string, { label: string; color: string }> = {
@@ -172,21 +169,8 @@ const RoomCard = memo(({
   }, [room.id, statusHistory]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.25, delay: index * 0.03 }}
-      whileHover={{ scale: 1.01, y: -2 }}
-      onClick={onClick}
-      className="cursor-pointer group"
-    >
+    <button type="button" onClick={onClick} className="w-full cursor-pointer text-left group">
       <Card elevated className="p-4 h-full relative overflow-hidden">
-        {/* Accent glow */}
-        <div
-          className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20 pointer-events-none"
-          style={{ background: utilColor }}
-        />
-
         {/* Header */}
         <div className="flex items-start justify-between mb-3 relative">
           <div className="min-w-0 flex-1">
@@ -237,14 +221,14 @@ const RoomCard = memo(({
 
         {/* Footer CTA */}
         <div
-          className="flex items-center justify-end gap-1 mt-3 pt-2 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+          className="flex items-center justify-end gap-1 mt-3 pt-2 text-[10px] font-medium"
           style={{ color: C.accent, borderTop: `1px solid ${C.ghost}` }}
         >
           <span>Detail</span>
           <ChevronRight size={12} />
         </div>
       </Card>
-    </motion.div>
+    </button>
   );
 });
 RoomCard.displayName = 'RoomCard';
@@ -263,8 +247,6 @@ const SummaryKPI = memo(({
 
   return (
     <Card className="p-4 relative overflow-hidden">
-      <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl opacity-10" style={{ background: color }} />
-
       <div className="flex items-start justify-between mb-3">
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center"
@@ -279,13 +261,7 @@ const SummaryKPI = memo(({
 
       <div className="flex items-center gap-2">
         <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: C.ghost }}>
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: color }}
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-          />
+          <div className="h-full rounded-full" style={{ background: color, width: `${pct}%` }} />
         </div>
         <span className="text-[10px] font-semibold tabular-nums" style={{ color }}>{formatPercent(pct, 0)}</span>
       </div>
@@ -614,18 +590,14 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
       </div>
 
       {/* ── Room cards grid ── */}
-      <AnimatePresence mode="popLayout">
-        <motion.div
+      <div
           key={viewMode}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
           className={viewMode === 'grid'
             ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'
             : 'space-y-2'
           }
         >
-          {sortedRooms.map((data, idx) => (
+          {sortedRooms.map(data => (
             <RoomCard
               key={data.room.id}
               room={data.room}
@@ -633,12 +605,10 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               opsCount={data.operations}
               avgOpTime={data.avgOpTime}
               onClick={() => onRoomSelect?.(data.room)}
-              index={idx}
               statusHistory={statusHistory}
             />
           ))}
-        </motion.div>
-      </AnimatePresence>
+      </div>
 
       {/* ── Performance comparison table ── */}
       <Card className="p-0 overflow-hidden">

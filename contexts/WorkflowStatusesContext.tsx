@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { useHospital } from './HospitalContext';
+import { useHospitalRealtime } from './RealtimeContext';
 
 export interface WorkflowStatus {
   id: string;
@@ -89,6 +90,22 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
 
   // Track if initial load is complete
   const [isInitialized, setIsInitialized] = useState(false);
+
+  useHospitalRealtime('workflow_statuses', (payload) => {
+    const raw = payload.new ?? payload.old;
+    const id = typeof raw?.id === 'string' ? raw.id : null;
+    if (!id) return;
+    if (payload.eventType === 'DELETE') {
+      setStatuses((current) => current.filter((status) => status.id !== id));
+      return;
+    }
+    const nextStatus = mapDBToStatus(payload.new as unknown as WorkflowStatusDBRow);
+    setStatuses((current) => {
+      const index = current.findIndex((status) => status.id === id);
+      const next = index === -1 ? [...current, nextStatus] : current.map((status) => status.id === id ? nextStatus : status);
+      return next.sort((a, b) => a.sort_order - b.sort_order);
+    });
+  });
 
   const fetchStatuses = useCallback(async (isInitialLoad = false) => {
     if (hospitalLoading || !activeHospitalId) {
@@ -203,10 +220,7 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
     // Initial load with loading indicator
     fetchStatuses(true);
     
-    // NOTE: Realtime subscription DISABLED to prevent flickering
-    // Workflow statuses only change via Settings module, not during normal operation
-    // If user changes statuses in Settings, they can refresh page or the optimistic update handles it
-    // This prevents unnecessary re-renders of ALL components when ANY room status changes
+    // Další změny přicházejí přes jediný centrální nemocniční Realtime kanál.
   }, [fetchStatuses]);
 
   // Memoize computed values

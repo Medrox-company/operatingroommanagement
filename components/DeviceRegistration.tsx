@@ -2,15 +2,18 @@
 
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useHospital } from '../contexts/HospitalContext';
 
-// Generate or get device ID from localStorage
-function getOrCreateDeviceId(): string {
+// Každá nemocnice má vlastní identitu zařízení. Databázový sloupec device_id
+// je unikátní, proto nesmí stejný browser při přepnutí nemocnice znovu použít
+// globální ID a narazit na duplicate-key konflikt.
+function getOrCreateDeviceId(hospitalId: string): string {
   if (typeof window === 'undefined') return '';
-  const STORAGE_KEY = 'orm_device_id';
-  let deviceId = localStorage.getItem(STORAGE_KEY);
+  const storageKey = `orm_device_id:${hospitalId}`;
+  let deviceId = localStorage.getItem(storageKey);
   if (!deviceId) {
     deviceId = 'dev_' + crypto.randomUUID();
-    localStorage.setItem(STORAGE_KEY, deviceId);
+    localStorage.setItem(storageKey, deviceId);
   }
   return deviceId;
 }
@@ -60,9 +63,9 @@ function isRunningAsPWA(): boolean {
 }
 
 // Register device with server (one-time)
-async function registerDevice() {
+async function registerDevice(hospitalId: string) {
   try {
-    const device_id = getOrCreateDeviceId();
+    const device_id = getOrCreateDeviceId(hospitalId);
     if (!device_id) return;
     
     const info = detectDeviceInfo();
@@ -87,16 +90,22 @@ async function registerDevice() {
  * No polling - just one-time registration when the app loads.
  */
 export const DeviceRegistration: React.FC = () => {
-  const registeredRef = useRef(false);
+  const registeredHospitalRef = useRef<string | null>(null);
   const { isAuthenticated } = useAuth();
+  const { activeHospitalId } = useHospital();
 
   useEffect(() => {
-    // Registruj zařízení až po přihlášení (API endpoint vyžaduje session)
-    if (isAuthenticated && !registeredRef.current) {
-      registeredRef.current = true;
-      registerDevice();
+    // Registruj zařízení až po přihlášení a aktivaci nemocnice. Při přepnutí
+    // nemocnice se zařízení zaregistruje pod její samostatnou identitou.
+    if (
+      isAuthenticated &&
+      activeHospitalId &&
+      registeredHospitalRef.current !== activeHospitalId
+    ) {
+      registeredHospitalRef.current = activeHospitalId;
+      void registerDevice(activeHospitalId);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeHospitalId]);
 
   return null;
 };

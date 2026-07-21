@@ -7,10 +7,49 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 // Singleton pattern for Supabase client to avoid creating multiple instances
 let supabaseInstance: SupabaseClient | null = null;
+let hospitalRealtimeInstance: SupabaseClient | null = null;
 let hospitalAccessToken: string | null = null;
 
-export function setSupabaseHospitalToken(token: string | null) {
+/**
+ * Keep PostgREST and the already-open Realtime socket on the same hospital JWT.
+ * Supabase reads `accessToken` lazily for HTTP calls, but an existing Realtime
+ * client keeps its previous token until `setAuth` is called explicitly.
+ */
+export async function setSupabaseHospitalToken(token: string | null) {
   hospitalAccessToken = token;
+  await Promise.all([
+    supabaseInstance?.realtime.setAuth(token),
+    hospitalRealtimeInstance?.realtime.setAuth(token),
+  ]);
+}
+
+/**
+ * Dedicated, lazy Realtime singleton. It is intentionally created only after
+ * the server has issued a hospital-scoped JWT. This avoids the anonymous auth
+ * initialization of the HTTP client racing with the WebSocket channel join.
+ * There is still exactly one Realtime socket per browser/device.
+ */
+export async function getHospitalRealtimeClient(): Promise<SupabaseClient | null> {
+  if (!supabaseUrl || !supabaseAnonKey || !hospitalAccessToken) return null;
+
+  if (!hospitalRealtimeInstance) {
+    hospitalRealtimeInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      accessToken: async () => hospitalAccessToken,
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+    });
+  }
+
+  await hospitalRealtimeInstance.realtime.setAuth(hospitalAccessToken);
+  return hospitalRealtimeInstance;
 }
 
 function getSupabaseClient(): SupabaseClient | null {

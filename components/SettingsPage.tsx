@@ -1,20 +1,24 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft, Smartphone, ClipboardList } from 'lucide-react';
-import OperatingRoomsManager from './OperatingRoomsManager';
-import NotificationsManager from './NotificationsManager';
-import ScheduleManager from './ScheduleManager';
-import StatisticsModule from './StatisticsModule';
-import StaffManager from './StaffManager';
-import StaffOverviewModule from './StaffOverviewModule';
-import StatusesManager from './StatusesManager';
-import BackgroundManager from './BackgroundManager';
-import ManagementManager from './ManagementManager';
-import DevicesManager from './DevicesManager';
-import CalendarManager from './CalendarManager';
-import SystemSettingsModule from './SystemSettingsModule';
 import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom, WeeklySchedule } from '../types';
 import { useHospital } from '../contexts/HospitalContext';
+
+const OperatingRoomsManager = dynamic(() => import('./OperatingRoomsManager'), { ssr: false });
+const NotificationsManager = dynamic(() => import('./NotificationsManager'), { ssr: false });
+const ScheduleManager = dynamic(() => import('./ScheduleManager'), { ssr: false });
+const StatisticsModule = dynamic(() => import('./StatisticsModule'), { ssr: false });
+const StaffManager = dynamic(() => import('./StaffManager'), { ssr: false });
+const StaffOverviewModule = dynamic(() => import('./StaffOverviewModule'), { ssr: false });
+const StatusesManager = dynamic(() => import('./StatusesManager'), { ssr: false });
+const BackgroundManager = dynamic(() => import('./BackgroundManager'), { ssr: false });
+const ManagementManager = dynamic(() => import('./ManagementManager'), { ssr: false });
+const DevicesManager = dynamic(() => import('./DevicesManager'), { ssr: false });
+const CalendarManager = dynamic(() => import('./CalendarManager'), { ssr: false });
+const SystemSettingsModule = dynamic(() => import('./SystemSettingsModule'), { ssr: false });
 
 interface SettingsPageProps {
   rooms?: OperatingRoom[];
@@ -167,7 +171,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         </ModuleWrapper>
       ) : selectedModule === 'staff-overview' ? (
         <ModuleWrapper>
-          <StaffOverviewModule />
+          <StaffOverviewModule rooms={rooms} />
         </ModuleWrapper>
       ) : selectedModule === 'statuses' ? (
         <ModuleWrapper>

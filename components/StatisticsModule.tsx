@@ -1,35 +1,23 @@
 import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import {
   TrendingUp, TrendingDown, Activity,
-  AlertTriangle, Shield, Clock, Layers, Zap, X, BarChart3,
+  AlertTriangle, Shield, Clock, Layers, X, BarChart3,
   Printer, FileDown,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus, DayWorkingHours } from '../types';
 // Step durations now calculated from real database history
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { useHospital } from '../contexts/HospitalContext';
 import { useIsMobileDark } from '../hooks/useIsMobileDark';
 import {
-  fetchRoomStatistics,
   fetchStatusHistory,
-  fetchAllStaff,
-  fetchNotificationsLog,
-  fetchShiftSchedules,
-  fetchDepartments,
-  fetchSubDepartments,
-  fetchDevices,
-  type RoomStatistics,
   type StatusHistoryRow,
-  type StaffRow,
-  type NotificationLogRow,
-  type ShiftScheduleRow,
-  type DepartmentRow,
-  type SubDepartmentRow,
-  type DeviceRow,
 } from '../lib/db';
+import { useStaffData } from '../hooks/useStaffData';
+import { useStatisticsData } from '../hooks/useStatisticsData';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import {
-  AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis,
+  AreaChart, Area, BarChart, Bar,
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip,
   LineChart, Line, CartesianGrid, ComposedChart,
   ScatterChart, Scatter, ZAxis,
@@ -41,19 +29,18 @@ import {
   MobilePillTabs,
   MobileSectionLabel,
 } from './mobile/MobileShell';
-import { StaffTab } from './statistics/StaffTab';
-import { FinanceTab } from './statistics/FinanceTab';
-import { RoomsTab } from './statistics/RoomsTab';
-import { PhasesTab } from './statistics/PhasesTab';
-import { NotificationsTab } from './statistics/NotificationsTab';
-import { HeatmapTab } from './statistics/HeatmapTab';
-import { DevicesTab } from './statistics/DevicesTab';
+const StaffTab = dynamic(() => import('./statistics/StaffTab').then((module) => module.StaffTab), { ssr: false });
+const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
+const RoomsTab = dynamic(() => import('./statistics/RoomsTab').then((module) => module.RoomsTab), { ssr: false });
+const PhasesTab = dynamic(() => import('./statistics/PhasesTab').then((module) => module.PhasesTab), { ssr: false });
+const NotificationsTab = dynamic(() => import('./statistics/NotificationsTab').then((module) => module.NotificationsTab), { ssr: false });
+const DevicesTab = dynamic(() => import('./statistics/DevicesTab').then((module) => module.DevicesTab), { ssr: false });
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 type Tab    = 'prehled' | 'finance' | 'personal'
-            | 'saly' | 'faze' | 'heatmapa' | 'notifikace' | 'zarizeni';
+            | 'saly' | 'faze' | 'notifikace' | 'zarizeni';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -63,7 +50,9 @@ const C = {
   yellow:  '#FBBF24',
   red:     '#EF4444',
   border:  'var(--stats-border)',
+  borderHover: 'var(--stats-border-hover)',
   surface: 'var(--stats-surface)',
+  surfaceActive: 'var(--stats-surface-active)',
   muted:   'var(--stats-muted)',
   faint:   'var(--stats-faint)',
   ghost:   'var(--stats-ghost)',
@@ -221,24 +210,6 @@ function calculateRoomWorkflowDistribution(
   });
   
   return roomDistributions;
-}
-
-// ── Helper: Get all rooms' combined working hours range for a day ──────────────
-function getCombinedWorkingHoursRange(rooms: OperatingRoom[], dayIndex: number): { start: number; end: number } {
-  let minStart = 24;
-  let maxEnd = 0;
-  
-  rooms.forEach(room => {
-    const hours = getRoomWorkingHours(room, dayIndex);
-    if (hours.enabled) {
-      minStart = Math.min(minStart, hours.startHour);
-      maxEnd = Math.max(maxEnd, hours.endHour + (hours.endMinute > 0 ? 1 : 0));
-    }
-  });
-  
-  // Fallback to 7-18 if no rooms have schedule
-  if (minStart === 24) return { start: 7, end: 18 };
-  return { start: minStart, end: maxEnd };
 }
 
 // ── Helper: Calculate total working minutes for a room across a period ─────────
@@ -435,176 +406,17 @@ function formatRoomWorkingHours(room: OperatingRoom, dayIndex: number): string {
 
 // ── Tooltip shared style ─────────�����─��������──────────────────────────────────────────
 const TIP = {
-  contentStyle:{ background:'rgba(2,8,23,0.97)', border:`1px solid ${C.border}`, borderRadius:6, fontSize:12 },
+  contentStyle:{
+    background:'rgba(2,8,23,0.97)',
+    border:`1px solid ${C.border}`,
+    borderRadius:10,
+    fontSize:12,
+    fontFamily:'var(--font-sans)',
+    boxShadow:'0 16px 36px rgba(0,0,0,0.28)',
+  },
   labelStyle:  { color:C.muted },
   itemStyle:   { color:C.accent },
 };
-
-// ── Helper: Build utilisation data from status history with room schedules ─────
-function buildUtilDataFromHistory(
-  history: StatusHistoryRow[],
-  period: Period,
-  rooms: OperatingRoom[]
-): { t: string; v: number; cap: number }[] {
-  // Get today's day index for hourly data
-  const todayDayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-  const workingRange = getCombinedWorkingHoursRange(rooms, todayDayIndex);
-  
-  if (!history || history.length === 0) {
-    // Return empty data structure based on period
-    if (period === 'den') {
-      const hourCount = workingRange.end - workingRange.start;
-      return Array.from({ length: hourCount }, (_, i) => ({ 
-        t: `${workingRange.start + i}h`, v: 0, cap: 100 
-      }));
-    }
-    if (period === 'týden') {
-      return DAYS.map((t, i) => {
-        // Check if any room is active this day
-        const anyActive = rooms.some(r => getRoomWorkingHours(r, i).enabled);
-        return { t, v: 0, cap: anyActive ? 100 : 0 };
-      });
-    }
-    if (period === 'měsíc') {
-      return Array.from({ length: 30 }, (_, i) => ({ t: `${i + 1}`, v: 0, cap: 100 }));
-    }
-    const months = ['Led', 'Únr', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Září', 'Říj', 'Lis', 'Pro'];
-    return months.map(t => ({ t, v: 0, cap: 100 }));
-  }
-
-  // Group operations by time interval - only count events within working hours
-  const operationEvents = history.filter(e => 
-    e.event_type === 'operation_start' || e.event_type === 'step_change'
-  );
-
-  if (period === 'den') {
-    // Group by hour within working hours range
-    const hourCounts: Record<number, number> = {};
-    for (let h = workingRange.start; h < workingRange.end; h++) hourCounts[h] = 0;
-    
-    operationEvents.forEach(e => {
-      const hour = new Date(e.timestamp).getHours();
-      if (hour >= workingRange.start && hour < workingRange.end) {
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-      }
-    });
-    
-    const maxCount = Math.max(1, ...Object.values(hourCounts));
-    const hourCount = workingRange.end - workingRange.start;
-    return Array.from({ length: hourCount }, (_, i) => ({
-      t: `${workingRange.start + i}h`,
-      v: Math.round((hourCounts[workingRange.start + i] / maxCount) * 100),
-      cap: 100,
-    }));
-  }
-
-  if (period === 'týden') {
-    // Group by day of week - calculate utilization based on working hours
-    const dayDurations: Record<number, number> = {};
-    const dayCapacities: Record<number, number> = {};
-    
-    for (let d = 0; d < 7; d++) {
-      dayDurations[d] = 0;
-      // Calculate total capacity for this day across all rooms
-      dayCapacities[d] = rooms.reduce((sum, room) => sum + getRoomWorkingMinutes(room, d), 0);
-    }
-    
-    operationEvents.forEach(e => {
-      const day = new Date(e.timestamp).getDay();
-      const adjustedDay = day === 0 ? 6 : day - 1;
-      // Add duration in minutes
-      dayDurations[adjustedDay] += (e.duration_seconds || 0) / 60;
-    });
-    
-    return DAYS.map((t, i) => {
-      const capacity = dayCapacities[i];
-      if (capacity === 0) return { t, v: 0, cap: 0 };
-      const utilization = Math.min(100, Math.round((dayDurations[i] / capacity) * 100));
-      return { t, v: utilization, cap: 100 };
-    });
-  }
-
-  if (period === 'měsíc') {
-    // Group by day of month
-    const dayCounts: Record<number, number> = {};
-    for (let d = 1; d <= 30; d++) dayCounts[d] = 0;
-    
-    operationEvents.forEach(e => {
-      const day = new Date(e.timestamp).getDate();
-      if (day >= 1 && day <= 30) {
-        dayCounts[day] = (dayCounts[day] || 0) + 1;
-      }
-    });
-    
-    const maxCount = Math.max(1, ...Object.values(dayCounts));
-    return Array.from({ length: 30 }, (_, i) => ({
-      t: `${i + 1}`,
-      v: Math.round((dayCounts[i + 1] / maxCount) * 100),
-      cap: 100,
-    }));
-  }
-
-  // Year - group by month
-  const monthNames = ['Led', 'Únr', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Září', 'Říj', 'Lis', 'Pro'];
-  const monthCounts: Record<number, number> = {};
-  for (let m = 0; m < 12; m++) monthCounts[m] = 0;
-  
-  operationEvents.forEach(e => {
-    const month = new Date(e.timestamp).getMonth();
-    monthCounts[month] = (monthCounts[month] || 0) + 1;
-  });
-  
-  const maxCount = Math.max(1, ...Object.values(monthCounts));
-  return monthNames.map((t, i) => ({
-    t,
-    v: Math.round((monthCounts[i] / maxCount) * 100),
-    cap: 100,
-  }));
-}
-
-// ── Helper: Build heatmap from status history with room schedules (7 days × 24 hours) ──
-function buildHeatmapFromHistory(history: StatusHistoryRow[], rooms: OperatingRoom[]): number[][] {
-  // Initialize empty 7x24 grid
-  const heatmap: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
-  
-  // Mark non-working hours as -1 (will be displayed differently)
-  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-    const range = getCombinedWorkingHoursRange(rooms, dayIndex);
-    for (let hour = 0; hour < 24; hour++) {
-      if (hour < range.start || hour >= range.end) {
-        heatmap[dayIndex][hour] = -1; // Outside working hours
-      }
-    }
-  }
-  
-  if (!history || history.length === 0) {
-    // Return heatmap with 0 for working hours, -1 for non-working
-    return heatmap.map(row => row.map(v => v === -1 ? -1 : 0));
-  }
-
-  // Count operations by day of week and hour
-  const operationEvents = history.filter(e => 
-    e.event_type === 'operation_start' || e.event_type === 'step_change'
-  );
-
-  operationEvents.forEach(e => {
-    const date = new Date(e.timestamp);
-    const day = date.getDay();
-    const hour = date.getHours();
-    // Convert Sunday=0 to Monday=0 format
-    const adjustedDay = day === 0 ? 6 : day - 1;
-    if (heatmap[adjustedDay][hour] !== -1) {
-      heatmap[adjustedDay][hour] = (heatmap[adjustedDay][hour] || 0) + 1;
-    }
-  });
-
-  // Normalize working hours to percentages (0-100), keep -1 for non-working
-  const workingHourValues = heatmap.flat().filter(v => v >= 0);
-  const maxCount = Math.max(1, ...workingHourValues);
-  return heatmap.map(row => row.map(count => 
-    count === -1 ? -1 : Math.round((count / maxCount) * 100)
-  ));
-}
 
 // ── Helper fns ────────────────────────────────────────────────────────────────
 // Determine if room is busy based on currentStepIndex (0 or 7 = ready/free, anything else = busy)
@@ -639,15 +451,6 @@ function statusLabel(s:RoomStatus){
   if(s===RoomStatus.CLEANING) return 'Úklid';
   return 'Údržba';
 }
-function heatColor(v:number){
-  if(v===-1) return 'rgba(255,255,255,0.03)'; // Non-working hours
-  if(v>=90) return 'rgba(255,59,48,0.88)';
-  if(v>=70) return 'rgba(249,115,22,0.78)';
-  if(v>=50) return 'rgba(251,191,36,0.68)';
-  if(v>=25) return 'rgba(16,185,129,0.62)';
-  return 'rgba(30,41,59,0.45)';
-}
-function isUPS(r:OperatingRoom){ return r.isEmergency === true; }
 // Calculate working minutes for today based on room's schedule
 function dayMinutes(r:OperatingRoom){ 
   // Get today's day index (Monday=0)
@@ -692,7 +495,6 @@ function mergeSeg(segs:Seg[]):Seg[]{
 // ── Room mini card (extracted so hooks are always called at component level) ──
 interface RoomMiniCardProps { 
   r: OperatingRoom; 
-  index: number; 
   onClick: () => void; 
   workflowSteps: WorkflowStep[]; 
   stepDurations: number[];
@@ -701,11 +503,10 @@ interface RoomMiniCardProps {
   /** Pokud true, vyrenderuje rozšířenou kartu s detail daty pro tisk/PDF */
   isPrinting?: boolean;
 }
-const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, workflowSteps, stepDurations, opsCount, utilization, isPrinting }) => {
+const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, onClick, workflowSteps, stepDurations, opsCount, utilization, isPrinting }) => {
   const sc2   = roomStatusColor(r);
   const isBusy = isRoomBusyByStep(r);
   const tl2   = useMemo(() => mergeSeg(buildTimeline(r, workflowSteps, stepDurations)), [r, workflowSteps, stepDurations]);
-  const ups2  = isUPS(r);
   const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
   const workingHoursStr = formatRoomWorkingHours(r, todayIndex);
   const workingMinutes = getRoomWorkingMinutes(r, todayIndex);
@@ -721,15 +522,12 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
   const fmtTime = (iso?: string | null) => iso ? new Date(iso).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '—';
   
   return (
-    <motion.button onClick={onClick}
+    <button onClick={onClick}
       className="text-left rounded-lg p-3 w-full group"
       style={{
         background: isBusy ? `${sc2}08` : C.surface,
         border: `1px solid ${isBusy ? `${sc2}30` : C.border}`,
-      }}
-      initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.18, delay: index * 0.025 }}
-      whileHover={{ scale: 1.03 }}>
+      }}>
       <div className="flex items-center justify-between mb-1.5 gap-1.5">
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sc2, boxShadow: `0 0 5px ${sc2}` }} />
@@ -745,7 +543,6 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
             {r.name}
           </span>
         </div>
-        {ups2 && <span className="text-[8px] font-bold px-1 py-px rounded shrink-0" style={{ background: `${C.accent}15`, color: C.accent }}>ÚPS</span>}
       </div>
       <p className="text-[10px] mb-1 whitespace-nowrap overflow-hidden text-ellipsis" style={{ color: C.faint }} title={r.department}>{r.department}</p>
       {/* Working hours indicator */}
@@ -836,7 +633,6 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
             <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.text}10`, color: C.text }}>
               24h: {r.operations24h}
             </span>
-            {ups2 && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.accent}20`, color: C.accent }}>ÚPS</span>}
             {r.isSeptic && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.red}20`, color: C.red }}>SEPTICKÝ</span>}
             {r.isEmergency && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.red}20`, color: C.red }}>POHOT.</span>}
             {r.isLocked && <span className="text-[8px] font-bold px-1 py-px rounded" style={{ background: `${C.muted}20`, color: C.muted }}>UZAMČEN</span>}
@@ -845,20 +641,20 @@ const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, index, onClick, wor
           </div>
         </div>
       )}
-    </motion.button>
+    </button>
   );
 });
 
 // ── Card primitive ────────────────────────────────────────────────────────────
 function Card({children,className='',style={}}:{children:React.ReactNode;className?:string;style?:React.CSSProperties}){
   return(
-    <div className={`rounded-xl ${className}`} style={{background:C.surface,border:`1px solid ${C.border}`,...style}}>
+    <div className={`statistics-card rounded-xl ${className}`} style={{background:C.surface,border:`1px solid ${C.border}`,...style}}>
       {children}
     </div>
   );
 }
 function SectionLabel({children}:{children:React.ReactNode}){
-  return <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-4" style={{color:C.muted}}>{children}</p>;
+  return <p className="statistics-section-label text-[11px] font-semibold uppercase tracking-[0.1em] mb-4" style={{color:C.muted}}>{children}</p>;
 }
 function EmptyState({title,desc}:{title:string;desc:string}){
   return (
@@ -889,8 +685,9 @@ interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:Wo
 
 const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
   const sc     = roomStatusColor(room);
-  const ups    = isUPS(room);
-  const dm     = dayMinutes(room);
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+  const todayWorkingHours = getRoomWorkingHours(room, todayIndex);
+  const todayWorkingHoursLabel = formatRoomWorkingHours(room, todayIndex);
 
   // State must be declared first - before any useMemo that depends on it
   const [roomHistory, setRoomHistory] = useState<StatusHistoryRow[]>([]);
@@ -923,12 +720,9 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   // Day utilisation curve from real data using room's weekly schedule
   const dayCurve=useMemo(()=>{
     // Get today's day index (Monday=0)
-    const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-    const todayHours = getRoomWorkingHours(room, todayIndex);
-    
-    // Use room's actual working hours, or fallback for UPS rooms
-    const start = ups ? 0 : (todayHours.enabled ? todayHours.startHour : 7);
-    const end = ups ? 24 : (todayHours.enabled ? todayHours.endHour + (todayHours.endMinute > 0 ? 1 : 0) : 16);
+    if (!todayWorkingHours.enabled) return [];
+    const start = todayWorkingHours.startHour;
+    const end = todayWorkingHours.endHour + (todayWorkingHours.endMinute > 0 ? 1 : 0);
     
     const hourCounts: Record<number, number> = {};
     for (let h = start; h < end; h++) hourCounts[h] = 0;
@@ -941,12 +735,11 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
         }
       });
     
-    const maxCount = Math.max(1, ...Object.values(hourCounts));
     return Array.from({length:end-start},(_,i)=>({
       t:`${start+i}`,
-      v: Math.round((hourCounts[start+i] / maxCount) * 100),
+      v: hourCounts[start+i],
     }));
-  },[roomHistory,ups,room]);
+  },[roomHistory,todayWorkingHours]);
 
   // Weekly stacked data from real data, respecting room's schedule
   const weeklyStacked=useMemo(()=>DAYS.map((day,di)=>{
@@ -976,11 +769,10 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
     return base;
   }),[roomHistory,workflowSteps,room]);
 
-  // Hourly bar — utilisation %
-  const hourlyUtil=useMemo(()=>dayCurve.map(d=>({
+  // Hourly event counts from recorded history
+  const hourlyEvents=useMemo(()=>dayCurve.map(d=>({
     t:d.t,
-    util:d.v,
-    idle:100-d.v,
+    events:d.v,
   })),[dayCurve]);
 
   // Phase bar - using room step durations calculated earlier
@@ -993,19 +785,6 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
 
   // Pie from dist
   const pieData=dist.filter(d=>d.min>0);
-
-  // Radar - based on real data
-  const radarData=useMemo(()=>{
-    const completedOps = roomHistory.filter(e => e.event_type === 'operation_end').length;
-    const totalEvents = roomHistory.length;
-    return [
-      {subject:'Využití',   A:utilPct},
-      {subject:'Operace',   A:Math.min(100, completedOps * 10)},
-      {subject:'Průchodnost',A:Math.min(100, totalEvents > 0 ? Math.round((completedOps / Math.max(1, totalEvents)) * 100) : 0)},
-      {subject:'Aktivita',A:Math.min(100, totalEvents > 0 ? 100 : 0)},
-      {subject:'Efektivita',   A:utilPct},
-    ];
-  },[roomHistory, utilPct]);
 
   // 30-day cumulative from real data
   const cumulData=useMemo(()=>{
@@ -1039,12 +818,9 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   ];
 
   return(
-    <motion.div className="fixed inset-0 z-50 flex justify-end" style={{background:'rgba(0,0,0,0.7)'}}
-      initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}>
-      <motion.div className="h-full overflow-y-auto hide-scrollbar w-full max-w-3xl"
+    <div className="statistics-module fixed inset-0 z-50 flex justify-end" style={{background:'rgba(0,0,0,0.7)'}} onClick={onClose}>
+      <div className="h-full overflow-y-auto hide-scrollbar w-full max-w-3xl"
         style={{background:'#020B17',borderLeft:`1px solid ${C.border}`}}
-        initial={{x:'100%'}} animate={{x:0}} exit={{x:'100%'}}
-        transition={{type:'spring',damping:28,stiffness:260}}
         onClick={e=>e.stopPropagation()}>
 
         {/* Header */}
@@ -1056,7 +832,6 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
               <p className="text-base font-bold" style={{color:C.text}}>{room.name}</p>
               <p className="text-xs mt-0.5" style={{color:C.muted}}>
                 {room.department}
-                {ups&&<span className="ml-2 font-bold" style={{color:C.accent}}>· ÚPS 24 h</span>}
                 {room.isSeptic&&<span className="ml-2 font-bold" style={{color:C.red}}>· SEPTICKÝ</span>}
               </p>
             </div>
@@ -1074,7 +849,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
             {[
               {l:'Výkony / den',v:opsDay,       c:C.accent},
               {l:'Využití výkonem',v:`${utilPct}%`, c:C.text},
-              {l:'Provoz',v:ups?'24 h':'12 h',  c:ups?C.accent:C.muted},
+              {l:'Provoz',v:todayWorkingHoursLabel, c:C.muted},
               {l:'Fronta',v:room.queueCount,    c:room.queueCount>0?C.yellow:C.muted},
             ].map(k=>(
               <Card key={k.l} className="p-4 text-center">
@@ -1087,21 +862,19 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           {/* Timeline bar */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <SectionLabel>Časová osa — {ups?'00:00–24:00':'07:00–19:00'}</SectionLabel>
+              <SectionLabel>Rozložení naměřených fází — {todayWorkingHoursLabel}</SectionLabel>
             </div>
             <div className="flex h-7 w-full rounded-lg overflow-hidden gap-px">
               {tl.map((seg,i)=>(
-                <motion.div key={i} className="h-full relative"
-                  style={{background:seg.color,opacity:0.88}}
-                  initial={{width:0}} animate={{width:`${seg.pct}%`}}
-                  transition={{duration:0.5,delay:i*0.02,ease:'easeOut'}}
+                <div key={i} className="h-full relative"
+                  style={{background:seg.color,opacity:0.88,width:`${seg.pct}%`}}
                   title={`${seg.title} — ${seg.min} min (${seg.pct.toFixed(1)}%)`}>
                   {seg.pct>=9&&(
                     <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-black/60 pointer-events-none">
                       {Math.round(seg.pct)}%
                     </span>
                   )}
-                </motion.div>
+                </div>
               ))}
             </div>
             {/* Legend */}
@@ -1124,7 +897,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           {/* Row: Day curve + Status distribution */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Card className="p-5">
-              <SectionLabel>Vytížení v průběhu dne (%)</SectionLabel>
+              <SectionLabel>Zaznamenané události v průběhu dne</SectionLabel>
               <ResponsiveContainer width="100%" height={140} minWidth={0} minHeight={0}>
                 <AreaChart data={dayCurve} margin={{top:4,right:0,bottom:0,left:-24}}>
                   <defs>
@@ -1153,9 +926,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
                       <span className="text-sm font-bold" style={{color:s.color}}>{s.pct}%</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
-                      <motion.div className="h-full rounded-full" style={{background:s.color,opacity:0.85}}
-                        initial={{width:0}} animate={{width:`${s.pct}%`}}
-                        transition={{duration:0.55,delay:i*0.06,ease:'easeOut'}}/>
+                      <div className="h-full rounded-full" style={{background:s.color,opacity:0.85,width:`${s.pct}%`}}/>
                     </div>
                   </div>
                 ))}
@@ -1166,24 +937,15 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           {/* Row: Hourly stacked + Weekly stacked */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Card className="p-5">
-              <SectionLabel>Hodinové vytížení vs. prodlevy (%)</SectionLabel>
+              <SectionLabel>Počet zaznamenaných událostí za hodinu</SectionLabel>
               <ResponsiveContainer width="100%" height={150} minWidth={0} minHeight={0}>
-                <BarChart data={hourlyUtil} margin={{top:4,right:0,bottom:0,left:-24}} barSize={12}>
+                <BarChart data={hourlyEvents} margin={{top:4,right:0,bottom:0,left:-24}} barSize={12}>
                   <XAxis dataKey="t" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
                   <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
                   <Tooltip {...TIP}/>
-                  <Bar dataKey="util" stackId="a" fill={sc}      opacity={0.78} radius={[0,0,0,0]} name="Výkon %"/>
-                  <Bar dataKey="idle" stackId="a" fill={C.ghost} opacity={0.9}  radius={[2,2,0,0]} name="Prodleva %"/>
+                  <Bar dataKey="events" fill={sc} opacity={0.78} radius={[2,2,0,0]} name="Události"/>
                 </BarChart>
               </ResponsiveContainer>
-              <div className="flex gap-4 mt-2">
-                {[{c:sc,l:'Výkon'},{c:'rgba(255,255,255,0.15)',l:'Prodleva'}].map(x=>(
-                  <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-[2px]" style={{background:x.c}}/>
-                    <span className="text-[10px]" style={{color:C.muted}}>{x.l}</span>
-                  </div>
-                ))}
-              </div>
             </Card>
             <Card className="p-5">
               <SectionLabel>Týdenní workflow fáze — min/den</SectionLabel>
@@ -1208,8 +970,8 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
             </Card>
           </div>
 
-          {/* Row: Phase bar + Radar + Pie */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Row: measured phase duration + cycle structure */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Card className="p-5">
               <SectionLabel>Délka fází ��� minuty</SectionLabel>
               <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
@@ -1221,16 +983,6 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
                     {phaseBar.map((e,i)=><Cell key={i} fill={e.color} opacity={0.82}/>)}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
-            </Card>
-            <Card className="p-5">
-              <SectionLabel>Výkonnostní profil</SectionLabel>
-              <ResponsiveContainer width="100%" height={170} minWidth={0} minHeight={0}>
-                <RadarChart data={radarData} margin={{top:10,right:20,bottom:10,left:20}}>
-                  <PolarGrid stroke={C.ghost}/>
-                  <PolarAngleAxis dataKey="subject" tick={{fill:C.muted,fontSize:9,fontWeight:700}}/>
-                  <Radar dataKey="A" stroke={sc} fill={sc} fillOpacity={0.14} strokeWidth={1.5}/>
-                </RadarChart>
               </ResponsiveContainer>
             </Card>
             <Card className="p-5">
@@ -1308,8 +1060,8 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
           </div>
 
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
@@ -1317,8 +1069,8 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
 // MAIN MODULE
 // ══════════════════════════════════════════════════════════════════════════════
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms }) => {
-  const { activeHospitalId } = useHospital();
   const isMobileDark = useIsMobileDark();
+  const isMobileViewport = useMediaQuery('(max-width: 767px)');
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -1339,18 +1091,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
-  const [dbStats, setDbStats] = useState<RoomStatistics | null>(null);
-  const [statusHistory, setStatusHistory] = useState<StatusHistoryRow[]>([]);
-  // ── REÁLNÁ DB DATA pro tab moduly (Staff) ──
-  // null = načítá se / DB nedostupná; [] = načteno, žádný záznam.
-  const [staffList, setStaffList] = useState<StaffRow[] | null>(null);
-  // ── NOVÁ REÁLNÁ DB DATA pro rozšířené taby ──
-  const [notifications, setNotifications] = useState<NotificationLogRow[] | null>(null);
-  const [shifts, setShifts] = useState<ShiftScheduleRow[] | null>(null);
-  const [departments, setDepartments] = useState<DepartmentRow[] | null>(null);
-  const [subDepartments, setSubDepartments] = useState<SubDepartmentRow[] | null>(null);
-  const [devices, setDevices] = useState<DeviceRow[] | null>(null);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const { staff, loading: staffLoading } = useStaffData();
+  const staffList = staffLoading ? null : staff;
+  const { dbStats, statusHistory, notifications, devices } = useStatisticsData(period);
 
   // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
   // Obě funkce volají `window.print()`. Prohlížeč zobrazí systémový dialog,
@@ -1421,68 +1164,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 'personal':   'Personál',
 'saly':       'Sály',
 'faze':       'Fáze',
-'heatmapa':   'Heatmapa',
 'notifikace': 'Notifikace',
 'zarizeni':   'Zařízení',
   };
 
-  // Load statistics from database
-  useEffect(() => {
-    const loadStats = async () => {
-      setIsLoadingStats(true);
-      
-      // Calculate date range based on period
-      const now = new Date();
-      let fromDate: Date;
-      switch (period) {
-        case 'den':
-          fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case 'týden':
-          fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case 'měsíc':
-          fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        case 'rok':
-          fromDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-          break;
-      }
-
-const [stats, history, staffRows, notifRows, shiftRows, deptRows, subDeptRows, deviceRows] = await Promise.all([
-  fetchRoomStatistics(fromDate, now),
-  fetchStatusHistory({ fromDate, toDate: now, limit: 5000 }),
-  fetchAllStaff(),
-  fetchNotificationsLog({ fromDate, toDate: now, limit: 1000 }),
-  fetchShiftSchedules({ fromDate, toDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) }),
-  fetchDepartments(),
-  fetchSubDepartments(),
-  fetchDevices(),
-  ]);
-  
-  if (stats) setDbStats(stats);
-  setStatusHistory(history ?? []);
-  setStaffList(staffRows);
-  setNotifications(notifRows);
-  setShifts(shiftRows);
-  setDepartments(deptRows);
-  setSubDepartments(subDeptRows);
-  setDevices(deviceRows);
-  setIsLoadingStats(false);
-    };
-
-    loadStats();
-  }, [period, activeHospitalId]);
-
-  // Build utilisation data from real database history with room schedules
+  // Per-room utilization calculated from measured operation intervals and configured schedules.
   const utilData = useMemo(() => {
-    return buildUtilDataFromHistory(statusHistory, period, rooms);
+    return rooms.map(room => ({
+      t: room.name.replace('Sál č. ', 'S'),
+      v: calculateRoomUtilization(room, statusHistory, period),
+      cap: 100,
+    }));
   }, [statusHistory, period, rooms]);
-
-  // Build heatmap from real database history with room schedules
-  const heatmapData = useMemo(() => {
-    return buildHeatmapFromHistory(statusHistory, rooms);
-  }, [statusHistory, rooms]);
 
   // Calculate average step durations from real history data
   const avgStepDurations = useMemo(() => {
@@ -1516,13 +1209,15 @@ const [stats, history, staffRows, notifRows, shiftRows, deptRows, subDeptRows, d
   const totalQueue= rooms.reduce((s,r)=>s+r.queueCount,0);
   const septicCnt = rooms.filter(r=>r.isSeptic).length;
   const emergCnt  = dbStats?.emergencyCount ?? rooms.filter(r=>r.isEmergency).length;
-  const upsCnt    = rooms.filter(isUPS).length;
 
   const deptMap = useMemo(()=>{
     const m:Record<string,number>={};
-    rooms.forEach(r=>{ m[r.department]=(m[r.department]??0)+r.operations24h; });
+    rooms.forEach(r=>{
+      const operations = countOperationsInWorkingHours(r, statusHistory, period);
+      m[r.department]=(m[r.department]??0)+operations;
+    });
     return Object.entries(m).sort((a,b)=>b[1]-a[1]);
-  },[rooms]);
+  },[rooms,statusHistory,period]);
 
   // Per-room status utilisation from real status history (must be defined before roomBarData)
   const roomDistributions = useMemo(() => {
@@ -1633,7 +1328,6 @@ const TABS:{ id:Tab; label:string }[]=[
 {id:'personal',   label:'Personál'},
 {id:'saly',       label:'Sály'},
 {id:'faze',       label:'Fáze'},
-{id:'heatmapa',   label:'Heatmapa'},
 {id:'notifikace', label:'Notifikace'},
 {id:'zarizeni',   label:'Zařízení'},
   ];
@@ -1694,8 +1388,9 @@ const TABS:{ id:Tab; label:string }[]=[
       </div>
 
       {/* ========== MOBILE (md:hidden) ========== */}
+      {isMobileViewport && !isPrinting && (
       <div
-        className={`mobile-statistics ${isMobileDark ? 'is-dark' : 'is-light'} md:hidden w-full relative`}
+        className={`statistics-module mobile-statistics ${isMobileDark ? 'is-dark' : 'is-light'} md:hidden w-full relative`}
         style={{
           zIndex: 1,
           ...(!isMobileDark ? {
@@ -1760,7 +1455,7 @@ const TABS:{ id:Tab; label:string }[]=[
           <div className="flex items-center gap-2 print-hide">
             <button
               onClick={handlePrint}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest"
               style={{
                 background: `${C.accent}14`,
                 color: C.accent,
@@ -1771,7 +1466,7 @@ const TABS:{ id:Tab; label:string }[]=[
             </button>
             <button
               onClick={handleExportPdf}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest"
               style={{
                 background: `${C.yellow}14`,
                 color: C.yellow,
@@ -1806,7 +1501,6 @@ tabs={[
 { id: 'personal', label: 'Personál' },
 { id: 'saly', label: 'Sály' },
 { id: 'faze', label: 'Fáze' },
-{ id: 'heatmapa', label: 'Heatmapa' },
 { id: 'notifikace', label: 'Notifikace' },
 { id: 'zarizeni', label: 'Zařízení' },
   ]}
@@ -1828,14 +1522,13 @@ tabs={[
                 ].map(k => (
                   <div
                     key={k.l}
-                    className="rounded-2xl p-4"
+                    className="statistics-kpi-card rounded-2xl p-4"
                     style={{
-                      background: `linear-gradient(135deg, ${k.c}14 0%, rgba(255,255,255,0.02) 100%)`,
+                      background: `linear-gradient(135deg, ${k.c}12 0%, var(--stats-surface) 78%)`,
                       border: `1px solid ${k.c}2b`,
-                      backdropFilter: 'blur(12px)',
                     }}
                   >
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50 leading-none">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] leading-none" style={{ color: C.muted }}>
                       {k.l}
                     </p>
                     <p className="text-2xl font-semibold mt-2 tabular-nums" style={{ color: k.c }}>
@@ -1847,7 +1540,7 @@ tabs={[
 
               {/* Mini trend chart */}
               <MobileCard>
-                <MobileSectionLabel className="mb-3">Trend vytížení</MobileSectionLabel>
+                <MobileSectionLabel className="mb-3">Využití jednotlivých sálů</MobileSectionLabel>
                 <div style={{ width: '100%', height: 160 }}>
                   <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <AreaChart data={utilData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
@@ -1888,8 +1581,8 @@ tabs={[
                   </ResponsiveContainer>
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-white/50 mt-2 px-1">
-                  <span>Peak: <span className="text-white/80 font-semibold">{peakUtil}%</span></span>
-                  <span>Min: <span className="text-white/80 font-semibold">{minUtil}%</span></span>
+                  <span>Nejvyšší: <span className="text-white/80 font-semibold">{peakUtil}%</span></span>
+                  <span>Nejnižší: <span className="text-white/80 font-semibold">{minUtil}%</span></span>
                 </div>
               </MobileCard>
             </div>
@@ -1952,89 +1645,6 @@ tabs={[
             </div>
           )}
 
-          {/* ── Heatmapa ── (vždy renderováno při tisku) */}
-          {(tab === 'heatmapa' || isPrinting) && (
-            <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Heatmapa</h2>}
-              <MobileSectionLabel>Heatmapa 7 × 24 h</MobileSectionLabel>
-              <MobileCard>
-                {(() => {
-                  const matrix = heatmapData as number[][] | undefined;
-                  const rows = matrix && matrix.length === 7 ? matrix : Array.from({ length: 7 }, () => Array(24).fill(0));
-                  const flat = rows.flat();
-                  const max = Math.max(1, ...flat);
-                  return (
-                    <div className="flex flex-col gap-1">
-                      {/* Hour axis */}
-                      <div className="grid grid-cols-[28px_1fr] items-end gap-2">
-                        <div />
-                        <div className="grid grid-cols-24">
-                          <div
-                            className="grid gap-[2px]"
-                            style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
-                          >
-                            {Array.from({ length: 24 }, (_, h) => (
-                              <span
-                                key={h}
-                                className="text-[8px] text-white/30 text-center tabular-nums leading-none"
-                              >
-                                {h % 6 === 0 ? h : ''}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      {rows.map((row, di) => (
-                        <div
-                          key={di}
-                          className="grid grid-cols-[28px_1fr] items-center gap-2"
-                        >
-                          <span className="text-[10px] font-semibold text-white/60 tabular-nums">
-                            {DAYS[di]}
-                          </span>
-                          <div
-                            className="grid gap-[2px]"
-                            style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
-                          >
-                            {row.map((v, hi) => {
-                              const intensity = v / max;
-                              return (
-                                <div
-                                  key={hi}
-                                  className="aspect-square rounded-[3px]"
-                                  style={{
-                                    background:
-                                      v === 0
-                                        ? 'rgba(255,255,255,0.03)'
-                                        : `rgba(6,182,212,${0.15 + intensity * 0.75})`,
-                                  }}
-                                  title={`${DAYS[di]} ${hi}:00 — ${v}`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                      <div className="flex items-center justify-between text-[10px] text-white/40 mt-3 px-1">
-                        <span>méně</span>
-                        <div className="flex gap-0.5">
-                          {[0.15, 0.35, 0.55, 0.75, 0.9].map(i => (
-                            <div
-                              key={i}
-                              className="w-3 h-3 rounded-sm"
-                              style={{ background: `rgba(6,182,212,${i})` }}
-                            />
-                          ))}
-                        </div>
-                        <span>více</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </MobileCard>
-            </div>
-          )}
-
           {/* ── Notifikace ── */}
           {(tab === 'notifikace' || isPrinting) && (
             <div className="flex flex-col gap-3 print-section">
@@ -2062,6 +1672,7 @@ tabs={[
           )}
         </div>
       </div>
+      )}
 
       {/* ========== DESKTOP (hidden md:block) ========== */}
       {/* `data-print-area="statistics"` označuje sekci, která se vytiskne /
@@ -2074,8 +1685,9 @@ tabs={[
           Dáme ji proto fixed offscreen pozici se šířkou 1024 px (typický
           desktop layout) — uživatel ji nevidí, ale Recharts ji změří. Print
           CSS pak při window.print() přemístí na origin a zviditelní. */}
+      {(!isMobileViewport || isPrinting) && (
       <div
-        className="hidden md:block w-full"
+        className="statistics-module statistics-desktop hidden md:block w-full"
         data-print-area="statistics"
         style={isPrinting ? {
           display: 'block',
@@ -2106,30 +1718,33 @@ tabs={[
         </div>
       </div>
 
-      {/* ── Module header ── */}
-      <div className="mb-8 print-hide">
-        <div className="flex items-center gap-3 mb-2 opacity-60">
-          <BarChart3 className="w-4 h-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">OPERATINGROOM CONTROL</p>
+      {/* ── Module header — stejný vzor jako ostatní desktopové moduly ── */}
+      <header className="mb-8 print-hide">
+        <div className="mb-2 flex items-center gap-3 opacity-60">
+          <BarChart3 className="h-4 w-4 text-[#FBBF24]" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#FBBF24]">
+            OPERATINGROOM CONTROL
+          </p>
         </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
+        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
           STATISTIKY
         </h1>
-      </div>
+      </header>
 
       {/* ── Row 1: Tab navigation ── */}
-      <div className="print-hide flex items-center overflow-x-auto pb-px"
+      <div className="statistics-tabs print-hide flex items-center gap-1 overflow-x-auto rounded-xl p-1"
         style={{
-          borderBottom: `1px solid ${C.border}`,
+          border: `1px solid ${C.border}`,
           scrollbarWidth: 'thin',
           scrollbarColor: `${C.faint} transparent`,
         }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="px-4 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap shrink-0"
+            className="rounded-lg px-4 py-2 text-[12px] font-medium whitespace-nowrap shrink-0"
             style={{
-              color: tab === t.id ? 'white' : C.muted,
-              borderBottom: tab === t.id ? `2px solid white` : '2px solid transparent',
+              color: tab === t.id ? C.text : C.muted,
+              background: tab === t.id ? C.surfaceActive : 'transparent',
+              border: `1px solid ${tab === t.id ? C.borderHover : 'transparent'}`,
             }}>
             {t.label}
           </button>
@@ -2137,16 +1752,16 @@ tabs={[
       </div>
 
       {/* ── Row 2: Period selector + Export ── */}
-      <div className="print-hide flex items-center justify-between gap-4 mb-6">
+      <div className="print-hide flex items-center justify-between gap-4 py-4 mb-2">
         {/* Period pills */}
         <div className="flex items-center gap-1 p-1 rounded-lg"
           style={{ background: C.surface, border: `1px solid ${C.border}` }}>
           {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
             <button key={p} onClick={()=>setPeriod(p)}
-              className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-all"
+              className="px-3 py-1.5 rounded-md text-[12px] font-medium"
               style={{
                 background: period === p ? C.surface : 'transparent',
-                color: period === p ? 'white' : C.muted,
+                color: period === p ? C.text : C.muted,
               }}>
               {p.charAt(0).toUpperCase() + p.slice(1)}
             </button>
@@ -2158,7 +1773,7 @@ tabs={[
           <button
             onClick={handlePrint}
             title="Vytisknout aktuální zobrazení"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:scale-[1.02]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium"
             style={{
               color: C.muted,
               border: `1px solid ${C.border}`,
@@ -2169,7 +1784,7 @@ tabs={[
           <button
             onClick={handleExportPdf}
             title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all hover:scale-[1.02]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium"
             style={{
               color: C.muted,
               border: `1px solid ${C.border}`,
@@ -2180,19 +1795,12 @@ tabs={[
         </div>
       </div>
 
-      {/* ── Tab content ── 
-          Při tisku změníme `mode` na "sync" a vyrenderujeme všechny záložky
-          najednou (přes `|| isPrinting`). Bez toho by AnimatePresence(mode="wait")
-          povolila pouze jedinou aktivní záložku a v PDF by chybělo 75 % dat.
-          Browser pak přirozeně paginuje na víc A4 stránek. */}
-      <AnimatePresence mode={isPrinting ? 'sync' : 'wait'}>
+      {/* ── Tab content ──
+          Obsah záložek se přepíná bez vstupních animací. Při tisku se všechny
+          sekce vyrenderují současně a prohlížeč je přirozeně stránkuje. */}
+      <>
         {(tab==='prehled' || isPrinting) && (
-          <motion.div key="prehled"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5 print-section">
+          <div key="prehled" className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Přehled
@@ -2208,24 +1816,22 @@ tabs={[
                 {l:'Volno',            v:`${freeCount} / ${rooms.length}`,       c:C.green},
                 {l:'Úklid + Údržba',  v:`${cleanCount+maintCount}`,             c:C.accent},
                 {l:`Využití (${period})`,v:`${avgUtil}%`,                        c:C.text},
-                {l:'Peak využití',     v:`${peakUtil}%`,                         c:peakUtil>90?C.red:C.orange},
-                {l:'Min využití',      v:`${minUtil}%`,                          c:C.muted},
+                {l:'Nejvyšší využití sálu', v:`${peakUtil}%`,                    c:peakUtil>90?C.red:C.orange},
+                {l:'Nejnižší využití sálu', v:`${minUtil}%`,                     c:C.muted},
                 {l:`Výkony (${period})`,v:totalOps,                             c:C.accent},
               ].map((k,i)=>(
-                <motion.div key={i} className="flex flex-col justify-between px-4 py-4"
-                  style={{background:C.surface,borderRight:i<7?`1px solid ${C.border}`:undefined}}
-                  initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}
-                  transition={{duration:0.3,delay:i*0.04}}>
+                <div key={i} className="flex flex-col justify-between px-4 py-4"
+                  style={{background:C.surface,borderRight:i<7?`1px solid ${C.border}`:undefined}}>
                   <p className="text-[9px] font-bold uppercase tracking-widest mb-2.5" style={{color:C.muted}}>{k.l}</p>
                   <p className="text-2xl font-bold leading-none" style={{color:k.c}}>{k.v}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
 
             {/* Per-room KPI strips — real operational data per room */}
             <div className="space-y-3">
               <SectionLabel>Jednotlivé sály — provozní metriky ({period})</SectionLabel>
-              {rooms.map((r, roomIdx) => {
+              {rooms.map(r => {
                 const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
                 const opsInHours = countOperationsInWorkingHours(r, statusHistory, period);
                 const util = calculateRoomUtilization(r, statusHistory, period);
@@ -2237,9 +1843,8 @@ tabs={[
                 const flags: string[] = [];
                 if (r.isEmergency) flags.push('EMERG');
                 if (r.isSeptic)    flags.push('SEPT');
-                if (isUPS(r))      flags.push('ÚPS');
                 const flagsLabel = flags.length > 0 ? flags.join(' · ') : '—';
-                const flagsColor = r.isEmergency ? C.orange : r.isSeptic ? C.red : isUPS(r) ? C.accent : C.faint;
+                const flagsColor = r.isEmergency ? C.orange : r.isSeptic ? C.red : C.faint;
 
                 const cells = [
                   // Plný název sálu (bez zkrácení "Sál č. " → "S") — uživatel
@@ -2255,11 +1860,8 @@ tabs={[
                 ];
 
                 return (
-                  <motion.div
+                  <div
                     key={r.id}
-                    initial={{opacity:0,y:8}}
-                    animate={{opacity:1,y:0}}
-                    transition={{duration:0.25, delay: Math.min(roomIdx, 10) * 0.03}}
                     className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
                     style={{border:`1px solid ${C.border}`}}>
                     {cells.map((k, i) => (
@@ -2286,7 +1888,7 @@ tabs={[
                         </p>
                       </div>
                     ))}
-                  </motion.div>
+                  </div>
                 );
               })}
               {rooms.length === 0 && (
@@ -2299,7 +1901,7 @@ tabs={[
             {/* Row 1: Main area + Status pie */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <Card className="lg:col-span-2 p-5">
-                <SectionLabel>Procentuální vytížení — {period}</SectionLabel>
+                <SectionLabel>Využití jednotlivých sálů — {period}</SectionLabel>
                 <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={0}>
                   <ComposedChart data={utilData} margin={{top:4,right:4,bottom:0,left:-24}}>
                     <defs>
@@ -2353,12 +1955,6 @@ tabs={[
                         <Shield className="w-3 h-3"/>{septicCnt} Septické
                       </span>
                     )}
-                    {upsCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
-                        style={{background:`${C.accent}18`,color:C.accent}}>
-                        <Zap className="w-3 h-3"/>{upsCnt} ÚPS
-                      </span>
-                    )}
                   </div>
                 )}
               </Card>
@@ -2394,9 +1990,11 @@ tabs={[
                           <span className="text-xs font-bold" style={{color:C.text}}>{count}</span>
                         </div>
                         <div className="h-0.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
-                          <motion.div className="h-full rounded-full" style={{background:color,opacity:0.8}}
-                            initial={{width:0}} animate={{width:`${(count/deptMap[0][1])*100}%`}}
-                            transition={{duration:0.55,delay:i*0.04,ease:'easeOut'}}/>
+                          <div className="h-full rounded-full" style={{
+                            background:color,
+                            opacity:0.8,
+                            width:`${(count/deptMap[0][1])*100}%`,
+                          }}/>
                         </div>
                       </div>
                     );
@@ -2458,10 +2056,6 @@ tabs={[
                     <p className="text-3xl font-bold" style={{color:totalQueue>0?C.yellow:C.green}}>{totalQueue}</p>
                   </div>
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:C.muted}}>ÚPS sálů</p>
-                    <p className="text-3xl font-bold" style={{color:C.accent}}>{upsCnt}</p>
-                  </div>
-                  <div>
                     <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:C.muted}}>Zaplněnost</p>
                     <p className="text-3xl font-bold" style={{color:C.text}}>{Math.round((busyCount/Math.max(1,rooms.length))*100)}%</p>
                   </div>
@@ -2499,9 +2093,6 @@ tabs={[
                           <div className="w-2 h-2 rounded-full" style={{ background: roomStatusColor(r) }} />
                           <span className="text-xs font-bold" style={{ color: C.text }}>{r.name}</span>
                         </div>
-                        {isUPS(r) && (
-                          <span className="text-[8px] font-bold px-1 py-0.5 rounded" style={{ background: `${C.accent}15`, color: C.accent }}>24h</span>
-                        )}
                       </div>
                       <p className="text-[10px] mb-2" style={{ color: C.faint }}>{r.department}</p>
                       
@@ -2541,17 +2132,12 @@ tabs={[
               </div>
             </Card>
 
-          </motion.div>
+          </div>
         )}
 
         {/* ── Personál & týmy ── (nová záložka) */}
         {(tab==='personal' || isPrinting) && (
-          <motion.div key="personal"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5 print-section">
+          <div key="personal" className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Personál & týmy
@@ -2562,17 +2148,12 @@ tabs={[
               rooms={rooms}
               periodLabel={period}
             />
-          </motion.div>
+          </div>
         )}
 
         {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
         {(tab==='finance' || isPrinting) && (
-          <motion.div key="finance"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5 print-section">
+          <div key="finance" className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Finance & náklady provozu
@@ -2585,17 +2166,12 @@ tabs={[
               periodLabel={period}
               statusHistory={statusHistory}
             />
-          </motion.div>
+          </div>
         )}
 
         {/* ── Sály — propracovaný RoomsTab ── */}
         {(tab==='saly' || isPrinting) && (
-          <motion.div key="saly"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5 print-section">
+          <div key="saly" className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Operační sály — detailní přehled
@@ -2610,17 +2186,12 @@ tabs={[
               countOperationsInWorkingHours={countOperationsInWorkingHours}
               workflowSteps={WORKFLOW_STEPS}
             />
-          </motion.div>
+          </div>
         )}
 
         {/* ── Fáze — propracovaný PhasesTab ── */}
         {(tab==='faze' || isPrinting) && (
-          <motion.div key="faze"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5 print-section">
+          <div key="faze" className="space-y-5 print-section">
             {isPrinting && (
               <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
                 Workflow fáze �� detailní analýza
@@ -2634,72 +2205,38 @@ tabs={[
               avgStepDurations={avgStepDurations}
               workflowAgg={workflowAgg}
             />
-          </motion.div>
-        )}
-
-        {(tab==='heatmapa' || isPrinting) && (
-          <motion.div key="heatmapa"
-            initial={isPrinting ? false : {opacity:0,y:10}}
-            animate={{opacity:1,y:0}}
-            exit={{opacity:0,y:-6}}
-            transition={{duration:0.22}}
-            className="space-y-5 print-section">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Heatmapa
-              </h2>
-            )}
-            <HeatmapTab
-              rooms={rooms}
-              statusHistory={statusHistory}
-              periodLabel={period}
-              calculateRoomUtilization={calculateRoomUtilization}
-            />
-          </motion.div>
+          </div>
         )}
 
         {/* ── Notifikace ── (nový tab) */}
         {(tab==='notifikace' || isPrinting) && (
-        <motion.div key="notifikace"
-        initial={isPrinting ? false : {opacity:0,y:10}}
-        animate={{opacity:1,y:0}}
-        exit={{opacity:0,y:-6}}
-        transition={{duration:0.22}}
-        className="flex flex-col gap-5 print-section"
-        >
+        <div key="notifikace" className="flex flex-col gap-5 print-section">
           <NotificationsTab
             notifications={notifications}
             rooms={rooms}
             periodLabel={periodLabelMap[period]}
           />
-        </motion.div>
+        </div>
         )}
 
         {/* ── Zařízení ── (nový tab) */}
         {(tab==='zarizeni' || isPrinting) && (
-        <motion.div key="zarizeni"
-        initial={isPrinting ? false : {opacity:0,y:10}}
-        animate={{opacity:1,y:0}}
-        exit={{opacity:0,y:-6}}
-        transition={{duration:0.22}}
-        className="flex flex-col gap-5 print-section"
-        >
+        <div key="zarizeni" className="flex flex-col gap-5 print-section">
           <DevicesTab
             devices={devices}
             periodLabel={periodLabelMap[period]}
           />
-        </motion.div>
+        </div>
         )}
 
-        </AnimatePresence>
+        </>
 
       </div>
+      )}
       {/* ── Room detail panel (shared mobile + desktop) �����─ */}
-      <AnimatePresence>
-        {selectedRoom&&(
-          <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>
-        )}
-      </AnimatePresence>
+      {selectedRoom&&(
+        <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>
+      )}
     </>
   );
 };

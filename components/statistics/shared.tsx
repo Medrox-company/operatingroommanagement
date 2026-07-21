@@ -15,7 +15,7 @@
 'use client';
 
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 export type IconComponent = React.ElementType<React.SVGProps<SVGSVGElement> & {
@@ -168,13 +168,8 @@ export const Card: React.FC<CardProps> = memo(({
   title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon,
 }) => {
   return (
-    <motion.div 
-      className={`rounded-2xl transition-all ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
-      whileHover={{ 
-        boxShadow: elevated 
-          ? `0 12px 40px rgba(0,217,255,0.15), inset 0 1px 0 rgba(255,255,255,0.1)`
-          : '0 8px 24px rgba(0,217,255,0.08)'
-      }}
+    <div
+      className={`rounded-2xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
       style={{
         background: elevated
           ? `linear-gradient(180deg, ${C.surface3} 0%, ${C.surface2} 100%)`
@@ -184,24 +179,18 @@ export const Card: React.FC<CardProps> = memo(({
         boxShadow: elevated 
           ? `0 8px 32px rgba(0,217,255,0.08), inset 0 1px 0 rgba(255,255,255,0.08)`
           : `0 4px 16px rgba(0,0,0,0.4)`,
-        backdropFilter: elevated ? 'blur(16px)' : 'blur(12px)',
       }}>
       {(title || action) && (
         <div className={`flex items-start justify-between ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
           <div className="flex items-center gap-2 min-w-0">
             {accent && (
-              <motion.div 
-                className="w-1 h-5 rounded-full shrink-0" 
-                style={{ background: accent }}
-                whileHover={{ boxShadow: `0 0 8px ${accent}` }}
-              />
+              <div className="w-1 h-5 rounded-full shrink-0" style={{ background: accent }} />
             )}
             {Icon && (
               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                 style={{ 
                   background: `${accent ?? C.accent}1a`, 
                   border: `1px solid ${accent ?? C.accent}33`,
-                  boxShadow: `0 0 8px ${accent ?? C.accent}15`
                 }}>
                 <Icon size={14} color={accent ?? C.accent} strokeWidth={2.2} />
               </div>
@@ -221,7 +210,7 @@ export const Card: React.FC<CardProps> = memo(({
         </div>
       )}
       {children}
-    </motion.div>
+    </div>
   );
 });
 Card.displayName = 'Card';
@@ -236,17 +225,9 @@ interface AnimatedCounterProps {
   className?: string;
   style?: React.CSSProperties;
 }
-export const AnimatedCounter: React.FC<AnimatedCounterProps> = memo(({ value, format, duration = 0.9, className, style }) => {
-  const motionValue = useMotionValue(0);
-  const display = useTransform(motionValue, (v) => format ? format(v) : Math.round(v).toString());
-  useEffect(() => {
-    const controls = animate(motionValue, value, {
-      duration,
-      ease: [0.16, 1, 0.3, 1],
-    });
-    return controls.stop;
-  }, [value, duration, motionValue]);
-  return <motion.span className={className} style={style}>{display}</motion.span>;
+export const AnimatedCounter: React.FC<AnimatedCounterProps> = memo(({ value, format, className, style }) => {
+  const display = format ? format(value) : Math.round(value).toString();
+  return <span className={className} style={style}>{display}</span>;
 });
 AnimatedCounter.displayName = 'AnimatedCounter';
 
@@ -322,14 +303,12 @@ export const ProgressRing: React.FC<ProgressRingProps> = memo(({
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={track} strokeWidth={strokeWidth} />
-        <motion.circle
+        <circle
           cx={size/2} cy={size/2} r={r}
           fill="none" stroke={ringColor}
           strokeWidth={strokeWidth} strokeLinecap="round"
           strokeDasharray={circ}
-          initial={{ strokeDashoffset: circ }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
+          strokeDashoffset={offset}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -501,9 +480,8 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
   const showProgress = effectiveTarget !== undefined && Number.isFinite(progressBase) && effectiveTarget > 0;
   const progressPct = showProgress ? Math.min(100, (progressBase / effectiveTarget!) * 100) : 0;
   return (
-    <motion.div 
-      className="rounded-2xl p-4 relative overflow-hidden transition-all"
-      whileHover={{ scale: 1.02, boxShadow: `0 12px 32px ${accentColor}20` }}
+    <div
+      className="rounded-2xl p-4 relative overflow-hidden"
       style={{ 
         background: C.surface2, 
         border: `1px solid ${C.borderHover}`,
@@ -518,16 +496,14 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
       <div className="flex items-start justify-between mb-2 relative">
         <div className="flex items-center gap-2 min-w-0">
           {Icon && (
-            <motion.div 
+            <div
               className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-              whileHover={{ boxShadow: `0 0 12px ${accentColor}40` }}
               style={{ 
                 background: `${accentColor}18`, 
                 border: `1px solid ${accentColor}30`,
-                boxShadow: `0 0 8px ${accentColor}15`
               }}>
               <Icon size={13} color={accentColor} strokeWidth={2.4} />
-            </motion.div>
+            </div>
           )}
           <span className="text-[10px] font-bold uppercase tracking-wider truncate" style={{ color: C.muted }}>
             {label}
@@ -562,21 +538,18 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
         <div>
           <div className="flex items-baseline justify-between text-[8px] mb-1.5" style={{ color: C.muted }}>
             <span>Cíl: {effectiveTarget!.toLocaleString('cs-CZ')}{unit ?? ''}</span>
-            <motion.span initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{ color: accentColor }}>
+            <span style={{ color: accentColor }}>
               {progressPct.toFixed(0)}%
-            </motion.span>
+            </span>
           </div>
           <div className="h-2 rounded-full overflow-hidden" style={{ background: C.border }}>
-            <motion.div className="h-full rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPct}%` }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              style={{ background: `linear-gradient(90deg, ${accentColor}, ${C.green})` }}
+            <div className="h-full rounded-full"
+              style={{ background: `linear-gradient(90deg, ${accentColor}, ${C.green})`, width: `${progressPct}%` }}
             />
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 });
 KPIBlock.displayName = 'KPIBlock';
@@ -935,9 +908,7 @@ export const MetricTile: React.FC<MetricTileProps> = memo(({
   label, value, sublabel, color = C.text, icon: Icon, delta, invertedDelta, trend, className,
 }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
       className={`relative rounded-lg p-3 overflow-hidden ${className ?? ''}`}
       style={{ background: C.surface, border: `1px solid ${C.border}` }}
     >
@@ -967,7 +938,7 @@ export const MetricTile: React.FC<MetricTileProps> = memo(({
           <Sparkline data={trend} width={120} height={20} color={color} fillOpacity={0.12} />
         </div>
       )}
-    </motion.div>
+    </div>
   );
 });
 MetricTile.displayName = 'MetricTile';
@@ -1113,12 +1084,11 @@ export const CategoryBarList: React.FC<{
               )}
             </div>
             <div className="flex-1 relative h-4 rounded-md overflow-hidden" style={{ background: C.surface }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${pct}%` }}
-                transition={{ duration: 0.6, delay: i * 0.04 }}
-                style={{ height: '100%', background: `linear-gradient(90deg, ${color}55, ${color})` }}
-              />
+              <div style={{
+                height: '100%',
+                width: `${pct}%`,
+                background: `linear-gradient(90deg, ${color}55, ${color})`,
+              }} />
             </div>
             <div className="w-14 shrink-0 text-right text-[11px] font-mono tabular-nums font-bold" style={{ color }}>
               {formatValue(it.value)}

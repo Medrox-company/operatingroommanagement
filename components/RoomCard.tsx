@@ -117,11 +117,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     >
       <div
         aria-hidden
-        className="absolute inset-y-5 left-0 w-[3px] rounded-r-full"
-        style={{ background: themeColor, boxShadow: `0 0 16px ${themeColor}80` }}
-      />
-      <div
-        aria-hidden
         className="absolute -right-9 -top-11 w-24 h-24 rounded-full blur-2xl pointer-events-none"
         style={{ background: themeColor, opacity: 0.11 }}
       />
@@ -140,7 +135,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           {mobileRoomNumber}
         </span>
         <div className="min-w-0 flex-1 pt-0.5">
-          <h3 className="text-[14px] font-black uppercase truncate leading-tight tracking-[-0.02em]" style={{ color: 'var(--m-text-strong)' }}>
+          <h3 className="text-[14px] font-black uppercase whitespace-normal break-words leading-tight tracking-[-0.02em]" style={{ color: 'var(--m-text-strong)' }}>
             {room.name}
           </h3>
           <p className="text-[9px] font-bold uppercase tracking-[0.13em] truncate mt-1" style={{ color: 'var(--m-muted)' }}>
@@ -165,18 +160,19 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       {/* Stav + průběh */}
       <div
         className="relative z-10 mt-3 rounded-[16px] px-3 py-2.5 overflow-hidden"
-        style={{ background: `${themeColor}10`, border: `1px solid ${themeColor}30` }}
+        style={{ background: `${themeColor}0D` }}
       >
-        <div aria-hidden className="absolute inset-y-0 left-0 w-[2px]" style={{ background: themeColor }} />
-        <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex min-w-0 items-center gap-2 text-[9.5px] font-extrabold uppercase tracking-[0.09em]" style={{ color: room.isEmergency || room.isLocked ? themeColor : 'var(--m-text-strong)' }}>
-            <span className="relative flex w-2 h-2 shrink-0">
-              {(room.isEmergency || (!room.isLocked && safeIdxMobile > 0)) && (
-                <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ background: themeColor }} />
-              )}
-              <span className="relative w-2 h-2 rounded-full" style={{ background: themeColor }} />
-            </span>
-            <span className="truncate">
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden
+            className="h-5 w-1 rounded-full shrink-0"
+            style={{
+              background: themeColor,
+              boxShadow: `0 0 0 3px ${themeColor}12`,
+            }}
+          />
+          <span className="inline-flex min-w-0 items-center text-[9.5px] font-extrabold uppercase tracking-[0.09em]" style={{ color: room.isEmergency || room.isLocked ? themeColor : 'var(--m-text-strong)' }}>
+            <span className="whitespace-normal break-words leading-snug">
               {room.isEmergency
                 ? 'Stav nouze'
                 : room.isLocked
@@ -185,12 +181,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                 ? `${currentStep.title} · Pauza`
                 : currentStep.title}
             </span>
-          </span>
-          <span
-            className="min-w-[38px] h-6 px-1.5 rounded-[9px] inline-flex items-center justify-center text-[10px] font-black tabular-nums shrink-0"
-            style={{ color: themeColor, background: `${themeColor}18`, border: `1px solid ${themeColor}2E` }}
-          >
-            {Math.round(progressPct)}%
           </span>
         </div>
 

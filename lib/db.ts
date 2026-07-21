@@ -43,7 +43,7 @@ async function withRetry<T>(
 }
 
 // Type for database row
-interface DBOperatingRoom {
+export interface DBOperatingRoom {
   id: string;
   hospital_id: string;
   name: string;
@@ -329,6 +329,53 @@ export async function fetchOperatingRoomsLight(hospitalId: string = getDatabaseH
   } catch (error) {
     // Při chybě (např. přejmenovaný sloupec) → null; volající použije plný fetch.
     console.warn('[DB] Light fetch selhal, použiju plný fetch:', error);
+    return null;
+  }
+}
+
+// Načte jediný sál včetně jeho těžších historických dat. Používá se pro detail
+// sálu a Realtime INSERT / změnu obsazení, aby změna jednoho sálu nikdy
+// nespouštěla opakovaný dotaz na celé zařízení.
+export async function fetchOperatingRoomById(
+  roomId: string,
+  hospitalId: string = getDatabaseHospitalId(),
+): Promise<OperatingRoom | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+
+  try {
+    const roomRes = await supabase
+      .from('operating_rooms')
+      .select('*, completed_operations')
+      .eq('hospital_id', hospitalId)
+      .eq('id', roomId)
+      .maybeSingle();
+
+    if (roomRes.error) throw roomRes.error;
+    if (!roomRes.data) return null;
+
+    const row = roomRes.data as DBOperatingRoom;
+    const staffIds = [row.doctor_id, row.nurse_id, row.anesthesiologist_id]
+      .filter((id): id is string => Boolean(id));
+    const staffMap = new Map<string, DBStaff>();
+
+    if (staffIds.length > 0) {
+      const staffRes = await supabase
+        .from('staff')
+        .select('*')
+        .eq('hospital_id', hospitalId)
+        .in('id', staffIds);
+      if (staffRes.error) throw staffRes.error;
+      (staffRes.data || []).forEach((staff: DBStaff) => staffMap.set(staff.id, staff));
+    }
+
+    return transformRoom(
+      row,
+      staffMap,
+      new Map<string, DBPatient>(),
+      new Map<string, DBProcedure>(),
+    );
+  } catch (error) {
+    console.error(`[DB] Failed to fetch operating room ${roomId}:`, error);
     return null;
   }
 }
@@ -758,6 +805,7 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.id !== undefined) result.id = row.id;
   if (row.name !== undefined) result.name = row.name;
   if (row.department !== undefined) result.department = row.department;
+  if (row.sort_order !== undefined) result.sort_order = row.sort_order ?? undefined;
   if (row.status !== undefined) result.status = row.status as RoomStatus;
   if (row.queue_count !== undefined) result.queueCount = row.queue_count;
   if (row.operations_24h !== undefined) result.operations24h = row.operations_24h;
@@ -780,6 +828,11 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.notice_sender !== undefined) result.noticeSender = row.notice_sender ?? null;
   if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
   if (row.weekly_schedule !== undefined) result.weeklySchedule = row.weekly_schedule as WeeklySchedule | undefined;
+  if (row.hourly_operating_cost !== undefined) {
+    result.hourlyOperatingCost = row.hourly_operating_cost === null
+      ? null
+      : Number(row.hourly_operating_cost);
+  }
   
   return result;
 }
@@ -1229,13 +1282,13 @@ export interface StaffRow {
   updated_at: string;
 }
 
-export async function fetchAllStaff(): Promise<StaffRow[] | null> {
+export async function fetchAllStaff(hospitalId: string = getDatabaseHospitalId()): Promise<StaffRow[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
   try {
     const { data, error } = await supabase
       .from('staff')
       .select('*')
-      .eq('hospital_id', activeHospitalId || 'default')
+      .eq('hospital_id', hospitalId)
       .order('role', { ascending: true })
       .order('name', { ascending: true });
     if (error) throw error;

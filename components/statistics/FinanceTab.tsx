@@ -151,11 +151,13 @@ export function FinanceTab({
         hours,
         cost,
         utilizationPct,
-        opsCount: r.operations24h ?? 0,
+        opsCount: history.filter(row =>
+          row.operating_room_id === r.id && row.event_type === 'operation_start'
+        ).length,
         configured: rate !== null && rate >= 0,
       };
     });
-  }, [rooms, getRate, roomBusyHours, periodLabel]);
+  }, [rooms, getRate, roomBusyHours, periodLabel, history]);
 
   // ── Souhrnné metriky ─────────────────────────────────────────────────
   const summary = useMemo(() => {
@@ -623,9 +625,9 @@ export function FinanceTab({
           <MetricTile
             label="Vytížení"
             value={`${avgUtilization.toFixed(0)}%`}
-            sublabel={avgUtilization >= 70 ? 'výborné' : avgUtilization >= 40 ? 'střední' : 'nízké'}
+            sublabel={`za ${periodLabel}`}
             icon={TrendingUp}
-            color={avgUtilization >= 70 ? C.green : avgUtilization >= 40 ? C.yellow : C.red}
+            color={C.accent}
           />
         </div>
       </Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity,
@@ -20,9 +20,9 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { fetchAllStaff, StaffRow } from '../lib/db';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { useHospital } from '../contexts/HospitalContext';
+import type { StaffRow } from '../lib/db';
+import type { OperatingRoom } from '../types';
+import { useStaffData } from '../hooks/useStaffData';
 import { MobileHeaderMetrics, MobileModuleHeader } from './mobile/MobileShell';
 import { useIsMobileDark } from '../hooks/useIsMobileDark';
 
@@ -281,76 +281,34 @@ const AvailablePerson: React.FC<{ staff: StaffRow }> = ({ staff }) => {
   );
 };
 
-const StaffOverviewModule: React.FC = () => {
+const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: operatingRooms }) => {
   const isMobileDark = useIsMobileDark();
-  const { activeHospitalId } = useHospital();
-  const [staffList, setStaffList] = useState<StaffRow[]>([]);
-  const [rooms, setRooms] = useState<RoomWithStaff[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { staff: staffList, loading } = useStaffData();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterMode>('all');
   const [department, setDepartment] = useState('all');
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    if (!isSupabaseConfigured || !supabase) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const staffData = await fetchAllStaff();
-      const { data: roomsData } = await supabase
-        .from('operating_rooms')
-        .select('id, name, department, current_step_index, doctor_id, nurse_id, anesthesiologist_id, is_locked, is_paused')
-        .eq('hospital_id', activeHospitalId || 'default')
-        .order('sort_order', { ascending: true });
-
-      const staffMap = new Map(staffData?.map(staff => [staff.id, staff]) || []);
-      const roomsWithStaff: RoomWithStaff[] = (roomsData || []).map(room => {
-        // Po sloučení rolí se anesteziolog v detailu sálu ukládá do doctor_id.
-        // anesthesiologist_id ponecháváme jako fallback pro starší záznamy.
-        const anesthesiologistId = room.doctor_id || room.anesthesiologist_id;
-        return {
-          id: room.id,
-          name: room.name,
-          department: room.department,
-          current_step_index: room.current_step_index,
-          is_locked: room.is_locked,
-          is_paused: room.is_paused,
-          nurse: room.nurse_id ? staffMap.get(room.nurse_id) || null : null,
-          anesthesiologist: anesthesiologistId ? staffMap.get(anesthesiologistId) || null : null,
-          isActive: room.current_step_index !== null
-            && room.current_step_index >= 0
-            && room.current_step_index < 6
-            && !room.is_locked,
-        };
-      });
-
-      setStaffList(staffData || []);
-      setRooms(roomsWithStaff);
-    } catch (error) {
-      console.error('[StaffOverview] Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchData();
-
-    if (isSupabaseConfigured && supabase) {
-      const channel = supabase
-        .channel(`staff-overview-realtime:${activeHospitalId || 'default'}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'staff', filter: `hospital_id=eq.${activeHospitalId || 'default'}` }, fetchData)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'operating_rooms', filter: `hospital_id=eq.${activeHospitalId || 'default'}` }, fetchData)
-        .subscribe();
-
-      return () => {
-        void supabase.removeChannel(channel);
+  const rooms = useMemo<RoomWithStaff[]>(() => {
+    const staffMap = new Map(staffList.map((staff) => [staff.id, staff]));
+    return operatingRooms.map((room) => {
+      // Po sloučení rolí je anesteziolog primárně v doctor; starší záznamy
+      // používají samostatné pole anesthesiologist.
+      const anesthesiologistId = room.staff.doctor.id || room.staff.anesthesiologist?.id;
+      const nurseId = room.staff.nurse.id;
+      return {
+        id: room.id,
+        name: room.name,
+        department: room.department,
+        current_step_index: room.currentStepIndex,
+        is_locked: room.isLocked,
+        is_paused: room.isPaused,
+        nurse: nurseId ? staffMap.get(nurseId) || null : null,
+        anesthesiologist: anesthesiologistId ? staffMap.get(anesthesiologistId) || null : null,
+        isActive: room.currentStepIndex >= 0 && room.currentStepIndex < 6 && !room.isLocked,
       };
-    }
-  }, [activeHospitalId]);
+    });
+  }, [operatingRooms, staffList]);
 
   const assignedIds = useMemo(() => {
     const ids = new Set<string>();

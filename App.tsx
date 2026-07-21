@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { SWRConfig } from 'swr';
 import Sidebar from './components/Sidebar';
 import RoomNoticeComposer from './components/RoomNoticeComposer';
 import MobileNav from './components/MobileNav';
-import RoomCard from './components/RoomCard';
 import PlaceholderView from './components/PlaceholderView';
-import { MobileHeaderMetrics, MobileModuleHeader } from './components/mobile/MobileShell';
 
 // ── Lazy-load těžkých modulů (nejsou výchozí pohled) → menší úvodní bundle,
 //    rychlejší a stabilnější start. Načtou se až při přepnutí na daný modul. ──
@@ -17,27 +16,27 @@ const ModuleLoader = () => (
   </div>
 );
 const RoomDetail = dynamic(() => import('./components/RoomDetail'), { ssr: false, loading: ModuleLoader });
+const DashboardModule = dynamic(() => import('./components/DashboardModule'), { ssr: false, loading: ModuleLoader });
 const TimelineModule = dynamic(() => import('./components/TimelineModule'), { ssr: false, loading: ModuleLoader });
 const StatisticsModule = dynamic(() => import('./components/StatisticsModule'), { ssr: false, loading: ModuleLoader });
-const StaffManager = dynamic(() => import('./components/StaffManager'), { ssr: false, loading: ModuleLoader });
 const StaffOverviewModule = dynamic(() => import('./components/StaffOverviewModule'), { ssr: false, loading: ModuleLoader });
 const SettingsPage = dynamic(() => import('./components/SettingsPage'), { ssr: false, loading: ModuleLoader });
 const FlowMonitorModule = dynamic(() => import('./components/FlowMonitorModule'), { ssr: false, loading: ModuleLoader });
-import AnimatedCounter from './components/AnimatedCounter';
-import LiveClock from './components/LiveClock';
 import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import AnimatedBackground from './components/AnimatedBackground';
 import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { OperatingRoom, WeeklySchedule } from './types';
-import { Activity, LayoutGrid, Shield, AlertTriangle, Lock, Bell } from 'lucide-react';
-import { fetchOperatingRooms, fetchOperatingRoomsLight, updateOperatingRoom, subscribeToOperatingRooms, transformSingleRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
+import { AlertTriangle } from 'lucide-react';
+import { updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HospitalProvider, useHospital } from './contexts/HospitalContext';
+import { RealtimeProvider } from './contexts/RealtimeContext';
 import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts/WorkflowStatusesContext';
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
+import { useOperatingRoomsData } from './hooks/useOperatingRoomsData';
 
 // Main App Content - Operating Rooms Management System
 const DEFAULT_BG_SETTINGS: BackgroundSettings = {
@@ -58,20 +57,35 @@ type RoomStatusHistory = NonNullable<OperatingRoom['statusHistory']>;
 type StaffAssignmentField = 'doctor_id' | 'nurse_id' | 'anesthesiologist_id';
 type StaffAssignmentUpdate = Partial<Record<StaffAssignmentField, string | null>>;
 
+const SWR_OPTIONS = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: true,
+  dedupingInterval: 10_000,
+  errorRetryCount: 2,
+  keepPreviousData: true,
+};
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, isAdmin, modules, user } = useAuth();
   const { activeHospitalId, loading: hospitalLoading } = useHospital();
   const { workflowStatuses } = useWorkflowStatusesContext();
-  // Začínáme prázdní — mock data se NEzobrazují (zabrání probliknutí špatných
-  // názvů/statusů). Mock zůstává jen jako záloha při selhání načtení (offline/demo).
-  const [rooms, setRooms] = useState<OperatingRoom[]>([]);
-  const [roomsLoaded, setRoomsLoaded] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
-  const [isDbConnected, setIsDbConnected] = useState(false);
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
+  const {
+    rooms,
+    roomsLoaded,
+    isDbConnected,
+    setRooms,
+    refreshRooms,
+    ensureRoomDetails,
+    markRoomLocallyUpdated,
+  } = useOperatingRoomsData({
+    enabled: isAuthenticated && !hospitalLoading,
+    loadAllDetails: currentView === 'timeline',
+  });
 
   useEffect(() => {
     setDatabaseHospitalId(activeHospitalId);
@@ -135,70 +149,10 @@ const AppContent: React.FC = () => {
   // Globální přehledy zachovají vizuální upozornění, ale zvuk nepřehrávají.
   useEmergencyAlert(rooms, selectedRoomId);
 
-  // Track recent local updates to ignore the realtime UPDATE event echo from
-  // our own DB write (Supabase broadcasts UPDATE events back to the originating
-  // client). Without this, we'd briefly flicker as the realtime event arrives
-  // and re-applies the same value we already set optimistically.
-  const recentLocalUpdates = useRef<Map<string, number>>(new Map());
-  const DEBOUNCE_MS = 2000;
-
-  // Ref to track current view without causing re-renders
-  const currentViewRef = useRef(currentView);
+  // Detail načte historii jen vybraného sálu; dashboard tak zůstává lehký.
   useEffect(() => {
-    currentViewRef.current = currentView;
-  }, [currentView]);
-
-  // Load rooms after login (one-time fetch). Supabase Realtime handles all subsequent updates.
-  // /api/rooms nově vyžaduje session, proto načítáme až po přihlášení.
-  useEffect(() => {
-    if (!isAuthenticated || hospitalLoading || !activeHospitalId) return;
-    setDatabaseHospitalId(activeHospitalId);
-    setRooms([]);
-    setRoomsLoaded(false);
-    let isMounted = true;
-
-    const withTimeout = <T,>(p: Promise<T>, ms = 9000) =>
-      Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
-
-    const loadRooms = async () => {
-      try {
-        // 1. Lehký dashboard bez velkých JSON historií — uživatel uvidí sály
-        //    výrazně dříve i na pomalé nemocniční síti.
-        const lightRooms = await withTimeout(fetchOperatingRoomsLight(activeHospitalId), 4500);
-        if (!isMounted) return;
-        if (lightRooms && Array.isArray(lightRooms) && lightRooms.length > 0) {
-          setRooms(lightRooms);
-          setIsDbConnected(true);
-          setRoomsLoaded(true);
-        }
-
-        // 2. Kompletní historie a dokončené cykly se doplní následně pro
-        //    Timeline a Statistiky, aniž by blokovaly první dashboard.
-        const dbRooms = await withTimeout(fetchOperatingRooms(activeHospitalId), 9000);
-        if (!isMounted) return;
-        if (dbRooms && Array.isArray(dbRooms) && dbRooms.length > 0) {
-          setRooms(dbRooms);
-          setIsDbConnected(true);
-          setRoomsLoaded(true);
-        } else if (!lightRooms || !Array.isArray(lightRooms) || lightRooms.length === 0) {
-          setRooms([]);
-          setRoomsLoaded(true);
-        }
-      } catch (error) {
-        if (!isMounted) return;
-        console.error("[App] Failed to load rooms:", error);
-        setRooms([]);
-        setRoomsLoaded(true);
-      }
-    };
-    
-    // Initial load only - Supabase Realtime handles updates
-    loadRooms();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isAuthenticated, activeHospitalId, hospitalLoading]);
+    if (selectedRoomId) void ensureRoomDetails(selectedRoomId);
+  }, [ensureRoomDetails, selectedRoomId]);
 
   // Prefetch nejčastěji používaných modulů na pozadí (až je prohlížeč v klidu),
   // aby přepnutí bylo okamžité bez spinneru. Lazy-loading šetří úvodní bundle,
@@ -224,61 +178,6 @@ const AppContent: React.FC = () => {
       else clearTimeout(id);
     };
   }, [isAuthenticated]);
-
-  // Ruční obnovení dat (Timeline modul) — Realtime řeší většinu, tohle je „force refresh".
-  const refreshRooms = useCallback(async () => {
-    try {
-      const dbRooms = await fetchOperatingRooms();
-      if (dbRooms && dbRooms.length > 0) {
-        setRooms(dbRooms);
-        setIsDbConnected(true);
-      }
-    } catch (error) {
-      console.error('[App] Manual refresh failed:', error);
-    }
-  }, [activeHospitalId]);
-  
-  // Cleanup old entries from recentLocalUpdates to prevent memory growth.
-  useEffect(() => {
-    if (!activeHospitalId) return;
-    setDatabaseHospitalId(activeHospitalId);
-    const cleanupInterval = setInterval(() => {
-      const now = Date.now();
-      recentLocalUpdates.current.forEach((timestamp, roomId) => {
-        if (now - timestamp > DEBOUNCE_MS * 3) {
-          recentLocalUpdates.current.delete(roomId);
-        }
-      });
-    }, 10000);
-    return () => clearInterval(cleanupInterval);
-  }, []);
-
-  // Subscribe to real-time updates with granular room updates
-  useEffect(() => {
-    const unsubscribe = subscribeToOperatingRooms(
-      // Full refresh callback (for INSERT/DELETE)
-      async () => {
-        const dbRooms = await fetchOperatingRooms();
-        setRooms(dbRooms || []);
-      },
-      // Granular update callback (for UPDATE - instant sync)
-      (roomId, dbChanges) => {
-        // Skip if we recently made a local update to this room (prevents double-render flickering)
-        const lastLocalUpdate = recentLocalUpdates.current.get(roomId);
-        if (lastLocalUpdate && Date.now() - lastLocalUpdate < DEBOUNCE_MS) {
-          return; // Ignore this realtime update - we already have the data from optimistic update
-        }
-        
-        const appChanges = transformSingleRoom(dbChanges);
-        setRooms(prev => prev.map(room =>
-          room.id === roomId ? { ...room, ...appChanges } : room
-        ));
-      }
-    );
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [activeHospitalId]);
 
   // Memoize selectedRoom — bez useMemo se find() spouští každý render a `selectedRoom`
   // má pokaždé jinou referenci, což spou��tí re-render RoomDetailu i když data sálu jsou
@@ -311,7 +210,7 @@ const AppContent: React.FC = () => {
 
   const updateRoomStep = useCallback((roomId: string, newStepIndex: number, stepColor?: string) => {
     // Mark this room as recently updated locally to prevent realtime flicker
-    recentLocalUpdates.current.set(roomId, Date.now());
+    markRoomLocallyUpdated(roomId);
 
     const now = new Date().toISOString();
 
@@ -393,7 +292,7 @@ const AppContent: React.FC = () => {
         console.error('[v0] updateRoomStep DB persist failed', err)
       );
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, markRoomLocallyUpdated, setRooms]);
 
   // ── Globální auto-ukončení úklidu (běží i bez otevřeného detailu sálu) ──
   // Pokud status „úklid" trvá > 30 min (+10s po upozornění), přepne sál na další
@@ -445,31 +344,31 @@ const AppContent: React.FC = () => {
     if (!currentRoom) return;
     const newValue = !currentRoom.isEmergency;
     
-    recentLocalUpdates.current.set(roomId, Date.now());
+    markRoomLocallyUpdated(roomId);
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, isEmergency: newValue } : room
     ));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_emergency: newValue });
     }
-  }, [isDbConnected, rooms]);
+  }, [isDbConnected, markRoomLocallyUpdated, rooms, setRooms]);
 
   const toggleLock = useCallback(async (roomId: string) => {
     const currentRoom = rooms.find(r => r.id === roomId);
     if (!currentRoom) return;
     const newValue = !currentRoom.isLocked;
     
-    recentLocalUpdates.current.set(roomId, Date.now());
+    markRoomLocallyUpdated(roomId);
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, isLocked: newValue } : room
     ));
     if (isDbConnected) {
       await updateOperatingRoom(roomId, { is_locked: newValue });
     }
-  }, [isDbConnected, rooms]);
+  }, [isDbConnected, markRoomLocallyUpdated, rooms, setRooms]);
 
   const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
-    recentLocalUpdates.current.set(roomId, Date.now());
+    markRoomLocallyUpdated(roomId);
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, estimatedEndTime: newTime ? newTime.toISOString() : undefined }
@@ -480,10 +379,10 @@ const AppContent: React.FC = () => {
         estimated_end_time: newTime ? newTime.toISOString() : null 
       });
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, markRoomLocallyUpdated, setRooms]);
 
   const handleEnhancedHygieneToggle = useCallback(async (roomId: string, enabled: boolean) => {
-    recentLocalUpdates.current.set(roomId, Date.now());
+    markRoomLocallyUpdated(roomId);
     const targetRoom = rooms.find(r => r.id === roomId);
     // Při zapnutí ulož čas aktivace; při vypnutí čas PONECHÁME, aby bod na ose zůstal.
     const hygieneAt = enabled ? new Date().toISOString() : undefined;
@@ -508,10 +407,10 @@ const AppContent: React.FC = () => {
         });
       }
     }
-  }, [isDbConnected, rooms]);
+  }, [isDbConnected, markRoomLocallyUpdated, rooms, setRooms]);
 
   const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: WeeklySchedule) => {
-    recentLocalUpdates.current.set(roomId, Date.now());
+    markRoomLocallyUpdated(roomId);
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, weeklySchedule: schedule }
@@ -522,10 +421,10 @@ const AppContent: React.FC = () => {
         weekly_schedule: schedule
       });
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, markRoomLocallyUpdated, setRooms]);
 
   const handleStaffChange = useCallback(async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
-    recentLocalUpdates.current.set(roomId, Date.now());
+    markRoomLocallyUpdated(roomId);
     const isUnassigning = !staffId && !staffName;
 
     // Update local state
@@ -534,11 +433,11 @@ const AppContent: React.FC = () => {
       
       const updatedStaff = { ...room.staff };
       if (role === 'doctor') {
-        updatedStaff.doctor = isUnassigning ? { name: null, role: 'DOCTOR' } : { name: staffName, role: 'DOCTOR' };
+        updatedStaff.doctor = isUnassigning ? { name: null, role: 'DOCTOR' } : { id: staffId, name: staffName, role: 'DOCTOR' };
       } else if (role === 'nurse') {
-        updatedStaff.nurse = isUnassigning ? { name: null, role: 'NURSE' } : { name: staffName, role: 'NURSE' };
+        updatedStaff.nurse = isUnassigning ? { name: null, role: 'NURSE' } : { id: staffId, name: staffName, role: 'NURSE' };
       } else if (role === 'anesthesiologist') {
-        updatedStaff.anesthesiologist = isUnassigning ? { name: null, role: 'ANESTHESIOLOGIST' } : { name: staffName, role: 'ANESTHESIOLOGIST' };
+        updatedStaff.anesthesiologist = isUnassigning ? { name: null, role: 'ANESTHESIOLOGIST' } : { id: staffId, name: staffName, role: 'ANESTHESIOLOGIST' };
       }
       
       return { ...room, staff: updatedStaff };
@@ -550,7 +449,7 @@ const AppContent: React.FC = () => {
       const staffUpdate: StaffAssignmentUpdate = { [dbField]: isUnassigning ? null : staffId };
       await updateOperatingRoom(roomId, staffUpdate);
     }
-  }, [isDbConnected]);
+  }, [isDbConnected, markRoomLocallyUpdated, setRooms]);
 
   const handlePatientStatusChange = useCallback((roomId: string, calledAt: string | null, arrivedAt: string | null) => {
     setRooms(prev => prev.map(room =>
@@ -558,16 +457,16 @@ const AppContent: React.FC = () => {
         ? { ...room, patientCalledAt: calledAt, patientArrivedAt: arrivedAt }
         : room
     ));
-  }, []);
+  }, [setRooms]);
 
   const handlePauseChange = useCallback((roomId: string, paused: boolean, pausedAt: string | null) => {
-    recentLocalUpdates.current.set(roomId, Date.now());
+    markRoomLocallyUpdated(roomId);
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, isPaused: paused, pausedAt }
         : room
     ));
-  }, []);
+  }, [markRoomLocallyUpdated, setRooms]);
 
   // Stabilní handlery pro Sidebar / MobileNav — bez useCallbacku se recreatují
   // každý render a bustují memo na navigačních komponentách.
@@ -713,141 +612,13 @@ const AppContent: React.FC = () => {
 
             {/* Dashboard — room grid */}
             {currentView === 'dashboard' && !selectedRoom && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
-                {/* Světlý podklad dashboardu na mobilu — ladí s detailem sálu */}
-                <div aria-hidden className="mobile-theme-surface fixed inset-0 -z-10 md:hidden" />
-                <div className="max-w-[2400px] mx-auto w-full">
-                  {/* ── Mobilní hlavička — dle prototypu: ● OPERAČNÍ SÁLY + zvonek ── */}
-                  <div className="md:hidden mb-4">
-                    {(() => {
-                      const isRoomReadyM = (room: OperatingRoom) => room.currentStepIndex === 0 || room.currentStepIndex === 7;
-                      const emergencyM = rooms.filter(r => r.isEmergency).length;
-                      const readyM = rooms.filter(r => isRoomReadyM(r) && !r.isEmergency && !r.isLocked).length;
-                      const activeM = rooms.filter(r => !isRoomReadyM(r) && !r.isEmergency && !r.isLocked).length;
-                      const noticeM = rooms.filter(r => r.noticeMessage).length + emergencyM;
-                      return (
-                        <>
-                          <MobileModuleHeader
-                              kicker="Živý operační program"
-                              title="Operační sály"
-                              right={
-                              <span
-                                className="relative w-11 h-11 rounded-full flex items-center justify-center"
-                                style={{ background: 'var(--m-card-2)', border: '1px solid var(--m-border)' }}
-                              >
-                                <Bell className="w-[19px] h-[19px]" style={{ color: 'var(--m-text-strong)' }} strokeWidth={2} />
-                                {noticeM > 0 && (
-                                  <span
-                                    className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                                    style={{ background: 'var(--m-accent)', border: '2px solid var(--m-bg)' }}
-                                  >
-                                    {noticeM}
-                                  </span>
-                                )}
-                              </span>
-                              }
-                          >
-                            <MobileHeaderMetrics items={[
-                              {
-                                label: 'Aktivní',
-                                value: activeM,
-                                suffix: 'v provozu',
-                                color: '#9A6CFF',
-                                icon: <Activity className="w-5 h-5" strokeWidth={2} />,
-                              },
-                              {
-                                label: 'Připraveno',
-                                value: readyM,
-                                suffix: 'sálů',
-                                color: '#10B981',
-                                icon: <LayoutGrid className="w-5 h-5" strokeWidth={2} />,
-                              },
-                            ]} />
-                          </MobileModuleHeader>
-                        </>
-                      );
-                    })()}
-                  </div>
-
-                  <header className="hidden md:flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
-                    <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
-                      <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
-                        <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
-                        <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ</p>
-                      </div>
-                      <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-center lg:justify-start">
-                        <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0">
-                          <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#34D399' }} />
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ background: '#34D399', boxShadow: '0 0 10px #34D39988' }} />
-                        </span>
-                        <span>OPERAČNÍ <span className="text-white/20">SÁLY</span></span>
-                      </h1>
-                    </div>
-                    <div className="flex items-center gap-2 md:gap-5">
-                      <LiveClock />
-                      <div className="flex items-stretch gap-1 md:gap-2 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                        {/* Jemný horní světelný akcent panelu */}
-                        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-                        {(() => {
-                          // Check if room is in "ready" status (step index 0 or 7)
-                          const isRoomReady = (room: OperatingRoom) => {
-                            return room.currentStepIndex === 0 || room.currentStepIndex === 7;
-                          };
-
-                          const emergencyRooms = rooms.filter(r => r.isEmergency);
-                          const lockedRooms = rooms.filter(r => r.isLocked && !r.isEmergency);
-                          const readyRooms = rooms.filter(r => isRoomReady(r) && !r.isEmergency && !r.isLocked);
-                          const activeRooms = rooms.filter(r => !isRoomReady(r) && !r.isEmergency && !r.isLocked);
-
-                          // NOUZE a UZAMČENO se ukazují jen když jsou relevantní — panel zůstává čistý
-                          return [
-                            { label: 'AKTIVNÍ',    value: activeRooms.length,    icon: Activity,      color: 'text-[#22D3EE]',  valueColor: '#22D3EE', show: true,  pulse: false },
-                            { label: 'PŘIPRAVENO', value: readyRooms.length,     icon: LayoutGrid,    color: 'text-[#34D399]',  valueColor: '#34D399', show: true,  pulse: false },
-                            { label: 'NOUZE',      value: emergencyRooms.length, icon: AlertTriangle, color: 'text-[#FF453A]',  valueColor: '#FF453A', show: emergencyRooms.length > 0, pulse: true },
-                            { label: 'UZAMČENO',   value: lockedRooms.length,    icon: Lock,          color: 'text-[#FBBF24]',  valueColor: '#FBBF24', show: lockedRooms.length > 0,    pulse: false },
-                          ].filter(s => s.show);
-                        })().map((stat, idx) => (
-                          <React.Fragment key={stat.label}>
-                            {idx > 0 && (
-                              <div className="w-px self-stretch my-2 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
-                            )}
-                            <div className={`flex flex-col items-center justify-center px-3 sm:px-6 md:px-9 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[120px] md:min-w-[140px] z-10 ${stat.pulse ? 'animate-pulse' : ''}`}>
-                              <div className="flex items-center gap-1.5 sm:gap-2.5 mb-1 sm:mb-2">
-                                <stat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${stat.color}`} />
-                                <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/45">{stat.label}</p>
-                              </div>
-                              <div style={{ color: stat.valueColor }}>
-                                <AnimatedCounter to={stat.value} />
-                              </div>
-                            </div>
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    </div>
-                  </header>
-                  <div className="pb-20 px-0 sm:px-2">
-                    {!roomsLoaded ? (
-                      <div className="flex flex-col items-center justify-center py-32 gap-3">
-                        <div className="w-7 h-7 border-2 border-[#C7D4E8] border-t-[#2952C8] md:border-white/20 md:border-t-white/70 rounded-full animate-spin" />
-                        <p className="text-sm text-[#7C8AA5] md:text-white/40">Načítám operační sály…</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-x-5 md:gap-x-6 sm:gap-y-6 md:gap-y-8">
-                        {rooms.map((room) => (
-                          <RoomCard
-                            key={room.id}
-                            room={room}
-                            onClick={() => setSelectedRoomId(room.id)}
-                            onEmergency={() => toggleEmergency(room.id)}
-                            onLock={() => toggleLock(room.id)}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                  </div>
-                </div>
-              </div>
+              <DashboardModule
+                rooms={rooms}
+                roomsLoaded={roomsLoaded}
+                onSelectRoom={setSelectedRoomId}
+                onEmergency={toggleEmergency}
+                onLock={toggleLock}
+              />
             )}
 
             {/* Tok pacienta — živý monitorovací modul */}
@@ -881,7 +652,7 @@ const AppContent: React.FC = () => {
   {currentView === 'staff' && (
   <div className="w-full h-full overflow-y-auto hide-scrollbar">
   <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
-  <StaffOverviewModule />
+  <StaffOverviewModule rooms={rooms} />
   </div>
   </div>
   )}
@@ -920,16 +691,20 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
   <ErrorBoundary>
+  <SWRConfig value={SWR_OPTIONS}>
   <AuthProvider>
   <HospitalProvider>
+  <RealtimeProvider>
   <WorkflowStatusesProvider>
   <ConfirmProvider>
   <AppToaster />
   <AppContent />
   </ConfirmProvider>
   </WorkflowStatusesProvider>
+  </RealtimeProvider>
   </HospitalProvider>
   </AuthProvider>
+  </SWRConfig>
   </ErrorBoundary>
   );
   };

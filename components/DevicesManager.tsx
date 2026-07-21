@@ -21,8 +21,8 @@ import {
   Globe,
   ChevronLeft
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { useHospitalRealtime } from '@/contexts/RealtimeContext';
 
 interface DeviceInfo {
   id: string;
@@ -85,6 +85,19 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
+  useHospitalRealtime('devices', (payload) => {
+    if (payload.eventType === 'INSERT' && payload.new) {
+      const device = payload.new as unknown as DeviceInfo;
+      setDevices((prev) => prev.some((item) => item.id === device.id) ? prev : [device, ...prev]);
+    } else if (payload.eventType === 'UPDATE' && payload.new) {
+      const device = payload.new as unknown as DeviceInfo;
+      setDevices((prev) => prev.map((item) => item.id === device.id ? { ...item, ...device } : item));
+    } else if (payload.eventType === 'DELETE' && payload.old) {
+      const id = payload.old.id;
+      setDevices((prev) => prev.filter((item) => item.id !== id));
+    }
+  });
+
   const fetchDevices = useCallback(async () => {
     try {
       setError(null);
@@ -101,32 +114,7 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
 
   useEffect(() => {
     setCurrentDeviceId(getCurrentDeviceId());
-    fetchDevices();
-    
-    // Subscribe to Supabase Realtime for devices table changes
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    if (supabaseUrl && supabaseKey) {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      
-      const channel = supabase
-        .channel('devices-manager-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'devices' }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setDevices((prev) => [payload.new as DeviceInfo, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            setDevices((prev) => prev.map((d) => d.id === (payload.new as DeviceInfo).id ? payload.new as DeviceInfo : d));
-          } else if (payload.eventType === 'DELETE') {
-            setDevices((prev) => prev.filter((d) => d.id !== (payload.old as { id: string }).id));
-          }
-        })
-        .subscribe();
-        
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+    void fetchDevices();
   }, [fetchDevices]);
 
   const handleToggleActive = async (id: string, active: boolean) => {

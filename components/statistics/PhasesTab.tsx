@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, PieChart, Pie, LineChart, Line, CartesianGrid, AreaChart, Area,
@@ -65,7 +64,6 @@ const PhaseCard = ({
   step,
   duration,
   pct,
-  index,
   isBottleneck,
   roomsInPhase,
   totalRooms,
@@ -73,16 +71,12 @@ const PhaseCard = ({
   step: WorkflowStep;
   duration: number;
   pct: number;
-  index: number;
   isBottleneck: boolean;
   roomsInPhase: number;
   totalRooms: number;
 }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.08 }}
+    <div
       className="relative rounded-xl p-4 overflow-hidden group"
       style={{
         background: isBottleneck
@@ -112,7 +106,7 @@ const PhaseCard = ({
         >
           <div
             className="w-4 h-4 rounded-full"
-            style={{ background: step.color, boxShadow: `0 0 12px ${step.color}80` }}
+            style={{ background: step.color }}
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -158,16 +152,13 @@ const PhaseCard = ({
           </span>
         </div>
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: C.ghost }}>
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: step.color }}
-            initial={{ width: 0 }}
-            animate={{ width: `${(roomsInPhase / Math.max(1, totalRooms)) * 100}%` }}
-            transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }}
-          />
+          <div className="h-full rounded-full" style={{
+            background: step.color,
+            width: `${(roomsInPhase / Math.max(1, totalRooms)) * 100}%`,
+          }} />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -196,22 +187,18 @@ const TimelineGantt = ({
             cumulative += duration;
 
             return (
-              <motion.div
+              <div
                 key={step.name}
                 className="h-full relative group cursor-pointer"
                 style={{ width: `${widthPct}%` }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
               >
                 <div
-                  className="absolute inset-0.5 rounded-lg flex items-center justify-center transition-all group-hover:scale-[1.02]"
+                  className="absolute inset-0.5 rounded-lg flex items-center justify-center"
                   style={{
                     // Solid accent_color — must match the current-status badge color shown on RoomCard.
                     // Previously a 135° gradient dimmed the bottom-right to 80% opacity, so the same
                     // workflow phase looked visibly different from the room's actual status pill.
                     background: step.color,
-                    boxShadow: `0 4px 16px ${step.color}55`,
                   }}
                 >
                   {widthPct > 8 && (
@@ -239,7 +226,7 @@ const TimelineGantt = ({
                     <p style={{ color: step.color }}>{Math.round(duration)} minut</p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
@@ -462,13 +449,10 @@ export function PhasesTab({
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
+        <>
           {selectedView === 'cards' ? (
-            <motion.div
+            <div
               key="cards"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
             >
               {workflowSteps.map((step, i) => (
@@ -477,19 +461,15 @@ export function PhasesTab({
                   step={step}
                   duration={avgStepDurations[i] || 0}
                   pct={workflowAgg[i]?.pct || 0}
-                  index={i}
                   isBottleneck={i === longestPhaseIdx && avgStepDurations[i] > 0}
                   roomsInPhase={roomsPerPhase[i]}
                   totalRooms={rooms.length}
                 />
               ))}
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
+            <div
               key="chart"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
               className="grid grid-cols-1 lg:grid-cols-2 gap-5"
             >
               {/* Duration bar chart */}
@@ -556,9 +536,9 @@ export function PhasesTab({
                   </div>
                 </div>
               </Card>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </>
       </div>
 
       {/* ── Cumulative + Current Distribution Row ── */}

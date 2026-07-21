@@ -42,11 +42,11 @@ const activateHospitalAccess = async (id: string) => {
     body: JSON.stringify({ hospitalId: id }),
   });
   if (!response.ok) {
-    setSupabaseHospitalToken(null);
+    await setSupabaseHospitalToken(null);
     return false;
   }
   const json = await response.json();
-  setSupabaseHospitalToken(typeof json.token === 'string' ? json.token : null);
+  await setSupabaseHospitalToken(typeof json.token === 'string' ? json.token : null);
   return typeof json.token === 'string';
 };
 
@@ -60,7 +60,7 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/admin/hospital', { credentials: 'include', cache: 'no-store' });
       if (!response.ok) {
         if (response.status === 401) {
-          setSupabaseHospitalToken(null);
+          await setSupabaseHospitalToken(null);
           setDatabaseHospitalId(null);
           setActiveHospitalId(null);
           setHospitals([]);

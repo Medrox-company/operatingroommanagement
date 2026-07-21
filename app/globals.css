@@ -416,6 +416,66 @@ html.capacitor-native select {
   --stats-ghost: rgba(255, 255, 255, 0.08);
 }
 
+/* Statistiky používají napříč tabulkami, kartami, grafy a dialogy jediný
+   typografický systém. Čísla si zachovávají tabulární šířku, ale nepřepínají
+   na monospace řez, který dříve vizuálně rozbíjel jednotlivé záložky. */
+.statistics-module {
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--stats-text);
+}
+
+.statistics-module button,
+.statistics-module input,
+.statistics-module select,
+.statistics-module textarea,
+.statistics-module table,
+.statistics-module .font-mono,
+.statistics-module .recharts-wrapper,
+.statistics-module .recharts-default-tooltip,
+.statistics-module .recharts-cartesian-axis-tick-value,
+.statistics-module svg text {
+  font-family: inherit !important;
+}
+
+.statistics-module .statistics-card {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.statistics-module .statistics-tabs {
+  background: var(--stats-surface);
+}
+
+.statistics-module .statistics-kpi-card {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+/* Statistiky jsou datově rozsáhlý modul. Dekorativní pulzování a přechody
+   zde záměrně nepoužíváme, aby zůstalo překreslování levné i na starších PC. */
+.statistics-module .animate-ping,
+.statistics-module .animate-pulse {
+  animation: none !important;
+}
+
+.statistics-module button,
+.statistics-module [role='button'] {
+  transition: none !important;
+}
+
+.statistics-module table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.statistics-module table th {
+  letter-spacing: 0.04em;
+}
+
+.statistics-module table td,
+.statistics-module table th {
+  line-height: 1.35;
+}
+
 .m-dark {
   color-scheme: dark;
   --m-bg: #050A15;

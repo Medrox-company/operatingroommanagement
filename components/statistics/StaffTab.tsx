@@ -16,7 +16,6 @@
 'use client';
 
 import React, { useMemo, memo } from 'react';
-import { motion } from 'framer-motion';
 import {
   UserCircle2, Stethoscope, Users, Award, ShieldCheck, Coffee,
   AlertCircle, Briefcase, GraduationCap, UserX, UserCheck, Activity,
@@ -105,7 +104,9 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
     const onSick = staff.filter(s => (s.sick_leave_days ?? 0) > 0).length;
 
     // Availability distribution
-    const avails = staff.map(s => s.availability ?? 100);
+    const avails = staff
+      .map(s => s.availability)
+      .filter((availability): availability is number => typeof availability === 'number');
     const avgAvail = avails.length > 0 ? avails.reduce((a, b) => a + b, 0) / avails.length : 0;
 
     // Top by availability (kdo nejvíce reálně k dispozici)
@@ -230,17 +231,11 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
 
           {/* Role breakdown */}
           <div className="flex flex-col gap-2">
-            {stats.byRole.slice(0, 4).map(({ role, meta, active, total }, i) => {
+            {stats.byRole.slice(0, 4).map(({ role, meta, active, total }) => {
               const Icon = meta.icon;
               const pct = total > 0 ? (active / total) * 100 : 0;
               return (
-                <motion.div
-                  key={role}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
-                  className="flex items-center gap-3"
-                >
+                <div key={role} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                     style={{ background: `${meta.color}1a` }}>
                     <Icon size={14} color={meta.color} strokeWidth={2.2} />
@@ -253,15 +248,10 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
                       </span>
                     </div>
                     <div className="h-1 mt-1 rounded-full overflow-hidden" style={{ background: C.surface }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
-                        transition={{ duration: 0.5, delay: i * 0.05 + 0.1 }}
-                        style={{ height: '100%', background: meta.color }}
-                      />
+                      <div style={{ height: '100%', background: meta.color, width: `${pct}%` }} />
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -288,7 +278,7 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
           title="Skill level distribuce"
           subtitle="Z pole `skill_level`">
           <div className="flex flex-col gap-2.5 mt-1">
-            {stats.bySkill.map((sl, i) => (
+            {stats.bySkill.map(sl => (
               <div key={sl.key} className="flex flex-col gap-1">
                 <div className="flex items-baseline justify-between text-[11px]">
                   <span style={{ color: C.text }} className="font-medium">{sl.label}</span>
@@ -298,12 +288,7 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
                   </span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: C.surface }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${sl.pct}%` }}
-                    transition={{ duration: 0.6, delay: i * 0.05 }}
-                    style={{ height: '100%', background: sl.color }}
-                  />
+                  <div style={{ height: '100%', background: sl.color, width: `${sl.pct}%` }} />
                 </div>
               </div>
             ))}
@@ -377,9 +362,7 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
                 const meta = getRoleMeta(s.role);
                 const Icon = meta.icon;
                 return (
-                  <motion.div key={s.id}
-                    initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: i * 0.03 }}
+                  <div key={s.id}
                     className="flex items-center gap-3 py-2"
                     style={{ borderBottom: i < stats.topAvailable.length - 1 ? `1px solid ${C.border}` : 'none' }}>
                     <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
@@ -403,7 +386,7 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
                       </div>
                       <div className="text-[8px]" style={{ color: C.muted }}>availability</div>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -423,9 +406,7 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
                 const meta = getRoleMeta(s.role);
                 const Icon = meta.icon;
                 return (
-                  <motion.div key={s.id}
-                    initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: i * 0.03 }}
+                  <div key={s.id}
                     className="flex items-center gap-3 py-2"
                     style={{ borderBottom: i < stats.topAbsent.length - 1 ? `1px solid ${C.border}` : 'none' }}>
                     <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
@@ -449,7 +430,7 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
                       </div>
                       <div className="text-[8px]" style={{ color: C.muted }}>celkem</div>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -462,13 +443,10 @@ export const StaffTab: React.FC<StaffTabProps> = memo(({ staff, rooms, periodLab
         </Card>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.4 }}
-        className="text-[10px] text-center" style={{ color: C.faint }}>
+      <div className="text-[10px] text-center" style={{ color: C.faint }}>
         Veškeré metriky odvozeny z tabulky <code style={{ color: C.muted }}>public.staff</code> v Supabase DB.
         Údaje o produktivitě, odpracovaných hodinách a tréninku nejsou v aktuálním schématu k dispozici.
-      </motion.div>
+      </div>
     </div>
   );
 });
