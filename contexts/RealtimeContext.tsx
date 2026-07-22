@@ -21,13 +21,13 @@ export const REALTIME_TABLES = [
   'notifications_log',
   'workflow_statuses',
   'app_settings',
+  'room_specialty_allocations',
 ] as const;
 
-// `operating_rooms` is guaranteed by scripts/enable-realtime.sql to be part of
-// the Supabase publication. Do not mix optional/unpublished tables into this
-// critical binding: Realtime can report SUBSCRIBED while omitting all events
-// when a binding set contains tables missing from the publication.
-const PUBLISHED_REALTIME_TABLES = ['operating_rooms'] as const;
+// Obě tabulky jsou součástí Supabase publication: operating_rooms přes základní
+// realtime migraci a room_specialty_allocations přes skript 14. Držíme je v
+// jediném nemocničním kanálu, aby nevznikal další websocket na každou obrazovku.
+const PUBLISHED_REALTIME_TABLES = ['operating_rooms', 'room_specialty_allocations'] as const;
 
 export type RealtimeTable = typeof REALTIME_TABLES[number];
 export type RealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE';

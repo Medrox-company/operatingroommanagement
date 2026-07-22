@@ -3,6 +3,8 @@ import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
+import type { CurrentRoomSpecialty } from '../lib/room-specialty';
+import { RoomSpecialtyBadges } from './RoomSpecialtyBadge';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -11,9 +13,10 @@ interface RoomCardProps {
   onLock?: (e: React.MouseEvent) => void;
   /** Vyplní výšku buňky mřížky (desktop fit). Mobil = fixní výška. */
   fill?: boolean;
+  specialties?: CurrentRoomSpecialty[];
 }
 
-const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock, fill }) => {
+const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock, fill, specialties }) => {
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -141,6 +144,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           <p className="text-[9px] font-bold uppercase tracking-[0.13em] truncate mt-1" style={{ color: 'var(--m-muted)' }}>
             {room.department || 'Bez oddělení'}
           </p>
+          {specialties && specialties.length > 0 && <RoomSpecialtyBadges specialties={specialties} compact className="mt-1.5 max-w-full" />}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {room.noticeMessage && (
@@ -302,6 +306,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           `}>
             {room.name}
           </h3>
+          {specialties && specialties.length > 0 && <RoomSpecialtyBadges specialties={specialties} compact className="mt-2 max-w-[90%] justify-center" />}
         </div>
 
         {/* Central Content Wrapper */}
@@ -497,7 +502,14 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   // pro dashboard se 6+ kartami obsahujícími drahá SVG / glassmorph efekty.
   // Callbacky jsou de facto pure (jen volají setRooms s room.id), takže stale
   // closure neničí logiku.
-  return prev.room === next.room;
+  const previousSpecialties = prev.specialties ?? [];
+  const nextSpecialties = next.specialties ?? [];
+  return prev.room === next.room
+    && previousSpecialties.length === nextSpecialties.length
+    && previousSpecialties.every((specialty, index) => (
+      specialty.departmentId === nextSpecialties[index]?.departmentId
+      && specialty.dayPart === nextSpecialties[index]?.dayPart
+    ));
 });
 
 export default RoomCard;

@@ -45,6 +45,8 @@ import {
 } from './timeline/utils';
 import StatBox from './timeline/StatBox';
 import RoomDetailPopup from './timeline/RoomDetailPopup';
+import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
+import { RoomSpecialtyBadges } from './RoomSpecialtyBadge';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
@@ -199,6 +201,7 @@ type SortMode = 'default' | 'name' | 'status';
 type StatusFilter = 'all' | 'active' | 'free' | 'attention';
 
 function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
+  const { currentByRoom: currentSpecialties } = useCurrentRoomSpecialties();
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -1425,6 +1428,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
       {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
       <MobileTimelineView
         rooms={sortedRooms}
+        currentSpecialties={currentSpecialties}
         statusByOrderIndex={statusByOrderIndex}
         activeStatuses={activeStatuses}
         currentTime={currentTime}
@@ -2206,6 +2210,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
               </div>
             )}
             {displayRooms.map((room, roomIndex) => {
+              const currentSpecialty = currentSpecialties.get(room.id);
               // Get current workflow step info from database context
               const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
               const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
@@ -2371,6 +2376,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                       <div className="min-w-0 flex-1 overflow-hidden">
                         <p className="text-sm font-semibold tracking-tight truncate" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate" style={{ color: `${bannerColor}cc` }}>{bannerLabel}</p>
+                        {currentSpecialty && currentSpecialty.length > 0 && rowHeight >= 56 && <RoomSpecialtyBadges specialties={currentSpecialty} compact className="mt-1" />}
                       </div>
                     </div>
                     {/* Emergency timeline box - tinted glassmorph */}
@@ -2582,6 +2588,7 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
                             {room.department}
                           </p>
                         )}
+                        {currentSpecialty && currentSpecialty.length > 0 && rowHeight >= 56 && <RoomSpecialtyBadges specialties={currentSpecialty} compact className="mt-1" />}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {room.isEnhancedHygiene && (

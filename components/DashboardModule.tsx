@@ -7,6 +7,7 @@ import AnimatedCounter from './AnimatedCounter';
 import LiveClock from './LiveClock';
 import RoomCard from './RoomCard';
 import { MobileHeaderMetrics, MobileModuleHeader } from './mobile/MobileShell';
+import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
 
 interface DashboardModuleProps {
   rooms: OperatingRoom[];
@@ -23,6 +24,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   onEmergency,
   onLock,
 }) => {
+  const { currentByRoom } = useCurrentRoomSpecialties();
   const metrics = useMemo(() => {
     const isReady = (room: OperatingRoom) => room.currentStepIndex === 0 || room.currentStepIndex === 7;
     const emergencyRooms = rooms.filter((room) => room.isEmergency);
@@ -135,6 +137,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
                 <RoomCard
                   key={room.id}
                   room={room}
+                  specialties={currentByRoom.get(room.id)}
                   onClick={() => onSelectRoom(room.id)}
                   onEmergency={() => onEmergency(room.id)}
                   onLock={() => onLock(room.id)}

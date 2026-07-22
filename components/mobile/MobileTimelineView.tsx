@@ -11,6 +11,8 @@ import {
   MobileSectionLabel,
 } from './MobileShell';
 import { Activity, Stethoscope, Sparkles, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
+import type { CurrentRoomSpecialty } from '../../lib/room-specialty';
+import { RoomSpecialtyBadges } from '../RoomSpecialtyBadge';
 
 /* =============================================================================
    MobileTimelineView
@@ -61,6 +63,7 @@ type Stats = {
 
 interface Props {
   rooms: OperatingRoom[];
+  currentSpecialties: Map<string, CurrentRoomSpecialty[]>;
   statusByOrderIndex: Record<number, WorkflowStatus | undefined>;
   activeStatuses: WorkflowStatus[];
   currentTime: Date;
@@ -119,6 +122,7 @@ function getRoomRange(
 
 const MobileTimelineView: React.FC<Props> = ({
   rooms,
+  currentSpecialties,
   statusByOrderIndex,
   activeStatuses,
   currentTime,
@@ -214,6 +218,7 @@ const MobileTimelineView: React.FC<Props> = ({
             <MobileSectionLabel>Sály ({rooms.length})</MobileSectionLabel>
             <div className="flex flex-col gap-3">
               {rooms.map(room => {
+                const currentSpecialty = currentSpecialties.get(room.id);
                 const step = statusByOrderIndex[room.currentStepIndex];
                 const color =
                   room.isEmergency
@@ -281,6 +286,7 @@ const MobileTimelineView: React.FC<Props> = ({
 
                     {/* Pills row */}
                     <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                      {currentSpecialty && currentSpecialty.length > 0 && <RoomSpecialtyBadges specialties={currentSpecialty} compact />}
                       {room.isEmergency && (
                         <span className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">
                           Emergency
@@ -344,6 +350,7 @@ const MobileTimelineView: React.FC<Props> = ({
           /* ---------- OSA ---------- */
           <AxisView
             rooms={rooms}
+            currentSpecialties={currentSpecialties}
             statusByOrderIndex={statusByOrderIndex}
             activeStatuses={activeStatuses}
             currentTime={currentTime}
@@ -362,6 +369,7 @@ const MobileTimelineView: React.FC<Props> = ({
 
 const AxisView: React.FC<{
   rooms: OperatingRoom[];
+  currentSpecialties: Map<string, CurrentRoomSpecialty[]>;
   statusByOrderIndex: Record<number, WorkflowStatus | undefined>;
   activeStatuses: WorkflowStatus[];
   currentTime: Date;
@@ -370,6 +378,7 @@ const AxisView: React.FC<{
   onSelectRoom: (room: OperatingRoom) => void;
 }> = ({
   rooms,
+  currentSpecialties,
   statusByOrderIndex,
   activeStatuses,
   currentTime,
@@ -488,6 +497,7 @@ const AxisView: React.FC<{
         {/* Řady sálů — celý den vměstnaný na šířku */}
         <div className="flex flex-col gap-1.5">
           {rooms.map((room) => {
+            const currentSpecialty = currentSpecialties.get(room.id);
             const currentStep = statusByOrderIndex[room.currentStepIndex];
             const currentColor =
               room.isEmergency
@@ -550,6 +560,14 @@ const AxisView: React.FC<{
                   <span className="text-[10px] font-bold truncate leading-tight" style={{ color: 'var(--m-text)' }}>
                     {room.name}
                   </span>
+                  {currentSpecialty?.map(specialty => (
+                    <span
+                      key={`${specialty.departmentId}-${specialty.dayPart}`}
+                      className="h-1.5 w-1.5 shrink-0 rounded-sm"
+                      style={{ background: specialty.color }}
+                      title={`${specialty.name} · ${specialty.dayPart === 'FULL_DAY' ? 'celý den' : specialty.dayPart === 'AM' ? 'dopoledne' : 'odpoledne'}`}
+                    />
+                  ))}
                 </div>
 
                 {/* Dráha — celých 24 h na šířku */}
