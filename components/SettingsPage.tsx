@@ -9,7 +9,6 @@ import { useHospital } from '../contexts/HospitalContext';
 
 const OperatingRoomsManager = dynamic(() => import('./OperatingRoomsManager'), { ssr: false });
 const NotificationsManager = dynamic(() => import('./NotificationsManager'), { ssr: false });
-const ScheduleManager = dynamic(() => import('./ScheduleManager'), { ssr: false });
 const StatisticsModule = dynamic(() => import('./StatisticsModule'), { ssr: false });
 const StaffManager = dynamic(() => import('./StaffManager'), { ssr: false });
 const StaffOverviewModule = dynamic(() => import('./StaffOverviewModule'), { ssr: false });
@@ -153,10 +152,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             onScheduleUpdate={onScheduleUpdate}
           />
         </ModuleWrapper>
-      ) : selectedModule === 'schedule' ? (
-        <ModuleWrapper>
-          <ScheduleManager />
-        </ModuleWrapper>
       ) : selectedModule === 'notifications' ? (
         <ModuleWrapper>
           <NotificationsManager />
@@ -218,11 +213,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
                 {settings.map((setting, index) => {
                   const Icon = setting.icon;
+                  const hasModuleContent = setting.id !== 'schedule';
                   return (
                     <div
                       key={setting.id}
-                      onClick={() => setSelectedModule(setting.id)}
-                      className="relative group cursor-pointer h-[260px] sm:h-[340px] w-full transition-transform duration-300 hover:-translate-y-1 hover:z-50"
+                      onClick={() => {
+                        if (hasModuleContent) setSelectedModule(setting.id);
+                      }}
+                      className={`relative group h-[260px] sm:h-[340px] w-full transition-transform duration-300 ${hasModuleContent ? 'cursor-pointer hover:-translate-y-1 hover:z-50' : 'cursor-default'}`}
                       style={{ zIndex: 1 }}
                     >
                       {/* Main Card Container */}
@@ -266,9 +264,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                         {/* Bottom Info */}
                         <div className="w-full space-y-3 shrink-0">
                           <div className="flex items-center justify-center pt-3 border-t border-white/5">
-                            <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
-                            </div>
+                            {hasModuleContent && (
+                              <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
