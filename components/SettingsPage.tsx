@@ -8,6 +8,7 @@ import { OperatingRoom, WeeklySchedule } from '../types';
 import { useHospital } from '../contexts/HospitalContext';
 
 const OperatingRoomsManager = dynamic(() => import('./OperatingRoomsManager'), { ssr: false });
+const RoomSpecialtyScheduleManager = dynamic(() => import('./RoomSpecialtyScheduleManager'), { ssr: false });
 const NotificationsManager = dynamic(() => import('./NotificationsManager'), { ssr: false });
 const StatisticsModule = dynamic(() => import('./StatisticsModule'), { ssr: false });
 const StaffManager = dynamic(() => import('./StaffManager'), { ssr: false });
@@ -152,6 +153,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             onScheduleUpdate={onScheduleUpdate}
           />
         </ModuleWrapper>
+      ) : selectedModule === 'schedule' ? (
+        <ModuleWrapper>
+          <RoomSpecialtyScheduleManager
+            key={activeHospitalId || 'no-hospital'}
+            rooms={rooms}
+          />
+        </ModuleWrapper>
       ) : selectedModule === 'notifications' ? (
         <ModuleWrapper>
           <NotificationsManager />
@@ -213,7 +221,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
                 {settings.map((setting, index) => {
                   const Icon = setting.icon;
-                  const hasModuleContent = setting.id !== 'schedule';
+                  const hasModuleContent = true;
                   return (
                     <div
                       key={setting.id}
