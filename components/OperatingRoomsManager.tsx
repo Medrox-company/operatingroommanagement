@@ -215,7 +215,8 @@ const RoomCard: React.FC<{
   onEdit: () => void;
   onDelete: () => void;
   onScheduleEdit: () => void;
-}> = ({ room, index, reorderControls, onEdit, onDelete, onScheduleEdit }) => {
+  compact: boolean;
+}> = ({ room, index, reorderControls, onEdit, onDelete, onScheduleEdit, compact }) => {
   const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
   const activeDays = DAYS.filter(d => schedule[d.key as keyof WeeklySchedule].enabled).length;
   const currentDayKey = todayKey();
@@ -235,6 +236,86 @@ const RoomCard: React.FC<{
   if (room.isEmergency) { statusLabel = 'Stav nouze'; statusColor = '#F87171'; }
   else if (room.isLocked) { statusLabel = 'Uzamčeno'; statusColor = '#FBBF24'; }
   else if (room.isPaused) { statusLabel = 'Pauza'; statusColor = '#22D3EE'; }
+
+  if (compact) {
+    return (
+      <article
+        data-testid={`operating-room-card-${room.id}`}
+        className="overflow-hidden rounded-[18px] border border-cyan-200/[0.15] bg-[#091f35]/65 p-2.5 shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
+      >
+        <div className="grid min-w-0 grid-cols-1 gap-2.5 xl:grid-cols-[minmax(230px,0.8fr)_minmax(165px,0.55fr)_minmax(0,2.65fr)] xl:items-stretch">
+          <section className="flex min-w-0 items-center gap-3 rounded-[12px] bg-white/[0.025] px-3.5 py-2.5 ring-1 ring-inset ring-white/[0.06]">
+            <span className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-[9px] bg-cyan-300/[0.09] text-[10px] font-bold tabular-nums text-cyan-100 ring-1 ring-inset ring-cyan-200/[0.13]">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <div className="min-w-0">
+              <h3 className="break-words text-[15px] font-bold leading-tight text-white">{room.name}</h3>
+              <p className="mt-1 break-words text-[9px] font-semibold uppercase tracking-[0.10em] text-slate-400">
+                {room.department || 'Bez oddělení'}
+              </p>
+            </div>
+          </section>
+
+          <section className="flex min-w-0 flex-col justify-center rounded-[12px] bg-cyan-300/[0.055] px-3.5 py-2.5 ring-1 ring-inset ring-cyan-200/[0.10]">
+            <p className="text-[8px] font-bold uppercase tracking-[0.15em] text-cyan-200/55">Dnešní provoz</p>
+            <p className="mt-1 whitespace-nowrap text-[15px] font-bold tabular-nums tracking-tight text-white">
+              {todaySchedule.enabled
+                ? `${pad(todaySchedule.startHour)}:${pad(todaySchedule.startMinute)}–${pad(todaySchedule.endHour)}:${pad(todaySchedule.endMinute)}`
+                : 'Mimo provoz'}
+            </p>
+          </section>
+
+          <section className="min-w-0 overflow-x-auto rounded-[12px] bg-black/[0.08] p-1 [scrollbar-width:thin] [scrollbar-color:rgba(103,232,249,0.22)_transparent]">
+            <div className="grid min-h-[74px] min-w-[650px] grid-cols-7 grid-rows-2 gap-1">
+              {DAYS.map(day => {
+                const daySchedule = schedule[day.key as keyof WeeklySchedule];
+                const isToday = day.key === currentDayKey;
+                return (
+                  <div
+                    key={`${day.key}-compact-name`}
+                    className="flex items-center justify-center rounded-[8px] text-center"
+                    style={{
+                      background: daySchedule.enabled
+                        ? isToday ? 'rgba(34,211,238,0.24)' : 'rgba(30,110,153,0.28)'
+                        : 'rgba(255,255,255,0.025)',
+                      boxShadow: isToday ? 'inset 0 0 0 1px rgba(103,232,249,0.34)' : 'inset 0 0 0 1px rgba(255,255,255,0.045)',
+                    }}
+                  >
+                    <span className={`text-[10px] font-bold uppercase tracking-[0.08em] ${daySchedule.enabled ? 'text-cyan-50' : 'text-white/30'}`}>
+                      {day.short}
+                    </span>
+                  </div>
+                );
+              })}
+              {DAYS.map(day => {
+                const daySchedule = schedule[day.key as keyof WeeklySchedule];
+                const isToday = day.key === currentDayKey;
+                return (
+                  <div
+                    key={`${day.key}-compact-time`}
+                    className="flex items-center justify-center rounded-[8px] px-1 text-center"
+                    style={{
+                      background: daySchedule.enabled
+                        ? isToday ? 'rgba(10,102,139,0.32)' : 'rgba(10,55,86,0.34)'
+                        : 'rgba(255,255,255,0.015)',
+                      boxShadow: isToday ? 'inset 0 0 0 1px rgba(103,232,249,0.20)' : 'inset 0 0 0 1px rgba(255,255,255,0.035)',
+                    }}
+                  >
+                    <span className={`whitespace-nowrap text-[10px] font-bold tabular-nums ${daySchedule.enabled ? 'text-white/90' : 'text-white/24'}`}>
+                      {daySchedule.enabled
+                        ? `${pad(daySchedule.startHour)}:${pad(daySchedule.startMinute)}–${pad(daySchedule.endHour)}:${pad(daySchedule.endMinute)}`
+                        : 'Mimo provoz'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article
       data-testid={`operating-room-card-${room.id}`}
@@ -415,7 +496,8 @@ const SortableRoomCard: React.FC<{
   onMoveUp: () => void;
   onMoveDown: () => void;
   reorderEnabled: boolean;
-}> = ({ room, index, total, onEdit, onDelete, onScheduleEdit, onMoveUp, onMoveDown, reorderEnabled }) => {
+  compact: boolean;
+}> = ({ room, index, total, onEdit, onDelete, onScheduleEdit, onMoveUp, onMoveDown, reorderEnabled, compact }) => {
   const {
     attributes,
     listeners,
@@ -476,6 +558,7 @@ const SortableRoomCard: React.FC<{
         onEdit={onEdit}
         onDelete={onDelete}
         onScheduleEdit={onScheduleEdit}
+        compact={compact}
       />
     </div>
   );
@@ -498,6 +581,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<RoomFilter>('all');
+  const [compactView, setCompactView] = useState(false);
   const [newRoomData, setNewRoomData] = useState({
     name: '',
     department: '',
@@ -841,6 +925,21 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
         <button
           type="button"
+          aria-pressed={compactView}
+          aria-label="Přepnout kompaktní zobrazení operačních sálů"
+          onClick={() => setCompactView(value => !value)}
+          className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl px-3.5 text-[10px] font-bold transition-colors ${
+            compactView
+              ? 'bg-cyan-300/[0.14] text-cyan-100 ring-1 ring-inset ring-cyan-200/[0.25]'
+              : 'bg-white/[0.035] text-white/60 ring-1 ring-inset ring-white/[0.08] hover:bg-white/[0.065] hover:text-white'
+          }`}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Kompaktní
+        </button>
+
+        <button
+          type="button"
           onClick={() => setIsAddingNew(true)}
           className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-cyan-200 to-cyan-400 px-5 text-xs font-bold text-[#05131c] shadow-[0_8px_22px_rgba(34,211,238,0.18)] transition-colors hover:from-cyan-100 hover:to-cyan-300"
         >
@@ -873,7 +972,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={filteredRooms.map(room => room.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 gap-4">
+            <div className={`grid grid-cols-1 ${compactView ? 'gap-2.5' : 'gap-4'}`}>
               {filteredRooms.map(room => {
                 const index = roomsList.findIndex(item => item.id === room.id);
                 return (
@@ -888,6 +987,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 onMoveUp={() => moveRoom(room.id, 'up')}
                 onMoveDown={() => moveRoom(room.id, 'down')}
                       reorderEnabled={reorderEnabled}
+                      compact={compactView}
               />
                 );
               })}
