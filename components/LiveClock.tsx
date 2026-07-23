@@ -13,16 +13,18 @@ const LiveClock: React.FC = () => {
     return () => clearInterval(id);
   }, []);
 
-  const time = now.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
+    .map(value => String(value).padStart(2, '0'))
+    .join(':');
   const date = now.toLocaleDateString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'long' });
 
   return (
-    <div className="hidden sm:flex flex-col items-end leading-none select-none">
-      <span className="text-xl md:text-2xl font-mono font-bold tabular-nums text-white/90 tracking-tight">
-        {time}
-      </span>
-      <span className="mt-1 text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
+    <div className="hidden md:flex min-w-0 flex-col items-center justify-end leading-none select-none">
+      <span className="mb-1 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.3em] text-[#FBBF24] opacity-60 sm:mb-2 sm:text-[10px] sm:tracking-[0.4em]">
         {date}
+      </span>
+      <span className="whitespace-nowrap text-[clamp(1.75rem,7vw,4.5rem)] font-bold tabular-nums tracking-tight text-white/90">
+        {time}
       </span>
     </div>
   );

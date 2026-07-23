@@ -91,13 +91,13 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
           </MobileModuleHeader>
         </div>
 
-        <header className="hidden md:flex flex-col lg:flex-row items-center lg:items-end justify-between gap-3 md:gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
-          <div className="text-center lg:text-left min-w-0 w-full lg:w-auto">
-            <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
+        <header className="hidden md:grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-4 lg:gap-8 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
+          <div className="min-w-0 text-left">
+            <div className="flex items-center justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
               <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
               <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ</p>
             </div>
-            <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-center lg:justify-start">
+            <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-start">
               <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0">
                 <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#34D399' }} />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ background: '#34D399', boxShadow: '0 0 10px #34D39988' }} />
@@ -105,8 +105,8 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
               <span>OPERAČNÍ <span className="text-white/20">SÁLY</span></span>
             </h1>
           </div>
-          <div className="flex items-center gap-2 md:gap-5">
-            <LiveClock />
+          <LiveClock />
+          <div className="flex min-w-0 items-end justify-end">
             <div className="flex items-stretch gap-1 md:gap-2 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
               <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
               {desktopMetrics.map((stat, index) => (
