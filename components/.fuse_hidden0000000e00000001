@@ -1687,7 +1687,7 @@ tabs={[
                   max={100}
                   barHeight={7}
                   items={utilData.map(d => ({
-                    label: d.full,
+                    label: d.t,
                     value: d.v,
                     display: `${d.v}%`,
                     color: d.v >= 80 ? C.green : d.v >= 50 ? C.yellow : d.v > 0 ? C.orange : C.red,
@@ -2110,7 +2110,7 @@ tabs={[
                 <BarList
                   max={100}
                   items={utilData.map(d => ({
-                    label: d.full,
+                    label: d.t,
                     value: d.v,
                     display: `${d.v}%`,
                     color: d.v >= 80 ? C.green : d.v >= 50 ? C.yellow : d.v > 0 ? C.orange : C.red,
