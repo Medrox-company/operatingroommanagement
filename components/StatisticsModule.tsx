@@ -13,7 +13,6 @@ import {
   fetchStatusHistory,
   type StatusHistoryRow,
 } from '../lib/db';
-import { useStaffData } from '../hooks/useStaffData';
 import { useStatisticsData } from '../hooks/useStatisticsData';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import {
@@ -30,8 +29,8 @@ import {
   MobileSectionLabel,
 } from './mobile/MobileShell';
 // Čitelné grafy v jazyce aplikace (náhrada nečitelných recharts vizualizací)
-import { BarList, ColumnChart, SegmentBar, ScatterGrid } from './statistics/AppCharts';
-const StaffTab = dynamic(() => import('./statistics/StaffTab').then((module) => module.StaffTab), { ssr: false });
+import { BarList, ColumnChart, SegmentBar, ScatterGrid, GaugeRing, RingRow, InsightPanel, StatSectionLabel, DayNavigator, OrbitRings, GlassCalendar, PhasePanel } from './statistics/AppCharts';
+import type { InsightItem, OrbitItem } from './statistics/AppCharts';
 const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
 const RoomsTab = dynamic(() => import('./statistics/RoomsTab').then((module) => module.RoomsTab), { ssr: false });
 const PhasesTab = dynamic(() => import('./statistics/PhasesTab').then((module) => module.PhasesTab), { ssr: false });
@@ -41,7 +40,7 @@ const DevicesTab = dynamic(() => import('./statistics/DevicesTab').then((module)
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'finance' | 'personal'
+type Tab    = 'prehled' | 'finance'
             | 'saly' | 'faze' | 'notifikace' | 'zarizeni';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
@@ -401,13 +400,35 @@ function calculateRoomUtilization(
    00:00–24:00, takže se dá listovat do minulosti.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/** Hranice kalendářního dne (00:00 – následující 00:00). */
+/**
+ * PROVOZNÍ DEN operačních sálů začíná v 7:00 a končí v 6:59 následujícího dne.
+ * Noční výkony, které přesáhnou půlnoc, tak patří do dne, kdy začaly.
+ */
+const OPERATIONAL_DAY_START_HOUR = 7;
+
+/** Hranice provozního dne (07:00 zvoleného dne → 07:00 dne následujícího). */
 function dayBounds(date: Date): { start: Date; end: Date } {
   const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
+  start.setHours(OPERATIONAL_DAY_START_HOUR, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
   return { start, end };
+}
+
+/** Aktuálně běžící provozní den (před 7:00 ráno je to ještě včerejšek). */
+function operationalToday(now: Date = new Date()): Date {
+  const d = new Date(now);
+  if (d.getHours() < OPERATIONAL_DAY_START_HOUR) d.setDate(d.getDate() - 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Timestamp → datum provozního dne, do kterého spadá (klíč `YYYY-MM-DD`). */
+function operationalDayKey(ts: Date): string {
+  const d = new Date(ts);
+  if (d.getHours() < OPERATIONAL_DAY_START_HOUR) d.setDate(d.getDate() - 1);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 /** Index dne v týdnu 0=Po … 6=Ne. */
@@ -421,40 +442,93 @@ function getRoomWorkingMinutesForDate(room: OperatingRoom, date: Date): number {
   return getRoomWorkingMinutes(room, weekdayIndex(date));
 }
 
-/** Aktivní minuty sálu v provozní době daného dne (pro-rata odpočet pauzy). */
+/**
+ * Aktivní (obsazené) minuty sálu v PROVOZNÍM DNI 7:00–7:00.
+ *
+ * Počítá se celý odoperovaný čas v okně dne — tedy i výkony, které přesáhly
+ * plánovanou provozní dobu nebo běžely přes půlnoc. Přesahy se tak neztratí;
+ * kapacita zůstává plánovaná, takže poměr aktivní/kapacita přesah odhalí.
+ */
 function calculateActiveMinutesForDay(
   room: OperatingRoom,
   history: StatusHistoryRow[],
   date: Date,
 ): number {
   if (!room) return 0;
-  const now = new Date();
   const { start: dayStart, end: dayEnd } = dayBounds(date);
-  const hours = getRoomWorkingHours(room, weekdayIndex(date));
-  if (!hours.enabled) return 0;
 
-  const whStart = new Date(dayStart);
-  whStart.setHours(hours.startHour, hours.startMinute, 0, 0);
-  const whEnd = new Date(dayStart);
-  whEnd.setHours(hours.endHour, hours.endMinute, 0, 0);
-
-  const grossMins = Math.max(0, (whEnd.getTime() - whStart.getTime()) / 60000);
-  if (grossMins === 0) return 0;
-  const breakMins = Math.min(getDayBreakMinutes(hours), grossMins);
-  const netMins = Math.max(0, grossMins - breakMins);
-  const scale = netMins / grossMins;
-
-  const intervals = buildRoomOperationIntervals(room, history || [], now);
+  const intervals = buildDayOperationIntervals(room, history || [], date);
   let total = 0;
   for (const iv of intervals) {
-    const s = Math.max(iv.start.getTime(), whStart.getTime(), dayStart.getTime());
-    const e = Math.min(iv.end.getTime(), whEnd.getTime(), dayEnd.getTime());
-    if (e > s) total += ((e - s) / 60000) * scale;
+    const s = Math.max(iv.startMs, dayStart.getTime());
+    const e = Math.min(iv.endMs, dayEnd.getTime());
+    if (e > s) total += (e - s) / 60000;
   }
-  return Math.min(total, netMins);
+  return total;
 }
 
-/** Počet zahájených výkonů v provozní době daného dne. */
+/**
+ * Intervaly výkonů sálu z reálné historie, korektně uzavřené.
+ *
+ * Klíčový rozdíl proti `buildRoomOperationIntervals`: výkon bez události
+ * `operation_end` se NEnatahuje až do „teď" (u minulých dnů by tím uměle
+ * narostl aktivní čas o hodiny). Uzavře se podle součtu zaznamenaných fází
+ * a otevřený zůstane jen skutečně běžící výkon aktuálního provozního dne.
+ */
+function buildDayOperationIntervals(
+  room: OperatingRoom,
+  history: StatusHistoryRow[],
+  date: Date,
+): { startMs: number; endMs: number }[] {
+  const now = Date.now();
+  const isCurrentDay = date.getTime() === operationalToday().getTime();
+
+  const evts = (history || [])
+    .filter(e => e.operating_room_id === room.id && e.timestamp)
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  type Acc = { startMs: number; endMs: number | null; segMs: number };
+  const ops: Acc[] = [];
+  let cur: Acc | null = null;
+
+  for (const e of evts) {
+    const t = new Date(e.timestamp).getTime();
+    if (!Number.isFinite(t)) continue;
+
+    if (e.event_type === 'operation_start') {
+      if (cur) ops.push(cur);
+      cur = { startMs: t, endMs: null, segMs: 0 };
+    } else if (e.event_type === 'operation_end') {
+      if (cur) { cur.endMs = t; ops.push(cur); cur = null; }
+    } else if (e.event_type === 'step_change' && e.duration_seconds) {
+      const ms = e.duration_seconds * 1000;
+      if (cur) cur.segMs += ms;
+      else {
+        const last = ops[ops.length - 1];
+        if (last && last.endMs !== null && t - last.endMs <= 120_000) {
+          last.segMs += ms;
+          last.endMs = Math.max(last.endMs, t);
+        } else {
+          ops.push({ startMs: t - ms, endMs: t, segMs: ms });
+        }
+      }
+    }
+  }
+  if (cur) ops.push(cur);
+
+  return ops.map((op, i) => {
+    if (op.endMs !== null) return { startMs: op.startMs, endMs: op.endMs };
+    // Otevřený výkon: běží jen tehdy, je-li poslední, jde o dnešní provozní
+    // den a sál je opravdu ve fázi cyklu. Jinak jde o mezeru v datech.
+    const running = i === ops.length - 1 && isCurrentDay && room.currentStepIndex > 0;
+    return {
+      startMs: op.startMs,
+      endMs: running ? now : op.startMs + Math.max(op.segMs, 60_000),
+    };
+  });
+}
+
+/** Počet zahájených výkonů v provozním dni (včetně mimo plánovanou dobu). */
 function countOperationsForDay(
   room: OperatingRoom,
   history: StatusHistoryRow[],
@@ -462,29 +536,109 @@ function countOperationsForDay(
 ): number {
   if (!room || !history || history.length === 0) return 0;
   const { start, end } = dayBounds(date);
-  const hours = getRoomWorkingHours(room, weekdayIndex(date));
-  if (!hours.enabled) return 0;
 
   return history.filter(e => {
     if (e.operating_room_id !== room.id || e.event_type !== 'operation_start' || !e.timestamp) return false;
-    const t = new Date(e.timestamp);
-    if (t < start || t >= end) return false;
-    const mins = t.getHours() * 60 + t.getMinutes();
-    return mins >= hours.startHour * 60 + hours.startMinute
-        && mins <= hours.endHour * 60 + hours.endMinute;
+    const t = new Date(e.timestamp).getTime();
+    return Number.isFinite(t) && t >= start.getTime() && t < end.getTime();
   }).length;
 }
 
-/** Vytížení sálu (%) pro konkrétní den. */
+/**
+ * Vytížení sálu (%) za provozní den.
+ * Hodnota může přesáhnout 100 % — to je právě signál přesahu přes plán.
+ */
 function calculateRoomUtilizationForDay(
   room: OperatingRoom,
   history: StatusHistoryRow[],
   date: Date,
 ): number {
   const capacity = getRoomWorkingMinutesForDate(room, date);
-  if (capacity === 0) return 0;
   const active = calculateActiveMinutesForDay(room, history, date);
-  return Math.min(100, Math.round((active / capacity) * 100));
+  if (capacity === 0) return active > 0 ? 100 : 0;
+  return Math.round((active / capacity) * 100);
+}
+
+/**
+ * Skutečně odpauzovaný čas sálu v provozním dni (minuty).
+ * Páruje událost `pause` s následujícím `resume`; běžící pauzu uzavře „teď",
+ * resp. koncem provozního dne. Vše výhradně z reálné historie v databázi.
+ */
+function calculatePausedMinutesForDay(
+  room: OperatingRoom,
+  history: StatusHistoryRow[],
+  date: Date,
+): number {
+  if (!room || !history || history.length === 0) return 0;
+  const now = Date.now();
+  const { start, end } = dayBounds(date);
+
+  const events = history
+    .filter(e => e.operating_room_id === room.id
+      && (e.event_type === 'pause' || e.event_type === 'resume')
+      && e.timestamp)
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  let total = 0;
+  let openPause: number | null = null;
+
+  for (const e of events) {
+    const t = new Date(e.timestamp).getTime();
+    if (!Number.isFinite(t)) continue;
+    if (e.event_type === 'pause') {
+      if (openPause === null) openPause = t;
+    } else if (openPause !== null) {
+      const s = Math.max(openPause, start.getTime());
+      const x = Math.min(t, end.getTime());
+      if (x > s) total += (x - s) / 60000;
+      openPause = null;
+    }
+  }
+
+  if (openPause !== null) {
+    const s = Math.max(openPause, start.getTime());
+    const x = Math.min(now, end.getTime());
+    if (x > s) total += (x - s) / 60000;
+  } else if (room.isPaused && room.pausedAt && events.length === 0) {
+    // Fallback: pauza běží, ale událost není v načteném okně historie
+    const p = new Date(room.pausedAt).getTime();
+    if (Number.isFinite(p)) {
+      const s = Math.max(p, start.getTime());
+      const x = Math.min(now, end.getTime());
+      if (x > s) total += (x - s) / 60000;
+    }
+  }
+
+  return Math.round(total);
+}
+
+/** Minuty odoperované nad rámec plánované kapacity dne (přesah). */
+function calculateOvertimeMinutesForDay(
+  room: OperatingRoom,
+  history: StatusHistoryRow[],
+  date: Date,
+): number {
+  const capacity = getRoomWorkingMinutesForDate(room, date);
+  const active = calculateActiveMinutesForDay(room, history, date);
+  return Math.max(0, Math.round(active - capacity));
+}
+
+/**
+ * „Sál připraven" a podobné klidové stavy nejsou fází operačního cyklu —
+ * ve statistikách fází se nezobrazují (diakritika i velikost písmen se ignoruje).
+ */
+function isIdleStatusName(name: string): boolean {
+  const n = (name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return n.includes('priprav') && n.includes('sal');
+}
+
+/** Minuty → „6h 7m" / „48m" pro popisky pod prstenci. */
+function fmtDurationMin(min: number): string {
+  const m = Math.max(0, Math.round(min));
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest === 0 ? `${h}h` : `${h}h ${rest}m`;
 }
 
 /** „Dnes" / „Včera" / „po 14. 7." — popisek zvoleného dne. */
@@ -1195,45 +1349,30 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
-  const { staff, loading: staffLoading } = useStaffData();
-  const staffList = staffLoading ? null : staff;
   const { dbStats, statusHistory, notifications, devices } = useStatisticsData(period);
 
   /* ── Provozní metriky sálů po dnech ────────────────────────────────────────
      Sekce „Jednotlivé sály" umí listovat po dnech dozadu, proto potřebuje
      vlastní 30denní historii (hlavní `statusHistory` sleduje jen zvolené
      období, u „den" tedy pouhých 24 h). */
-  const [metricsDay, setMetricsDay] = useState<Date>(() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); return d;
-  });
+  // Výchozí den = aktuálně běžící PROVOZNÍ den (před 7:00 ještě včerejšek)
+  const [metricsDay, setMetricsDay] = useState<Date>(() => operationalToday());
+  /** Režim hero panelu: primárně orbitální rozpad po sálech, souhrn dne na klik */
+  const [heroMode, setHeroMode] = useState<'summary' | 'orbit'>('orbit');
   const [dayHistory, setDayHistory] = useState<StatusHistoryRow[]>([]);
   useEffect(() => {
     let alive = true;
     (async () => {
-      const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      // 31 dní zpět — provozní den začíná v 7:00, ať nejstarší volitelný den
+      // (30 dní zpět) obsahuje celé okno včetně nočního přesahu.
+      const fromDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
       const h = await fetchStatusHistory({ fromDate, toDate: new Date(), limit: 5000 });
       if (alive && h) setDayHistory(h);
     })();
     return () => { alive = false; };
   }, []);
 
-  const shiftMetricsDay = useCallback((delta: number) => {
-    setMetricsDay(prev => {
-      const next = new Date(prev);
-      next.setDate(next.getDate() + delta);
-      next.setHours(0, 0, 0, 0);
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      if (next.getTime() > today.getTime()) return prev; // do budoucna ne
-      const oldest = new Date(today); oldest.setDate(oldest.getDate() - 29);
-      if (next.getTime() < oldest.getTime()) return prev; // max 30 dní zpět
-      return next;
-    });
-  }, []);
 
-  const isMetricsToday = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    return metricsDay.getTime() === today.getTime();
-  }, [metricsDay]);
 
   // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
   // Obě funkce volají `window.print()`. Prohlížeč zobrazí systémový dialog,
@@ -1301,7 +1440,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const tabLabelMap: Record<Tab, string> = {
 'prehled':    'Přehled',
 'finance':    'Finance',
-'personal':   'Personál',
 'saly':       'Sály',
 'faze':       'Fáze',
 'notifikace': 'Notifikace',
@@ -1351,6 +1489,360 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const totalQueue= rooms.reduce((s,r)=>s+r.queueCount,0);
   const septicCnt = rooms.filter(r=>r.isSeptic).length;
   const emergCnt  = dbStats?.emergencyCount ?? rooms.filter(r=>r.isEmergency).length;
+
+  /* ── Hero panel pracuje s VYBRANÝM DNEM (listování kalendářem) ────────────
+     Používá 30denní `dayHistory`, takže lze procházet i minulé dny. */
+  const dayStats = useMemo(() => {
+    if (rooms.length === 0) {
+      return { avgUtil: 0, totalOps: 0, activeRooms: 0, openRooms: 0 };
+    }
+    let utilSum = 0;
+    let openRooms = 0;
+    let ops = 0;
+    let activeRooms = 0;
+    rooms.forEach(r => {
+      const capacity = getRoomWorkingMinutesForDate(r, metricsDay);
+      const roomOps = countOperationsForDay(r, dayHistory, metricsDay);
+      const util = calculateRoomUtilizationForDay(r, dayHistory, metricsDay);
+      ops += roomOps;
+      if (capacity > 0) { openRooms++; utilSum += util; }
+      if (roomOps > 0 || util > 0) activeRooms++;
+    });
+    return {
+      avgUtil: openRooms > 0 ? Math.round(utilSum / openRooms) : 0,
+      totalOps: ops,
+      activeRooms,
+      openRooms,
+    };
+  }, [rooms, dayHistory, metricsDay]);
+
+  /** Intenzita provozu po dnech pro kalendář (0–1 dle počtu zahájených výkonů). */
+  const dayActivityHeat = useMemo<Record<string, number>>(() => {
+    const counts: Record<string, number> = {};
+    dayHistory.forEach(e => {
+      if (e.event_type !== 'operation_start' || !e.timestamp) return;
+      const d = new Date(e.timestamp);
+      if (Number.isNaN(d.getTime())) return;
+      // Noční výkony patří do provozního dne, ve kterém začaly (7:00–7:00)
+      const k = operationalDayKey(d);
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    const max = Math.max(1, ...Object.values(counts));
+    const out: Record<string, number> = {};
+    Object.entries(counts).forEach(([k, v]) => { out[k] = v / max; });
+    return out;
+  }, [dayHistory]);
+
+  /* ── Drill-down: kliknutím na sál se orbit přepne na jeho výkony ──────────
+     Každý satelit = jeden operační výkon, jeho prstenec = fáze cyklu
+     (bez klidového stavu „Sál připraven"). */
+  const [orbitRoomId, setOrbitRoomId] = useState<string | null>(null);
+  /** Vybraný výkon v drill-downu (pro panel s rozpadem fází vpravo) */
+  const [selectedOpId, setSelectedOpId] = useState<string | null>(null);
+  const orbitRoom = useMemo(
+    () => (orbitRoomId ? rooms.find(r => r.id === orbitRoomId) ?? null : null),
+    [orbitRoomId, rooms],
+  );
+  // Při změně dne se vracíme na přehled sálů
+  useEffect(() => { setOrbitRoomId(null); setSelectedOpId(null); }, [metricsDay]);
+  useEffect(() => { setSelectedOpId(null); }, [orbitRoomId]);
+
+  /**
+   * Výkony vybraného sálu v daném dni rozpadlé na fáze cyklu.
+   *
+   * Zdrojem je `dayHistory` (stejná data, ze kterých se počítá i počet výkonů
+   * na prstenci sálu) — `room.completedOperations` obsahuje jen dnešní den
+   * a nemusí být naplněné, což vedlo k „žádný výkon" u sálu s výkony.
+   *
+   * POZOR na sémantiku `step_change`: `step_name` je fáze, která právě
+   * SKONČILA, a `duration_seconds` je její trvání (`step_index` je už nová
+   * fáze). Barvu proto hledáme podle názvu, ne podle indexu.
+   */
+  const roomOperationRings = useMemo<OrbitItem[]>(() => {
+    if (!orbitRoom) return [];
+    const { start, end } = dayBounds(metricsDay);
+    const now = Date.now();
+    const isCurrentDay = metricsDay.getTime() === operationalToday().getTime();
+
+    const colorByName = (name: string) =>
+      WORKFLOW_STEPS.find(s => s.title === name)?.color || C.accent;
+
+    type Seg = { value: number; color: string; label: string };
+    type Acc = { startMs: number; endMs: number | null; segs: Seg[] };
+
+    /* Události sálu se NEOŘEZÁVAJÍ na okno dne — výkon zahájený večer může
+       skončit až po 7:00 druhého dne a jeho `operation_end` by se ztratil,
+       což se dřív projevilo jako falešné „probíhá". Filtr na den se aplikuje
+       až na hotové výkony podle času ZAHÁJENÍ. */
+    const evts = dayHistory
+      .filter(e => e.operating_room_id === orbitRoom.id && e.timestamp)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    const ops: Acc[] = [];
+    let cur: Acc | null = null;
+
+    for (const e of evts) {
+      const t = new Date(e.timestamp).getTime();
+      if (!Number.isFinite(t)) continue;
+
+      if (e.event_type === 'operation_start') {
+        if (cur) ops.push(cur); // předchozí zůstal bez `operation_end`
+        cur = { startMs: t, endMs: null, segs: [] };
+        continue;
+      }
+
+      if (e.event_type === 'operation_end') {
+        if (cur) { cur.endMs = t; ops.push(cur); cur = null; }
+        continue;
+      }
+
+      if (e.event_type === 'step_change' && e.duration_seconds) {
+        const name = e.step_name || '';
+        if (!name || isIdleStatusName(name)) continue; // klidový stav vynecháváme
+        const ms = e.duration_seconds * 1000;
+        const seg: Seg = { value: ms, color: colorByName(name), label: `${name} · ${fmtDurationMin(ms / 60000)}` };
+
+        if (cur) {
+          cur.segs.push(seg);
+        } else {
+          // Fáze dokončená těsně po `operation_end` patří k právě uzavřenému
+          // výkonu; jinak zakládáme výkon zpětně (chybí `operation_start`).
+          const last = ops[ops.length - 1];
+          if (last && last.endMs !== null && t - last.endMs <= 120_000) {
+            last.segs.push(seg);
+            last.endMs = Math.max(last.endMs, t);
+          } else {
+            ops.push({ startMs: t - ms, endMs: t, segs: [seg] });
+          }
+        }
+      }
+    }
+    if (cur) ops.push(cur); // stále otevřený výkon
+
+    const fmtT = (ms: number) => new Date(ms).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+    const fmtD = (ms: number) => new Date(ms).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' });
+
+    return ops
+      // Do dne patří výkony ZAHÁJENÉ v jeho okně (7:00–7:00)
+      .filter(op => op.startMs >= start.getTime() && op.startMs < end.getTime())
+      .filter(op => op.segs.length > 0 || op.endMs !== null)
+      .map((op, i, arr) => {
+        const segTotal = op.segs.reduce((a, x) => a + x.value, 0);
+        // Skutečně běžící výkon = otevřený, poslední v pořadí, dnešní provozní
+        // den a sál je reálně v nějaké fázi cyklu.
+        const isRunning = op.endMs === null
+          && i === arr.length - 1
+          && isCurrentDay
+          && orbitRoom.currentStepIndex > 0;
+        // Neukončený záznam (chybí `operation_end`) — délku odvodíme z fází
+        const isUnterminated = op.endMs === null && !isRunning;
+        const endMs = op.endMs ?? (isRunning ? now : op.startMs + Math.max(segTotal, 60_000));
+        const crossesDay = endMs >= end.getTime();
+
+        const segs = op.segs.length > 0
+          ? op.segs
+          : [{ value: Math.max(1, endMs - op.startMs), color: C.accent, label: 'Výkon' }];
+        const totalMs = segs.reduce((a, x) => a + x.value, 0);
+
+        const label = isRunning
+          ? `${fmtT(op.startMs)} – probíhá`
+          : crossesDay
+            ? `${fmtT(op.startMs)} → ${fmtD(endMs)} ${fmtT(endMs)}`
+            : `${fmtT(op.startMs)}–${fmtT(endMs)}`;
+
+        const detail = isRunning
+          ? 'právě běží'
+          : isUnterminated
+            ? 'neukončeno v datech'
+            : crossesDay
+              ? 'přesah do dalšího dne'
+              : `${segs.length} ${segs.length === 1 ? 'fáze' : segs.length <= 4 ? 'fáze' : 'fází'}`;
+
+        return {
+          id: `op-${i}-${op.startMs}`,
+          label,
+          percent: 100,
+          detail,
+          color: isUnterminated ? C.faint : crossesDay ? C.orange : (segs[0]?.color || C.accent),
+          segments: segs,
+          centerLabel: fmtDurationMin(totalMs / 60000),
+          dimmed: isUnterminated,
+          startMs: op.startMs,
+          endMs,
+        } satisfies OrbitItem;
+      });
+  }, [orbitRoom, metricsDay, dayHistory, WORKFLOW_STEPS]);
+
+  /** Vybraný výkon v drill-downu (fallback = nejdelší výkon dne). */
+  const selectedOp = useMemo(() => {
+    if (roomOperationRings.length === 0) return null;
+    if (selectedOpId) {
+      const found = roomOperationRings.find(o => o.id === selectedOpId);
+      if (found) return found;
+    }
+    return null;
+  }, [roomOperationRings, selectedOpId]);
+
+  /** Fáze vybraného výkonu pro panel vpravo (název, čas, barva) + pauza. */
+  const selectedOpPhases = useMemo(() => {
+    if (!selectedOp) return [];
+
+    const phases = (selectedOp.segments || []).map(sgm => ({
+      label: (sgm.label || '').split(' · ')[0] || 'Fáze',
+      ms: sgm.value,
+      color: sgm.color,
+    }));
+
+    // Pauza není `step_change`, ale samostatné události pause/resume —
+    // spočítáme její překryv s časovým oknem vybraného výkonu.
+    if (orbitRoom && selectedOp.startMs !== undefined && selectedOp.endMs !== undefined) {
+      const winStart = selectedOp.startMs;
+      const winEnd = selectedOp.endMs;
+      const now = Date.now();
+
+      const evts = dayHistory
+        .filter(e => e.operating_room_id === orbitRoom.id
+          && (e.event_type === 'pause' || e.event_type === 'resume')
+          && e.timestamp)
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      let pausedMs = 0;
+      let open: number | null = null;
+      for (const e of evts) {
+        const t = new Date(e.timestamp).getTime();
+        if (!Number.isFinite(t)) continue;
+        if (e.event_type === 'pause') {
+          if (open === null) open = t;
+        } else if (open !== null) {
+          const s = Math.max(open, winStart);
+          const x = Math.min(t, winEnd);
+          if (x > s) pausedMs += x - s;
+          open = null;
+        }
+      }
+      if (open !== null) {
+        const s = Math.max(open, winStart);
+        const x = Math.min(now, winEnd);
+        if (x > s) pausedMs += x - s;
+      }
+
+      if (pausedMs > 0) phases.push({ label: 'Pauza', ms: pausedMs, color: C.yellow });
+    }
+
+    return phases;
+  }, [selectedOp, orbitRoom, dayHistory]);
+
+  /** Legenda fází pro drill-down (barvy + souhrnný čas napříč výkony). */
+  const roomPhaseLegend = useMemo(() => {
+    const agg: Record<string, { ms: number; color: string }> = {};
+    roomOperationRings.forEach(op => {
+      (op.segments || []).forEach(sgm => {
+        const name = (sgm.label || '').split(' · ')[0];
+        if (!name) return;
+        if (!agg[name]) agg[name] = { ms: 0, color: sgm.color };
+        agg[name].ms += sgm.value;
+      });
+    });
+    return Object.entries(agg)
+      .map(([name, v]) => ({ name, ms: v.ms, color: v.color }))
+      .sort((a, b) => b.ms - a.ms);
+  }, [roomOperationRings]);
+
+  /** Sály pro orbitální zobrazení — vytížení a počet výkonů ve vybraném dni. */
+  const orbitRooms = useMemo<OrbitItem[]>(() => {
+    return rooms.map(r => {
+      const util = calculateRoomUtilizationForDay(r, dayHistory, metricsDay);
+      const ops = countOperationsForDay(r, dayHistory, metricsDay);
+      const closed = getRoomWorkingMinutesForDate(r, metricsDay) === 0;
+      const color = r.isEmergency ? C.red
+        : closed ? C.faint
+        : util >= 80 ? C.green
+        : util >= 50 ? C.yellow
+        : util > 0 ? C.orange
+        : C.muted;
+      return {
+        id: r.id,
+        label: r.name,
+        percent: util,
+        detail: closed ? 'zavřeno' : `${ops} ${ops === 1 ? 'výkon' : ops >= 2 && ops <= 4 ? 'výkony' : 'výkonů'}`,
+        color,
+        dimmed: closed,
+      };
+    });
+  }, [rooms, dayHistory, metricsDay]);
+
+  /** Fáze operačního cyklu pro vybraný den (podíl času jednotlivých statusů). */
+  const dayPhaseRings = useMemo(() => {
+    const { start, end } = dayBounds(metricsDay);
+    const totals: Record<string, { ms: number; color: string }> = {};
+    WORKFLOW_STEPS.forEach(s => { totals[s.title] = { ms: 0, color: s.color }; });
+
+    dayHistory
+      .filter(e => e.event_type === 'step_change' && e.duration_seconds && e.timestamp)
+      .forEach(e => {
+        const t = new Date(e.timestamp).getTime();
+        if (t < start.getTime() || t >= end.getTime()) return;
+        if (e.step_name && totals[e.step_name]) {
+          totals[e.step_name].ms += (e.duration_seconds || 0) * 1000;
+        }
+      });
+
+    const total = Object.values(totals).reduce((a, b) => a + b.ms, 0);
+    if (total === 0) return [];
+    return Object.entries(totals)
+      .filter(([name, v]) => v.ms > 0 && !isIdleStatusName(name))
+      .map(([name, v]) => ({
+        label: name,
+        percent: (v.ms / total) * 100,
+        detail: fmtDurationMin(v.ms / 60000),
+        color: v.color,
+      }))
+      .sort((a, b) => b.percent - a.percent);
+  }, [dayHistory, metricsDay, WORKFLOW_STEPS]);
+
+  /** Doporučení pro hero panel Přehledu — odvozená z reálných čísel. */
+  const overviewInsights = useMemo<InsightItem[]>(() => {
+    const out: InsightItem[] = [];
+    if (rooms.length === 0) return out;
+
+    const util = dayStats.avgUtil;
+    const dayLabel = formatDayLabel(metricsDay).toLowerCase();
+
+    if (util >= 85) {
+      out.push({ tone: 'warn', title: 'Kapacita na hraně',
+        text: `Průměrné vytížení ${util} % (${dayLabel}). Hlídej přesčasy a zvaž rozšíření provozní doby.` });
+    } else if (util >= 60) {
+      out.push({ tone: 'good', title: 'Vysoké vytížení',
+        text: `Průměr ${util} % (${dayLabel}). Provoz je dobře využitý — udrž tempo a sleduj mezičasy.` });
+    } else if (util >= 40) {
+      out.push({ tone: 'info', title: 'Dobré vytížení',
+        text: `Průměr ${util} % (${dayLabel}). Stále je prostor zařadit kratší výkon na sály pod průměrem.` });
+    } else if (dayStats.openRooms === 0) {
+      out.push({ tone: 'info', title: 'Sály mimo provoz',
+        text: `Pro ${dayLabel} nemá žádný sál naplánovanou provozní dobu.` });
+    } else {
+      out.push({ tone: 'warn', title: 'Nízké vytížení',
+        text: `Průměr ${util} % (${dayLabel}). Sály zůstávají dlouho volné — prověř plánování programu.` });
+    }
+
+    // Nejdelší fáze dne — kandidát na zkrácení
+    const longest = dayPhaseRings[0];
+    if (longest && longest.percent >= 10) {
+      out.push({ tone: 'info', title: `Zkrať: ${longest.label}`,
+        text: `Status „${longest.label}" zabral ${longest.detail} (${Math.round(longest.percent)} % dne). Standardizace tohoto kroku přinese nejrychlejší zlepšení.` });
+    }
+
+    if (emergCnt > 0) {
+      out.push({ tone: 'warn', title: `Nouzový režim: ${emergCnt} ${emergCnt === 1 ? 'sál' : 'sály'}`,
+        text: 'Nouzové sály mají přednost — ověř, že navazující program počítá se zpožděním.' });
+    } else if (out.length < 2) {
+      out.push({ tone: 'good', title: 'Bez mimořádností',
+        text: `Žádný sál není v nouzovém režimu. Evidováno ${dayStats.totalOps} výkonů.` });
+    }
+
+    return out.slice(0, 3);
+  }, [rooms.length, dayStats, dayPhaseRings, metricsDay, emergCnt]);
+
 
   const deptMap = useMemo(()=>{
     const m:Record<string,number>={};
@@ -1467,7 +1959,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 const TABS:{ id:Tab; label:string }[]=[
 {id:'prehled',    label:'Přehled'},
 {id:'finance',    label:'Finance'},
-{id:'personal',   label:'Personál'},
 {id:'saly',       label:'Sály'},
 {id:'faze',       label:'Fáze'},
 {id:'notifikace', label:'Notifikace'},
@@ -1640,7 +2131,6 @@ const TABS:{ id:Tab; label:string }[]=[
 tabs={[
 { id: 'prehled', label: 'Přehled' },
 { id: 'finance', label: 'Finance' },
-{ id: 'personal', label: 'Personál' },
 { id: 'saly', label: 'Sály' },
 { id: 'faze', label: 'Fáze' },
 { id: 'notifikace', label: 'Notifikace' },
@@ -1733,18 +2223,6 @@ tabs={[
             </div>
           )}
 
-          {/* ── Personál & týmy ── */}
-          {(tab === 'personal' || isPrinting) && (
-            <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Personál</h2>}
-              <StaffTab
-                staff={staffList}
-                rooms={rooms}
-                periodLabel={period}
-              />
-            </div>
-          )}
-          
           {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
           {(tab === 'finance' || isPrinting) && (
             <div className="flex flex-col gap-3 print-section">
@@ -1921,6 +2399,183 @@ tabs={[
               </h2>
             )}
 
+            {/* ── Hero panel — velký prstenec vytížení, doporučení a stavy sálů.
+                   Stejný vizuální jazyk jako režim „Fáze" v Toku pacienta. ── */}
+            <Card className="p-6 lg:p-8">
+              {/* Listování po dnech / kalendář — stejný styl jako v Toku pacienta */}
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-7 print-hide">
+                <div>
+                  <p className="text-[15px] font-bold" style={{ color: C.text }}>
+                    {formatDayLabel(metricsDay)}
+                  </p>
+                  <p className="text-[12px] capitalize" style={{ color: C.muted }}>
+                    {metricsDay.toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                  <p className="text-[11px] mt-0.5" style={{ color: C.faint }}>
+                    Provozní den 7:00 – 6:59 (noční výkony patří do dne zahájení)
+                  </p>
+                </div>
+                {/* Přepínač: souhrn dne ↔ rozpad po sálech (orbit).
+                    Výběr data řeší glassmorph kalendář pod panelem doporučení. */}
+                <button
+                  onClick={() => setHeroMode(m => (m === 'orbit' ? 'summary' : 'orbit'))}
+                  aria-pressed={heroMode === 'summary'}
+                  title={heroMode === 'orbit'
+                    ? 'Přepnout na souhrn dne (fáze operačního cyklu)'
+                    : 'Přepnout na rozpad po sálech'}
+                  className="h-10 px-4 rounded-xl text-[13px] font-semibold flex items-center gap-2 transition-colors"
+                  style={heroMode === 'summary'
+                    ? { background: `${C.accent}1f`, color: C.accent, border: `1px solid ${C.accent}55` }
+                    : { background: C.surface, color: C.text, border: `1px solid ${C.border}` }}
+                >
+                  {heroMode === 'orbit'
+                    ? <BarChart3 className="w-4 h-4" />
+                    : <Layers className="w-4 h-4" />}
+                  {heroMode === 'orbit' ? 'Souhrn dne' : 'Rozpad po sálech'}
+                </button>
+              </div>
+
+              {/* Mřížka: vlevo prstenec + fáze pod ním (společně vycentrované),
+                  vpravo panel doporučení. Malé prstence tak sedí přesně
+                  pod středem velkého grafu. */}
+              {/* V rozpadu po sálech přibývá prostřední sloupec s fázemi
+                  vybraného výkonu — vlevo od doporučení a kalendáře. */}
+              <div
+                className={`grid grid-cols-1 gap-8 items-start ${
+                  heroMode === 'orbit' && orbitRoom
+                    ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,300px)_minmax(0,360px)]'
+                    : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]'
+                }`}
+              >
+                <div className="flex flex-col items-center">
+                  {heroMode === 'orbit' ? (
+                    /* Orbit — sály, po kliknutí rozpad výkonů vybraného sálu */
+                    orbitRoom ? (
+                      <>
+                        {/* Drobečková navigace zpět na přehled sálů */}
+                        <div className="w-full flex items-center justify-between gap-3 mb-4">
+                          <button
+                            onClick={() => setOrbitRoomId(null)}
+                            className="h-9 px-3 rounded-xl text-[12px] font-semibold flex items-center gap-1.5 transition-colors"
+                            style={{ background: C.surface, color: C.text, border: `1px solid ${C.border}` }}
+                          >
+                            <ChevronLeft className="w-4 h-4" /> Všechny sály
+                          </button>
+                          <p className="text-[13px] font-bold truncate" style={{ color: C.text }}>
+                            {orbitRoom.name}
+                            <span className="font-medium" style={{ color: C.muted }}> · výkony dne</span>
+                          </p>
+                        </div>
+
+                        <OrbitRings
+                          center={{
+                            value: calculateRoomUtilizationForDay(orbitRoom, dayHistory, metricsDay),
+                            color: C.accent,
+                            kicker: 'Vytížení sálu',
+                          }}
+                          items={roomOperationRings}
+                          onSelect={(id) => setSelectedOpId(cur => (cur === id ? null : id))}
+                          selectedId={selectedOpId}
+                          emptyText="V tento den nemá sál žádný zaznamenaný výkon."
+                        />
+
+                        {/* Legenda fází cyklu */}
+                        {roomPhaseLegend.length > 0 && (
+                          <div className="w-full mt-5 pt-4" style={{ borderTop: `1px solid ${C.border}` }}>
+                            <StatSectionLabel className="mb-3">Fáze cyklu</StatSectionLabel>
+                            <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+                              {roomPhaseLegend.map(p => (
+                                <span key={p.name} className="flex items-center gap-1.5 text-[12px]" style={{ color: C.muted }}>
+                                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color, boxShadow: `0 0 6px ${p.color}` }} />
+                                  {p.name}
+                                  <span className="font-bold tabular-nums" style={{ color: C.text }}>
+                                    {fmtDurationMin(p.ms / 60000)}
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {roomOperationRings.length > 0 && (
+                          <p className="text-[12px] mt-4 text-center" style={{ color: C.muted }}>
+                            {roomOperationRings.length}{' '}
+                            {roomOperationRings.length === 1
+                              ? 'výkon'
+                              : roomOperationRings.length <= 4 ? 'výkony' : 'výkonů'} ·
+                            <span style={{ color: C.faint }}> každý prstenec je jeden operační cyklus</span>
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <OrbitRings
+                          center={{
+                            value: dayStats.avgUtil,
+                            color: dayStats.avgUtil >= 80 ? C.green : dayStats.avgUtil >= 50 ? C.accent : dayStats.avgUtil > 0 ? C.orange : C.red,
+                            kicker: 'Průměr',
+                          }}
+                          items={orbitRooms}
+                          onSelect={(id) => setOrbitRoomId(id)}
+                        />
+                        <p className="text-[12px] mt-4 text-center" style={{ color: C.muted }}>
+                          Vytížení jednotlivých sálů · {dayStats.totalOps} výkonů celkem ·
+                          <span style={{ color: C.faint }}> klikni na sál pro rozpad výkonů</span>
+                        </p>
+                      </>
+                    )
+                  ) : (
+                    <>
+                      <GaugeRing
+                        value={dayStats.avgUtil}
+                        size={340}
+                        color={dayStats.avgUtil >= 80 ? C.green : dayStats.avgUtil >= 50 ? C.accent : dayStats.avgUtil > 0 ? C.orange : C.red}
+                        kicker="Vytížení sálů"
+                        sublabel={`${dayStats.totalOps} výkonů · ${dayStats.activeRooms}/${dayStats.openRooms || rooms.length} sálů v provozu`}
+                      />
+
+                      {/* Fáze operačního cyklu — podíl času jednotlivých statusů */}
+                      <div className="w-full mt-8 pt-7" style={{ borderTop: `1px solid ${C.border}` }}>
+                        <StatSectionLabel className="mb-6">Fáze operačního cyklu</StatSectionLabel>
+                        <RingRow
+                          items={dayPhaseRings}
+                          emptyText="Pro vybraný den nejsou zaznamenané fáze."
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Prostřední sloupec — fáze vybraného výkonu (jen v rozpadu) */}
+                {heroMode === 'orbit' && orbitRoom && (
+                  <PhasePanel
+                    title="Fáze výkonu"
+                    subtitle={selectedOp?.label}
+                    items={selectedOpPhases}
+                    emptyText="Klikni na výkon v grafu a zobrazí se rozpad jeho fází."
+                  />
+                )}
+
+                {/* Pravý sloupec — doporučení a kalendář */}
+                <div className="flex flex-col gap-4">
+                  <InsightPanel
+                    accent={dayStats.avgUtil >= 80 ? C.green : C.accent}
+                    items={overviewInsights}
+                  />
+
+                  <div className="print-hide">
+                    <GlassCalendar
+                      value={metricsDay}
+                      onChange={setMetricsDay}
+                      heat={dayActivityHeat}
+                      accent={C.accent}
+                      today={operationalToday()}
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+
             {/* KPI strip */}
             <div className="grid grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
               style={{border:`1px solid ${C.border}`}}>
@@ -1946,46 +2601,11 @@ tabs={[
             <div className="space-y-3">
               {/* Hlavička sekce + navigace po dnech */}
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <SectionLabel>Jednotlivé sály — provozní metriky</SectionLabel>
-                <div className="flex items-center gap-1.5 print-hide">
-                  <button
-                    onClick={() => shiftMetricsDay(-1)}
-                    aria-label="Předchozí den"
-                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
-                    style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text }}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <div
-                    className="h-8 px-3 rounded-lg flex items-center gap-2"
-                    style={{ background: C.surface, border: `1px solid ${C.border}` }}
-                  >
-                    <CalendarDays className="w-3.5 h-3.5" style={{ color: C.accent }} />
-                    <span className="text-xs font-bold" style={{ color: C.text }}>
-                      {formatDayLabel(metricsDay)}
-                    </span>
-                    <span className="text-[11px] tabular-nums" style={{ color: C.muted }}>
-                      {metricsDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' })}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => shiftMetricsDay(1)}
-                    disabled={isMetricsToday}
-                    aria-label="Následující den"
-                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
-                    style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.text }}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                  {!isMetricsToday && (
-                    <button
-                      onClick={() => { const d = new Date(); d.setHours(0,0,0,0); setMetricsDay(d); }}
-                      className="h-8 px-3 rounded-lg text-xs font-bold transition-colors"
-                      style={{ background: `${C.accent}1f`, color: C.accent, border: `1px solid ${C.accent}40` }}
-                    >
-                      Dnes
-                    </button>
-                  )}
+                <SectionLabel>
+                  Jednotlivé sály — provozní metriky ({formatDayLabel(metricsDay)})
+                </SectionLabel>
+                <div className="print-hide">
+                  <DayNavigator value={metricsDay} onChange={setMetricsDay} today={operationalToday()} />
                 </div>
               </div>
 
@@ -1997,101 +2617,78 @@ tabs={[
                 const totalMins = Math.round(getRoomWorkingMinutesForDate(r, metricsDay));
                 const dayHoursLabel = formatRoomWorkingHours(r, dayIdx);
                 const dayHours = getRoomWorkingHours(r, dayIdx);
-                const dayBreak = dayHours.enabled ? getDayBreakMinutes(dayHours) : 0;
+                // Skutečně odpauzovaný čas sálu (události pause/resume), ne
+                // plánovaná přestávka z rozvrhu.
+                const pausedMins = calculatePausedMinutesForDay(r, dayHistory, metricsDay);
                 const closed = !dayHours.enabled;
-                const utilColor = util >= 80 ? C.green : util >= 50 ? C.yellow : util > 0 ? C.orange : C.muted;
+                // Přesah = odoperováno nad rámec plánované kapacity dne
+                const overtimeMins = calculateOvertimeMinutesForDay(r, dayHistory, metricsDay);
+                const utilColor = util > 100 ? C.red
+                  : util >= 80 ? C.green
+                  : util >= 50 ? C.yellow
+                  : util > 0 ? C.orange : C.muted;
 
                 const flags: string[] = [];
-                if (r.isEmergency) flags.push('Nouze');
-                if (r.isSeptic)    flags.push('Septický');
+                if (r.isEmergency) flags.push('EMERG');
+                if (r.isSeptic)    flags.push('SEPT');
+                const flagsLabel = flags.length > 0 ? flags.join(' · ') : '—';
+                const flagsColor = r.isEmergency ? C.orange : r.isSeptic ? C.red : C.faint;
 
-                const metrics = [
-                  { l: 'Výkony',        v: String(opsInHours),                       c: opsInHours > 0 ? C.accent : C.muted },
-                  { l: 'Aktivní čas',   v: `${activeMins} min`,                      c: C.text },
-                  { l: 'Kapacita',      v: closed ? '—' : `${totalMins} min`,        c: closed ? C.faint : C.text },
-                  { l: 'Provozní doba', v: dayHoursLabel,                            c: closed ? C.faint : C.text },
-                  { l: 'Přestávka',     v: dayHours.enabled ? `${dayBreak} min` : '—', c: dayHours.enabled ? C.text : C.faint },
+                const cells = [
+                  { l: 'Sál',                  v: r.name,                                   c: C.text },
+                  // Stav + příznaky (nouze / septický) v jedné buňce
+                  { l: 'Stav',                 v: flags.length > 0 ? `${roomStatusLabel(r)} · ${flagsLabel}` : roomStatusLabel(r), c: flags.length > 0 ? flagsColor : roomStatusColor(r) },
+                  // Vytížení — barevné procento + barevná linka pod hodnotou
+                  { l: 'Využití kapacity',     v: `${util}%`,                               c: utilColor, bar: Math.min(100, util) },
+                  { l: 'Výkony',               v: String(opsInHours),                       c: opsInHours > 0 ? C.accent : C.muted },
+                  { l: 'Pracovní doba',        v: dayHoursLabel,                            c: closed ? C.faint : C.text },
+                  { l: 'Pauza',                v: pausedMins > 0 ? `${pausedMins} m` : '—', c: pausedMins > 0 ? C.yellow : C.faint },
+                  { l: 'Aktivní / Kap.',       v: `${activeMins} / ${totalMins} m`,         c: overtimeMins > 0 ? C.red : C.text },
+                  { l: 'Přesah',               v: overtimeMins > 0 ? `+${overtimeMins} m` : '—', c: overtimeMins > 0 ? C.red : C.faint },
                 ];
 
                 return (
                   <div
                     key={r.id}
-                    className="rounded-xl overflow-hidden"
-                    style={{ background: C.surface, border: `1px solid ${C.border}` }}
-                  >
-                    {/* Řádek 1 — sál, stav, vytížení */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pt-3.5 pb-3">
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: roomStatusColor(r), boxShadow: `0 0 10px ${roomStatusColor(r)}66` }}
-                        />
-                        <span className="text-[15px] font-bold truncate" style={{ color: C.text }}>
-                          {r.name}
-                        </span>
-                        <span
-                          className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
-                          style={{ background: `${roomStatusColor(r)}1a`, color: roomStatusColor(r) }}
+                    className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
+                    style={{border:`1px solid ${C.border}`}}>
+                    {cells.map((k, i) => (
+                      <div
+                        key={i}
+                        className="flex flex-col justify-between px-4 py-3"
+                        style={{
+                          background: C.surface,
+                          borderRight: i < cells.length - 1 ? `1px solid ${C.border}` : undefined,
+                        }}>
+                        <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color: C.muted}}>
+                          {k.l}
+                        </p>
+                        {/* Hodnota buňky — JEDEN řádek s adaptivní velikostí písma. */}
+                        <p
+                          className="font-bold leading-none whitespace-nowrap overflow-hidden text-ellipsis"
+                          style={{ color: k.c, fontSize: 'clamp(11px, 0.95vw, 16px)' }}
+                          title={String(k.v)}
                         >
-                          {roomStatusLabel(r)}
-                        </span>
-                        {flags.map(f => (
-                          <span
-                            key={f}
-                            className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
-                            style={{ background: `${C.orange}1a`, color: C.orange }}
+                          {k.v}
+                        </p>
+                        {/* Barevná linka vytížení pod procentem */}
+                        {k.bar !== undefined && (
+                          <div
+                            className="mt-2 h-1.5 rounded-full overflow-hidden"
+                            style={{ background: 'var(--stats-ghost)' }}
                           >
-                            {f}
-                          </span>
-                        ))}
-                        {closed && (
-                          <span
-                            className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
-                            style={{ background: 'var(--stats-ghost)', color: C.faint }}
-                          >
-                            Zavřeno
-                          </span>
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${k.bar}%`,
+                                background: `linear-gradient(90deg, ${k.c}CC, ${k.c})`,
+                                boxShadow: `0 0 8px ${k.c}55`,
+                              }}
+                            />
+                          </div>
                         )}
                       </div>
-
-                      {/* Vytížení — pruh + číslo, hlavní metrika řádku */}
-                      <div className="flex items-center gap-3 min-w-[190px]">
-                        <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--stats-ghost)' }}>
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{
-                              width: `${util}%`,
-                              background: `linear-gradient(90deg, ${utilColor}CC, ${utilColor})`,
-                              boxShadow: `0 0 10px ${utilColor}55`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-[17px] font-bold tabular-nums leading-none w-12 text-right" style={{ color: utilColor }}>
-                          {util}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Řádek 2 — dílčí metriky dne */}
-                    <div
-                      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
-                      style={{ borderTop: `1px solid ${C.border}` }}
-                    >
-                      {metrics.map((m, i) => (
-                        <div
-                          key={m.l}
-                          className="px-4 py-2.5"
-                          style={{ borderRight: i < metrics.length - 1 ? `1px solid ${C.border}` : undefined }}
-                        >
-                          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: C.muted }}>
-                            {m.l}
-                          </p>
-                          <p className="text-[14px] font-bold leading-none truncate" style={{ color: m.c }} title={m.v}>
-                            {m.v}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 );
               })}
@@ -2102,44 +2699,8 @@ tabs={[
               )}
             </div>
 
-            {/* Row 1: Main area + Status pie */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <Card className="lg:col-span-2 p-5">
-                <SectionLabel>Využití jednotlivých sálů — {period}</SectionLabel>
-                {/* Žebříček místo plošného grafu — hodnoty jsou přímo čitelné */}
-                <BarList
-                  max={100}
-                  items={utilData.map(d => ({
-                    label: d.full,
-                    value: d.v,
-                    display: `${d.v}%`,
-                    color: d.v >= 80 ? C.green : d.v >= 50 ? C.yellow : d.v > 0 ? C.orange : C.red,
-                  }))}
-                  emptyText="Žádné sály k zobrazení."
-                />
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Stav sálů — podíl</SectionLabel>
-                <SegmentBar items={statusPie} unit=" sálů" />
-                {/* Flags */}
-                {(emergCnt>0||septicCnt>0)&&(
-                  <div className="mt-4 pt-3 flex flex-wrap gap-2" style={{borderTop:`1px solid ${C.border}`}}>
-                    {emergCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
-                        style={{background:`${C.orange}18`,color:C.orange}}>
-                        <AlertTriangle className="w-3 h-3"/>{emergCnt} Emerg.
-                      </span>
-                    )}
-                    {septicCnt>0&&(
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
-                        style={{background:`${C.red}18`,color:C.red}}>
-                        <Shield className="w-3 h-3"/>{septicCnt} Septické
-                      </span>
-                    )}
-                  </div>
-                )}
-              </Card>
-            </div>
+            {/* Row 1 odstraněna — „Využití jednotlivých sálů" i „Stav sálů — podíl"
+                duplikovaly údaje z KPI pásu a provozních metrik sálů výše. */}
 
             {/* Row 2: Ops per room + Dept + 7-day trend */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -2210,31 +2771,6 @@ tabs={[
                   />
                 ) : <EmptyState title="Bez historických dat" desc="Pro zvolené období nejsou zaznamenané výkony." />}
               </Card>
-              <Card className="p-5">
-                <SectionLabel>Fronta a kapacita</SectionLabel>
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:C.muted}}>Celková fronta</p>
-                    <p className="text-3xl font-bold" style={{color:totalQueue>0?C.yellow:C.green}}>{totalQueue}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:C.muted}}>Zaplněnost</p>
-                    <p className="text-3xl font-bold" style={{color:C.text}}>{Math.round((busyCount/Math.max(1,rooms.length))*100)}%</p>
-                  </div>
-                </div>
-                <div className="space-y-2.5">
-                  {rooms.filter(r=>r.queueCount>0).slice(0,5).map(r=>(
-                    <div key={r.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{background:roomStatusColor(r)}}/>
-                        <span className="text-xs" style={{color:C.muted}}>{r.name}</span>
-                      </div>
-                      <span className="text-xs font-bold" style={{color:C.yellow}}>{r.queueCount} pac.</span>
-                    </div>
-                  ))}
-                  {totalQueue===0&&<p className="text-xs" style={{color:C.faint}}>Žádná fronta</p>}
-                </div>
-              </Card>
             </div>
 
             {/* Row 4: Working hours overview per room */}
@@ -2294,22 +2830,6 @@ tabs={[
               </div>
             </Card>
 
-          </div>
-        )}
-
-        {/* ── Personál & týmy ── (nová záložka) */}
-        {(tab==='personal' || isPrinting) && (
-          <div key="personal" className="space-y-5 print-section">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Personál & týmy
-              </h2>
-            )}
-            <StaffTab
-              staff={staffList}
-              rooms={rooms}
-              periodLabel={period}
-            />
           </div>
         )}
 

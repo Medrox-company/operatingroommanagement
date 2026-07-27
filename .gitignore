@@ -60,3 +60,4 @@ operatingroom-mobile/Thumbs.db
 tsconfig.tsbuildinfo
 .vercel
 .env*
+.fuse_hidden*
