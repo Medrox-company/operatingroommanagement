@@ -28,7 +28,7 @@ interface SpecialtyResponse {
   }>;
 }
 
-const fetcher = async (url: string): Promise<SpecialtyResponse> => {
+const fetcher = async ([url]: [string, string]): Promise<SpecialtyResponse> => {
   const response = await fetch(url, { credentials: 'include', cache: 'no-store' });
   if (!response.ok) throw new Error('Dnešní rozpis oborů se nepodařilo načíst.');
   return response.json();
@@ -38,11 +38,14 @@ export function useCurrentRoomSpecialties() {
   const { activeHospitalId } = useHospital();
   const [clock, setClock] = useState(() => new Date());
   const date = localScheduleDateKey(clock);
-  const key = activeHospitalId ? `/api/room-specialty-allocations?date=${date}` : null;
+  const key: [string, string] | null = activeHospitalId
+    ? [`/api/room-specialty-allocations?date=${date}`, activeHospitalId]
+    : null;
   const { data, mutate } = useSWR<SpecialtyResponse>(key, fetcher, {
     refreshInterval: 60_000,
     revalidateOnFocus: true,
-    keepPreviousData: true,
+    revalidateOnReconnect: true,
+    keepPreviousData: false,
   });
 
   useHospitalRealtime('room_specialty_allocations', (payload) => {

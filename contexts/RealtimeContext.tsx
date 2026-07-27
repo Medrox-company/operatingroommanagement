@@ -24,10 +24,9 @@ export const REALTIME_TABLES = [
   'room_specialty_allocations',
 ] as const;
 
-// Obě tabulky jsou součástí Supabase publication: operating_rooms přes základní
-// realtime migraci a room_specialty_allocations přes skript 14. Držíme je v
-// jediném nemocničním kanálu, aby nevznikal další websocket na každou obrazovku.
-const PUBLISHED_REALTIME_TABLES = ['operating_rooms', 'room_specialty_allocations'] as const;
+// Všechny živé tabulky držíme v jediném nemocničním kanálu. Databázová migrace
+// 17 je idempotentně přidává do publication `supabase_realtime`.
+const PUBLISHED_REALTIME_TABLES = REALTIME_TABLES;
 
 export type RealtimeTable = typeof REALTIME_TABLES[number];
 export type RealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE';
@@ -125,7 +124,10 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           const isConnected = status === 'SUBSCRIBED';
           setConnected(isConnected);
           if (isConnected) recoveryRequested = false;
-          if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && !recoveryRequested) {
+          if (
+            (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED')
+            && !recoveryRequested
+          ) {
             recoveryRequested = true;
             window.dispatchEvent(new Event('hospitalAccessRefreshRequested'));
           }

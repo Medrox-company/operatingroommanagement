@@ -1,51 +1,40 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { logger } from './logger';
 import { OperatingRoom, RoomStatus, WeeklySchedule, SkillLevel } from '../types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 type JsonObject = Record<string, unknown>;
 type RoomStatusHistoryEntry = NonNullable<OperatingRoom['statusHistory']>[number];
 
-// Network resilience: Retry wrapper for transient failures
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
+const ROOM_WRITE_ATTEMPTS = 3;
+const ROOM_WRITE_RETRY_DELAYS_MS = [450, 1_250] as const;
+const roomWriteQueues = new Map<string, Promise<boolean>>();
 
-async function withRetry<T>(
-  operation: () => Promise<T>,
-  operationName: string = 'database operation'
-): Promise<T> {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      
-      // Don't retry on non-transient errors
-      const isTransient = 
-        lastError.message.includes('network') ||
-        lastError.message.includes('timeout') ||
-        lastError.message.includes('connection') ||
-        lastError.message.includes('ECONNREFUSED') ||
-        lastError.message.includes('fetch');
-      
-      if (!isTransient || attempt === MAX_RETRIES) {
-        console.error(`[v0] ${operationName} failed after ${attempt} attempt(s):`, lastError.message);
-        throw lastError;
-      }
-      
-      console.warn(`[v0] ${operationName} failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
-    }
-  }
-  
-  throw lastError;
+const wait = (durationMs: number) => new Promise<void>((resolve) => {
+  setTimeout(resolve, durationMs);
+});
+
+function requestHospitalAccessRefresh() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event('hospitalAccessRefreshRequested'));
+}
+
+function reportOperatingRoomWriteFailure(
+  roomId: string,
+  hospitalId: string,
+  columns: string[],
+) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('operatingRoomWriteFailed', {
+    detail: { roomId, hospitalId, columns },
+  }));
 }
 
 // Type for database row
 export interface DBOperatingRoom {
   id: string;
   hospital_id: string;
+  state_revision?: number;
   name: string;
   department: string;
   status: string;
@@ -156,6 +145,7 @@ function transformRoom(
 
   return {
     id: row.id,
+    stateRevision: typeof row.state_revision === 'number' ? row.state_revision : undefined,
     name: row.name,
     department: row.department,
     sort_order: typeof row.sort_order === 'number' ? row.sort_order : undefined,
@@ -244,8 +234,11 @@ function transformRoom(
 }
 
 // Fetch all operating rooms with related data
-export async function fetchOperatingRooms(hospitalId: string = getDatabaseHospitalId()): Promise<OperatingRoom[] | null> {
-  if (!isSupabaseConfigured || !supabase) {
+export async function fetchOperatingRooms(
+  hospitalId: string = getDatabaseHospitalId(),
+  databaseClient: SupabaseClient | null = supabase,
+): Promise<OperatingRoom[] | null> {
+  if (!databaseClient) {
     return null;
   }
 
@@ -253,13 +246,13 @@ export async function fetchOperatingRooms(hospitalId: string = getDatabaseHospit
     // Fetch rooms and staff data in parallel
     // Explicitly select columns including completed_operations JSONB
     const [roomsRes, staffRes] = await Promise.all([
-      supabase
+      databaseClient
         .from('operating_rooms')
         .select('*, completed_operations')
         .eq('hospital_id', hospitalId)
         .order('sort_order', { ascending: true, nullsFirst: false })
         .order('name', { ascending: true }),
-      supabase.from('staff').select('*').eq('hospital_id', hospitalId),
+      databaseClient.from('staff').select('*').eq('hospital_id', hospitalId),
     ]);
 
     if (roomsRes.error) throw roomsRes.error;
@@ -290,7 +283,7 @@ export async function fetchOperatingRooms(hospitalId: string = getDatabaseHospit
 // operací, historie pro časovou osu) se doplní následným fetchOperatingRooms().
 // Transform tyto sloupce při chybějících hodnotách bezpečně doplní prázdným polem.
 const LIGHT_ROOM_COLUMNS = [
-  'id', 'name', 'department', 'status', 'queue_count', 'operations_24h',
+  'id', 'state_revision', 'name', 'department', 'status', 'queue_count', 'operations_24h',
   'is_septic', 'is_emergency', 'is_locked', 'is_enhanced_hygiene', 'enhanced_hygiene_at',
   'is_paused', 'paused_at', 'patient_called_at', 'patient_arrived_at',
   'phase_started_at', 'operation_started_at', 'current_step_index', 'estimated_end_time',
@@ -381,86 +374,128 @@ export async function fetchOperatingRoomById(
 }
 
 // Update operating room
-export async function updateOperatingRoom(
+type OperatingRoomUpdate = Partial<{
+  name: string;
+  department: string;
+  status: string;
+  is_emergency: boolean;
+  is_enhanced_hygiene: boolean;
+  enhanced_hygiene_at: string | null;
+  is_paused: boolean;
+  paused_at: string | null;
+  is_locked: boolean;
+  patient_called_at: string | null;
+  patient_arrived_at: string | null;
+  phase_started_at: string | null;
+  operation_started_at: string | null;
+  current_step_index: number;
+  estimated_end_time: string | null;
+  weekly_schedule: WeeklySchedule;
+  doctor_id: string | null;
+  nurse_id: string | null;
+  anesthesiologist_id: string | null;
+  status_history: RoomStatusHistoryEntry[] | null;
+  completed_operations: CompletedOperation[] | null;
+  hourly_operating_cost: number | null;
+  notice_message: string | null;
+  notice_at: string | null;
+  notice_sender: string | null;
+}>;
+
+async function performOperatingRoomUpdate(
   id: string, 
-  updates: Partial<{
-    name: string;
-    department: string;
-    status: string;
-    is_emergency: boolean;
-    is_enhanced_hygiene: boolean;
-    enhanced_hygiene_at: string | null;
-    is_paused: boolean;
-    paused_at: string | null;
-    is_locked: boolean;
-    patient_called_at: string | null;
-    patient_arrived_at: string | null;
-    phase_started_at: string | null;
-    operation_started_at: string | null;
-    current_step_index: number;
-    estimated_end_time: string | null;
-    weekly_schedule: WeeklySchedule;
-    doctor_id: string | null;
-    nurse_id: string | null;
-    anesthesiologist_id: string | null;
-    status_history: RoomStatusHistoryEntry[] | null;
-    completed_operations: CompletedOperation[] | null;
-    hourly_operating_cost: number | null;
-    notice_message: string | null;
-    notice_at: string | null;
-    notice_sender: string | null;
-  }>
+  updates: OperatingRoomUpdate,
+  hospitalId: string,
 ): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
+    reportOperatingRoomWriteFailure(id, hospitalId, Object.keys(updates));
     return false;
   }
-  
-  try {
-    const { error } = await supabase
-      .from('operating_rooms')
-      .update(updates)
-      .eq('id', id)
-      .eq('hospital_id', activeHospitalId || 'default');
 
-    if (error) {
+  let effectiveUpdates: Record<string, unknown> = { ...(updates as Record<string, unknown>) };
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= ROOM_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      const { data, error } = await supabase
+        .from('operating_rooms')
+        .update(effectiveUpdates)
+        .eq('id', id)
+        .eq('hospital_id', hospitalId)
+        .select('id')
+        .maybeSingle();
+
+      if (!error && data?.id === id) return true;
+
+      lastError = error ?? new Error('Databáze nepotvrdila změnu operačního sálu.');
+
       // Chybějící volitelný sloupec (kód 42703, např. paused_at / enhanced_hygiene_at,
       // dokud nebyla spuštěna migrace) → odeber tyto sloupce a zkus to znovu,
       // aby základní změna (např. is_paused, is_enhanced_hygiene) prošla.
-      if (error.code === '42703') {
+      if (error?.code === '42703') {
         const OPTIONAL_COLUMNS = ['paused_at', 'enhanced_hygiene_at', 'notice_message', 'notice_at', 'notice_sender'];
-        const stripped: Record<string, unknown> = { ...(updates as Record<string, unknown>) };
+        const stripped = { ...effectiveUpdates };
         let removed = false;
         for (const col of OPTIONAL_COLUMNS) {
           if (col in stripped) { delete stripped[col]; removed = true; }
         }
         if (removed && Object.keys(stripped).length > 0) {
-          const retry = await supabase
-            .from('operating_rooms')
-            .update(stripped)
-            .eq('id', id)
-            .eq('hospital_id', activeHospitalId || 'default');
-          if (!retry.error) {
-            console.warn('[DB] Volitelný sloupec chybí — proběhla migrace bez něj. Spusť scripts/add-*.sql.');
-            return true;
-          }
+          effectiveUpdates = stripped;
+          logger.warn('[DB] Volitelný sloupec chybí; opakuji zápis bez něj.');
+          continue;
         }
       }
-      // Supabase chybové objekty se do konzole serializují jako „{}"; vypíšeme
-      // proto explicitně jednotlivá pole, ať je vidět skutečná příčina.
-      console.error('Error updating operating room:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-        columns: Object.keys(updates),
-      });
-      return false;
+
+      if (attempt === 1) requestHospitalAccessRefresh();
+    } catch (error) {
+      lastError = error;
+      if (attempt === 1) requestHospitalAccessRefresh();
     }
-    return true;
-  } catch (err) {
-    console.error('Error updating operating room:', err instanceof Error ? err.message : err);
-    return false;
+
+    if (attempt < ROOM_WRITE_ATTEMPTS) {
+      await wait(ROOM_WRITE_RETRY_DELAYS_MS[attempt - 1] ?? 1_250);
+    }
   }
+
+  const error = lastError as {
+    message?: string;
+    details?: string;
+    hint?: string;
+    code?: string;
+  } | null;
+  logger.error('[DB] Zápis operačního sálu nebyl potvrzen ani po opakování:', {
+    roomId: id,
+    hospitalId,
+    message: error?.message,
+    details: error?.details,
+    hint: error?.hint,
+    code: error?.code,
+    columns: Object.keys(updates),
+  });
+  reportOperatingRoomWriteFailure(id, hospitalId, Object.keys(updates));
+  return false;
+}
+
+/**
+ * Zápisy stejného sálu jsou serializované. Rychlé po sobě jdoucí akce se tak
+ * nemohou v síti předběhnout a přepsat novější stav starším požadavkem.
+ */
+export function updateOperatingRoom(
+  id: string,
+  updates: OperatingRoomUpdate,
+): Promise<boolean> {
+  const hospitalId = getDatabaseHospitalId();
+  const queueKey = `${hospitalId}:${id}`;
+  const previous = roomWriteQueues.get(queueKey) ?? Promise.resolve(true);
+  const next = previous
+    .catch(() => false)
+    .then(() => performOperatingRoomUpdate(id, updates, hospitalId));
+
+  roomWriteQueues.set(queueKey, next);
+  void next.finally(() => {
+    if (roomWriteQueues.get(queueKey) === next) roomWriteQueues.delete(queueKey);
+  });
+  return next;
 }
 
 /**
@@ -803,6 +838,7 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   const result: Partial<OperatingRoom> = {};
   
   if (row.id !== undefined) result.id = row.id;
+  if (row.state_revision !== undefined) result.stateRevision = row.state_revision;
   if (row.name !== undefined) result.name = row.name;
   if (row.department !== undefined) result.department = row.department;
   if (row.sort_order !== undefined) result.sort_order = row.sort_order ?? undefined;

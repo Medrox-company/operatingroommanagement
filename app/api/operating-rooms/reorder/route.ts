@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
-import { requireSession } from '@/lib/auth/server';
+import { requireHospitalAccess } from '@/lib/hospital/access';
+import { assertSameOrigin } from '@/lib/auth/csrf';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(req, { adminOnly: true });
+  if (access instanceof NextResponse) return access;
+  const csrf = assertSameOrigin(req);
+  if (csrf) return csrf;
 
   try {
-    const { rooms, hospitalId } = await req.json();
+    const { rooms } = await req.json();
+    const { hospitalId } = access;
 
     if (!Array.isArray(rooms)) {
       return NextResponse.json({ error: 'Invalid rooms format' }, { status: 400 });
@@ -17,10 +21,6 @@ export async function POST(req: NextRequest) {
     if (rooms.length > 200) {
       return NextResponse.json({ error: 'Too many rooms' }, { status: 400 });
     }
-    if (typeof hospitalId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) {
-      return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
-    }
-
     const supabase = getSupabaseAdmin();
 
     // Update sort_order for each room

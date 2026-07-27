@@ -1,4 +1,4 @@
-const CACHE_NAME = 'or-control-v3';
+const CACHE_NAME = 'or-control-v4';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -46,24 +46,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API requests - network first
+  // Personalizované API odpovědi nikdy neukládáme. Jejich obsah závisí na
+  // session a nemocniční cookie; offline kopie by mohla být zastaralá nebo
+  // patřit předchozímu uživateli/zařízení.
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const cloned = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, cloned);
-          });
-          return response;
-        })
-        .catch(() => {
-          console.log('[SW] API request failed, checking cache:', url.pathname);
-          return caches.match(request).then((response) => {
-            return response || new Response('Offline - API not available', { status: 503 });
-          });
-        }),
-    );
     return;
   }
 

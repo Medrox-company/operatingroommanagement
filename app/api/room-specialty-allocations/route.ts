@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
-import { requireSession } from '@/lib/auth/server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
-import { getRequestHospitalId } from '@/lib/hospital/request';
+import { requireHospitalAccess } from '@/lib/hospital/access';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
@@ -36,18 +35,6 @@ function repeatedDates(start: Date, repeat: 'single' | 'month' | 'year') {
   return result;
 }
 
-async function canAccessHospital(userId: string, role: string, hospitalId: string) {
-  if (role === 'admin') return true;
-  const admin = getSupabaseAdmin();
-  const { data } = await admin
-    .from('hospital_user_memberships')
-    .select('user_id')
-    .eq('user_id', userId)
-    .eq('hospital_id', hospitalId)
-    .maybeSingle();
-  return Boolean(data);
-}
-
 function databaseError(error: { code?: string; message?: string } | null, fallback: string) {
   if (error?.code === '42P01' || error?.code === 'PGRST205') {
     return NextResponse.json(
@@ -77,14 +64,11 @@ function hospitalDepartmentId(hospitalId: string, name: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
-  const hospitalId = getRequestHospitalId(request);
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
+  const { hospitalId } = access;
   if (!hospitalId || !HOSPITAL_PATTERN.test(hospitalId)) {
     return NextResponse.json({ error: 'Zdravotnické zařízení není vybráno.' }, { status: 400 });
-  }
-  if (!await canAccessHospital(auth.user.sub, auth.user.role, hospitalId)) {
-    return NextResponse.json({ error: 'K zařízení nemáte přístup.' }, { status: 403 });
   }
 
   const requestedDate = request.nextUrl.searchParams.get('date');
@@ -166,17 +150,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
-  const hospitalId = getRequestHospitalId(request);
+  const { hospitalId } = access;
   if (!hospitalId || !HOSPITAL_PATTERN.test(hospitalId)) {
     return NextResponse.json({ error: 'Zdravotnické zařízení není vybráno.' }, { status: 400 });
-  }
-  if (!await canAccessHospital(auth.user.sub, auth.user.role, hospitalId)) {
-    return NextResponse.json({ error: 'K zařízení nemáte přístup.' }, { status: 403 });
   }
 
   const body = await request.json().catch(() => ({}));

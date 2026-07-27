@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmailNotification, generateEmailTemplate } from '@/lib/email';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
-import { requireSession } from '@/lib/auth/server';
 import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
+import { requireHospitalAccess } from '@/lib/hospital/access';
+import { assertSameOrigin } from '@/lib/auth/csrf';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +12,6 @@ interface NotificationRequest {
   roomId: string;
   roomName: string;
   customReason?: string;
-  hospitalId: string;
 }
 
 const NOTIFICATION_TYPE_MAP: Record<string, { name: string; field: string; subject: string }> = {
@@ -48,12 +48,14 @@ const NOTIFICATION_TYPE_MAP: Record<string, { name: string; field: string; subje
 };
 
 export async function POST(request: NextRequest) {
-  // AuthN — pouze přihlášení uživatelé mohou spouštět odesílání e-mailů
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+  const { hospitalId, user } = access;
 
   // Rate limit — max 20 odeslání / 1 minuta / uživatel (ochrana proti zneužití)
-  const rl = rateLimit(`notify:${auth.user.sub}:${getClientIdentifier(request.headers)}`, {
+  const rl = rateLimit(`notify:${user.sub}:${getClientIdentifier(request.headers)}`, {
     limit: 20,
     windowMs: 60 * 1000,
   });
@@ -67,8 +69,7 @@ export async function POST(request: NextRequest) {
   const supabase = getSupabaseAdmin();
 
   try {
-    const { type, roomId, roomName, customReason, hospitalId }: NotificationRequest = await request.json();
-    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId || '')) return NextResponse.json({ error: 'Neplatné zařízení' }, { status: 400 });
+    const { type, roomId, roomName, customReason }: NotificationRequest = await request.json();
 
     const notificationType = NOTIFICATION_TYPE_MAP[type];
     if (!notificationType) {
@@ -82,6 +83,19 @@ export async function POST(request: NextRequest) {
     if (customReason !== undefined && (typeof customReason !== 'string' || customReason.length > 2000)) {
       return NextResponse.json({ error: 'Neplatný customReason' }, { status: 400 });
     }
+    const { data: room, error: roomError } = await supabase
+      .from('operating_rooms')
+      .select('id, name')
+      .eq('id', roomId)
+      .eq('hospital_id', hospitalId)
+      .maybeSingle();
+    if (roomError) {
+      return NextResponse.json({ error: 'Operační sál nelze ověřit' }, { status: 500 });
+    }
+    if (!room) {
+      return NextResponse.json({ error: 'Operační sál do vybraného zařízení nepatří' }, { status: 404 });
+    }
+    const verifiedRoomName = room.name || roomName;
 
     // Get management contacts that want this type of notification
     const { data: contacts, error: contactsError } = await supabase
@@ -104,7 +118,7 @@ export async function POST(request: NextRequest) {
           .insert({
             hospital_id: hospitalId,
             room_id: roomId,
-            room_name: roomName,
+            room_name: verifiedRoomName,
             notification_type: type,
             custom_reason: customReason || null,
             recipient_count: 0,
@@ -126,11 +140,11 @@ export async function POST(request: NextRequest) {
     // Generate email HTML using the same template as NotificationsManager
     const emailHtml = generateEmailTemplate({
       type: 'emergency_alert',
-      roomName: roomName,
+      roomName: verifiedRoomName,
       message: customReason || notificationType.name,
       details: {
         'Typ notifikace': notificationType.name,
-        'Sál': roomName,
+        'Sál': verifiedRoomName,
         'Čas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
         ...(customReason ? { 'Podrobnosti': customReason } : {}),
       },
@@ -142,7 +156,7 @@ export async function POST(request: NextRequest) {
     for (const contact of contacts) {
       const result = await sendEmailNotification({
         to: contact.email,
-        subject: `${notificationType.subject} - Sál: ${roomName}`,
+        subject: `${notificationType.subject} - Sál: ${verifiedRoomName}`,
         html: emailHtml,
         recipientName: contact.name,
       });
@@ -167,7 +181,7 @@ export async function POST(request: NextRequest) {
         .insert({
           hospital_id: hospitalId,
           room_id: roomId,
-          room_name: roomName,
+          room_name: verifiedRoomName,
           notification_type: type,
           custom_reason: customReason || null,
           recipient_count: successCount,

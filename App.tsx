@@ -77,7 +77,6 @@ const AppContent: React.FC = () => {
   const {
     rooms,
     roomsLoaded,
-    isDbConnected,
     setRooms,
     refreshRooms,
     ensureRoomDetails,
@@ -208,98 +207,77 @@ const AppContent: React.FC = () => {
     }
   }, [currentView, isModuleEnabled]);
 
+  const roomsRef = useRef<OperatingRoom[]>(rooms);
+  roomsRef.current = rooms;
+
   const updateRoomStep = useCallback((roomId: string, newStepIndex: number, stepColor?: string) => {
-    // Mark this room as recently updated locally to prevent realtime flicker
     markRoomLocallyUpdated(roomId);
-
     const now = new Date().toISOString();
+    const currentRoom = roomsRef.current.find((room) => room.id === roomId);
+    if (!currentRoom) return;
 
-    // Check if operation is being completed (transitioning to "Sál připraven po úklidu" - index 7, or back to index 0)
-    const isOperationComplete = (currentIndex: number, nextIndex: number) => {
-      if (nextIndex === 0) return true;
-      if (nextIndex === 7 && currentIndex >= 1) return true;
-      return false;
-    };
+    const isOperationComplete =
+      newStepIndex === 0 || (newStepIndex === 7 && currentRoom.currentStepIndex >= 1);
+    let completedOperations = currentRoom.completedOperations || [];
+    if (isOperationComplete && currentRoom.operationStartedAt) {
+      completedOperations = [
+        ...completedOperations,
+        {
+          startedAt: currentRoom.operationStartedAt,
+          endedAt: now,
+          statusHistory: currentRoom.statusHistory ? [...currentRoom.statusHistory] : [],
+        },
+      ];
+    }
 
-    // Compute the new room state using a functional updater. We do the heavy lifting
-    // inside the reducer so we always have access to the latest `room` data (no stale
-    // closure on `rooms`), and we capture the DB payload via a ref-style local var
-    // so we can persist it AFTER React has applied the optimistic update.
-    let dbPayload: {
+    const shouldResetHistory = newStepIndex === 0 || newStepIndex === 7;
+    const statusHistory: RoomStatusHistory = shouldResetHistory
+      ? []
+      : [
+          ...(currentRoom.statusHistory || []),
+          { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' },
+        ];
+    const operationStartedAt =
+      newStepIndex === 1 && (currentRoom.currentStepIndex === 0 || currentRoom.currentStepIndex === 7)
+        ? now
+        : shouldResetHistory
+          ? null
+          : currentRoom.operationStartedAt || null;
+
+    const dbPayload: {
       current_step_index: number;
       phase_started_at: string;
       operation_started_at: string | null;
       status_history: RoomStatusHistory;
       completed_operations: CompletedOperations;
-    } | null = null;
+    } = {
+      current_step_index: newStepIndex,
+      phase_started_at: now,
+      operation_started_at: operationStartedAt,
+      status_history: statusHistory,
+      completed_operations: completedOperations,
+    };
 
     setRooms(prev => prev.map(room => {
       if (room.id !== roomId) return room;
-
-      // Save completed operation when transitioning to ready state
-      let updatedCompletedOps = room.completedOperations || [];
-      const shouldSaveOperation =
-        isOperationComplete(room.currentStepIndex, newStepIndex) && !!room.operationStartedAt;
-
-      if (shouldSaveOperation) {
-        updatedCompletedOps = [
-          ...updatedCompletedOps,
-          {
-            startedAt: room.operationStartedAt!,
-            endedAt: now,
-            statusHistory: room.statusHistory ? [...room.statusHistory] : [],
-          },
-        ];
-      }
-
-      // Build status history - reset when going back to ready state
-      const shouldResetHistory = newStepIndex === 0 || newStepIndex === 7;
-      const currentHistory = room.statusHistory || [];
-      const newHistory = shouldResetHistory
-        ? []
-        : [...currentHistory, { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' }];
-
-      const operationStartedAt =
-        newStepIndex === 1 && (room.currentStepIndex === 0 || room.currentStepIndex === 7)
-          ? now
-          : shouldResetHistory
-            ? null
-            : room.operationStartedAt;
-
-      // Capture payload for DB write (computed from authoritative `prev` snapshot)
-      dbPayload = {
-        current_step_index: newStepIndex,
-        phase_started_at: now,
-        operation_started_at: operationStartedAt,
-        status_history: newHistory,
-        completed_operations: updatedCompletedOps,
-      };
-
       return {
         ...room,
         currentStepIndex: newStepIndex,
         phaseStartedAt: now,
         operationStartedAt,
-        statusHistory: newHistory,
-        completedOperations: updatedCompletedOps,
+        statusHistory,
+        completedOperations,
       };
     }));
 
-    // Fire-and-forget DB persist. UI has already updated optimistically �� we don't
-    // block on the network roundtrip. Errors are logged but never surfaced.
-    if (isDbConnected && dbPayload) {
-      updateOperatingRoom(roomId, dbPayload).catch((err) =>
-        console.error('[v0] updateRoomStep DB persist failed', err)
-      );
-    }
-  }, [isDbConnected, markRoomLocallyUpdated, setRooms]);
+    // Zápis proběhne vždy. Případný výpadek obstará retry a následné
+    // cílené načtení autoritativního stavu pouze tohoto sálu.
+    void updateOperatingRoom(roomId, dbPayload);
+  }, [markRoomLocallyUpdated, setRooms]);
 
   // ── Globální auto-ukončení úklidu (běží i bez otevřeného detailu sálu) ──
   // Pokud status „úklid" trvá > 30 min (+10s po upozornění), přepne sál na další
   // status. Logika je optimistická → na dalším ticku už sál není v úklidu.
-  const roomsRef = useRef<OperatingRoom[]>(rooms);
-  useEffect(() => { roomsRef.current = rooms; }, [rooms]);
-
   useEffect(() => {
     const statuses = workflowStatuses || [];
     if (statuses.length === 0) return;
@@ -348,10 +326,8 @@ const AppContent: React.FC = () => {
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, isEmergency: newValue } : room
     ));
-    if (isDbConnected) {
-      await updateOperatingRoom(roomId, { is_emergency: newValue });
-    }
-  }, [isDbConnected, markRoomLocallyUpdated, rooms, setRooms]);
+    await updateOperatingRoom(roomId, { is_emergency: newValue });
+  }, [markRoomLocallyUpdated, rooms, setRooms]);
 
   const toggleLock = useCallback(async (roomId: string) => {
     const currentRoom = rooms.find(r => r.id === roomId);
@@ -362,10 +338,8 @@ const AppContent: React.FC = () => {
     setRooms(prev => prev.map(room =>
       room.id === roomId ? { ...room, isLocked: newValue } : room
     ));
-    if (isDbConnected) {
-      await updateOperatingRoom(roomId, { is_locked: newValue });
-    }
-  }, [isDbConnected, markRoomLocallyUpdated, rooms, setRooms]);
+    await updateOperatingRoom(roomId, { is_locked: newValue });
+  }, [markRoomLocallyUpdated, rooms, setRooms]);
 
   const handleUpdateRoomEndTime = useCallback(async (roomId: string, newTime: Date | null) => {
     markRoomLocallyUpdated(roomId);
@@ -374,12 +348,10 @@ const AppContent: React.FC = () => {
         ? { ...room, estimatedEndTime: newTime ? newTime.toISOString() : undefined }
         : room
     ));
-    if (isDbConnected) {
-      await updateOperatingRoom(roomId, { 
-        estimated_end_time: newTime ? newTime.toISOString() : null 
-      });
-    }
-  }, [isDbConnected, markRoomLocallyUpdated, setRooms]);
+    await updateOperatingRoom(roomId, {
+      estimated_end_time: newTime ? newTime.toISOString() : null,
+    });
+  }, [markRoomLocallyUpdated, setRooms]);
 
   const handleEnhancedHygieneToggle = useCallback(async (roomId: string, enabled: boolean) => {
     markRoomLocallyUpdated(roomId);
@@ -391,23 +363,20 @@ const AppContent: React.FC = () => {
         ? { ...room, isEnhancedHygiene: enabled, ...(enabled ? { enhancedHygieneAt: hygieneAt } : {}) }
         : room
     ));
-    if (isDbConnected) {
-      await updateOperatingRoom(roomId, {
-        is_enhanced_hygiene: enabled,
-        ...(enabled ? { enhanced_hygiene_at: hygieneAt } : {}),
+    const saved = await updateOperatingRoom(roomId, {
+      is_enhanced_hygiene: enabled,
+      ...(enabled ? { enhanced_hygiene_at: hygieneAt } : {}),
+    });
+    // Auditní záznam vytvoříme jen po potvrzeném zápisu primárního stavu.
+    if (saved && enabled) {
+      void logNotificationEvent({
+        roomId,
+        roomName: targetRoom?.name || roomId,
+        notificationType: 'infectious_patient',
+        customReason: 'Zvýšený hygienický režim — infekční pacient',
       });
-      // Při VYHLÁŠENÍ zvýšeného hygienického režimu (infekční pacient) zapiš
-      // trvalý záznam do notifications_log — na kterém sále a v jakém čase.
-      if (enabled) {
-        void logNotificationEvent({
-          roomId,
-          roomName: targetRoom?.name || roomId,
-          notificationType: 'infectious_patient',
-          customReason: 'Zvýšený hygienický režim — infekční pacient',
-        });
-      }
     }
-  }, [isDbConnected, markRoomLocallyUpdated, rooms, setRooms]);
+  }, [markRoomLocallyUpdated, rooms, setRooms]);
 
   const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: WeeklySchedule) => {
     markRoomLocallyUpdated(roomId);
@@ -416,12 +385,10 @@ const AppContent: React.FC = () => {
         ? { ...room, weeklySchedule: schedule }
         : room
     ));
-    if (isDbConnected) {
-      await updateOperatingRoom(roomId, { 
-        weekly_schedule: schedule
-      });
-    }
-  }, [isDbConnected, markRoomLocallyUpdated, setRooms]);
+    await updateOperatingRoom(roomId, {
+      weekly_schedule: schedule,
+    });
+  }, [markRoomLocallyUpdated, setRooms]);
 
   const handleStaffChange = useCallback(async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
     markRoomLocallyUpdated(roomId);
@@ -443,21 +410,23 @@ const AppContent: React.FC = () => {
       return { ...room, staff: updatedStaff };
     }));
 
-    // Update database - null to unassign
-    if (isDbConnected) {
-      const dbField: StaffAssignmentField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
-      const staffUpdate: StaffAssignmentUpdate = { [dbField]: isUnassigning ? null : staffId };
-      await updateOperatingRoom(roomId, staffUpdate);
-    }
-  }, [isDbConnected, markRoomLocallyUpdated, setRooms]);
+    const dbField: StaffAssignmentField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
+    const staffUpdate: StaffAssignmentUpdate = { [dbField]: isUnassigning ? null : staffId };
+    await updateOperatingRoom(roomId, staffUpdate);
+  }, [markRoomLocallyUpdated, setRooms]);
 
   const handlePatientStatusChange = useCallback((roomId: string, calledAt: string | null, arrivedAt: string | null) => {
+    markRoomLocallyUpdated(roomId);
     setRooms(prev => prev.map(room =>
       room.id === roomId
         ? { ...room, patientCalledAt: calledAt, patientArrivedAt: arrivedAt }
         : room
     ));
-  }, [setRooms]);
+    void updateOperatingRoom(roomId, {
+      patient_called_at: calledAt,
+      patient_arrived_at: arrivedAt,
+    });
+  }, [markRoomLocallyUpdated, setRooms]);
 
   const handlePauseChange = useCallback((roomId: string, paused: boolean, pausedAt: string | null) => {
     markRoomLocallyUpdated(roomId);
@@ -466,6 +435,10 @@ const AppContent: React.FC = () => {
         ? { ...room, isPaused: paused, pausedAt }
         : room
     ));
+    void updateOperatingRoom(roomId, {
+      is_paused: paused,
+      paused_at: pausedAt,
+    });
   }, [markRoomLocallyUpdated, setRooms]);
 
   // Stabilní handlery pro Sidebar / MobileNav — bez useCallbacku se recreatují

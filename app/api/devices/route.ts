@@ -1,33 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { requireSession, requireAdmin } from '@/lib/auth/server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
-import { getRequestHospitalId } from '@/lib/hospital/request';
+import { requireHospitalAccess } from '@/lib/hospital/access';
+import { getSupabaseAdmin } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function getSupabase() {
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return null;
-  }
-  return createClient(supabaseUrl, supabaseServiceKey);
-}
-
 // GET - List all devices (jen přihlášení — seznam obsahuje IP adresy zařízení)
 export async function GET(request: NextRequest) {
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
-  const hospitalId = getRequestHospitalId(request);
-  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
+  const { hospitalId } = access;
 
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-  }
+  const supabase = getSupabaseAdmin();
 
   try {
     const { data, error } = await supabase
@@ -53,10 +38,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Register or update a device (jen přihlášení + rate limit)
 export async function POST(request: NextRequest) {
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
-  const hospitalId = getRequestHospitalId(request);
-  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
+  const { hospitalId } = access;
 
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
@@ -72,10 +56,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-  }
+  const supabase = getSupabaseAdmin();
 
   try {
     const body = await request.json();
@@ -161,18 +142,14 @@ export async function POST(request: NextRequest) {
 
 // PATCH - Update device (activate/deactivate, rename) — pouze admin
 export async function PATCH(request: NextRequest) {
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
-  const hospitalId = getRequestHospitalId(request);
-  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+  const access = await requireHospitalAccess(request, { adminOnly: true });
+  if (access instanceof NextResponse) return access;
+  const { hospitalId } = access;
 
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-  }
+  const supabase = getSupabaseAdmin();
 
   try {
     const body = await request.json();
@@ -211,18 +188,14 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE - Remove a device — pouze admin
 export async function DELETE(request: NextRequest) {
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
-  const hospitalId = getRequestHospitalId(request);
-  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+  const access = await requireHospitalAccess(request, { adminOnly: true });
+  if (access instanceof NextResponse) return access;
+  const { hospitalId } = access;
 
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-  }
+  const supabase = getSupabaseAdmin();
 
   try {
     const { searchParams } = new URL(request.url);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
-import { requireSession, requireAdmin } from '@/lib/auth/server';
+import { requireHospitalAccess } from '@/lib/hospital/access';
+import { assertSameOrigin } from '@/lib/auth/csrf';
 
 export const runtime = 'nodejs';
 
@@ -13,12 +14,11 @@ function sanitizeString(v: unknown, maxLen = 500): string {
 
 // GET - seznam všech management kontaktů (pro přihlášené uživatele)
 export async function GET(request: NextRequest) {
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
 
   try {
-    const hospitalId = request.nextUrl.searchParams.get('hospitalId') || '';
-    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
+    const { hospitalId } = access;
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('management_contacts')
@@ -39,13 +39,14 @@ export async function GET(request: NextRequest) {
 
 // POST - přidání nového management kontaktu (admin only)
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(request, { adminOnly: true });
+  if (access instanceof NextResponse) return access;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
 
   try {
     const body = await request.json();
-    const hospitalId = sanitizeString(body.hospitalId, 100);
-    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
+    const { hospitalId } = access;
     const position = sanitizeString(body.position, 200);
     const email = sanitizeString(body.email, 255).toLowerCase();
     const name = sanitizeString(body.name, 200);
@@ -96,13 +97,14 @@ export async function POST(request: NextRequest) {
 
 // PUT - aktualizace management kontaktu (admin only)
 export async function PUT(request: NextRequest) {
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(request, { adminOnly: true });
+  if (access instanceof NextResponse) return access;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
 
   try {
     const body = await request.json();
-    const hospitalId = sanitizeString(body.hospitalId, 100);
-    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
+    const { hospitalId } = access;
     const id = sanitizeString(body.id, 100);
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -154,18 +156,18 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - smazání management kontaktu (admin only)
 export async function DELETE(request: NextRequest) {
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(request, { adminOnly: true });
+  if (access instanceof NextResponse) return access;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
 
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const hospitalId = searchParams.get('hospitalId') || '';
+    const { hospitalId } = access;
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
-    if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) return NextResponse.json({ error: 'Invalid hospital' }, { status: 400 });
-
     const supabase = getSupabaseAdmin();
     const { error } = await supabase
       .from('management_contacts')

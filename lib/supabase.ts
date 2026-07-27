@@ -41,8 +41,12 @@ export async function getHospitalRealtimeClient(): Promise<SupabaseClient | null
         detectSessionInUrl: false,
       },
       realtime: {
+        // Heartbeat ve workeru není zpomalován skrytou záložkou ani úsporným
+        // režimem prohlížeče na dlouhodobě běžících nemocničních stanicích.
+        worker: true,
+        heartbeatIntervalMs: 25_000,
         params: {
-          eventsPerSecond: 10,
+          eventsPerSecond: 20,
         },
       },
     });
@@ -62,8 +66,10 @@ function getSupabaseClient(): SupabaseClient | null {
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
     accessToken: async () => hospitalAccessToken,
     realtime: {
+      worker: true,
+      heartbeatIntervalMs: 25_000,
       params: {
-        eventsPerSecond: 10,
+        eventsPerSecond: 20,
       },
     },
   });

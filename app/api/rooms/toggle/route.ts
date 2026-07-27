@@ -1,34 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { requireSession } from '@/lib/auth/server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 import { logger } from '@/lib/logger';
-import { getRequestHospitalId } from '@/lib/hospital/request';
+import { requireHospitalAccess } from '@/lib/hospital/access';
+import { getSupabaseAdmin } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
 
-let supabaseInstance: SupabaseClient | null | undefined;
-
-function getSupabaseClient(): SupabaseClient | null {
-  if (supabaseInstance !== undefined) return supabaseInstance;
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-  supabaseInstance = supabaseUrl && supabaseServiceKey
-    ? createClient(supabaseUrl, supabaseServiceKey)
-    : null;
-
-  return supabaseInstance;
-}
-
 export async function POST(request: NextRequest) {
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
-  const hospitalId = getRequestHospitalId(request);
-  if (!hospitalId) return NextResponse.json({ error: 'Hospital is required' }, { status: 400 });
+  const { hospitalId } = access;
 
   try {
     const body = await request.json();
@@ -45,12 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid value' }, { status: 400 });
     }
 
-    const supabase = getSupabaseClient();
-
-    if (!supabase) {
-      logger.error('[API] Supabase not configured');
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
+    const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
       .from('operating_rooms')

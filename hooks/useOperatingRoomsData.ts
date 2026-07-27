@@ -11,9 +11,7 @@ import {
   type DBOperatingRoom,
 } from '../lib/db';
 import { useHospital } from '../contexts/HospitalContext';
-import { useHospitalRealtime } from '../contexts/RealtimeContext';
-
-const LOCAL_ECHO_WINDOW_MS = 2_000;
+import { useHospitalRealtime, useRealtimeContext } from '../contexts/RealtimeContext';
 
 function sortRooms(rooms: OperatingRoom[]) {
   return [...rooms].sort((a, b) =>
@@ -38,22 +36,32 @@ export function useOperatingRoomsData({
   loadAllDetails: boolean;
 }) {
   const { activeHospitalId } = useHospital();
+  const { connected: realtimeConnected } = useRealtimeContext();
   const hospitalId = enabled ? activeHospitalId : null;
   const upgradedHospitalRef = useRef<string | null>(null);
   const loadedRoomDetailsRef = useRef(new Set<string>());
   const recentLocalUpdatesRef = useRef(new Map<string, number>());
+  const wasRealtimeConnectedRef = useRef(false);
 
   const { data, error, isLoading, mutate } = useSWR<OperatingRoom[]>(
     hospitalId ? ['operating-rooms', hospitalId] : null,
     async () => {
+      if (loadAllDetails || upgradedHospitalRef.current === hospitalId) {
+        return (await fetchOperatingRooms(hospitalId!)) ?? [];
+      }
       const lightRooms = await fetchOperatingRoomsLight(hospitalId!);
       if (lightRooms) return lightRooms;
       return (await fetchOperatingRooms(hospitalId!)) ?? [];
     },
     {
       keepPreviousData: false,
-      revalidateOnFocus: false,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      refreshInterval: realtimeConnected ? 120_000 : 15_000,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
       dedupingInterval: 10_000,
+      errorRetryCount: 4,
     },
   );
 
@@ -61,6 +69,7 @@ export function useOperatingRoomsData({
     upgradedHospitalRef.current = null;
     loadedRoomDetailsRef.current.clear();
     recentLocalUpdatesRef.current.clear();
+    wasRealtimeConnectedRef.current = false;
   }, [hospitalId]);
 
   const setRooms = useCallback((update: React.SetStateAction<OperatingRoom[]>) => {
@@ -89,6 +98,18 @@ export function useOperatingRoomsData({
     await mutate((current = []) => upsertRoom(current, fullRoom), { revalidate: false });
   }, [hospitalId, mutate]);
 
+  const reconcileRoom = useCallback(async (roomId: string) => {
+    if (!hospitalId) return;
+    const fullRoom = await fetchOperatingRoomById(roomId, hospitalId);
+    recentLocalUpdatesRef.current.delete(roomId);
+    loadedRoomDetailsRef.current.delete(`${hospitalId}:${roomId}`);
+    await mutate((current = []) => (
+      fullRoom
+        ? upsertRoom(current, fullRoom)
+        : current.filter((room) => room.id !== roomId)
+    ), { revalidate: false });
+  }, [hospitalId, mutate]);
+
   const refreshRooms = useCallback(async () => {
     if (!hospitalId) return;
     const fullRooms = await fetchOperatingRooms(hospitalId);
@@ -112,14 +133,39 @@ export function useOperatingRoomsData({
     });
   }, [hospitalId, loadAllDetails, mutate]);
 
+  // Po obnovení websocketu proveď jeden kontrolní dotaz. Tím se zacelí mezera
+  // událostí, které mohly vzniknout během spánku počítače nebo výpadku sítě.
+  useEffect(() => {
+    const wasConnected = wasRealtimeConnectedRef.current;
+    wasRealtimeConnectedRef.current = realtimeConnected;
+    if (realtimeConnected && !wasConnected && data !== undefined) {
+      void mutate();
+    }
+  }, [data, mutate, realtimeConnected]);
+
+  // Když databáze nepotvrdí optimistický zápis ani po retry, vrať konkrétní sál
+  // k autoritativnímu databázovému stavu. Ostatní sály se znovu nenačítají.
+  useEffect(() => {
+    const handleWriteFailure = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        roomId?: string;
+        hospitalId?: string;
+      }>).detail;
+      if (!detail?.roomId || detail.hospitalId !== hospitalId) return;
+      void reconcileRoom(detail.roomId);
+    };
+    window.addEventListener('operatingRoomWriteFailed', handleWriteFailure);
+    return () => window.removeEventListener('operatingRoomWriteFailed', handleWriteFailure);
+  }, [hospitalId, reconcileRoom]);
+
   useHospitalRealtime('operating_rooms', (payload) => {
     if (!hospitalId) return;
     const raw = (payload.new ?? payload.old) as Partial<DBOperatingRoom> | null;
     const roomId = raw?.id;
     if (!roomId) return;
 
-    const lastLocalUpdate = recentLocalUpdatesRef.current.get(roomId);
-    if (lastLocalUpdate && Date.now() - lastLocalUpdate < LOCAL_ECHO_WINDOW_MS) return;
+    // I vlastní potvrzenou událost vždy sloučíme. Databáze je zdroj pravdy a
+    // zároveň tím nepřijdeme o téměř současnou změnu z jiného pracoviště.
     recentLocalUpdatesRef.current.delete(roomId);
 
     if (payload.eventType === 'DELETE') {
@@ -128,13 +174,19 @@ export function useOperatingRoomsData({
     }
 
     if (payload.eventType === 'INSERT') {
-      void fetchOperatingRoomById(roomId, hospitalId).then((room) => {
-        if (room) void mutate((current = []) => upsertRoom(current, room), { revalidate: false });
-      });
+      void reconcileRoom(roomId);
       return;
     }
 
     const currentRoom = data?.find((room) => room.id === roomId);
+    const incomingRevision = typeof raw.state_revision === 'number' ? raw.state_revision : null;
+    if (
+      incomingRevision !== null
+      && typeof currentRoom?.stateRevision === 'number'
+      && incomingRevision < currentRoom.stateRevision
+    ) {
+      return;
+    }
     const staffAssignmentChanged = Boolean(currentRoom) && (
       (raw.doctor_id !== undefined && raw.doctor_id !== (currentRoom?.staff.doctor.id ?? null))
       || (raw.nurse_id !== undefined && raw.nurse_id !== (currentRoom?.staff.nurse.id ?? null))
@@ -142,9 +194,7 @@ export function useOperatingRoomsData({
         && raw.anesthesiologist_id !== (currentRoom?.staff.anesthesiologist?.id ?? null))
     );
     if (staffAssignmentChanged) {
-      void fetchOperatingRoomById(roomId, hospitalId).then((room) => {
-        if (room) void mutate((current = []) => upsertRoom(current, room), { revalidate: false });
-      });
+      void reconcileRoom(roomId);
       return;
     }
 

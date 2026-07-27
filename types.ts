@@ -84,6 +84,8 @@ export const DEFAULT_WEEKLY_SCHEDULE: WeeklySchedule = {
 
 export interface OperatingRoom {
   id: string;
+  /** Monotónní databázová revize pro ignorování opožděných Realtime událostí. */
+  stateRevision?: number;
   name: string;
   department: string;
   status: RoomStatus;

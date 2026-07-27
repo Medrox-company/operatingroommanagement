@@ -10,7 +10,7 @@ import {
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone,
   Utensils,
 } from 'lucide-react';
-import { recordStatusEvent, updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
+import { recordStatusEvent, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
@@ -423,8 +423,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       setPatientArrivedTime(null);
       setPatientCallElapsedTime('00:00');
       onPatientStatusChange?.(null, null);
-      // Fire-and-forget DB persist
-      updateOperatingRoom(room.id, { patient_called_at: null, patient_arrived_at: null }).catch(() => {});
       setTimeout(() => { isResettingRef.current = false; }, 1500);
     }
 
@@ -959,10 +957,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   setIsPaused(newPaused);
                   setPauseStartedAt(pausedAt);
                   onPauseChange?.(newPaused, pausedAtIso);
-                  await updateOperatingRoom(room.id, {
-                    is_paused: newPaused,
-                    paused_at: pausedAtIso,
-                  });
                   await recordStatusEvent({
                     operating_room_id: room.id,
                     event_type: newPaused ? 'pause' : 'resume',
@@ -1002,7 +996,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 onClick={async () => {
                   const newH = !room.isEnhancedHygiene;
                   onEnhancedHygieneToggle?.(newH);
-                  await updateOperatingRoom(room.id, { is_enhanced_hygiene: newH });
                   await recordStatusEvent({
                     operating_room_id: room.id,
                     event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
@@ -1041,16 +1034,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     setPatientCalledTime(now);
                     setShowPatientCalledText(true);
                     setTimeout(() => setShowPatientCalledText(false), 5000);
-                    await updateOperatingRoom(room.id, {
-                      patient_called_at: now.toISOString(),
-                    });
+                    onPatientStatusChange?.(now.toISOString(), null);
                     await recordStatusEvent({
                       operating_room_id: room.id,
                       event_type: 'patient_call',
                       step_index: currentStepIndex,
                       step_name: currentStep?.name || 'Status',
                     });
-                    onPatientStatusChange?.(now.toISOString(), null);
                   }
                 }}
                 disabled={!!patientCalledTime}
@@ -1084,19 +1074,16 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                     const now = new Date();
                     setPatientArrivedTime(now);
                     setShowPatientArrivedText(true);
-                    await updateOperatingRoom(room.id, {
-                      patient_arrived_at: now.toISOString(),
-                    });
+                    onPatientStatusChange?.(
+                      patientCalledTime.toISOString(),
+                      now.toISOString(),
+                    );
                     await recordStatusEvent({
                       operating_room_id: room.id,
                       event_type: 'patient_arrived',
                       step_index: currentStepIndex,
                       step_name: currentStep?.name || 'Status',
                     });
-                    onPatientStatusChange?.(
-                      patientCalledTime!.toISOString(),
-                      now.toISOString(),
-                    );
                     setTimeout(() => {
                       setShowPatientArrivedText(false);
                     }, 5000);
@@ -1360,14 +1347,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 setPatientCalledTime(now);
                 setShowPatientCalledText(true);
                 setTimeout(() => setShowPatientCalledText(false), 5000);
-                await updateOperatingRoom(room.id, { patient_called_at: now.toISOString() });
+                onPatientStatusChange?.(now.toISOString(), null);
                 await recordStatusEvent({
                   operating_room_id: room.id,
                   event_type: 'patient_call',
                   step_index: currentStepIndex,
                   step_name: currentStep.title,
                 });
-                onPatientStatusChange?.(now.toISOString(), null);
               }
             }}
             disabled={!!patientCalledTime}
@@ -1418,7 +1404,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 const arrivalTime = new Date();
                 const waitDuration = Math.floor((arrivalTime.getTime() - patientCalledTime.getTime()) / 1000);
                 setPatientArrivedTime(arrivalTime);
-                await updateOperatingRoom(room.id, { patient_arrived_at: arrivalTime.toISOString() });
                 setShowPatientArrivedText(true);
                 onPatientStatusChange?.(patientCalledTime.toISOString(), arrivalTime.toISOString());
                 await recordStatusEvent({
@@ -1460,7 +1445,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             onClick={async () => {
               const newHygieneState = !room.isEnhancedHygiene;
               onEnhancedHygieneToggle?.(newHygieneState);
-              await updateOperatingRoom(room.id, { is_enhanced_hygiene: newHygieneState });
               await recordStatusEvent({
                 operating_room_id: room.id,
                 event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
@@ -1494,10 +1478,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 setIsPaused(newPaused);
                 setPauseStartedAt(pausedAt);
                 onPauseChange?.(newPaused, pausedAtIso);
-                await updateOperatingRoom(room.id, {
-                  is_paused: newPaused,
-                  paused_at: pausedAtIso,
-                });
                 await recordStatusEvent({
                   operating_room_id: room.id,
                   event_type: newPaused ? 'pause' : 'resume',

@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { requireSession } from '@/lib/auth/server';
 import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
-import { getRequestHospitalId } from '@/lib/hospital/request';
+import { requireHospitalAccess } from '@/lib/hospital/access';
+import { getSupabaseAdmin } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DOWNLOAD_SIZE = 256 * 1024;
-
-function getSupabase() {
-  if (!supabaseUrl || !supabaseServiceKey) return null;
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 function noStoreHeaders(extra?: Record<string, string>) {
   return {
@@ -42,18 +32,11 @@ function createDiagnosticPayload() {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await requireSession();
-  if (auth instanceof NextResponse) return auth;
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
+  const { hospitalId, user } = access;
 
-  const hospitalId = getRequestHospitalId(request);
-  if (!hospitalId) {
-    return NextResponse.json(
-      { error: 'Nejprve vyberte zdravotnické zařízení.' },
-      { status: 400, headers: noStoreHeaders() },
-    );
-  }
-
-  const limiter = rateLimit(`speed-test:${getClientIdentifier(request.headers)}:${auth.user.sub}`, {
+  const limiter = rateLimit(`speed-test:${getClientIdentifier(request.headers)}:${user.sub}`, {
     limit: 36,
     windowMs: 60 * 1000,
   });
@@ -68,29 +51,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Databázové připojení není nakonfigurováno.' },
-      { status: 500, headers: noStoreHeaders() },
-    );
-  }
-
-  if (auth.user.role !== 'admin') {
-    const { data: membership, error: membershipError } = await supabase
-      .from('hospital_user_memberships')
-      .select('user_id')
-      .eq('user_id', auth.user.sub)
-      .eq('hospital_id', hospitalId)
-      .maybeSingle();
-
-    if (membershipError || !membership) {
-      return NextResponse.json(
-        { error: 'K tomuto zdravotnickému zařízení nemáte přístup.' },
-        { status: 403, headers: noStoreHeaders() },
-      );
-    }
-  }
+  const supabase = getSupabaseAdmin();
 
   const mode = request.nextUrl.searchParams.get('mode');
   if (mode === 'download') {
