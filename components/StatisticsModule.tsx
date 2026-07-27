@@ -297,7 +297,7 @@ function buildRoomOperationIntervals(
 
   for (const e of events) {
     if (e.event_type === 'operation_start') {
-      // If we already had an open start, treat previous as open-ended (shouldn't happen normally)
+      // Nový explicitní start nahradí případný neukončený starý záznam.
       currentStart = new Date(e.timestamp);
     } else if (e.event_type === 'operation_end' && currentStart) {
       intervals.push({ start: currentStart, end: new Date(e.timestamp) });
@@ -305,15 +305,24 @@ function buildRoomOperationIntervals(
     }
   }
 
-  // Handle currently running operation
-  if (currentStart) {
-    intervals.push({ start: currentStart, end: now });
-  } else if (room.operationStartedAt) {
-    // Fallback: room marked as running but no operation_start event in fetched window
-    const opStart = new Date(room.operationStartedAt);
-    if (!isNaN(opStart.getTime())) {
-      intervals.push({ start: opStart, end: now });
-    }
+  // Otevřený interval lze natáhnout do „teď" pouze tehdy, když autoritativní
+  // stav sálu potvrzuje právě běžící operační cyklus. Samotná chybějící
+  // operation_end událost nesmí vytvářet několikahodinový falešný výkon.
+  const authoritativeStart = room.operationStartedAt
+    ? new Date(room.operationStartedAt)
+    : null;
+  const hasAuthoritativeRunningOperation =
+    room.currentStepIndex > 0 &&
+    room.currentStepIndex !== 7 &&
+    authoritativeStart !== null &&
+    Number.isFinite(authoritativeStart.getTime());
+
+  if (hasAuthoritativeRunningOperation && authoritativeStart) {
+    const openStart = currentStart &&
+      Math.abs(currentStart.getTime() - authoritativeStart.getTime()) <= 120_000
+        ? currentStart
+        : authoritativeStart;
+    intervals.push({ start: openStart, end: now });
   }
 
   return intervals;
@@ -387,11 +396,18 @@ function calculateRoomUtilization(
   history: StatusHistoryRow[],
   period: Period
 ): number {
+  // Denní přehled používá všude stejný provozní den 07:00–07:00 a stejný
+  // čitatel jako tabulka „Jednotlivé sály". Tím nevzniká rozdíl mezi
+  // kruhovým grafem, mobilním přehledem a tabulkou.
+  if (period === 'den') {
+    return calculateRoomUtilizationForDay(room, history, operationalToday());
+  }
+
   const totalWorkingMinutes = getRoomTotalWorkingMinutes(room, period);
   if (totalWorkingMinutes === 0) return 0;
 
   const activeMinutes = calculateActiveTimeInWorkingHours(room, history, period);
-  return Math.min(100, Math.round((activeMinutes / totalWorkingMinutes) * 100));
+  return Math.round((activeMinutes / totalWorkingMinutes) * 100);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -470,10 +486,10 @@ function calculateActiveMinutesForDay(
 /**
  * Intervaly výkonů sálu z reálné historie, korektně uzavřené.
  *
- * Klíčový rozdíl proti `buildRoomOperationIntervals`: výkon bez události
- * `operation_end` se NEnatahuje až do „teď" (u minulých dnů by tím uměle
- * narostl aktivní čas o hodiny). Uzavře se podle součtu zaznamenaných fází
- * a otevřený zůstane jen skutečně běžící výkon aktuálního provozního dne.
+ * Interval vzniká jen z explicitní dvojice `operation_start`–`operation_end`.
+ * Do „teď" zůstane otevřený pouze výkon potvrzený aktuálním autoritativním
+ * `operationStartedAt` sálu. Samostatné `step_change` události nejsou důkazem
+ * výkonu a do využití se nezapočítávají.
  */
 function buildDayOperationIntervals(
   room: OperatingRoom,
@@ -487,45 +503,48 @@ function buildDayOperationIntervals(
     .filter(e => e.operating_room_id === room.id && e.timestamp)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-  type Acc = { startMs: number; endMs: number | null; segMs: number };
-  const ops: Acc[] = [];
-  let cur: Acc | null = null;
+  const intervals: { startMs: number; endMs: number }[] = [];
+  let currentStartMs: number | null = null;
 
   for (const e of evts) {
     const t = new Date(e.timestamp).getTime();
     if (!Number.isFinite(t)) continue;
 
     if (e.event_type === 'operation_start') {
-      if (cur) ops.push(cur);
-      cur = { startMs: t, endMs: null, segMs: 0 };
+      // Nový explicitní začátek nahradí případný neukončený starý záznam.
+      // Mezeru mezi dvěma starty nikdy nevydáváme za výkon.
+      currentStartMs = t;
     } else if (e.event_type === 'operation_end') {
-      if (cur) { cur.endMs = t; ops.push(cur); cur = null; }
-    } else if (e.event_type === 'step_change' && e.duration_seconds) {
-      const ms = e.duration_seconds * 1000;
-      if (cur) cur.segMs += ms;
-      else {
-        const last = ops[ops.length - 1];
-        if (last && last.endMs !== null && t - last.endMs <= 120_000) {
-          last.segMs += ms;
-          last.endMs = Math.max(last.endMs, t);
-        } else {
-          ops.push({ startMs: t - ms, endMs: t, segMs: ms });
-        }
+      if (currentStartMs !== null && t >= currentStartMs) {
+        intervals.push({ startMs: currentStartMs, endMs: t });
       }
+      currentStartMs = null;
     }
   }
-  if (cur) ops.push(cur);
 
-  return ops.map((op, i) => {
-    if (op.endMs !== null) return { startMs: op.startMs, endMs: op.endMs };
-    // Otevřený výkon: běží jen tehdy, je-li poslední, jde o dnešní provozní
-    // den a sál je opravdu ve fázi cyklu. Jinak jde o mezeru v datech.
-    const running = i === ops.length - 1 && isCurrentDay && room.currentStepIndex > 0;
-    return {
-      startMs: op.startMs,
-      endMs: running ? now : op.startMs + Math.max(op.segMs, 60_000),
-    };
-  });
+  // Aktuálně běžící výkon se dopočítává do „teď" pouze z autoritativního
+  // operationStartedAt uloženého na sále. Klidové step_change události
+  // (např. několikadenní „Sál připraven") se do využití nikdy nezapočítají.
+  const authoritativeStartMs = room.operationStartedAt
+    ? new Date(room.operationStartedAt).getTime()
+    : Number.NaN;
+  const hasAuthoritativeRunningOperation =
+    isCurrentDay &&
+    room.currentStepIndex > 0 &&
+    room.currentStepIndex !== 7 &&
+    Number.isFinite(authoritativeStartMs);
+
+  if (hasAuthoritativeRunningOperation) {
+    const startMs = currentStartMs !== null &&
+      Math.abs(currentStartMs - authoritativeStartMs) <= 120_000
+        ? currentStartMs
+        : authoritativeStartMs;
+    if (!intervals.some(interval => interval.startMs === startMs)) {
+      intervals.push({ startMs, endMs: now });
+    }
+  }
+
+  return intervals;
 }
 
 /** Počet zahájených výkonů v provozním dni (včetně mimo plánovanou dobu). */
@@ -1349,7 +1368,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
-  const { dbStats, statusHistory, notifications, devices } = useStatisticsData(period);
+  const { dbStats, statusHistory, dayHistory, notifications, devices } = useStatisticsData(period);
 
   /* ── Provozní metriky sálů po dnech ────────────────────────────────────────
      Sekce „Jednotlivé sály" umí listovat po dnech dozadu, proto potřebuje
@@ -1359,21 +1378,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [metricsDay, setMetricsDay] = useState<Date>(() => operationalToday());
   /** Režim hero panelu: primárně orbitální rozpad po sálech, souhrn dne na klik */
   const [heroMode, setHeroMode] = useState<'summary' | 'orbit'>('orbit');
-  const [dayHistory, setDayHistory] = useState<StatusHistoryRow[]>([]);
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      // 31 dní zpět — provozní den začíná v 7:00, ať nejstarší volitelný den
-      // (30 dní zpět) obsahuje celé okno včetně nočního přesahu.
-      const fromDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
-      const h = await fetchStatusHistory({ fromDate, toDate: new Date(), limit: 5000 });
-      if (alive && h) setDayHistory(h);
-    })();
-    return () => { alive = false; };
-  }, []);
-
-
-
   // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
   // Obě funkce volají `window.print()`. Prohlížeč zobrazí systémový dialog,
   // ve kterém uživatel může:

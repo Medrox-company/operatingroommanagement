@@ -23,6 +23,8 @@ interface StatisticsData {
   devices: DeviceRow[];
 }
 
+const DAY_HISTORY_DAYS = 31;
+
 function periodStart(period: StatisticsPeriod, now: Date) {
   const days = period === 'den' ? 1 : period === 'týden' ? 7 : period === 'měsíc' ? 30 : 365;
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
@@ -95,19 +97,48 @@ export function useStatisticsData(period: StatisticsPeriod) {
     { revalidateOnFocus: false, dedupingInterval: 20_000, keepPreviousData: true },
   );
 
+  // Samostatné 31denní okno pro kalendářní/provozní den. Je v SWR cache,
+  // takže se mezi renderovacími cykly nenačítá znovu, a dostává stejné
+  // realtime změny jako hlavní statistická historie.
+  const {
+    data: dayHistoryData,
+    error: dayHistoryError,
+    isLoading: isDayHistoryLoading,
+    mutate: mutateDayHistory,
+  } = useSWR<StatusHistoryRow[]>(
+    activeHospitalId ? ['statistics-day-history', activeHospitalId, DAY_HISTORY_DAYS] : null,
+    async () => {
+      const now = new Date();
+      const fromDate = new Date(now.getTime() - DAY_HISTORY_DAYS * 24 * 60 * 60 * 1000);
+      return (await fetchStatusHistory({ fromDate, toDate: now, limit: 5_000 })) ?? [];
+    },
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 20_000,
+      keepPreviousData: true,
+    },
+  );
+
   useHospitalRealtime('room_status_history', (payload) => {
     const raw = payload.new ?? payload.old;
     const id = typeof raw?.id === 'string' ? raw.id : null;
     if (!id) return;
+    const applyHistoryEvent = (current: StatusHistoryRow[] | undefined) => {
+      if (!current) return current;
+      return payload.eventType === 'DELETE'
+        ? current.filter((event) => event.id !== id)
+        : upsertById(current, payload.new as unknown as StatusHistoryRow);
+    };
+
     void mutate((current) => {
       if (!current) return current;
       return {
         ...current,
-        statusHistory: payload.eventType === 'DELETE'
-          ? current.statusHistory.filter((event) => event.id !== id)
-          : upsertById(current.statusHistory, payload.new as unknown as StatusHistoryRow),
+        statusHistory: applyHistoryEvent(current.statusHistory) ?? current.statusHistory,
       };
     }, { revalidate: false });
+    void mutateDayHistory(applyHistoryEvent, { revalidate: false });
   });
 
   useHospitalRealtime('notifications_log', (payload) => {
@@ -144,10 +175,11 @@ export function useStatisticsData(period: StatisticsPeriod) {
   const dbStats = useMemo(() => aggregateRoomStatistics(statusHistory), [statusHistory]);
   return {
     statusHistory,
+    dayHistory: dayHistoryData ?? EMPTY_HISTORY,
     notifications: data ? data.notifications : null,
     devices: data ? data.devices : null,
     dbStats,
-    isLoading,
-    error,
+    isLoading: isLoading || isDayHistoryLoading,
+    error: error ?? dayHistoryError,
   };
 }

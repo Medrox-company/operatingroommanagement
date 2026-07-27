@@ -545,7 +545,7 @@ function useMounted(): boolean {
 // GaugeRing — velký zářící prstenec (design převzatý z modulu Tok pacienta)
 // ─────────────────────────────────────────────────────────────────────────────
 export const GaugeRing: React.FC<{
-  /** Hodnota 0–100 */
+  /** Zobrazená hodnota; obvod se při přesahu vizuálně zastaví na 100 %. */
   value: number;
   size?: number;
   stroke?: number;
@@ -560,8 +560,9 @@ export const GaugeRing: React.FC<{
   dotted?: boolean;
 }> = ({ value, size = 340, stroke, color = C.accent, kicker, sublabel, unit = '%', dotted = true }) => {
   const on = useMounted();
-  const pct = Math.max(0, Math.min(100, value));
-  const shown = useCountUp(pct, on, 1100);
+  const displayValue = Math.max(0, value);
+  const visualPercent = Math.min(100, displayValue);
+  const shown = useCountUp(displayValue, on, 1100);
 
   // Poměry odpovídají originálu (viewBox 360, r 130, stroke 36)
   const VB = 360;
@@ -602,7 +603,7 @@ export const GaugeRing: React.FC<{
           stroke={color}
           strokeWidth={SW}
           strokeLinecap="round"
-          strokeDasharray={`${((on ? pct : 0) / 100) * CIRC} ${CIRC}`}
+          strokeDasharray={`${((on ? visualPercent : 0) / 100) * CIRC} ${CIRC}`}
           style={{
             transition: 'stroke-dasharray 1.1s cubic-bezier(.22,1,.36,1)',
             filter: `drop-shadow(0 0 8px ${color}99)`,
@@ -823,7 +824,8 @@ export const OrbitRings: React.FC<{
 
   const renderSat = (it: OrbitItem, idx: number, count: number, radius: number, offset: number, delayBase: number) => {
     const { x, y } = place(idx, count, radius, offset);
-    const pct = Math.max(0, Math.min(100, it.percent));
+    const displayPercent = Math.max(0, it.percent);
+    const visualPercent = Math.min(100, displayPercent);
     const R = 46;
     const CIRC = 2 * Math.PI * R;
     const isHot = hovered === it.id || selectedId === it.id;
@@ -898,7 +900,7 @@ export const OrbitRings: React.FC<{
                 stroke={it.color}
                 strokeWidth="10"
                 strokeLinecap="round"
-                strokeDasharray={`${((on ? pct : 0) / 100) * CIRC} ${CIRC}`}
+                strokeDasharray={`${((on ? visualPercent : 0) / 100) * CIRC} ${CIRC}`}
                 style={{
                   transition: `stroke-dasharray 0.9s cubic-bezier(.22,1,.36,1) ${delayBase + 0.2 + idx * 0.045}s`,
                   filter: `drop-shadow(0 0 5px ${it.color}${isHot ? 'cc' : '88'})`,
@@ -919,7 +921,7 @@ export const OrbitRings: React.FC<{
                 className="font-black tabular-nums leading-none"
                 style={{ color: C.textHi, fontSize: sat * 0.24 }}
               >
-                {Math.round(pct)}
+                {Math.round(displayPercent)}
                 <span className="align-top" style={{ fontSize: sat * 0.11, color: C.text }}>%</span>
               </span>
             )}
