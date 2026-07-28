@@ -14,6 +14,24 @@ const wait = (durationMs: number) => new Promise<void>((resolve) => {
   setTimeout(resolve, durationMs);
 });
 
+function createEventId() {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  if (typeof globalThis.crypto?.getRandomValues === 'function') {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Math.floor(Math.random() * 256);
+    }
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 function requestHospitalAccessRefresh() {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new Event('hospitalAccessRefreshRequested'));
@@ -639,12 +657,13 @@ export async function fetchAllCompletedOperationsForDay(
     const endOfWindow = new Date(date);
     endOfWindow.setDate(endOfWindow.getDate() + 1);
     endOfWindow.setHours(6, 59, 59, 999);
+    const matchingStart = new Date(startOfWindow.getTime() - 24 * 60 * 60 * 1_000);
 
     const { data, error } = await supabase
       .from('room_status_history')
       .select('*')
       .eq('hospital_id', activeHospitalId || 'default')
-      .gte('timestamp', startOfWindow.toISOString())
+      .gte('timestamp', matchingStart.toISOString())
       .lte('timestamp', endOfWindow.toISOString())
       .order('operating_room_id')
       .order('timestamp', { ascending: true });
@@ -665,7 +684,10 @@ export async function fetchAllCompletedOperationsForDay(
     // Build operations for each room
     const result = new Map<string, CompletedOperation[]>();
     for (const [roomId, events] of byRoom) {
-      const ops = buildOperationsFromEvents(events);
+      const ops = buildCompletedOperationsFromEvents(events).filter((operation) => (
+        new Date(operation.startedAt).getTime() <= endOfWindow.getTime()
+        && new Date(operation.endedAt).getTime() >= startOfWindow.getTime()
+      ));
       if (ops.length > 0) {
         result.set(roomId, ops);
       }
@@ -678,71 +700,67 @@ export async function fetchAllCompletedOperationsForDay(
   }
 }
 
-// Build operations from a sequence of events for one room
-function buildOperationsFromEvents(events: StatusHistoryRow[]): CompletedOperation[] {
+// Sestaví dokončené cykly z append-only logu. Hranice cyklu jsou výhradně
+// explicitní operation_start / operation_end; názvy fází se mohou v nastavení
+// nemocnice měnit a nesmí proto rozhodovat o tom, zda výkon z časové osy zmizí.
+export function buildCompletedOperationsFromEvents(
+  events: StatusHistoryRow[],
+): CompletedOperation[] {
   const operations: CompletedOperation[] = [];
-  let currentOpEvents: StatusHistoryRow[] = [];
-  let inOperation = false;
+  let current: CompletedOperation | null = null;
+  const ordered = [...events].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+  );
 
-  for (const event of events) {
-    // Start of operation: "Příjezd na sál"
-    if (event.event_type === 'step_change' && event.step_name === 'Příjezd na sál') {
-      // If already in operation, close previous one first
-      if (inOperation && currentOpEvents.length > 0) {
-        const op = buildCompletedOperation(currentOpEvents);
-        if (op) operations.push(op);
-      }
-      currentOpEvents = [event];
-      inOperation = true;
-    } 
-    // End of operation: "Úklid sálu" or operation_completed
-    else if (inOperation && (
-      (event.event_type === 'step_change' && event.step_name === 'Úklid sálu') ||
-      event.event_type === 'operation_completed'
-    )) {
-      currentOpEvents.push(event);
-      const op = buildCompletedOperation(currentOpEvents);
-      if (op) operations.push(op);
-      currentOpEvents = [];
-      inOperation = false;
+  for (const event of ordered) {
+    if (event.event_type === 'operation_start') {
+      const stepIndex = event.step_index ?? 1;
+      current = {
+        startedAt: event.timestamp,
+        endedAt: '',
+        statusHistory: [{
+          stepIndex,
+          startedAt: event.timestamp,
+          color: getStepColor(stepIndex),
+          stepName: event.step_name || undefined,
+        }],
+      };
+      continue;
     }
-    // Middle events
-    else if (inOperation) {
-      currentOpEvents.push(event);
+
+    if (!current) continue;
+
+    if (event.event_type === 'step_change' && event.step_index !== null) {
+      // step_name u této události popisuje právě ukončenou (předchozí) fázi.
+      // Doplníme jej k poslednímu záznamu a pro index 0 už novou fázi
+      // nevytváříme — ten pouze signalizuje návrat do připraveného stavu.
+      const lastPhase = current.statusHistory[current.statusHistory.length - 1];
+      if (lastPhase && event.step_name) lastPhase.stepName = event.step_name;
+
+      if (event.step_index !== 0 && lastPhase?.stepIndex !== event.step_index) {
+        current.statusHistory.push({
+          stepIndex: event.step_index,
+          startedAt: event.timestamp,
+          color: getStepColor(event.step_index),
+        });
+      }
+      continue;
+    }
+
+    if (event.event_type === 'operation_end' || event.event_type === 'operation_completed') {
+      if (new Date(event.timestamp).getTime() > new Date(current.startedAt).getTime()) {
+        operations.push({
+          ...current,
+          endedAt: event.timestamp,
+        });
+      }
+      current = null;
     }
   }
 
-  return operations;
-}
-
-// Build a completed operation from events
-function buildCompletedOperation(events: StatusHistoryRow[]): CompletedOperation | null {
-  if (events.length === 0) return null;
-  
-  // First event should be "Příjezd na sál", last should be "Úklid sálu"
-  const firstEvent = events[0];
-  const lastEvent = events[events.length - 1];
-  
-  if (!firstEvent || !lastEvent) return null;
-  
-  // Collect all step_change events as status history
-  const statusHistory = events
-    .filter(e => e.event_type === 'step_change' && e.step_index !== null)
-    .map(e => ({
-      stepIndex: e.step_index as number,
-      startedAt: e.timestamp,
-      color: getStepColor(e.step_index as number),
-      stepName: e.step_name || ''
-    }))
-    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
-
-  if (statusHistory.length === 0) return null;
-
-  return {
-    startedAt: firstEvent.timestamp,
-    endedAt: lastEvent.timestamp,
-    statusHistory
-  };
+  return operations.sort(
+    (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+  );
 }
 
 // Keep old function for compatibility but make it use new logic
@@ -892,26 +910,48 @@ export async function recordStatusEvent(event: StatusHistoryEvent): Promise<bool
     return false;
   }
 
-  try {
-    const { error } = await supabase
-      .from('room_status_history')
-      .insert({
-        hospital_id: activeHospitalId || 'default',
-        operating_room_id: event.operating_room_id,
-        event_type: event.event_type,
-        step_index: event.step_index,
-        step_name: event.step_name,
-        duration_seconds: event.duration_seconds,
-        timestamp: event.timestamp || new Date().toISOString(),
-        metadata: event.metadata || {},
-      });
+  // Stejné ID a čas používáme při všech pokusech. Upsert je díky tomu
+  // idempotentní i v situaci, kdy databáze zápis přijala, ale klient před
+  // potvrzením ztratil spojení a pokus zopakoval.
+  const row = {
+    id: event.id || createEventId(),
+    hospital_id: activeHospitalId || 'default',
+    operating_room_id: event.operating_room_id,
+    event_type: event.event_type,
+    step_index: event.step_index,
+    step_name: event.step_name,
+    duration_seconds: event.duration_seconds,
+    timestamp: event.timestamp || new Date().toISOString(),
+    metadata: event.metadata || {},
+  };
+  let lastError: unknown = null;
 
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('[DB] Failed to record status event:', error);
-    return false;
+  for (let attempt = 1; attempt <= ROOM_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      const { error } = await supabase
+        .from('room_status_history')
+        .upsert(row, { onConflict: 'id', ignoreDuplicates: true });
+
+      if (!error) return true;
+      lastError = error;
+      if (attempt === 1) requestHospitalAccessRefresh();
+    } catch (error) {
+      lastError = error;
+      if (attempt === 1) requestHospitalAccessRefresh();
+    }
+
+    if (attempt < ROOM_WRITE_ATTEMPTS) {
+      await wait(ROOM_WRITE_RETRY_DELAYS_MS[attempt - 1] ?? 1_250);
+    }
   }
+
+  logger.error('[DB] Událost operačního cyklu nebyla uložena ani po opakování:', {
+    eventId: row.id,
+    roomId: row.operating_room_id,
+    eventType: row.event_type,
+    error: lastError,
+  });
+  return false;
 }
 
 // Fetch status history for statistics

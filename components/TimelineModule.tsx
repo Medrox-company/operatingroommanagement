@@ -47,6 +47,7 @@ import StatBox from './timeline/StatBox';
 import RoomDetailPopup from './timeline/RoomDetailPopup';
 import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
 import { RoomSpecialtyBadges } from './RoomSpecialtyBadge';
+import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
@@ -200,7 +201,59 @@ const TimelineMinimap: React.FC<TimelineMinimapProps> = ({ lanes, nowPct, contai
 type SortMode = 'default' | 'name' | 'status';
 type StatusFilter = 'all' | 'active' | 'free' | 'attention';
 
-function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
+type TimelineCompletedOperation = NonNullable<OperatingRoom['completedOperations']>[number];
+
+function mergeTimelineOperations(
+  persisted: TimelineCompletedOperation[],
+  eventOperations: TimelineCompletedOperation[],
+) {
+  if (eventOperations.length === 0) return persisted;
+  const merged = [...persisted];
+
+  for (const eventOperation of eventOperations) {
+    const eventStart = new Date(eventOperation.startedAt).getTime();
+    const eventEnd = new Date(eventOperation.endedAt).getTime();
+    const matchingIndex = merged.findIndex((operation) => (
+      Math.abs(new Date(operation.startedAt).getTime() - eventStart) <= 120_000
+      && Math.abs(new Date(operation.endedAt).getTime() - eventEnd) <= 120_000
+    ));
+
+    if (matchingIndex === -1) {
+      merged.push(eventOperation);
+      continue;
+    }
+
+    const persistedOperation = merged[matchingIndex];
+    const eventHistoryIsRicher = eventOperation.statusHistory.length >= persistedOperation.statusHistory.length;
+    merged[matchingIndex] = {
+      ...persistedOperation,
+      statusHistory: eventHistoryIsRicher
+        ? eventOperation.statusHistory
+        : persistedOperation.statusHistory,
+    };
+  }
+
+  return merged.sort(
+    (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+  );
+}
+
+function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModuleProps) {
+  const {
+    completedOperationsByRoom,
+    refreshCompletedOperations,
+  } = useTimelineCompletedOperations();
+  const rooms = useMemo(() => sourceRooms.map((room) => {
+    const eventOperations = completedOperationsByRoom.get(room.id) ?? [];
+    if (eventOperations.length === 0) return room;
+    return {
+      ...room,
+      completedOperations: mergeTimelineOperations(
+        room.completedOperations ?? [],
+        eventOperations,
+      ),
+    };
+  }), [completedOperationsByRoom, sourceRooms]);
   const { currentByRoom: currentSpecialties } = useCurrentRoomSpecialties();
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -345,12 +398,15 @@ function TimelineModuleImpl({ rooms, onRefresh }: TimelineModuleProps) {
     if (!onRefresh || isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await onRefresh();
+      await Promise.all([
+        Promise.resolve(onRefresh()),
+        refreshCompletedOperations(),
+      ]);
       setLastUpdated(new Date());
     } finally {
       setIsRefreshing(false);
     }
-  }, [onRefresh, isRefreshing]);
+  }, [onRefresh, isRefreshing, refreshCompletedOperations]);
 
   // ── Dynamický rozsah osy ──
   // Standardně osa končí v 0:00 (7:00 → 24:00 = 17 h). Jakmile aktuální čas

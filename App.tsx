@@ -249,14 +249,20 @@ const AppContent: React.FC = () => {
       phase_started_at: string;
       operation_started_at: string | null;
       status_history: RoomStatusHistory;
-      completed_operations: CompletedOperations;
+      completed_operations?: CompletedOperations;
     } = {
       current_step_index: newStepIndex,
       phase_started_at: now,
       operation_started_at: operationStartedAt,
       status_history: statusHistory,
-      completed_operations: completedOperations,
     };
+    // Běžný přechod fáze nesmí přepsat archiv dokončených výkonů. „Light"
+    // načtení sálů totiž záměrně completed_operations neobsahuje a v klientovi
+    // by se tak do DB mohla omylem uložit prázdná hodnota. Archiv zapisujeme
+    // pouze ve chvíli, kdy právě vznikl nový dokončený cyklus.
+    if (isOperationComplete && currentRoom.operationStartedAt) {
+      dbPayload.completed_operations = completedOperations;
+    }
 
     setRooms(prev => prev.map(room => {
       if (room.id !== roomId) return room;
