@@ -10,6 +10,7 @@ import { OperatingRoom, RoomStatus, DayWorkingHours } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { useIsMobileDark } from '../hooks/useIsMobileDark';
 import {
+  buildCompletedOperationsFromEvents,
   fetchStatusHistory,
   type StatusHistoryRow,
 } from '../lib/db';
@@ -1071,8 +1072,8 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
       last30Days[date.toISOString().split('T')[0]] = 0;
     }
     
-    roomHistory.filter(e => e.event_type === 'operation_end').forEach(e => {
-      const day = e.timestamp.split('T')[0];
+    buildCompletedOperationsFromEvents(roomHistory).forEach(operation => {
+      const day = operation.startedAt.split('T')[0];
       if (last30Days[day] !== undefined) {
         last30Days[day] = (last30Days[day] || 0) + 1;
       }
@@ -1086,11 +1087,14 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   },[roomHistory]);
 
   // Utilisation per status (time-based %)
+  const cleanupDistribution = dist.find((entry) => (
+    entry.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes('uklid')
+  ));
   const statusUtil=[
     {label:'Výkon',      pct:utilPct,                         color:workflowSteps[3]?.color || '#FCA5A5'},
     {label:'Anestezie',  pct:(dist.find(d=>d.title==='Začátek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:workflowSteps[2]?.color || '#C4B5FD'},
     {label:'Příprava',   pct:(dist.find(d=>d.title==='Příjezd na sál')?.pct??0)+(dist.find(d=>d.title==='Ukončení výkonu')?.pct??0),       color:workflowSteps[1]?.color || '#5EEAD4'},
-    {label:'Úklid',      pct:dist.find(d=>d.title==='Ukončení anestezie')?.pct??0,                                                         color:workflowSteps[5]?.color || '#A5B4FC'},
+    {label:'Úklid',      pct:cleanupDistribution?.pct??0,                                                                                  color:cleanupDistribution?.color || '#F97316'},
     {label:'Volno',      pct:dist.find(d=>d.title==='Sál připraven')?.pct??0,                                                               color:workflowSteps[0]?.color || '#34D399'},
   ];
 
@@ -1578,9 +1582,24 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
        skončit až po 7:00 druhého dne a jeho `operation_end` by se ztratil,
        což se dřív projevilo jako falešné „probíhá". Filtr na den se aplikuje
        až na hotové výkony podle času ZAHÁJENÍ. */
-    const evts = dayHistory
+    const rawEvents = dayHistory
       .filter(e => e.operating_room_id === orbitRoom.id && e.timestamp)
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const lastLifecycleEvent = new Map<string, number>();
+    const evts = rawEvents.filter((event) => {
+      if (
+        event.event_type !== 'operation_start'
+        && event.event_type !== 'operation_end'
+        && event.event_type !== 'step_change'
+      ) {
+        return true;
+      }
+      const timestamp = new Date(event.timestamp).getTime();
+      const signature = `${event.event_type}:${event.step_index ?? 'none'}`;
+      const previous = lastLifecycleEvent.get(signature);
+      lastLifecycleEvent.set(signature, timestamp);
+      return previous === undefined || timestamp - previous > 2_000;
+    });
 
     const ops: Acc[] = [];
     let cur: Acc | null = null;
@@ -1590,6 +1609,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       if (!Number.isFinite(t)) continue;
 
       if (e.event_type === 'operation_start') {
+        if (cur && Math.abs(t - cur.startMs) <= 120_000) continue;
         if (cur) ops.push(cur); // předchozí zůstal bez `operation_end`
         cur = { startMs: t, endMs: null, segs: [] };
         continue;

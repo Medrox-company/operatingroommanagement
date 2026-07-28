@@ -390,10 +390,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       if (newIndex === 0) return; // Never allow starting over if locked
     }
 
-    // Calculate duration of previous step
     const now = new Date();
-    const durationSeconds = Math.floor((now.getTime() - phaseStartTime.getTime()) / 1000);
-    const previousStep = activeDbStatuses.length > 0 ? activeDbStatuses[safeStepIndex] : currentStep;
     const newStep = activeDbStatuses.length > 0 ? activeDbStatuses[Math.min(newIndex, activeDbStatuses.length - 1)] : nextStep;
     const newStepColor = newStep?.color || '#6B7280';
 
@@ -426,44 +423,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       setTimeout(() => { isResettingRef.current = false; }, 1500);
     }
 
-    // ============================================================
-    // FIRE-AND-FORGET ANALYTICS — never block UI
-    // ============================================================
-    // These writes go to room_status_history (analytics only). They are not
-    // required for correctness of the room state, so we run them in the
-    // background without awaiting. Errors are logged but never surfaced.
-    void recordStatusEvent({
-      operating_room_id: room.id,
-      event_type: 'step_change',
-      step_index: newIndex,
-      step_name: previousStep?.name || 'Status',
-      duration_seconds: durationSeconds,
-      metadata: {
-        previous_step: previousStep?.name || 'Status',
-        previous_step_index: currentStepIndex,
-      },
-    }).catch((err) => console.error('[v0] step_change event failed', err));
-
-    if (newIndex === 1 && currentStepIndex === 0) {
-      void recordStatusEvent({
-        operating_room_id: room.id,
-        event_type: 'operation_start',
-        step_index: newIndex,
-        step_name: newStep?.name || 'Status',
-      }).catch((err) => console.error('[v0] operation_start event failed', err));
-    } else if (newIndex === 0 && currentStepIndex === validStepCount - 1) {
-      void recordStatusEvent({
-        operating_room_id: room.id,
-        event_type: 'operation_end',
-        step_index: currentStepIndex,
-        step_name: 'Operation End',
-        duration_seconds: durationSeconds,
-        metadata: {
-          completed_step: previousStep?.name || 'Status',
-          previous_step: previousStep?.name || 'Status',
-        },
-      }).catch((err) => console.error('[v0] operation_end event failed', err));
-    }
+    // Zápis step_change / operation_start / operation_end zajišťuje atomicky
+    // databázový trigger nad změnou current_step_index. Stejnou cestou tak
+    // prochází ruční změna i automatické ukončení úklidu.
   };
 
   const handleNextStep = () => {

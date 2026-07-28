@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useHospital } from '../contexts/HospitalContext';
 import { useHospitalRealtime } from '../contexts/RealtimeContext';
 import {
+  buildCompletedOperationsFromEvents,
   fetchDevices,
   fetchNotificationsLog,
   fetchStatusHistory,
@@ -39,15 +40,25 @@ function upsertById<T extends { id: string }>(items: T[], item: T) {
 }
 
 export function aggregateRoomStatistics(history: StatusHistoryRow[]): RoomStatistics {
-  const operationEnds = history.filter((event) => event.event_type === 'operation_end');
   const emergencyCount = history.filter((event) => event.event_type === 'emergency_on').length;
   const operationsByRoom: Record<string, number> = {};
   const operationsByDay: Record<string, number> = {};
   const stepDurations: Record<string, number[]> = {};
+  const eventsByRoom = new Map<string, StatusHistoryRow[]>();
 
-  operationEnds.forEach((event) => {
-    operationsByRoom[event.operating_room_id] = (operationsByRoom[event.operating_room_id] || 0) + 1;
-    const day = event.timestamp.slice(0, 10);
+  history.forEach((event) => {
+    const roomEvents = eventsByRoom.get(event.operating_room_id);
+    if (roomEvents) roomEvents.push(event);
+    else eventsByRoom.set(event.operating_room_id, [event]);
+  });
+
+  const completedOperations = [...eventsByRoom.entries()].flatMap(([roomId, events]) => (
+    buildCompletedOperationsFromEvents(events).map((operation) => ({ roomId, operation }))
+  ));
+
+  completedOperations.forEach(({ roomId, operation }) => {
+    operationsByRoom[roomId] = (operationsByRoom[roomId] || 0) + 1;
+    const day = operation.startedAt.slice(0, 10);
     operationsByDay[day] = (operationsByDay[day] || 0) + 1;
   });
   history.forEach((event) => {
@@ -55,18 +66,20 @@ export function aggregateRoomStatistics(history: StatusHistoryRow[]): RoomStatis
     (stepDurations[event.step_name] ??= []).push(event.duration_seconds);
   });
 
-  const operationDurations = operationEnds
-    .map((event) => event.duration_seconds)
-    .filter((duration): duration is number => typeof duration === 'number');
+  const operationDurations = completedOperations
+    .map(({ operation }) => (
+      new Date(operation.endedAt).getTime() - new Date(operation.startedAt).getTime()
+    ))
+    .filter((duration) => Number.isFinite(duration) && duration > 0);
   const averageStepDurations = Object.fromEntries(Object.entries(stepDurations).map(([name, durations]) => [
     name,
     Math.round(durations.reduce((sum, duration) => sum + duration, 0) / durations.length / 60),
   ]));
 
   return {
-    totalOperations: operationEnds.length,
+    totalOperations: completedOperations.length,
     averageOperationDuration: operationDurations.length
-      ? Math.round(operationDurations.reduce((sum, duration) => sum + duration, 0) / operationDurations.length / 60)
+      ? Math.round(operationDurations.reduce((sum, duration) => sum + duration, 0) / operationDurations.length / 60_000)
       : 0,
     averageStepDurations,
     emergencyCount,

@@ -216,8 +216,9 @@ const AppContent: React.FC = () => {
     const currentRoom = roomsRef.current.find((room) => room.id === roomId);
     if (!currentRoom) return;
 
-    const isOperationComplete =
-      newStepIndex === 0 || (newStepIndex === 7 && currentRoom.currentStepIndex >= 1);
+    const previousStepIndex = currentRoom.currentStepIndex;
+    const isOperationStart = newStepIndex === 1 && previousStepIndex === 0;
+    const isOperationComplete = newStepIndex === 0 && previousStepIndex > 0;
     let completedOperations = currentRoom.completedOperations || [];
     if (isOperationComplete && currentRoom.operationStartedAt) {
       completedOperations = [
@@ -230,7 +231,10 @@ const AppContent: React.FC = () => {
       ];
     }
 
-    const shouldResetHistory = newStepIndex === 0 || newStepIndex === 7;
+    // Historie cyklu se smí vyčistit až po návratu z poslední fáze do
+    // „Sál připraven". Pevný index 7 byl chybný, protože každá nemocnice může
+    // mít jiný počet aktivních workflow stavů a úklid může mít jinou pozici.
+    const shouldResetHistory = newStepIndex === 0;
     const statusHistory: RoomStatusHistory = shouldResetHistory
       ? []
       : [
@@ -238,7 +242,7 @@ const AppContent: React.FC = () => {
           { stepIndex: newStepIndex, startedAt: now, color: stepColor || '#6B7280' },
         ];
     const operationStartedAt =
-      newStepIndex === 1 && (currentRoom.currentStepIndex === 0 || currentRoom.currentStepIndex === 7)
+      isOperationStart
         ? now
         : shouldResetHistory
           ? null

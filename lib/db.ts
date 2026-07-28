@@ -714,6 +714,15 @@ export function buildCompletedOperationsFromEvents(
 
   for (const event of ordered) {
     if (event.event_type === 'operation_start') {
+      if (
+        current
+        && Math.abs(
+          new Date(event.timestamp).getTime() - new Date(current.startedAt).getTime(),
+        ) <= 120_000
+      ) {
+        // Stejný přechod mohl při souběhu více stanic dorazit vícekrát.
+        continue;
+      }
       const stepIndex = event.step_index ?? 1;
       current = {
         startedAt: event.timestamp,
@@ -735,9 +744,12 @@ export function buildCompletedOperationsFromEvents(
       // Doplníme jej k poslednímu záznamu a pro index 0 už novou fázi
       // nevytváříme — ten pouze signalizuje návrat do připraveného stavu.
       const lastPhase = current.statusHistory[current.statusHistory.length - 1];
-      if (lastPhase && event.step_name) lastPhase.stepName = event.step_name;
+      const isActualTransition = lastPhase?.stepIndex !== event.step_index;
+      if (isActualTransition && lastPhase && event.step_name) {
+        lastPhase.stepName = event.step_name;
+      }
 
-      if (event.step_index !== 0 && lastPhase?.stepIndex !== event.step_index) {
+      if (isActualTransition && event.step_index !== 0) {
         current.statusHistory.push({
           stepIndex: event.step_index,
           startedAt: event.timestamp,
