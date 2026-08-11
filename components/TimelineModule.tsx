@@ -49,6 +49,7 @@ import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
 import { RoomSpecialtyBadges } from './RoomSpecialtyBadge';
 import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
 import { mergeCompletedOperations } from '../lib/completed-operations';
+import { useNowDate } from '../hooks/useSharedClock';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
@@ -58,17 +59,10 @@ interface TimelineModuleProps {
 
 const TIMELINE_OPERATIONAL_TICK_MS = 10_000;
 
-const TimelineClockDisplay: React.FC<{ initialTime: Date }> = React.memo(({ initialTime }) => {
-  const [clockTime, setClockTime] = useState(initialTime);
-
-  useEffect(() => {
-    setClockTime(initialTime);
-  }, [initialTime]);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setClockTime(new Date()), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
+const TimelineClockDisplay: React.FC<{ initialTime: Date }> = React.memo(() => {
+  // Sdílený tik aplikace. Komponenta je memoizovaná, takže se sekundovým
+  // překreslením mění jen text hodin, nikoli celá časová osa.
+  const clockTime = useNowDate();
 
   return (
     <div

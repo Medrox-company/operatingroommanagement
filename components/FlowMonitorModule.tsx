@@ -10,6 +10,7 @@ import {
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileFlowView from './mobile/MobileFlowView';
+import { useNowMs } from '../hooks/useSharedClock';
 
 /* ────────────────────────────────────────────────────────────────────────────
    TOK PACIENTA — živý monitorovací modul.
@@ -108,11 +109,7 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
   const { workflowStatuses, loading: statusesLoading } = useWorkflowStatusesContext();
   const statuses = (workflowStatuses || []) as WStatus[];
 
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
+  const now = useNowMs();
 
   const [mode, setMode] = useState<'live' | 'board' | 'history'>('live');
   const [boardRoomId, setBoardRoomId] = useState<string>('');
@@ -430,9 +427,30 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
                         return <path key={r.id} id={`edge-${r.id}`} d={elbow(canvasW / 2, 80, p.x + NODE_W / 2, p.y)} />;
                       })}
                     </defs>
+                    {/* Základní klidná linka spojnice */}
                     {visible.map((r) => (
                       <use key={r.id} href={`#edge-${r.id}`} stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
                     ))}
+                    {/* Proudící přerušovaná vrstva — tok je vidět i u sálu, který
+                        zrovna neoperuje (u připraveného sálu jen slabě, u aktivního
+                        naplno v barvě jeho fáze). Animuje se stroke-dashoffset,
+                        což běží na kompozitoru a nevynucuje překreslení. */}
+                    {visible.map((r, i) => {
+                      const active = !r.isLocked && (r.currentStepIndex ?? 0) !== 0;
+                      const c = colorFor(r, statuses);
+                      return (
+                        <use
+                          key={`flow-${r.id}`}
+                          href={`#edge-${r.id}`}
+                          className="flow-edge-line"
+                          stroke={active ? c : 'rgba(255,255,255,0.45)'}
+                          strokeWidth={active ? 2 : 1.5}
+                          strokeLinecap="round"
+                          opacity={r.isLocked ? 0.18 : active ? 0.9 : 0.4}
+                          style={{ animationDuration: `${1.4 + ((i % 5) * 0.22)}s` }}
+                        />
+                      );
+                    })}
                     {visible.map((r, i) => {
                       const active = !r.isLocked && (r.currentStepIndex ?? 0) !== 0;
                       if (!active) return null;

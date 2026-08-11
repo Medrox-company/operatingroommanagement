@@ -7,6 +7,7 @@ import { C } from './constants';
 import { getReadableTextColor } from './utils';
 import { MobileThemeToggle } from '../mobile/MobileShell';
 import { RapidSurgeryWarning } from '../room/RapidSurgeryWarning';
+import { useNowMs } from '../../hooks/useSharedClock';
 
 /* ════════════════════════════════════════════════════════════════════════
    Detail sálu — ANIMOVANÝ TACHOMETR dílčích statusů
@@ -40,16 +41,11 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   const { workflowStatuses } = useWorkflowStatusesContext();
   const activeStatuses = workflowStatuses;
   const [hoverDot, setHoverDot] = useState<number | null>(null);
-  const [liveTimeMs, setLiveTimeMs] = useState(() => Date.now());
   const isHistoricalSnapshot = selectedPhaseEndTime != null;
 
-  // Živý čas běží pouze uvnitř otevřeného detailu. Timeline ani ostatní sály
-  // se kvůli sekundám nepřekreslují a nevzniká další dotaz či subscription.
-  useEffect(() => {
-    if (isHistoricalSnapshot) return;
-    const interval = window.setInterval(() => setLiveTimeMs(Date.now()), 1000);
-    return () => window.clearInterval(interval);
-  }, [isHistoricalSnapshot]);
+  // Živý čas bere ze sdíleného tiku aplikace. U historického náhledu se hodnota
+  // stejně nepoužije, takže překreslování nic nestojí.
+  const liveTimeMs = useNowMs();
 
   const displayTimeMs = isHistoricalSnapshot ? currentTime.getTime() : liveTimeMs;
 

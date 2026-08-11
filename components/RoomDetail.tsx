@@ -17,6 +17,7 @@ import NotificationOverlay from './NotificationOverlay';
 import { useHospital } from '../contexts/HospitalContext';
 import { MobileThemeToggle } from './mobile/MobileShell';
 import { RapidSurgeryWarning } from './room/RapidSurgeryWarning';
+import { useNowMs } from '../hooks/useSharedClock';
 
 // Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
 const formatElapsed = (totalSeconds: number): string => {
@@ -144,23 +145,18 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   
   const estimatedEndTime = localEndTime;
 
+  // Všechny tři čítače (fáze, pauza, čekání na pacienta) běží ze sdíleného tiku
+  // aplikace — místo tří vlastních intervalů jedno probuzení za sekundu, které
+  // se navíc na skryté záložce zastaví.
+  const sharedNowMs = useNowMs();
+
   // Update elapsed time every second
   useEffect(() => {
     if (isPaused) return;
-    
-    const updateElapsedTime = () => {
-      const now = new Date();
-      setLiveNowMs(now.getTime());
-      const diff = now.getTime() - phaseStartTime.getTime();
-      const totalSeconds = Math.floor(diff / 1000);
-      setElapsedTime(formatElapsed(totalSeconds));
-    };
-    
-    updateElapsedTime();
-    const timer = setInterval(updateElapsedTime, 1000);
-    
-    return () => clearInterval(timer);
-  }, [phaseStartTime, isPaused]);
+    setLiveNowMs(sharedNowMs);
+    const totalSeconds = Math.floor((sharedNowMs - phaseStartTime.getTime()) / 1000);
+    setElapsedTime(formatElapsed(totalSeconds));
+  }, [sharedNowMs, phaseStartTime, isPaused]);
 
   // Update pause time every second
   useEffect(() => {
@@ -170,18 +166,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     }
 
     const pauseStartTime = pauseStartedAt || new Date();
-    const updatePauseTime = () => {
-      const now = new Date();
-      const diff = now.getTime() - pauseStartTime.getTime();
-      const totalSeconds = Math.floor(diff / 1000);
-      setPauseElapsedTime(formatElapsed(totalSeconds));
-    };
-    
-    updatePauseTime();
-    const timer = setInterval(updatePauseTime, 1000);
-
-    return () => clearInterval(timer);
-  }, [isPaused, pauseStartedAt]);
+    const totalSeconds = Math.floor((sharedNowMs - pauseStartTime.getTime()) / 1000);
+    setPauseElapsedTime(formatElapsed(totalSeconds));
+  }, [sharedNowMs, isPaused, pauseStartedAt]);
 
   // Load background settings and listen for changes
   useEffect(() => {
@@ -203,27 +190,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   // Patient call timer - update every second
   useEffect(() => {
     if (!patientCalledTime || patientArrivedTime) return;
-
-    const updatePatientCallTime = () => {
-      const now = new Date();
-      const diff = now.getTime() - patientCalledTime.getTime();
-      const totalSeconds = Math.floor(diff / 1000);
-      setPatientCallElapsedTime(formatElapsed(totalSeconds));
-    };
-    
-    updatePatientCallTime();
-    patientCallTimerRef.current = window.setInterval(updatePatientCallTime, 1000);
-
-    return () => {
-      if (patientCallTimerRef.current) clearInterval(patientCallTimerRef.current);
-    };
-  }, [patientCalledTime, patientArrivedTime]);
-
-  useEffect(() => {
-    if (patientArrivedTime && patientCallTimerRef.current) {
-      clearInterval(patientCallTimerRef.current);
-    }
-  }, [patientArrivedTime]);
+    const totalSeconds = Math.floor((sharedNowMs - patientCalledTime.getTime()) / 1000);
+    setPatientCallElapsedTime(formatElapsed(totalSeconds));
+  }, [sharedNowMs, patientCalledTime, patientArrivedTime]);
 
   // Track if we're in the middle of a local reset to prevent sync overwriting
   const isResettingRef = useRef(false);

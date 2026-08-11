@@ -89,7 +89,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     {/* ===== MOBILE — prémiová karta sálu ===== */}
     <div
       onClick={onClick}
-      className="mobile-dashboard-room-card md:hidden relative isolate w-full rounded-[24px] p-3.5 cursor-pointer active:scale-[0.98] transition-all duration-200 select-none overflow-hidden"
+      className="room-card-shell mobile-dashboard-room-card md:hidden relative isolate w-full rounded-[24px] p-3.5 cursor-pointer active:scale-[0.98] transition-transform duration-200 select-none overflow-hidden"
       style={{
         boxShadow: room.isEmergency ? '0 12px 28px rgba(229,72,77,0.18)' : 'var(--m-card-shadow-strong)',
         border: room.isEmergency
@@ -101,8 +101,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     >
       <div
         aria-hidden
-        className="absolute -right-9 -top-11 w-24 h-24 rounded-full blur-2xl pointer-events-none"
-        style={{ background: themeColor, opacity: 0.11 }}
+        className="glow-soft absolute -right-9 -top-11 w-24 h-24 rounded-full pointer-events-none"
+        style={{ ['--glow' as string]: themeColor, opacity: 0.11 }}
       />
 
       {/* Identita sálu */}
@@ -226,7 +226,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     {/* ===== DESKTOP — původní karta ===== */}
     <div
       onClick={onClick}
-      className={`hidden md:block relative group cursor-pointer w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] ${fill ? 'h-full min-h-[140px]' : 'h-[260px] sm:h-[340px]'}`}
+      className={`room-card-shell hidden md:block relative group cursor-pointer w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] ${fill ? 'h-full min-h-[140px]' : 'h-[260px] sm:h-[340px]'}`}
     >
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
@@ -236,7 +236,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       )}
 
       {/* Main Card Container */}
-      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-all duration-500 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]
+      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-shadow duration-500 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]
         ${room.isEmergency 
             ? 'bg-red-950/20 border-red-500/40' 
             : (room.isLocked 
@@ -250,12 +250,13 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none" />
         )}
         
-        {/* Static Glow Layer */}
-        <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] pointer-events-none transition-opacity duration-1000"
-          style={{ 
-            backgroundColor: themeColor,
-            opacity: (room.isEmergency || room.isLocked) ? 0.3 : 0.15 
+        {/* Barevná záře karty. Radiální gradient místo filter: blur(100px) —
+            stejný vjem, ale bez offscreen textury na každé z 15 karet. */}
+        <div
+          className="glow-soft absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full pointer-events-none transition-opacity duration-1000"
+          style={{
+            ['--glow' as string]: themeColor,
+            opacity: (room.isEmergency || room.isLocked) ? 0.3 : 0.15
           }}
         />
       </div>
@@ -295,8 +296,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             <div className="relative flex items-center justify-center">
                 {/* Static glow behind the circle - replaced motion for performance */}
                 <div
-                  className="absolute rounded-full blur-[40px] transition-all duration-500"
-                  style={{ width: 80, height: 80, backgroundColor: themeColor, opacity: 0.25 }}
+                  className="glow-core absolute rounded-full transition-opacity duration-500"
+                  style={{ width: 80, height: 80, ['--glow' as string]: themeColor, opacity: 0.25 }}
                 />
                 <svg
                   viewBox="0 0 112 112"
@@ -318,7 +319,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                       strokeLinecap="round"
                       strokeDasharray={strokeDasharray}
                       strokeDashoffset={room.isPaused ? 0 : strokeDashoffset}
-                      className="transition-all duration-500"
+                      className="transition-[stroke-dashoffset,stroke] duration-500"
                       style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
                     />
                     {room.isPaused ? (
@@ -374,7 +375,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         <div className="w-full space-y-2 sm:space-y-3 shrink-0">
           <div className="w-full text-center">
             <p
-              className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-all inline-block w-full
+              className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-colors inline-block w-full
               ${room.isEmergency 
                   ? 'bg-red-600 text-white border-red-500' 
                   : (room.isLocked 
@@ -424,21 +425,21 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             {/* Right: action buttons / status badges */}
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {room.isSeptic && (
-                <div className="p-1 sm:p-1.5 bg-red-500/10 rounded-lg sm:rounded-xl border border-red-500/20 backdrop-blur-md">
+                <div className="p-1 sm:p-1.5 bg-red-500/10 rounded-lg sm:rounded-xl border border-red-500/20">
                   <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500/70" />
                 </div>
               )}
 
               {/* Patient called indicator */}
               {room.patientCalledAt && !room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-blue-500/20 border-blue-400/40">
+                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-colors bg-blue-500/20 border-blue-400/40">
                   <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
                 </div>
               )}
 
               {/* Patient arrived indicator */}
               {room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md bg-green-500/20 border-green-400/40">
+                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-colors bg-green-500/20 border-green-400/40">
                   <BedDouble className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
                 </div>
               )}
@@ -447,7 +448,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
               <button
                 onClick={(e) => handleAction(e, onEmergency)}
                 aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
-                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md
+                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-colors
                   ${room.isEmergency
                     ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]'
                     : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
@@ -460,7 +461,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
               <button
                 onClick={(e) => handleAction(e, onLock)}
                 aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
-                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all backdrop-blur-md
+                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-colors
                   ${room.isLocked
                     ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]'
                     : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}

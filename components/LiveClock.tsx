@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useNowDate } from '../hooks/useSharedClock';
 
 /**
  * LiveClock — samostatná komponenta s vlastním stavem, aby se aktualizace času
@@ -6,12 +7,9 @@ import React, { useState, useEffect } from 'react';
  * Zobrazuje aktuální čas (HH:MM:SS) a datum v češtině.
  */
 const LiveClock: React.FC = () => {
-  const [now, setNow] = useState<Date>(() => new Date());
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
+  // Sdílený tik celé aplikace — jeden interval místo vlastního,
+  // a na skryté záložce se zastaví úplně.
+  const now = useNowDate();
 
   const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
     .map(value => String(value).padStart(2, '0'))

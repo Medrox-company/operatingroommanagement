@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Bell, Globe, ShieldCheck } from 'lucide-react';
+import { useNowDate } from '../hooks/useSharedClock';
 
 interface TopBarProps {
   currentView?: string;
@@ -9,12 +10,7 @@ interface TopBarProps {
 }
 
 const TopBar: React.FC<TopBarProps> = ({ currentView, onNavigate, onSettingsReset }) => {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const time = useNowDate();
 
   return (
     <header className="h-24 px-12 md:px-14 flex items-center justify-between bg-white/5 backdrop-blur-2xl z-30 border-b border-white/10">

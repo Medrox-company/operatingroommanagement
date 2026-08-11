@@ -17,6 +17,7 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useNowMs } from '../../hooks/useSharedClock';
 
 export type IconComponent = React.ElementType<React.SVGProps<SVGSVGElement> & {
   size?: number | string;
@@ -679,12 +680,9 @@ LiveDot.displayName = 'LiveDot';
 // useCountdown — pomocný hook pro live-updating čítače
 // ─────────────────────────────────────────────────────────────────────────────
 export function useTickEverySecond(): number {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return tick;
+  // Napojeno na sdílený tik aplikace — žádný vlastní interval a na skryté
+  // záložce se statistiky přestanou překreslovat úplně.
+  return useNowMs();
 }
 
 // ──────────────────────────────��──────────────────────────────────────────────

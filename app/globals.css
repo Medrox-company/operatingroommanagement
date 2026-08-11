@@ -366,6 +366,78 @@ html.capacitor-native select {
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   Výkon: měkká záře bez filter: blur()
+
+   `filter: blur(100px)` nutí prohlížeč vykreslit prvek do offscreen textury
+   zvětšené o trojnásobek poloměru rozostření a tu pak rozmazat. Na dashboardu
+   se 15 kartami to znamenalo 30 takových textur (~500×500 px každá) a
+   přepočet při každé změně barvy stavu.
+
+   Silně rozmazaný plný kruh je opticky prakticky totožný s radiálním
+   gradientem — ten ale kreslí GPU přímo, bez mezitextury a bez filtru.
+   Barvu předává proměnná --glow, sytost --glow-strength.
+   ─────────────────────────────────────────────────────────────────────────── */
+.glow-soft {
+  /* Záložní varianta pro starší prohlížeče bez color-mix() — o odstín tvrdší,
+     ale funkční. Novější engine přepíše deklaraci níž. */
+  background-image: radial-gradient(closest-side, var(--glow, #ffffff) 0%, transparent 100%);
+  background-image: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--glow, #ffffff) var(--glow-strength, 85%), transparent) 0%,
+    color-mix(in srgb, var(--glow, #ffffff) calc(var(--glow-strength, 85%) * 0.55), transparent) 45%,
+    transparent 100%
+  );
+}
+
+/* Varianta s tvrdším jádrem — nahrazuje blur v rozsahu 40–60 px, kde si
+   původní efekt držel výraznější střed. */
+.glow-core {
+  background-image: radial-gradient(closest-side, var(--glow, #ffffff) 0%, transparent 100%);
+  background-image: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--glow, #ffffff) var(--glow-strength, 90%), transparent) 0%,
+    color-mix(in srgb, var(--glow, #ffffff) calc(var(--glow-strength, 90%) * 0.7), transparent) 30%,
+    transparent 100%
+  );
+}
+
+/* Uživatelé s vypnutými animacemi (systémové nastavení) — zastavíme dekorativní
+   smyčky, ale necháme běžet přechody stavů, aby zůstala čitelná zpětná vazba. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ping,
+  .animate-pulse,
+  .animate-spin {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Výkon: izolace karet sálů
+
+   Bez `contain` musí prohlížeč při každé změně v jedné kartě (tik čítače, jiná
+   barva stavu, dojetí animace prstence) přepočítat rozvržení celé mřížky.
+   `contain: layout style` mu řekne, že se změna nemůže projevit mimo kartu —
+   přepočet se tak omezí na jednu dlaždici.
+
+   Pozor: `paint` tu být NESMÍ. Ořezalo by vykreslování na čtvercový box karty,
+   takže by se u zaoblených rohů uťal měkký stín a rohy by byly vidět jako
+   ostré hrany.
+   ─────────────────────────────────────────────────────────────────────────── */
+.room-card-shell {
+  contain: layout style;
+}
+
+/* Nekonečné dekorativní smyčky (ping / pulse) drží kompozitor v neustálé
+   činnosti. Na skryté záložce nebo v minimalizovaném okně je zastavíme —
+   prohlížeč sice většinu práce sám odloží, ale takto zmizí i příprava snímků. */
+.app-idle .animate-ping,
+.app-idle .animate-pulse,
+.app-idle .animate-spin {
+  animation-play-state: paused !important;
+}
+
 /* Subtle horizontal scrollbar for the zoomable timeline */
 .timeline-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
 .timeline-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -691,13 +763,10 @@ html.capacitor-native select {
     box-shadow: var(--m-card-shadow);
   }
 
-  .m-dark .mobile-timeline-detail-header,
-  .m-dark .mobile-timeline-progress-card,
-  .m-dark .mobile-timeline-detail-card,
-  .m-dark .mobile-timeline-phase-card {
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
-  }
+  /* Výkon: backdrop-filter tu byl zbytečný. Pozadí stránky (--m-page-bg) je
+     hladký gradient přes celou výšku a povrch karty má krytí 0,92–0,96 —
+     rozmazání takového podkladu není okem rozeznatelné, ale mobilní GPU za něj
+     platí plnou cenu při každém posunu seznamu. */
 
   .mobile-theme-surface {
     background: var(--m-page-bg) !important;
@@ -707,8 +776,6 @@ html.capacitor-native select {
   .m-dark .mobile-glass-card {
     border-color: var(--m-border) !important;
     box-shadow: var(--m-card-shadow) !important;
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
   }
 
   /* Detail sálu používá v obou motivech stejné rozložení. Níže se pro
@@ -1717,6 +1784,21 @@ html.capacitor-native select {
 }
 @media (prefers-reduced-motion: reduce) {
   .hygiene-frame { animation: none; background: linear-gradient(135deg, #F97316, #FDBA74); }
+}
+
+/* Tok pacienta — proudící spojnice mezi centrálním uzlem a sály.
+   Animuje se pouze stroke-dashoffset, tedy vlastnost, kterou prohlížeč zvládne
+   bez přepočtu rozvržení. */
+@keyframes flow-edge {
+  to { stroke-dashoffset: -24; }
+}
+.flow-edge-line {
+  fill: none;
+  stroke-dasharray: 3 9;
+  animation: flow-edge 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-edge-line { animation: none; }
 }
 
 /* Tok pacienta — proudící přerušovaná spojnice mezi fázemi */
