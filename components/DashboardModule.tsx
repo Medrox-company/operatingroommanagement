@@ -8,6 +8,8 @@ import LiveClock from './LiveClock';
 import RoomCard from './RoomCard';
 import { MobileHeaderMetrics, MobileModuleHeader } from './mobile/MobileShell';
 import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
+import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
+import { mergeCompletedOperations } from '../lib/completed-operations';
 
 interface DashboardModuleProps {
   rooms: OperatingRoom[];
@@ -18,13 +20,28 @@ interface DashboardModuleProps {
 }
 
 const DashboardModule: React.FC<DashboardModuleProps> = ({
-  rooms,
+  rooms: sourceRooms,
   roomsLoaded,
   onSelectRoom,
   onEmergency,
   onLock,
 }) => {
   const { currentByRoom } = useCurrentRoomSpecialties();
+
+  // Číslo uprostřed karty = počet dokončených cyklů provozního dne. Samotný
+  // archiv u sálu na to nestačí: zapisuje ho klient jen při vlastním přechodu
+  // do „Sál připraven", takže výkony ukončené z jiného zařízení nebo databázovým
+  // triggerem v něm chybí. Log událostí je úplný a chodí realtime, proto ho sem
+  // přimícháváme stejně jako v Timeline (SWR cache je pro oba moduly společná).
+  const { completedOperationsByRoom } = useTimelineCompletedOperations();
+  const rooms = useMemo(() => sourceRooms.map((room) => {
+    const eventOperations = completedOperationsByRoom.get(room.id) ?? [];
+    if (eventOperations.length === 0) return room;
+    return {
+      ...room,
+      completedOperations: mergeCompletedOperations(room.completedOperations ?? [], eventOperations),
+    };
+  }), [completedOperationsByRoom, sourceRooms]);
   const metrics = useMemo(() => {
     const isReady = (room: OperatingRoom) => room.currentStepIndex === 0 || room.currentStepIndex === 7;
     const emergencyRooms = rooms.filter((room) => room.isEmergency);

@@ -296,12 +296,18 @@ export async function fetchOperatingRooms(
   }
 }
 
-// „Light" varianta — vynechá těžké JSONB sloupce (completed_operations,
-// status_history) pro RYCHLÉ první vykreslení dashboardu. Plná data (počty
-// operací, historie pro časovou osu) se doplní následným fetchOperatingRooms().
-// Transform tyto sloupce při chybějících hodnotách bezpečně doplní prázdným polem.
+// „Light" varianta — vynechá těžký JSONB sloupec status_history (historie pro
+// časovou osu) pro RYCHLÉ první vykreslení dashboardu; ta se doplní následným
+// fetchOperatingRooms(). Transform ho při chybějící hodnotě bezpečně doplní
+// prázdným polem.
+//
+// completed_operations se naopak načítá VŽDY, i když je to JSONB. Dashboard
+// z něj počítá číslo cyklů uprostřed karty — bez něj se po startu zobrazovaly
+// samé nuly, dokud uživatel neotevřel detail sálu. Navíc by se prázdné pole
+// mohlo při dokončení výkonu zapsat zpět do DB a přepsat archiv.
 const LIGHT_ROOM_COLUMNS = [
   'id', 'state_revision', 'name', 'department', 'status', 'queue_count', 'operations_24h',
+  'completed_operations',
   'is_septic', 'is_emergency', 'is_locked', 'is_enhanced_hygiene', 'enhanced_hygiene_at',
   'is_paused', 'paused_at', 'patient_called_at', 'patient_arrived_at',
   'phase_started_at', 'operation_started_at', 'current_step_index', 'estimated_end_time',

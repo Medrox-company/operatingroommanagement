@@ -5,6 +5,7 @@ import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext'
 import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
 import type { CurrentRoomSpecialty } from '../lib/room-specialty';
 import { RoomSpecialtyBadges } from './RoomSpecialtyBadge';
+import { useOperationalDayWindow } from '../hooks/useOperationalDayWindow';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -24,39 +25,19 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   // Add null safety
   const activeStatuses = workflowStatuses || [];
   
-  // Filter completed operations for today (7:00 yesterday/today to 6:59 today/tomorrow)
-  // The window is: if current time >= 7:00, count from 7:00 today to 6:59 tomorrow
-  //                if current time < 7:00, count from 7:00 yesterday to 6:59 today
+  // Počet dokončených cyklů v aktuálním provozním dni (7:00 → 6:59).
+  // Okno drží sdílený hook, takže se počty samy překlopí i na dashboardu, který
+  // běží nepřetržitě přes noc — bez nutnosti obnovit stránku.
+  const { start: startOfWindow, end: endOfWindow } = useOperationalDayWindow();
   const todayOperationCount = useMemo(() => {
     if (!room.completedOperations || room.completedOperations.length === 0) return 0;
-    
-    const now = new Date();
-    const currentHour = now.getHours();
-    
-    // Determine the start of the 24h window based on current time
-    const startOfWindow = new Date(now);
-    if (currentHour >= 7) {
-      // After 7 AM - window starts at 7:00 today
-      startOfWindow.setHours(7, 0, 0, 0);
-    } else {
-      // Before 7 AM - window starts at 7:00 yesterday
-      startOfWindow.setDate(startOfWindow.getDate() - 1);
-      startOfWindow.setHours(7, 0, 0, 0);
-    }
-    
-    // End of window is 24h after start (6:59:59 next day)
-    const endOfWindow = new Date(startOfWindow);
-    endOfWindow.setDate(endOfWindow.getDate() + 1);
-    endOfWindow.setHours(6, 59, 59, 999);
-    
-    const count = room.completedOperations.filter(op => {
-      if (!op.endedAt) return false; // Use endedAt for completed operations
-      const opEnd = new Date(op.endedAt);
+
+    return room.completedOperations.filter(op => {
+      if (!op.endedAt) return false; // Dokončený cyklus poznáme podle endedAt
+      const opEnd = new Date(op.endedAt).getTime();
       return opEnd >= startOfWindow && opEnd <= endOfWindow;
     }).length;
-    
-    return count;
-  }, [room.completedOperations]);
+  }, [room.completedOperations, startOfWindow, endOfWindow]);
   
   // Memoize computed values using database statuses
   const { currentStep, themeColor, shouldShowTime, strokeDasharray, strokeDashoffset } = useMemo(() => {
