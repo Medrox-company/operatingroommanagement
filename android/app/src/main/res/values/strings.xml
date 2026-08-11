@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Operating Room Management</string>
+    <string name="title_activity_main">Operating Room Management</string>
+    <string name="package_name">com.operatingroom.app</string>
+    <string name="custom_url_scheme">com.operatingroom.app</string>
+</resources>

@@ -91,13 +91,16 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
           </MobileModuleHeader>
         </div>
 
-        <header className="hidden md:grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-4 lg:gap-8 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
-          <div className="min-w-0 text-left">
-            <div className="flex items-center justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
-              <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24]" />
-              <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.3em] sm:tracking-[0.4em] uppercase">APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ</p>
+        {/* Hlavička: na tabletu (md–lg) skládaná na střed, třísloupcová mřížka
+            se zapíná až od xl — na užších displejích se do ní titulek, hodiny
+            a panel metrik nevešly a překrývaly se. */}
+        <header className="hidden md:flex md:flex-col md:items-center md:gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-end xl:gap-8 mb-6 md:mb-8 lg:mb-12 flex-shrink-0">
+          <div className="min-w-0 text-center xl:text-left">
+            <div className="flex items-center justify-center xl:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
+              <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24] shrink-0" />
+              <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.2em] sm:tracking-[0.3em] xl:tracking-[0.4em] uppercase">APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ</p>
             </div>
-            <h1 className="text-[clamp(1.75rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-start">
+            <h1 className="text-[clamp(1.5rem,4vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-center xl:justify-start">
               <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0">
                 <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#34D399' }} />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ background: '#34D399', boxShadow: '0 0 10px #34D39988' }} />
@@ -106,13 +109,13 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
             </h1>
           </div>
           <LiveClock />
-          <div className="flex min-w-0 items-end justify-end">
+          <div className="flex min-w-0 max-w-full items-end justify-center xl:justify-end">
             <div className="flex items-stretch gap-1 md:gap-2 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
               <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
               {desktopMetrics.map((stat, index) => (
                 <React.Fragment key={stat.label}>
                   {index > 0 && <div className="w-px self-stretch my-2 bg-gradient-to-b from-transparent via-white/10 to-transparent" />}
-                  <div className={`flex flex-col items-center justify-center px-3 sm:px-6 md:px-9 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[90px] sm:min-w-[120px] md:min-w-[140px] z-10 ${stat.pulse ? 'animate-pulse' : ''}`}>
+                  <div className={`flex flex-col items-center justify-center px-3 sm:px-5 xl:px-9 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[84px] sm:min-w-[104px] xl:min-w-[140px] z-10 ${stat.pulse ? 'animate-pulse' : ''}`}>
                     <div className="flex items-center gap-1.5 sm:gap-2.5 mb-1 sm:mb-2">
                       <stat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${stat.color}`} />
                       <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/45">{stat.label}</p>
@@ -132,6 +135,8 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
               <p className="text-sm text-[#7C8AA5] md:text-white/40">Načítám operační sály…</p>
             </div>
           ) : (
+            /* Užší karty — na běžný monitor se jich vejde o jednu řadu víc.
+               Hustota roste plynule se šířkou, strop je 6 sloupců. */
             <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-x-5 md:gap-x-6 sm:gap-y-6 md:gap-y-8">
               {rooms.map((room) => (
                 <RoomCard

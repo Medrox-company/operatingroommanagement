@@ -18,6 +18,13 @@ const config: CapacitorConfig = {
     preferredContentMode: 'mobile',
     backgroundColor: '#000000',
   },
+  android: {
+    backgroundColor: '#000000',
+    // Ladění WebView jen ve vývoji — v release buildu zůstává vypnuté.
+    webContentsDebuggingEnabled: process.env.NODE_ENV !== 'production',
+    // Aplikace nesmí zpracovávat externí odkazy jako vlastní obsah.
+    allowMixedContent: false,
+  },
   plugins: {
     // Use URLSession for fetch and keep HttpOnly sessions in the native jar.
     CapacitorHttp: {
@@ -37,6 +44,8 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'LIGHT',
       backgroundColor: '#000000',
+      // Android: obsah kreslíme až pod stavový řádek (safe-area řeší CSS)
+      overlaysWebView: true,
     },
   },
 };

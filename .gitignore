@@ -38,7 +38,25 @@ yarn-error.log*
 *.pem
 *.key
 secrets.json
-# Expo
+# Capacitor — Android build artefakty (nativní projekt se verzuje)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+*.apk
+*.aab
+*.keystore
+
+# Capacitor — iOS build artefakty
+ios/App/Pods/
+ios/App/App/public/
+ios/DerivedData/
+ios/App/*.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/xcuserdata/
+
+# Expo (legacy — projekt běží na Capacitoru)
 operatingroom-mobile/node_modules/
 operatingroom-mobile/dist/
 operatingroom-mobile/.expo/

@@ -27,6 +27,23 @@ if (Capacitor.isNativePlatform()) {
     if (isActive) window.dispatchEvent(new Event('nativeAppResumed'));
   });
   document.documentElement.classList.add('capacitor-native');
+
+  const platform = Capacitor.getPlatform();
+  document.documentElement.classList.add(`platform-${platform}`);
+
+  if (platform === 'android') {
+    /* Hardwarové tlačítko Zpět: nejdřív zavře otevřený detail/overlay
+       (komponenty na `nativeBackButton` reagují voláním preventDefault),
+       teprve pak jde o krok zpět v historii; na kořeni aplikaci ukončí. */
+    void CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      const handled = !window.dispatchEvent(
+        new CustomEvent('nativeBackButton', { cancelable: true }),
+      );
+      if (handled) return;
+      if (canGoBack) window.history.back();
+      else void CapacitorApp.exitApp();
+    });
+  }
 }
 
 const root = document.getElementById('root');

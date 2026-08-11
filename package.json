@@ -9,11 +9,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "mobile:dev": "vite --config vite.mobile.config.ts",
     "mobile:build": "vite build --config vite.mobile.config.ts",
+    "mobile:sync": "npm run mobile:build && npm exec cap sync",
     "ios:sync": "npm run mobile:build && npm exec cap sync ios",
     "ios:verify": "npm run ios:sync && xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug -derivedDataPath /tmp/orm-derived-data CODE_SIGNING_ALLOWED=NO build",
     "ios:open": "npm exec cap open ios",
-    "ios:build": "npm run ios:sync && npm run ios:open"
+    "ios:build": "npm run ios:sync && npm run ios:open",
+    "android:add": "npm exec cap add android",
+    "android:sync": "npm run mobile:build && npm exec cap sync android",
+    "android:verify": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:open": "npm exec cap open android",
+    "android:build": "npm run android:sync && npm run android:open"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
@@ -43,6 +50,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.4.1",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/ios": "^8.4.1",

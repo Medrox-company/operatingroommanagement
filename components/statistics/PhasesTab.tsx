@@ -172,7 +172,18 @@ const TimelineGantt = ({
   workflowSteps: WorkflowStep[];
   avgStepDurations: number[];
 }) => {
-  const totalDuration = avgStepDurations.reduce((a, b) => a + b, 0);
+  // „Sál připraven" je klidový stav mezi výkony, ne fáze operačního cyklu —
+  // v timeline ho vynecháváme, aby nezkresloval podíly ostatních fází.
+  const DIACRITICS = new RegExp('[\\u0300-\\u036f]', 'g');
+  const isIdle = (name: string) => {
+    const n = (name || '').toLowerCase().normalize('NFD').replace(DIACRITICS, '');
+    return n.includes('priprav') && n.includes('sal');
+  };
+  const steps = workflowSteps
+    .map((step, i) => ({ step, duration: avgStepDurations[i] || 0 }))
+    .filter(({ step }) => !isIdle(step.title) && !isIdle(step.name));
+
+  const totalDuration = steps.reduce((sum, s) => sum + s.duration, 0);
   let cumulative = 0;
 
   return (
@@ -180,8 +191,7 @@ const TimelineGantt = ({
       {/* Timeline bar */}
       <div className="relative h-14 rounded-xl overflow-hidden" style={{ background: C.ghost }}>
         <div className="absolute inset-0 flex">
-          {workflowSteps.map((step, i) => {
-            const duration = avgStepDurations[i] || 0;
+          {steps.map(({ step, duration }) => {
             const widthPct = (duration / Math.max(1, totalDuration)) * 100;
             const startPct = (cumulative / Math.max(1, totalDuration)) * 100;
             cumulative += duration;

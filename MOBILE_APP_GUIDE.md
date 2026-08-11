@@ -1,210 +1,87 @@
-# Operating Room Management - Kompletní Řešení
+# Mobilní aplikace — iOS a Android
 
-Moderní systém pro správu operačních sálů s web a mobilní verzí.
+Nativní aplikace staví na **Capacitoru 8** a sdílí **stejný React kód** jako web.
+Není to samostatný projekt: `App.tsx` a všechny komponenty jsou společné, jen se
+místo Next.js serveru balí do statické SPA, která se nainstaluje do telefonu.
 
-## Projekty
+> Pozn.: `app.json`, `eas.json` a prázdná složka `operatingroom-mobile/` jsou
+> pozůstatky po dřívějším pokusu s Expem. Na build se nepoužívají a lze je
+> smazat.
 
-### Web Aplikace (`/`)
-Next.js 16 aplikace s:
-- Dashboard s live sály
-- Timeline modul
-- Přehled personálu
-- Statistiky a grafy
-- Admin management
+## Jak to funguje
 
-**Spuštění:**
-```bash
-npm install
-npm run dev
-# http://localhost:3000
-```
+| Vrstva | Soubor | Účel |
+|---|---|---|
+| Vstupní bod | `mobile/main.tsx` | Nabootuje `App.tsx`, nastaví tmavý motiv, StatusBar, klávesnici a tlačítko Zpět (Android) |
+| HTML shell | `mobile/index.html` | `viewport-fit=cover` kvůli výřezu a safe-area |
+| Build | `vite.mobile.config.ts` | Vite build → `mobile-dist/` (obchází Next.js server) |
+| Náhrada Next.js | `mobile/next-dynamic.tsx` | Alias za `next/dynamic`, aby fungoval lazy-loading modulů |
+| Síť | `mobile/native-api.ts` | Volání `/api/*` přesměruje na produkční backend a posílá cookies |
+| Konfigurace | `capacitor.config.ts` | appId, pluginy, nastavení pro iOS i Android |
 
-### Mobilní Aplikace (`/operatingroom-mobile`)
-iOS/Android Expo aplikace se všemi funkcionalitami web verze.
+UI běží **lokálně v telefonu**, na server jdou jen API volání. Aplikace tedy
+naskočí okamžitě i na slabé síti.
 
-**Spuštění:**
-```bash
-cd operatingroom-mobile
-npm install
-npm start
-```
+## Požadavky
 
-Poté v Expo Go aplikaci naskenujte QR kód.
+- Node 26 (viz `.nvmrc`), `npm install`
+- **iOS:** macOS, Xcode 16+, CocoaPods
+- **Android:** Android Studio (Ladybug+), JDK 21, Android SDK 35
 
-## Stack
-
-- **Frontend Web:** Next.js 16, React, TypeScript, Tailwind CSS
-- **Frontend Mobile:** React Native, Expo, Expo Router, NativeWind
-- **Backend:** Supabase (PostgreSQL)
-- **Real-time:** Supabase Realtime subscriptions
-- **Authentication:** Supabase Auth
-- **Styling:** Tailwind CSS (web), NativeWind (mobile)
-
-## Funkcionalita
-
-### Web Verze
-- Dashboard s grid operačních sálů
-- Live statistiky a metriky
-- Timeline historie operací
-- Přehled personálu s filtrováním
-- Admin panel pro konfiguraci
-- Dark mode design
-
-### Mobilní Verze
-- Přihlášení přes Supabase
-- Dashboard s live daty
-- Interaktivní sály s detail viewem
-- Timeline se 24-hodinovým streamem
-- Personál s filtrováním podle role
-- Statistiky s grafy
-- Realtime updates
-- Tab navigace
-
-## Začínáme
-
-### Požadavky
-- Node.js 18+
-- npm/yarn/pnpm
-- Expo CLI (pro mobilní app): `npm install -g expo-cli`
-- Supabase projekt (sdílený mezi web a mobilem)
-
-### Instalace Web
+## iOS
 
 ```bash
-# Install dependencies
-npm install
-
-# Create .env.local s Supabase credentials
-# NEXT_PUBLIC_SUPABASE_URL=...
-# NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-
-# Run development server
-npm run dev
+npm run ios:sync     # build webu + cap sync ios
+npm run ios:open     # otevře Xcode
+npm run ios:build    # sync + otevření Xcode
+npm run ios:verify   # zkompiluje pro simulátor bez podpisu (CI kontrola)
 ```
 
-### Instalace Mobile
+Podepisování a nahrání na TestFlight se řeší v Xcode (Signing & Capabilities →
+tvůj Apple Developer tým).
+
+## Android
+
+Nativní projekt se vytvoří jednorázově:
 
 ```bash
-cd operatingroom-mobile
-npm install
-
-# Create .env.local s Supabase credentials
-# EXPO_PUBLIC_SUPABASE_URL=...
-# EXPO_PUBLIC_SUPABASE_ANON_KEY=...
-
-# Start Expo development
-npm start
-
-# Na fyzickém zařízení: Naskenujte QR kód v Expo Go
-# Na emulátoru/simulátoru: Stiskněte 'a' (Android) nebo 'i' (iOS)
+npm install          # doinstaluje @capacitor/android
+npm run android:add  # vygeneruje složku android/ (jen poprvé)
 ```
 
-## Build & Deploy
+Běžná práce:
 
-### Web - Vercel
 ```bash
-npm run build
-vercel deploy
+npm run android:sync    # build webu + cap sync android
+npm run android:open    # otevře Android Studio
+npm run android:build   # sync + otevření Android Studia
+npm run android:verify  # ./gradlew assembleDebug (CI kontrola)
 ```
 
-### Mobilní - EAS Build (Expo)
+Podpis release buildu (`.aab` pro Google Play) se nastavuje v
+`android/app/build.gradle` přes `signingConfigs` a keystore, který **nepatří do
+gitu** (je v `.gitignore`).
 
-#### iOS Build
+## Po každé změně kódu
+
+Nativní aplikace nese vlastní kopii webu. Po úpravách je nutné znovu zabalit:
+
 ```bash
-eas build --platform ios --auto-submit
+npm run mobile:sync   # build + sync do iOS i Androidu naráz
 ```
 
-#### Android Build
-```bash
-eas build --platform android --auto-submit
-```
+Bez toho zůstane v telefonu stará verze rozhraní.
 
-Vyžaduje:
-- Apple Developer Account ($99/rok, iOS)
-- Google Play Developer Account ($25, Android)
-- Expo Account (zdarma, s limitací)
+## Co je specifické pro nativní běh
 
-## Databáze
-
-Supabase schéma zahrnuje:
-- `operating_rooms` - Operační sály
-- `staff` - Personál (lékaři, sestry, anesteziolgy)
-- `room_status_history` - Historie stavu sálů
-- `users` - Uživatelské účty
-
-## Autentizace
-
-Obě verze (web i mobile) používají Supabase Auth.
-
-**Demo přihlášení:**
-- Email: `admin@example.com`
-- Heslo: `password`
-
-Hesla byste měli změnit v produkci!
-
-## Realtime Updates
-
-Aplikace používá Supabase Realtime subscriptions:
-- Dashboard se automaticky aktualizuje
-- Timeline se doplňuje novými eventy
-- Personál se načítá live
-- Všechny změny v databázi jsou vidět okamžitě
-
-## Trouble Shooting
-
-### Mobile: "Ekspo Go not found"
-- Stáhněte Expo Go z App Store (iOS) nebo Play Store (Android)
-- Ujistěte se, že jste na stejné síti jako dev server
-
-### Mobile: "SUPABASE credentials missing"
-- Zkontrolujte `.env.local` v `/operatingroom-mobile`
-- Ujistěte se, že máte `EXPO_PUBLIC_` prefix
-
-### Web: "Build error"
-- Vymažte `.next/` folder a zkuste znovu
-- `npm run dev`
-
-## Struktura Projektu
-
-```
-operatingroom-management/
-├── app/                          # Web Next.js aplikace
-│   ├── components/              # React komponenty
-│   ├── (auth)/                  # Autentizace
-│   ├── (app)/                   # Hlavní aplikace
-│   ├── api/                     # API routy
-│   └── layout.tsx
-├── operatingroom-mobile/        # iOS/Android Expo app
-│   ├── app/
-│   │   ├── (auth)/             # Login screen
-│   │   ├── (app)/              # Tab navigace
-│   │   │   ├── dashboard.tsx
-│   │   │   ├── timeline.tsx
-│   │   │   ├── staff.tsx
-│   │   │   ├── statistics.tsx
-│   │   │   ├── settings.tsx
-│   │   │   └── room/[id].tsx   # Detail sálu
-│   │   └── _layout.tsx
-│   ├── components/             # Reusable komponenty
-│   ├── contexts/               # React contexts
-│   ├── app.json                # Expo konfigurace
-│   └── package.json
-├── lib/                         # Utilities
-├── public/                      # Static assets
-└── README.md
-```
-
-## Příspěvky
-
-Pokyn pro přispěvatele:
-1. Vytvořte feature branch: `git checkout -b feature/nova-funkcionalita`
-2. Commitujtě s popisnými zprávami
-3. Pushujte a vytvořte Pull Request
-
-## Licence
-
-Interní projekt - Medrox Company
-
-## Kontakt
-
-Otázky či problémy? Obraťte se na tým.
+- **Tmavý motiv** je výchozí; volba světlého se ukládá do `localStorage`
+  (`or-mobile-theme`) a přežije restart.
+- **Safe-area** — obsah respektuje výřez přes `env(safe-area-inset-*)`,
+  na Androidu kreslí StatusBar přes WebView (`overlaysWebView`).
+- **Tlačítko Zpět (Android)** — komponenty mohou odchytit událost
+  `nativeBackButton` a zavolat `preventDefault()`, čímž zavřou detail místo
+  odchodu z aplikace. Na kořeni aplikaci ukončí.
+- **Návrat do popředí** — aplikace vyšle `nativeAppResumed`, na což lze navázat
+  obnovení dat.
+- **Detekce platformy** — na `<html>` přibude třída `capacitor-native` a
+  `platform-ios` / `platform-android`.

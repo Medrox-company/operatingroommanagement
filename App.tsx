@@ -171,7 +171,11 @@ const AppContent: React.FC = () => {
     const run = () => {
       void import('./components/TimelineModule');
     };
-    const id = w.requestIdleCallback ? w.requestIdleCallback(run, { timeout: 10000 }) : window.setTimeout(run, 8000);
+    // Timeline je nejčastější těžký modul. Začni ji načítat krátce po
+    // přihlášení, aby první otevření nečekalo na stažení a parsování chunku.
+    const id = w.requestIdleCallback
+      ? w.requestIdleCallback(run, { timeout: 1_500 })
+      : window.setTimeout(run, 250);
     return () => {
       if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(id);
       else clearTimeout(id);
@@ -465,6 +469,19 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleCloseRoomDetail = useCallback(() => setSelectedRoomId(null), []);
+
+  /* Hardwarové tlačítko Zpět (Android): zavře otevřený detail sálu, jinak
+     nechá událost projít (mobile/main.tsx pak jde zpět v historii, případně
+     aplikaci ukončí). */
+  useEffect(() => {
+    const onNativeBack = (e: Event) => {
+      if (noticeComposerOpen) { e.preventDefault(); setNoticeComposerOpen(false); return; }
+      if (selectedRoomId) { e.preventDefault(); setSelectedRoomId(null); return; }
+      if (currentView !== 'dashboard') { e.preventDefault(); setCurrentView('dashboard'); }
+    };
+    window.addEventListener('nativeBackButton', onNativeBack);
+    return () => window.removeEventListener('nativeBackButton', onNativeBack);
+  }, [selectedRoomId, currentView, noticeComposerOpen]);
   // Stabilní RoomDetail callbacky — používají selectedRoomId přímo (zdroj pravdy), takže
   // se NErecreatují při každém update sálů. Bez useCallbacku se po realtime updatu
   // recreate inline arrow funkce → memo na RoomDetailu by selhal a 1745řádková komponenta

@@ -23,7 +23,8 @@ const LiveClock: React.FC = () => {
       <span className="mb-1 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.3em] text-[#FBBF24] opacity-60 sm:mb-2 sm:text-[10px] sm:tracking-[0.4em]">
         {date}
       </span>
-      <span className="whitespace-nowrap text-[clamp(1.75rem,7vw,4.5rem)] font-bold tabular-nums tracking-tight text-white/90">
+      {/* Menší základ (4vw) — se 7vw se hodiny na tabletu překrývaly s titulkem */}
+      <span className="whitespace-nowrap text-[clamp(1.75rem,4vw,4.5rem)] font-bold tabular-nums tracking-tight text-white/90">
         {time}
       </span>
     </div>
