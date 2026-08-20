@@ -7,6 +7,9 @@ import {
   Building2,
   Database,
   Shield,
+  ShieldCheck,
+  Layers,
+  Crown,
   AlertTriangle,
   Check,
   X,
@@ -46,7 +49,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useAuth, UserRole, AppModule } from '../contexts/AuthContext';
+import { useAuth, UserRole, AppModule, AppSubmodule } from '../contexts/AuthContext';
 import { useHospital, type Hospital } from '../contexts/HospitalContext';
 import { logger } from '../lib/logger';
 import { usePWAInstall } from './PWAInstaller';
@@ -79,10 +82,98 @@ const COLORS = {
   violet: '#A78BFA',
 };
 
+/**
+ * Materiál povrchů — shodný se zbytkem Nastavení: chladný nádech okraje,
+ * jemné vnitřní světlo shora. Barvu nesou pouze ikony, plochy zůstávají
+ * neutrální, aby matice oprávnění nebyla pestrá.
+ */
+const SURFACE: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.024)',
+  border: '1px solid rgba(125,165,185,0.18)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
+};
+const CARD: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.018)',
+  border: '1px solid rgba(125,165,185,0.14)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
+};
+const CARD_OFF: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.008)',
+  border: '1px solid rgba(125,165,185,0.07)',
+};
+const TILE: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.022)',
+  border: '1px solid rgba(125,165,185,0.13)',
+};
+const TILE_ACTIVE: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.055)',
+  border: '1px solid rgba(125,165,185,0.28)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+};
+
+const TIER_COLOR = { superadmin: '#E0574F', admin: '#D99C35', roles: '#38BDF8' } as const;
+
+/** Panel Nastavení ↔ podmodul, kterým se řídí jeho viditelnost. */
+const SETTINGS_TAB_SUBMODULE: Record<TabId, string> = {
+  hospital: 'settings.hospital',
+  modules: 'settings.modules',
+  diagnostics: 'settings.diagnostics',
+  database: 'settings.database',
+  access: 'settings.access',
+};
+
 const SystemSettingsModule: React.FC = () => {
-  const { user, isAdmin, logout, modules, toggleModule, toggleModuleRole } = useAuth();
+  const { user, isAdmin, canManageModuleRoles, logout, modules, submodules, toggleModule, toggleModuleRole, toggleSubmoduleRole, hasSubmoduleAccess } = useAuth();
   const { hospitals, activeHospital, activeHospitalId, selectHospital, refreshHospitals, loading: hospitalsLoading } = useHospital();
-  const [activeTab, setActiveTab] = useState<TabId>('hospital');
+  // Otevřený panel přežije i případné přemontování komponenty (např. když
+  // uložení nastavení vyvolá načtení modulů). Bez toho by uživatele po každé
+  // změně vrátilo zpět na „Zdravotnické zařízení".
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (typeof window === 'undefined') return 'hospital';
+    const saved = window.sessionStorage.getItem('orm-settings-tab');
+    return saved && saved in SETTINGS_TAB_SUBMODULE ? (saved as TabId) : 'hospital';
+  });
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem('orm-settings-tab', activeTab);
+    } catch {
+      // Bez sessionStorage se panel jen nezapamatuje, nic dalšího se neděje.
+    }
+  }, [activeTab]);
+
+  // Kdyby role ztratila přístup k právě otevřenému panelu, přepneme na první
+  // dostupný — jinak by zůstala prázdná obrazovka.
+  //
+  // Pozor na závislosti: `hasSubmoduleAccess` z kontextu mění identitu při
+  // každé úpravě modulů, takže po každém přepnutí role by se efekt spustil
+  // znovu a uživatele to vyhodilo zpět na první panel. Proto se tu vyhodnocuje
+  // jen konkrétní seznam rolí aktivního panelu a efekt reaguje výhradně na
+  // jeho skutečnou změnu.
+  const activeTabSubmoduleId = SETTINGS_TAB_SUBMODULE[activeTab];
+  const activeTabRolesKey = (
+    submodules.find(s => s.id === activeTabSubmoduleId)?.allowed_roles ?? []
+  ).join(',');
+
+  useEffect(() => {
+    // Superadministrátor má přístup ke všemu, není co hlídat.
+    if (user?.role === 'superadmin') return;
+    // Dokud se podmoduly nenačetly, nic nepřepínáme.
+    if (submodules.length === 0) return;
+
+    const activeSub = submodules.find(s => s.id === activeTabSubmoduleId);
+    if (!activeSub) return; // neznámý panel = bez omezení
+    if (activeSub.allowed_roles?.includes(user?.role ?? '')) return;
+
+    const fallback = (Object.keys(SETTINGS_TAB_SUBMODULE) as TabId[]).find(id => {
+      const sub = submodules.find(s => s.id === SETTINGS_TAB_SUBMODULE[id]);
+      return sub?.allowed_roles?.includes(user?.role ?? '');
+    });
+    if (fallback && fallback !== activeTab) setActiveTab(fallback);
+    // Reagujeme jen na změnu panelu nebo jeho vlastních oprávnění.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, activeTabRolesKey, user?.role, submodules.length]);
+
   const { isInstallable, isInstalled, handleInstall } = usePWAInstall();
   const [installLoading, setInstallLoading] = useState(false);
 
@@ -436,13 +527,15 @@ const SystemSettingsModule: React.FC = () => {
         className="mb-5 flex items-center gap-1 overflow-x-auto rounded-[22px] p-2 hide-scrollbar"
         style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
       >
+{/* Panely Nastavení jsou podmoduly — superadministrátor u nich řídí, které
+    role je uvidí. Zakázaný panel se v liště vůbec nezobrazí. */}
 {([
-  { id: 'hospital' as const, label: 'Zdravotnické zařízení', icon: Building2 },
-  { id: 'modules' as const,  label: 'Správa modulů',         icon: SlidersHorizontal },
-  { id: 'diagnostics' as const, label: 'Rychlost a připojení', icon: Gauge },
-  { id: 'database' as const, label: 'Administrace databáze', icon: Database },
-  { id: 'access' as const,   label: 'Přihlášení a přístup',  icon: UserCog },
-  ]).map(tab => {
+  { id: 'hospital' as const, label: 'Zdravotnické zařízení', icon: Building2, sub: 'settings.hospital' },
+  { id: 'modules' as const,  label: 'Správa modulů',         icon: SlidersHorizontal, sub: 'settings.modules' },
+  { id: 'diagnostics' as const, label: 'Rychlost a připojení', icon: Gauge, sub: 'settings.diagnostics' },
+  { id: 'database' as const, label: 'Administrace databáze', icon: Database, sub: 'settings.database' },
+  { id: 'access' as const,   label: 'Přihlášení a přístup',  icon: UserCog, sub: 'settings.access' },
+  ]).filter(tab => hasSubmoduleAccess(tab.sub)).map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
@@ -512,9 +605,12 @@ const SystemSettingsModule: React.FC = () => {
             >
               <ModulesPanel
                 isAdmin={isAdmin}
+                canManageRoles={canManageModuleRoles}
                 modules={modules}
+                submodules={submodules}
                 onToggleModule={toggleModule}
                 onToggleRole={toggleModuleRole}
+                onToggleSubmoduleRole={toggleSubmoduleRole}
               />
             </motion.div>
           )}
@@ -1401,7 +1497,7 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, hosp
 
 interface FieldProps {
   label: string;
-  icon: React.FC<{ className?: string }>;
+  icon: LucideIcon;
   placeholder?: string;
   value: string;
   onChange: (v: string) => void;
@@ -1555,17 +1651,73 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
 
 interface ModulesPanelProps {
   isAdmin: boolean;
+  /** Přepínat přístup rolí k modulům smí výhradně superadministrátor. */
+  canManageRoles: boolean;
   modules: AppModule[];
+  submodules: AppSubmodule[];
   onToggleModule: (moduleId: string, enabled: boolean) => Promise<boolean>;
   onToggleRole: (moduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
+  onToggleSubmoduleRole: (submoduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
 }
 
-const ROLE_DEFS: Array<{ id: UserRole; label: string; icon: React.FC<{ className?: string }>; color: string }> = [
+/**
+ * Role, kterým se přístup k modulům nastavuje. Superadministrátor ani
+ * administrátor tu nejsou — mají přístup ke všemu z principu a nedá se jim
+ * odebrat, jinak by si mohli zamknout cestu zpět do nastavení.
+ */
+type RoleDef = { id: UserRole; label: string; icon: LucideIcon; color: string };
+
+/** Administrátorská úroveň — stojí zvlášť nad provozními rolemi. */
+const ADMIN_ROLE: RoleDef = { id: 'admin', label: 'Administrátor', icon: ShieldCheck, color: '#D99C35' };
+
+/** Provozní role — vykreslují se ve dvojicích pod administrátorem. */
+const OPERATIONAL_ROLES: RoleDef[] = [
   { id: 'aro',        label: 'ARO',        icon: Activity,      color: '#EF4444' },
   { id: 'cos',        label: 'COS',        icon: Stethoscope,   color: '#06B6D4' },
   { id: 'management', label: 'Management', icon: Briefcase,     color: '#F59E0B' },
   { id: 'primar',     label: 'Primariát',  icon: ClipboardList, color: '#A855F7' },
-  { id: 'user',       label: 'Uživatel',   icon: UserIcon,      color: '#64748B' },
+];
+
+/** Všechny nastavitelné role dohromady (pro počítadla). */
+const ROLE_DEFS: RoleDef[] = [ADMIN_ROLE, ...OPERATIONAL_ROLES];
+
+/**
+ * Úrovně přístupu vysvětlené v záhlaví panelu. Slouží k tomu, aby bylo na první
+ * pohled zřejmé, že superadministrátor stojí nad administrátorem a že provozní
+ * role se nastavují níže v matici.
+ */
+const ACCESS_TIERS: Array<{
+  id: 'superadmin' | 'admin' | 'roles';
+  label: string;
+  level: string;
+  description: string;
+  icon: LucideIcon;
+  color: string;
+}> = [
+  {
+    id: 'superadmin',
+    label: 'Superadministrátor',
+    level: 'Bez omezení',
+    description: 'Všechny moduly a funkce včetně administrátorského rozhraní. Jako jediný nastavuje přístup ostatních rolí.',
+    icon: Crown,
+    color: '#E0574F',
+  },
+  {
+    id: 'admin',
+    label: 'Administrátor',
+    level: 'Správa systému',
+    description: 'Všechny moduly a správa nemocnice. Nastavení přístupu rolí vidí, ale nemění.',
+    icon: ShieldCheck,
+    color: '#D99C35',
+  },
+  {
+    id: 'roles',
+    label: 'Provozní role',
+    level: 'Dle nastavení',
+    description: 'ARO, COS, Management a Primariát vidí jen moduly povolené v matici níže.',
+    icon: UserCog,
+    color: '#60A5FA',
+  },
 ];
 
 const MODULE_ICON_MAP: Record<string, LucideIcon> = {
@@ -1578,7 +1730,7 @@ const MODULE_ICON_MAP: Record<string, LucideIcon> = {
   Shield,
 };
 
-const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, modules, onToggleModule, onToggleRole }) => {
+const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, modules, submodules, onToggleModule, onToggleRole, onToggleSubmoduleRole }) => {
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
 
@@ -1602,161 +1754,366 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, modules, onToggleM
   };
 
   const handleRoleToggle = async (moduleId: string, role: UserRole, currentEnabled: boolean) => {
-    if (moduleId === 'settings') return; // settings je admin-only
+    if (!canManageRoles) return; // měnit smí jen superadministrátor
     const key = `${moduleId}:${role}`;
     setPendingKey(key);
     await onToggleRole(moduleId, role, !currentEnabled);
     setPendingKey(null);
   };
 
+  /** Jedna přepínatelná dlaždice role u modulu. */
+  const renderRoleTile = (mod: AppModule, role: RoleDef) => {
+    const RoleIcon = role.icon;
+    const allowed = !!mod.allowed_roles?.includes(role.id);
+    const pending = pendingKey === `${mod.id}:${role.id}`;
+    const disabled = !mod.is_enabled || !canManageRoles;
+
+    return (
+      <button
+        key={role.id}
+        type="button"
+        onClick={() => handleRoleToggle(mod.id, role.id, allowed)}
+        disabled={disabled || pending}
+        aria-pressed={allowed}
+        title={
+          disabled
+            ? (!canManageRoles ? 'Měnit smí pouze superadministrátor' : 'Modul je vypnutý')
+            : allowed ? `Odebrat přístup roli ${role.label}` : `Povolit přístup roli ${role.label}`
+        }
+        className="flex w-full items-center gap-2 rounded-2xl px-2.5 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+        style={allowed ? { ...TILE_ACTIVE, color: '#FFFFFF' } : { ...TILE, color: 'rgba(255,255,255,0.42)' }}
+      >
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
+          <RoleIcon className="h-3.5 w-3.5" style={{ color: allowed ? role.color : 'rgba(255,255,255,0.22)' }} />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-left">{role.label}</span>
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05]">
+          {pending ? (
+            <Loader2 className="h-3 w-3 animate-spin text-white/60" />
+          ) : allowed ? (
+            <Check className="h-3 w-3 text-emerald-400" />
+          ) : (
+            <X className="h-3 w-3 text-white/25" />
+          )}
+        </span>
+      </button>
+    );
+  };
+
+  const handleSubmoduleRoleToggle = async (submoduleId: string, role: UserRole, currentEnabled: boolean) => {
+    if (!canManageRoles) return;
+    const key = `sub:${submoduleId}:${role}`;
+    setPendingKey(key);
+    await onToggleSubmoduleRole(submoduleId, role, !currentEnabled);
+    setPendingKey(null);
+  };
+
+  /** Dlaždice role u podmodulu — stejná logika, jen menší měřítko. */
+  const renderSubmoduleRoleTile = (mod: AppModule, sub: AppSubmodule, role: RoleDef) => {
+    const RoleIcon = role.icon;
+    const allowed = !!sub.allowed_roles?.includes(role.id);
+    const pending = pendingKey === `sub:${sub.id}:${role.id}`;
+
+    return (
+      <button
+        key={role.id}
+        type="button"
+        onClick={() => handleSubmoduleRoleToggle(sub.id, role.id, allowed)}
+        disabled={!canManageRoles || !mod.is_enabled || pending}
+        aria-pressed={allowed}
+        className="flex w-full items-center gap-1.5 rounded-[11px] px-2 py-1.5 text-[10px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+        style={allowed ? { ...TILE_ACTIVE, color: '#FFFFFF' } : { ...TILE, color: 'rgba(255,255,255,0.38)' }}
+      >
+        <RoleIcon
+          className="h-3.5 w-3.5 shrink-0"
+          style={{ color: allowed ? role.color : 'rgba(255,255,255,0.2)' }}
+        />
+        <span className="flex-1 truncate text-left">{role.label}</span>
+        {pending ? (
+          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-white/60" />
+        ) : allowed ? (
+          <Check className="h-3 w-3 shrink-0 text-emerald-400" />
+        ) : (
+          <X className="h-3 w-3 shrink-0 text-white/20" />
+        )}
+      </button>
+    );
+  };
+
+  const enabledCount = sortedModules.filter(m => m.is_enabled).length;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-white mb-1">Správa modulů a rolí</h2>
-        <p className="text-sm text-white/50 leading-relaxed max-w-3xl">
-          Pro každý modul nastavte zapnutí globálně a přístup pro jednotlivé role. Administrátor má vždy přístup ke všem
-          modulům bez ohledu na nastavení. Modul <span className="text-white/80 font-semibold">Nastavení</span> je vyhrazen
-          pouze pro administrátory a nelze jej vypnout.
-        </p>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-xs text-white/50">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-emerald-500/20 text-emerald-400">
-            <Check className="w-3 h-3" />
-          </span>
-          <span>Povoleno</span>
+    <div className="space-y-4">
+      {/* ── Záhlaví: kdo jsem + hierarchie + čísla ─────────────────────────
+          Materiál (rádius, nádech okraje, vnitřní světlo) odpovídá ostatním
+          sekcím Nastavení, aby panel nevypadal jako cizí prvek. */}
+      <section className="relative overflow-hidden rounded-[26px] p-5" style={SURFACE}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/38">Oprávnění</p>
+            <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-white">Správa modulů a rolí</h2>
+            <p className="mt-1 text-[12px] text-white/38">Kdo uvidí který modul. Změny se ukládají okamžitě.</p>
+          </div>
+          <div className="flex items-center gap-3 rounded-[18px] px-4 py-2.5" style={TILE}>
+            <span className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/[0.05]">
+              {canManageRoles
+                ? <Crown className="h-[18px] w-[18px]" style={{ color: TIER_COLOR.superadmin }} />
+                : <ShieldCheck className="h-[18px] w-[18px]" style={{ color: TIER_COLOR.admin }} />}
+            </span>
+            <div className="leading-tight">
+              <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/38">Přihlášen jako</p>
+              <p className="mt-0.5 text-[13px] font-semibold text-white">
+                {canManageRoles ? 'Superadministrátor' : 'Administrátor'}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-white/5 text-white/30">
-            <X className="w-3 h-3" />
-          </span>
-          <span>Zakázáno</span>
-        </div>
-      </div>
 
-      {/* Matrix */}
-      <div className="space-y-3">
+        {/* Úrovně přístupu */}
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+          {ACCESS_TIERS.map((tier, tierIndex) => {
+            const TierIcon = tier.icon;
+            const isMine = canManageRoles ? tier.id === 'superadmin' : tier.id === 'admin';
+            return (
+              <div
+                key={tier.id}
+                className="relative overflow-hidden rounded-[18px] p-3.5"
+                style={isMine ? TILE_ACTIVE : TILE}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-white/[0.05]">
+                    <TierIcon className="h-4 w-4" style={{ color: tier.color }} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12.5px] font-semibold text-white">{tier.label}</p>
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{tier.level}</p>
+                  </div>
+                  <span className="text-[22px] font-semibold leading-none tabular-nums text-white/12">
+                    {tierIndex + 1}
+                  </span>
+                </div>
+                <p className="mt-2.5 text-[10.5px] leading-relaxed text-white/32">{tier.description}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Čísla — stejný formát jako přehled nahoře v Nastavení */}
+        <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {[
+            { label: 'Modulů celkem', value: sortedModules.length, suffix: 'modulů', color: COLORS.cyan, icon: LayoutGrid },
+            { label: 'Zapnuto', value: enabledCount, suffix: 'aktivních', color: COLORS.green, icon: Check },
+            { label: 'Vypnuto', value: sortedModules.length - enabledCount, suffix: 'skrytých', color: COLORS.amber, icon: ShieldOff },
+            { label: 'Podmodulů', value: submodules.length, suffix: 'částí', color: COLORS.violet, icon: Layers },
+          ].map(({ label, value, suffix, color, icon: StatIcon }) => (
+            <div key={label} className="flex min-h-[74px] flex-col justify-between rounded-[18px] px-3.5 py-3" style={TILE}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</p>
+                <StatIcon className="h-3.5 w-3.5" style={{ color }} />
+              </div>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className="text-2xl font-semibold tabular-nums tracking-tight text-white">{value}</span>
+                <span className="text-[9px] text-white/25">{suffix}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Moduly ──────────────────────────────────────────────────────── */}
+      <div className="grid gap-3.5 md:grid-cols-2 2xl:grid-cols-3">
         {sortedModules.map((mod) => {
-          const Icon = MODULE_ICON_MAP[mod.icon || 'Settings'] || SettingsIcon;
           const accent = mod.accent_color || '#64748B';
           const isSettingsModule = mod.id === 'settings';
           const globalPending = pendingKey === `g:${mod.id}`;
+          const moduleSubmodules = submodules
+            .filter(sub => sub.module_id === mod.id)
+            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
           return (
-            <div
+            <article
               key={mod.id}
-              className={`rounded-2xl border transition-all ${
-                mod.is_enabled ? 'bg-white/[0.02] border-white/10' : 'bg-white/[0.01] border-white/5 opacity-60'
-              }`}
+              className="relative flex flex-col overflow-hidden rounded-[22px] p-3 font-sans transition-colors"
+              style={{
+                // Barevné odlišení kartou v odstínu modulu — stejný zápis jako
+                // v notifikačním centru: velmi jemný diagonální přechod, ne
+                // plocha v plné barvě.
+                background: mod.is_enabled
+                  ? `linear-gradient(125deg, ${accent}0A, rgba(255,255,255,0.018) 52%, rgba(251,191,36,0.012))`
+                  : 'rgba(255,255,255,0.016)',
+                border: `1px solid ${mod.is_enabled ? 'rgba(125,165,185,0.16)' : 'rgba(255,255,255,0.07)'}`,
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
+              }}
             >
-              {/* Module header row */}
-              <div className="flex items-center justify-between gap-4 p-4 border-b border-white/5">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      background: mod.is_enabled ? `${accent}20` : 'rgba(255,255,255,0.05)',
-                    }}
-                  >
-                    <Icon className="w-5 h-5" style={{ color: mod.is_enabled ? accent : 'rgba(255,255,255,0.3)' }} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-white font-medium truncate">{mod.name}</p>
-                    <p className="text-white/40 text-xs truncate">{mod.description || '—'}</p>
-                  </div>
-                </div>
+              {/* Vlásková linka nahoře v barvě modulu — stejný podpis jako mají
+                  karty kontaktů v Managementu. */}
+              <div
+                aria-hidden
+                className="absolute inset-x-10 top-0 h-px"
+                style={{
+                  background: `linear-gradient(90deg, transparent, ${
+                    mod.is_enabled ? accent : 'rgba(148,163,184,0.5)'
+                  }, transparent)`,
+                }}
+              />
 
-                {/* Global toggle */}
-                <div className="flex items-center gap-3 shrink-0">
-                  {isSettingsModule ? (
-                    <span className="text-white/30 text-xs uppercase tracking-wider font-bold">Vždy aktivní</span>
-                  ) : (
-                    <>
-                      <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
-                        Globálně
-                      </span>
+              {/* Identita vlevo, oprávnění vpravo */}
+              <div className="grid gap-3 sm:grid-cols-[136px_minmax(0,1fr)]">
+                {/* ── Identita modulu ── */}
+                <div
+                  className="flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl px-3 py-3"
+                  style={{
+                    // Sloupec identity nese barvu modulu, stejně jako dlaždice
+                    // kanálu v notifikačním centru.
+                    background: mod.is_enabled
+                      ? `linear-gradient(145deg, ${accent}2E, ${accent}12)`
+                      : 'linear-gradient(145deg, rgba(148,163,184,0.11), rgba(148,163,184,0.04))',
+                    border: `1px solid ${mod.is_enabled ? `${accent}55` : 'rgba(148,163,184,0.15)'}`,
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Modul</span>
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: mod.is_enabled ? COLORS.green : 'rgba(255,255,255,0.22)' }}
+                    />
+                  </div>
+
+                  <div className="my-2">
+                    <p className="line-clamp-2 text-sm font-bold leading-tight text-white">{mod.name}</p>
+                    <p className="mt-1 line-clamp-3 text-[10px] leading-tight text-white/42">
+                      {mod.description || '—'}
+                    </p>
+                  </div>
+
+                  {/* Stav modulu + přepínač na jednom řádku */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`text-[9px] font-semibold ${
+                        mod.is_enabled ? 'text-emerald-300/75' : 'text-white/28'
+                      }`}
+                    >
+                      {isSettingsModule ? 'Vždy aktivní' : mod.is_enabled ? 'Zapnuto' : 'Vypnuto'}
+                    </span>
+                    {!isSettingsModule && (
                       <button
                         type="button"
                         onClick={() => handleGlobalToggle(mod.id, mod.is_enabled)}
                         disabled={globalPending}
                         aria-label={`Globální přepínač modulu ${mod.name}`}
-                        className={`relative w-12 h-6 rounded-full transition-all ${
-                          mod.is_enabled ? 'bg-emerald-500' : 'bg-white/10'
+                        className={`relative h-5 w-10 shrink-0 rounded-full transition-colors ${
+                          mod.is_enabled ? 'bg-emerald-500' : 'bg-white/12'
                         } disabled:opacity-50`}
                       >
                         <motion.div
-                          animate={{ x: mod.is_enabled ? 24 : 2 }}
+                          animate={{ x: mod.is_enabled ? 21 : 2 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                          className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center"
+                          className="absolute top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow"
                         >
-                          {globalPending ? (
-                            <Loader2 className="w-3 h-3 text-emerald-500 animate-spin" />
-                          ) : mod.is_enabled ? (
-                            <Check className="w-3 h-3 text-emerald-500" />
-                          ) : (
-                            <X className="w-3 h-3 text-white/40" />
-                          )}
+                          {globalPending && <Loader2 className="h-2.5 w-2.5 animate-spin text-emerald-500" />}
                         </motion.div>
                       </button>
-                    </>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Oprávnění vpravo ── */}
+                <div className="flex min-w-0 flex-col gap-1.5 py-0.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">
+                      Přístup rolí
+                    </span>
+                    <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-white/50">
+                      {ROLE_DEFS.filter(r => mod.allowed_roles?.includes(r.id)).length}/{ROLE_DEFS.length}
+                    </span>
+                  </div>
+
+                  {/* Superadmin — jediná role, které přístup odebrat nejde */}
+                  <div
+                    className="flex items-center gap-2 rounded-2xl px-2.5 py-1.5 text-[11px] font-semibold text-white/85"
+                    style={TILE}
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
+                      <Crown className="h-3.5 w-3.5" style={{ color: TIER_COLOR.superadmin }} />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">Superadministrátor</span>
+                    <Lock className="h-3.5 w-3.5 shrink-0 text-white/25" />
+                  </div>
+
+                  {renderRoleTile(mod, ADMIN_ROLE)}
+
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {OPERATIONAL_ROLES.map(role => renderRoleTile(mod, role))}
+                  </div>
+
+                  {!canManageRoles && (
+                    <span className="inline-flex items-center gap-1.5 text-[9px] font-semibold text-amber-300/60">
+                      <Lock className="h-2.5 w-2.5" />
+                      Přepínat smí pouze superadministrátor
+                    </span>
                   )}
                 </div>
               </div>
 
-              {/* Per-role row */}
-              <div className="p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-3">
-                  Přístup pro role
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {ROLE_DEFS.map(role => {
-                    const RoleIcon = role.icon;
-                    const allowed = !!mod.allowed_roles?.includes(role.id);
-                    const pending = pendingKey === `${mod.id}:${role.id}`;
-                    const disabled = isSettingsModule || !mod.is_enabled;
-
-                    return (
-                      <button
-                        key={role.id}
-                        type="button"
-                        onClick={() => handleRoleToggle(mod.id, role.id, allowed)}
-                        disabled={disabled || pending}
-                        aria-pressed={allowed}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40"
-                        style={{
-                          background: allowed ? `${role.color}22` : 'rgba(255,255,255,0.02)',
-                          borderColor: allowed ? `${role.color}60` : 'rgba(255,255,255,0.08)',
-                          color: allowed ? role.color : 'rgba(255,255,255,0.5)',
-                        }}
-                      >
-                        <RoleIcon className="w-4 h-4 shrink-0" />
-                        <span className="flex-1 text-left truncate">{role.label}</span>
-                        {pending ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : allowed ? (
-                          <Check className="w-3.5 h-3.5" />
-                        ) : (
-                          <X className="w-3.5 h-3.5 opacity-50" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+              {/* Poznámky a podmoduly přes celou šířku karty */}
+              <div className="mt-3">
                 {isSettingsModule && (
-                  <p className="mt-3 text-[11px] text-white/30 flex items-center gap-1.5">
-                    <Info className="w-3 h-3" />
-                    Modul Nastavení je dostupný pouze pro administrátora.
+                  <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.02] px-2.5 py-2 text-[11px] text-white/35">
+                    <Info className="h-3 w-3 shrink-0" />
+                    Odebráním administrátora ztratí přístup ke správě systému.
                   </p>
                 )}
                 {!mod.is_enabled && !isSettingsModule && (
-                  <p className="mt-3 text-[11px] text-amber-400/70 flex items-center gap-1.5">
-                    <AlertTriangle className="w-3 h-3" />
-                    Modul je globálně vypnutý — role nelze nastavovat.
+                  <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/[0.07] px-2.5 py-2 text-[11px] text-amber-300/80">
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    Modul je vypnutý — role nelze nastavovat.
                   </p>
                 )}
-                
+
+                {/* ── Podmoduly ───────────────────────────────────────────
+                    Části uvnitř modulu s vlastním oprávněním. Rozbalují se,
+                    aby karta zůstala přehledná i u modulů bez podmodulů. */}
+                {moduleSubmodules.length > 0 && (
+                  <div className="mt-4 border-t border-[rgba(125,165,185,0.12)] pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedModule(expandedModule === `sub:${mod.id}` ? null : `sub:${mod.id}`)}
+                      className="flex w-full items-center gap-2 rounded-[13px] px-2.5 py-2 text-[11px] font-semibold text-white/70 transition-colors hover:text-white" style={TILE}
+                    >
+                      <Layers className="h-4 w-4 shrink-0 text-white/40" />
+                      <span className="flex-1 text-left">Podmoduly</span>
+                      <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] tabular-nums text-white/55">
+                        {moduleSubmodules.length}
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-white/40 transition-transform ${
+                          expandedModule === `sub:${mod.id}` ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {expandedModule === `sub:${mod.id}` && (
+                      <div className="mt-2 space-y-2">
+                        {moduleSubmodules.map(sub => (
+                          <div key={sub.id} className="rounded-[15px] p-2.5" style={TILE}>
+                            <div className="mb-2 flex items-center gap-2">
+                              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/25" />
+                              <p className="min-w-0 flex-1 truncate text-[11px] font-bold text-white/80">{sub.name}</p>
+                              <span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-white/50">
+                                {ROLE_DEFS.filter(r => sub.allowed_roles?.includes(r.id)).length}/{ROLE_DEFS.length}
+                              </span>
+                            </div>
+                            <div className="mb-1.5">{renderSubmoduleRoleTile(mod, sub, ADMIN_ROLE)}</div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {OPERATIONAL_ROLES.map(role => renderSubmoduleRoleTile(mod, sub, role))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Devices module - expandable management section */}
                 {mod.id === 'devices' && mod.is_enabled && (
                   <div className="mt-4 pt-4 border-t border-white/10">
@@ -1783,16 +2140,17 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, modules, onToggleM
                   </div>
                 )}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
 
-      <div className="flex items-start gap-2 p-3 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-white/50">
-        <Info className="w-4 h-4 shrink-0 mt-0.5 text-white/40" />
+      <div className="flex items-start gap-2.5 rounded-[18px] p-3.5 text-[11.5px] leading-relaxed text-white/38" style={CARD}>
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-white/35" />
         <span>
-          Změny se projeví okamžitě. Administrátor má vždy plný přístup bez ohledu na nastavení rolí. Dashboard je vždy
-          přístupný všem přihlášeným uživatelům.
+          Změny se ukládají okamžitě. Superadministrátor a administrátor mají přístup ke všem modulům bez ohledu na
+          nastavení — proto se u nich přepínač nezobrazuje. Vypnutý modul zmizí všem provozním rolím bez ohledu na
+          jejich nastavení.
         </span>
       </div>
     </div>

@@ -73,6 +73,7 @@ export interface DBOperatingRoom {
   completed_operations: CompletedOperation[] | string | null;
   current_step_index: number;
   estimated_end_time: string | null;
+  aro_overtime_since?: string | null;
   doctor_id: string | null;
   nurse_id: string | null;
   anesthesiologist_id: string | null;
@@ -188,6 +189,7 @@ function transformRoom(
     noticeAt: row.notice_at ?? null,
     noticeSender: row.notice_sender ?? null,
     estimatedEndTime: row.estimated_end_time || undefined,
+    aroOvertimeSince: row.aro_overtime_since ?? null,
     weeklySchedule: row.weekly_schedule as WeeklySchedule | undefined,
     // Finance — hodinová sazba provozu (CZK/h). NULL = nenastaveno.
     hourlyOperatingCost: row.hourly_operating_cost === null || row.hourly_operating_cost === undefined
@@ -311,6 +313,7 @@ const LIGHT_ROOM_COLUMNS = [
   'is_septic', 'is_emergency', 'is_locked', 'is_enhanced_hygiene', 'enhanced_hygiene_at',
   'is_paused', 'paused_at', 'patient_called_at', 'patient_arrived_at',
   'phase_started_at', 'operation_started_at', 'current_step_index', 'estimated_end_time',
+  'aro_overtime_since',
   'doctor_id', 'nurse_id', 'anesthesiologist_id', 'current_patient_id', 'current_procedure_id',
   'weekly_schedule', 'sort_order', 'hourly_operating_cost',
   'notice_message', 'notice_at', 'notice_sender',
@@ -520,6 +523,51 @@ export function updateOperatingRoom(
     if (roomWriteQueues.get(queueKey) === next) roomWriteQueues.delete(queueKey);
   });
   return next;
+}
+
+/**
+ * Zapíše okamžik, kdy sál vstoupil do přesahu pracovní doby.
+ *
+ * Pořadové číslo u ikony ARO se řídí tímhle časem, proto musí být uložený
+ * v databázi — jen tak zůstane stejný po obnovení stránky i na jiném zařízení.
+ *
+ * Zápis je podmíněný (`is('aro_overtime_since', null)`), takže i když přesah
+ * zaznamená několik zařízení současně, uloží se jen ten první a pořadí se
+ * nepřepíše. Vrací `true`, když se hodnota skutečně zapsala.
+ */
+export async function markRoomAroOvertimeStart(roomId: string, since: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('operating_rooms')
+      .update({ aro_overtime_since: since, updated_at: new Date().toISOString() })
+      .eq('id', roomId)
+      .eq('hospital_id', getDatabaseHospitalId())
+      .is('aro_overtime_since', null);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('[DB] Zápis začátku přesahu ARO selhal:', error);
+    return false;
+  }
+}
+
+/** Zruší příznak přesahu, jakmile sál z přesahu vystoupí. */
+export async function clearRoomAroOvertimeStart(roomId: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('operating_rooms')
+      .update({ aro_overtime_since: null, updated_at: new Date().toISOString() })
+      .eq('id', roomId)
+      .eq('hospital_id', getDatabaseHospitalId())
+      .not('aro_overtime_since', 'is', null);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('[DB] Vymazání příznaku přesahu ARO selhalo:', error);
+    return false;
+  }
 }
 
 /**
@@ -899,6 +947,7 @@ export function transformSingleRoom(row: Partial<DBOperatingRoom>): Partial<Oper
   if (row.notice_at !== undefined) result.noticeAt = row.notice_at ?? null;
   if (row.notice_sender !== undefined) result.noticeSender = row.notice_sender ?? null;
   if (row.estimated_end_time !== undefined) result.estimatedEndTime = row.estimated_end_time || undefined;
+  if (row.aro_overtime_since !== undefined) result.aroOvertimeSince = row.aro_overtime_since ?? null;
   if (row.weekly_schedule !== undefined) result.weeklySchedule = row.weekly_schedule as WeeklySchedule | undefined;
   if (row.hourly_operating_cost !== undefined) {
     result.hourlyOperatingCost = row.hourly_operating_cost === null
@@ -992,6 +1041,7 @@ export async function fetchStatusHistory(
     fromDate?: Date;
     toDate?: Date;
     limit?: number;
+    all?: boolean;
   }
 ): Promise<StatusHistoryRow[] | null> {
   if (!isSupabaseConfigured || !supabase) {
@@ -999,31 +1049,39 @@ export async function fetchStatusHistory(
   }
 
   try {
-    let query = supabase
-      .from('room_status_history')
-      .select('*')
-      .eq('hospital_id', activeHospitalId || 'default')
-      .order('timestamp', { ascending: false });
+    // PostgREST obvykle vrací nejvýše 1 000 řádků na požadavek. Statistiky
+    // ale za měsíc/rok obsahují násobně více událostí, proto je načítáme po
+    // stránkách. `limit` zůstává celkovým limitem, nikoli limitem jedné stránky.
+    const requestedLimit = options?.all
+      ? Number.MAX_SAFE_INTEGER
+      : Math.max(0, options?.limit ?? 1_000);
+    if (requestedLimit === 0) return [];
 
-    if (options?.roomId) {
-      query = query.eq('operating_room_id', options.roomId);
-    }
-    if (options?.eventTypes && options.eventTypes.length > 0) {
-      query = query.in('event_type', options.eventTypes);
-    }
-    if (options?.fromDate) {
-      query = query.gte('timestamp', options.fromDate.toISOString());
-    }
-    if (options?.toDate) {
-      query = query.lte('timestamp', options.toDate.toISOString());
-    }
-    if (options?.limit) {
-      query = query.limit(options.limit);
+    const pageSize = Math.min(1_000, requestedLimit);
+    const rows: StatusHistoryRow[] = [];
+
+    while (rows.length < requestedLimit) {
+      const currentPageSize = Math.min(pageSize, requestedLimit - rows.length);
+      let query = supabase
+        .from('room_status_history')
+        .select('*')
+        .eq('hospital_id', activeHospitalId || 'default')
+        .order('timestamp', { ascending: false })
+        .range(rows.length, rows.length + currentPageSize - 1);
+
+      if (options?.roomId) query = query.eq('operating_room_id', options.roomId);
+      if (options?.eventTypes && options.eventTypes.length > 0) query = query.in('event_type', options.eventTypes);
+      if (options?.fromDate) query = query.gte('timestamp', options.fromDate.toISOString());
+      if (options?.toDate) query = query.lte('timestamp', options.toDate.toISOString());
+
+      const { data, error } = await query;
+      if (error) throw error;
+      const page = (data ?? []) as StatusHistoryRow[];
+      rows.push(...page);
+      if (page.length < currentPageSize) break;
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
+    return rows;
   } catch (error) {
     console.error('[DB] Failed to fetch status history:', error);
     return null;
@@ -1552,23 +1610,38 @@ export interface NotificationLogRow {
 }
 
 export async function fetchNotificationsLog(
-  options?: { fromDate?: Date; toDate?: Date; limit?: number }
+  options?: { fromDate?: Date; toDate?: Date; limit?: number; all?: boolean }
 ): Promise<NotificationLogRow[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
   try {
-    let query = supabase
-      .from('notifications_log')
-      .select('*')
-      .eq('hospital_id', activeHospitalId || 'default')
-      .order('created_at', { ascending: false });
+    const requestedLimit = options?.all
+      ? Number.MAX_SAFE_INTEGER
+      : Math.max(0, options?.limit ?? 1_000);
+    if (requestedLimit === 0) return [];
 
-    if (options?.fromDate) query = query.gte('created_at', options.fromDate.toISOString());
-    if (options?.toDate) query = query.lte('created_at', options.toDate.toISOString());
-    if (options?.limit) query = query.limit(options.limit);
+    const pageSize = Math.min(1_000, requestedLimit);
+    const rows: NotificationLogRow[] = [];
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data ?? []) as NotificationLogRow[];
+    while (rows.length < requestedLimit) {
+      const currentPageSize = Math.min(pageSize, requestedLimit - rows.length);
+      let query = supabase
+        .from('notifications_log')
+        .select('*')
+        .eq('hospital_id', activeHospitalId || 'default')
+        .order('created_at', { ascending: false })
+        .range(rows.length, rows.length + currentPageSize - 1);
+
+      if (options?.fromDate) query = query.gte('created_at', options.fromDate.toISOString());
+      if (options?.toDate) query = query.lte('created_at', options.toDate.toISOString());
+
+      const { data, error } = await query;
+      if (error) throw error;
+      const page = (data ?? []) as NotificationLogRow[];
+      rows.push(...page);
+      if (page.length < currentPageSize) break;
+    }
+
+    return rows;
   } catch (error) {
     console.error('[DB] Failed to fetch notifications_log:', error);
     return null;

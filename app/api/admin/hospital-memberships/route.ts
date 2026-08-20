@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/server';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
+import { isAdminRole } from '../../../../lib/auth/roles';
 
 export const runtime = 'nodejs';
 
@@ -27,8 +28,8 @@ export async function GET(request: NextRequest) {
     users: (users || []).map(user => ({
       ...user,
       id: String(user.id),
-      has_access: user.role === 'admin' || memberIds.has(String(user.id)),
-      access_is_global: user.role === 'admin',
+      has_access: isAdminRole(user.role) || memberIds.has(String(user.id)),
+      access_is_global: isAdminRole(user.role),
     })),
   });
 }
@@ -53,7 +54,7 @@ export async function PUT(request: NextRequest) {
     admin.from('app_users').select('id,role').eq('id', userId).maybeSingle(),
   ]);
   if (!hospital || !user) return NextResponse.json({ error: 'Nemocnice nebo uživatel neexistuje' }, { status: 404 });
-  if (user.role === 'admin') return NextResponse.json({ success: true, global: true });
+  if (isAdminRole(user.role)) return NextResponse.json({ success: true, global: true });
 
   const result = enabled
     ? await admin.from('hospital_user_memberships').upsert(

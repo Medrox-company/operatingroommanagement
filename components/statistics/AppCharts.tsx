@@ -703,15 +703,19 @@ export const RingRow: React.FC<{ items: RingItem[]; size?: number; emptyText?: s
               </div>
             </div>
             <div className="text-center leading-tight">
+              {/* Zkrácení musí být na samotném textu — `truncate` na flexovém
+                  rodiči se u vnořeného uzlu neprojeví a dlouhý název sálu pak
+                  přetekl ven z dlaždice. */}
               <p
-                className="text-[13px] font-semibold truncate flex items-center justify-center gap-1.5"
+                className="text-[13px] font-semibold flex items-center justify-center gap-1.5"
                 style={{ color: C.text, maxWidth: size + 20 }}
+                title={it.label}
               >
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ background: it.color, boxShadow: `0 0 6px ${it.color}` }}
                 />
-                {it.label}
+                <span className="min-w-0 truncate">{it.label}</span>
               </p>
               {it.detail && (
                 <p className="text-[11px] tabular-nums mt-0.5" style={{ color: C.muted }}>

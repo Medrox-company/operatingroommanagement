@@ -4,6 +4,7 @@ import { requireAdmin, requireSession } from '../auth/server';
 import type { SessionPayload } from '../auth/session';
 import { getSupabaseAdmin } from '../supabase-server';
 import { getRequestHospitalId } from './request';
+import { hasGlobalHospitalAccess } from '../auth/roles';
 
 interface HospitalAccessOptions {
   adminOnly?: boolean;
@@ -32,7 +33,7 @@ export async function requireHospitalAccess(
 
   try {
     const admin = getSupabaseAdmin();
-    if (auth.user.role === 'admin') {
+    if (hasGlobalHospitalAccess(auth.user.role)) {
       const { data: hospital, error } = await admin
         .from('hospitals')
         .select('id')

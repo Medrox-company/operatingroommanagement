@@ -66,7 +66,7 @@ const SWR_OPTIONS = {
 };
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, isAdmin, modules, user } = useAuth();
+  const { isAuthenticated, isAdmin, isSuperAdmin, modules, user } = useAuth();
   const { activeHospitalId, loading: hospitalLoading } = useHospital();
   const { workflowStatuses } = useWorkflowStatusesContext();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -193,16 +193,17 @@ const AppContent: React.FC = () => {
 
   // Check if module is enabled AND the current user's role is allowed to see it.
   const isModuleEnabled = useCallback((moduleId: string) => {
-    if (isAdmin) return true; // Admin má vždy přístup ke všem modulům
+    // Superadministrátor vidí vše. Administrátor už výjimku nemá — jeho
+    // přístup nastavuje superadmin stejně jako u ostatních rolí.
+    if (isSuperAdmin) return true;
     if (moduleId === 'dashboard') return true; // Dashboard je vždy přístupný
     const module = modules.find(m => m.id === moduleId);
     if (!module || module.is_enabled === false) return false;
-    // allowed_roles NULL / [] => admin-only
     const allowed = module.allowed_roles;
     if (!allowed || allowed.length === 0) return false;
     const currentRole = user?.role;
     return !!currentRole && allowed.includes(currentRole);
-  }, [isAdmin, modules, user]);
+  }, [isSuperAdmin, modules, user]);
 
   // Guard: If current view is not enabled, redirect to dashboard
   useEffect(() => {

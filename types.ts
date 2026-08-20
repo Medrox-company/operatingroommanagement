@@ -130,6 +130,8 @@ export interface OperatingRoom {
   currentPatient?: Patient;
   currentProcedure?: Procedure;
   estimatedEndTime?: string; // ISO String
+  /** Kdy sál poprvé překročil pracovní dobu. Určuje pořadí čísel u ikony ARO. */
+  aroOvertimeSince?: string | null;
 
   /**
    * Hodinová sazba provozu sálu v Kč/h (DB sloupec `hourly_operating_cost`).

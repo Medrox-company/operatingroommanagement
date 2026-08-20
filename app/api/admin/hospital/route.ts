@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
 import { requireSession, requireAdmin } from '@/lib/auth/server';
+import { isAdminRole } from '../../../../lib/auth/roles';
 
 export const runtime = 'nodejs';
 
@@ -32,7 +33,7 @@ export async function GET() {
 
   const admin = getSupabaseAdmin();
   let allowedIds: string[] | null = null;
-  if (auth.user.role !== 'admin') {
+  if (!isAdminRole(auth.user.role)) {
     const { data: memberships } = await admin
       .from('hospital_user_memberships')
       .select('hospital_id')

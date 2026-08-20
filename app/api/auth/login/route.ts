@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
 import { signSession, getSessionCookieOptions } from '@/lib/auth/session';
 import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
+import { isAdminRole } from '../../../../lib/auth/roles';
 
 export const runtime = 'nodejs';
 
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
   const { data: hospital } = await supabase.from('hospitals').select('id').eq('id', hospitalId).maybeSingle();
   if (!hospital) return NextResponse.json({ error: 'Vybraná nemocnice neexistuje' }, { status: 400 });
 
-  if (user.role !== 'admin') {
+  if (!isAdminRole(user.role)) {
     const { data: membership } = await supabase
       .from('hospital_user_memberships')
       .select('user_id')

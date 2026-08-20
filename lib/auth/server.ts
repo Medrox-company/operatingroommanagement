@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { SESSION_COOKIE, verifySession, type SessionPayload } from './session';
+import { isAdminRole } from './roles';
 
 /**
  * Vrátí ověřeného uživatele ze session cookie nebo `null`.
@@ -39,7 +40,7 @@ export async function requireAdmin(): Promise<{ user: SessionPayload } | NextRes
   if (!user) {
     return NextResponse.json({ error: 'Nejste přihlášen' }, { status: 401 });
   }
-  if (user.role !== 'admin') {
+  if (!isAdminRole(user.role)) {
     return NextResponse.json({ error: 'Přístup pouze pro administrátora' }, { status: 403 });
   }
   return { user };

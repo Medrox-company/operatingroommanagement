@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSession } from '@/lib/auth/server';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
+import { isAdminRole } from '../../../../lib/auth/roles';
 
 export const runtime = 'nodejs';
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
   const { data: hospital } = await admin.from('hospitals').select('id').eq('id', hospitalId).maybeSingle();
   if (!hospital) return NextResponse.json({ error: 'Zařízení neexistuje' }, { status: 404 });
 
-  if (auth.user.role !== 'admin') {
+  if (!isAdminRole(auth.user.role)) {
     const { data: membership } = await admin
       .from('hospital_user_memberships')
       .select('user_id')

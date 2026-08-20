@@ -14,7 +14,6 @@ import {
   Radio,
   Search,
   ShieldCheck,
-  UserRound,
   Users,
   Wind,
   X,
@@ -77,9 +76,6 @@ const initials = (name: string) =>
     .map(part => part[0])
     .join('')
     .toUpperCase();
-
-const roleForStaff = (staff: StaffRow): StaffRole =>
-  staff.role === 'NURSE' ? 'nurse' : 'anesthesiologist';
 
 const roomNumber = (name: string) => name.match(/\d+/)?.[0] || name.slice(0, 2).toUpperCase();
 
@@ -233,54 +229,6 @@ const RoomNetworkCard: React.FC<{
   );
 };
 
-const AvailablePerson: React.FC<{ staff: StaffRow }> = ({ staff }) => {
-  const role = roleForStaff(staff);
-  const meta = roleMeta[role];
-  const Icon = meta.icon;
-  const availability = Math.max(0, Math.min(100, staff.availability ?? 100));
-
-  return (
-    <motion.div
-      className="rounded-xl p-2.5 flex items-center gap-2.5 font-sans"
-      style={{
-        background: 'rgba(255,255,255,0.023)',
-        border: '1px solid rgba(255,255,255,0.055)',
-      }}
-    >
-      <div
-        className="relative w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-[9px] font-bold"
-        style={{ background: `${meta.color}14`, color: meta.color }}
-      >
-        {initials(staff.name)}
-        <span
-          className="absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 border-[#071019]"
-          style={{ background: COLORS.green }}
-        >
-          <Icon className="w-2 h-2 text-[#071019]" strokeWidth={3} />
-        </span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <p className="text-sm font-bold text-white truncate">{staff.name}</p>
-          {staff.is_external && (
-            <span className="text-[7px] font-bold tracking-wider px-1 py-0.5 rounded text-amber-300 bg-amber-300/10">EXT</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-[11px] font-medium" style={{ color: meta.color }}>
-            {meta.shortLabel}
-          </span>
-          {staff.skill_level && <span className="text-[11px] text-white/35">• {staff.skill_level}</span>}
-          <span className="ml-auto text-[11px] tabular-nums text-white/40">{availability}%</span>
-        </div>
-        <div className="h-px bg-white/[0.06] mt-1.5 overflow-hidden">
-          <div className="h-full" style={{ width: `${availability}%`, background: meta.color }} />
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
 const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: operatingRooms }) => {
   const isMobileDark = useIsMobileDark();
   const { staff: staffList, loading } = useStaffData();
@@ -374,11 +322,6 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
       return matchesFilter && matchesDepartment && (!query || haystack.includes(query));
     });
   }, [department, filter, rooms, search]);
-
-  const availableByRole = useMemo(() => ({
-    anesthesiologist: availableStaff.filter(staff => roleForStaff(staff) === 'anesthesiologist').length,
-    nurse: availableStaff.filter(staff => roleForStaff(staff) === 'nurse').length,
-  }), [availableStaff]);
 
   return (
     <div
@@ -561,7 +504,7 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_290px] gap-5 items-start">
+        <div className="grid grid-cols-1 gap-5 items-start">
           <section
             className="mobile-staff-panel relative rounded-[28px] p-3 sm:p-4 overflow-hidden"
             style={{
@@ -595,7 +538,7 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
 
             <AnimatePresence mode="popLayout">
               {filteredRooms.length > 0 ? (
-                <motion.div layout className="relative grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <motion.div layout className="relative grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 min-[1800px]:grid-cols-4 gap-3">
                   {filteredRooms.map(room => (
                     <RoomNetworkCard
                       key={room.id}
@@ -629,90 +572,10 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
             </AnimatePresence>
           </section>
 
-          <aside className="xl:sticky xl:top-4 space-y-4">
-            <section
-              className="mobile-staff-panel rounded-[26px] p-4 overflow-hidden"
-              style={{
-                background: 'linear-gradient(155deg, rgba(54,217,236,0.08), rgba(255,255,255,0.018) 48%, rgba(251,191,36,0.045))',
-                border: '1px solid rgba(54,217,236,0.17)',
-              }}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-3.5 h-3.5 text-emerald-300" />
-                    <h2 className="text-[11px] font-bold tracking-[0.15em] text-white/78 uppercase">Pohotovostní tým</h2>
-                  </div>
-                  <p className="text-[9px] text-white/30 mt-1">Připraven k okamžitému nasazení</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-semibold text-emerald-300 tabular-nums leading-none">{availableStaff.length}</p>
-                  <p className="text-[7px] tracking-widest text-white/25 mt-1">DOSTUPNÝCH</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-1.5 my-4">
-                {([
-                  ['anesthesiologist', availableByRole.anesthesiologist],
-                  ['nurse', availableByRole.nurse],
-                ] as const).map(([role, count]) => {
-                  const meta = roleMeta[role];
-                  const Icon = meta.icon;
-                  return (
-                    <div key={role} className="rounded-xl py-2 px-1 text-center bg-black/10 border border-white/[0.045]">
-                      <Icon className="w-3 h-3 mx-auto" style={{ color: meta.color }} />
-                      <p className="text-base font-semibold mt-1 tabular-nums" style={{ color: meta.color }}>{count}</p>
-                      <p className="text-[7px] text-white/26 tracking-wider">{meta.shortLabel}</p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="space-y-1.5 max-h-[420px] overflow-y-auto hide-scrollbar pr-0.5">
-                {availableStaff.length > 0 ? (
-                  availableStaff.map(staff => (
-                    <AvailablePerson key={staff.id} staff={staff} />
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] py-8 px-4 text-center">
-                    <UserRound className="w-6 h-6 text-white/18 mx-auto mb-2" />
-                    <p className="text-[10px] font-medium text-white/40">Všichni jsou právě přiřazeni</p>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section
-              className="mobile-staff-panel rounded-[22px] p-4"
-              style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.13)' }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <ShieldCheck className="w-3.5 h-3.5" style={{ color: stats.coverage >= 90 ? COLORS.green : COLORS.amber }} />
-                <h3 className="text-[10px] font-bold tracking-[0.14em] text-white/65 uppercase">Integrita směny</h3>
-              </div>
-              <div className="flex items-center gap-4">
-                <div
-                  className="relative w-16 h-16 rounded-full flex items-center justify-center shrink-0"
-                  style={{
-                    background: `conic-gradient(${stats.coverage >= 90 ? COLORS.green : COLORS.amber} ${stats.coverage * 3.6}deg, rgba(255,255,255,0.06) 0deg)`,
-                  }}
-                >
-                  <div className="absolute inset-[5px] rounded-full bg-[#08121a]" />
-                  <span className="relative text-sm font-semibold text-white/82 tabular-nums">{stats.coverage}%</span>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-white/75">
-                    {stats.missingSlots === 0 ? 'Všechny týmy kompletní' : `${stats.missingSlots} neobsazených pozic`}
-                  </p>
-                  <p className="text-[9px] text-white/30 mt-1 leading-relaxed">
-                    {stats.missingSlots === 0
-                      ? 'Směna je personálně připravena.'
-                      : 'Filtr „Chybí personál“ ukáže kritická místa.'}
-                  </p>
-                </div>
-              </div>
-            </section>
-          </aside>
+          {/* Postranní panely „Pohotovostní tým" a „Integrita směny" jsou
+              odstraněné — dostupnost personálu se zatím nikde nenastavuje,
+              takže by zobrazovaly nepodložená čísla. Uvolněnou šířku dostala
+              Personální síť sálů. */}
         </div>
       )}
     </div>

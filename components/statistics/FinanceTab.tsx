@@ -2,20 +2,24 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import {
-  Wallet, Coins, Clock, TrendingUp, AlertTriangle, Save, Pencil, Check, X,
-  Building2, BarChart3, DollarSign, Activity, Hourglass,
+  Wallet, Coins, Clock, TrendingUp, AlertTriangle, Check, X,
+  Building2, DollarSign, Activity, Hourglass,
 } from 'lucide-react';
 import {
-  Card, KPIBlock, MetricTile, CategoryBarList, StackedBar,
+  Card,
   C, formatNumber,
 } from './shared';
 import { toast } from '@/components/ui/toast';
-import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  LineChart, Line, ComposedChart, Area,
-} from 'recharts';
+import { ColumnChart, StatSectionLabel, InsightPanel } from './AppCharts';
 import type { OperatingRoom } from '../../types';
-import { fetchStatusHistory, updateRoomHourlyOperatingCost, type StatusHistoryRow } from '../../lib/db';
+import {
+  fetchNotificationsLog,
+  fetchStatusHistory,
+  updateRoomHourlyOperatingCost,
+  type NotificationLogRow,
+  type StatusHistoryRow,
+} from '../../lib/db';
+import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 
@@ -24,11 +28,30 @@ interface FinanceTabProps {
   totalOps: number;
   avgUtilization: number;
   periodLabel: Period;
+  /** Samostatný pohled pro záložku se správou hodinových sazeb. */
+  view?: 'finance' | 'rates';
   /**
    * Volitelná předpočítaná historie statusů. Pokud není předaná,
    * komponenta si načte vlastní řez podle aktuálního období.
    */
   statusHistory?: StatusHistoryRow[];
+  /** Reálné záznamy odeslaných hlášení za zvolené období. */
+  notifications?: NotificationLogRow[] | null;
+}
+
+interface SpecialtyDepartment {
+  id: string;
+  name: string;
+  accent_color?: string | null;
+}
+
+interface SpecialtyAllocation {
+  id: string;
+  operating_room_id: string;
+  department_id: string | null;
+  allocation_date: string;
+  day_part: 'AM' | 'PM';
+  allocation_kind: 'SPECIALTY' | 'CLOSED' | 'SERVICE';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,25 +65,125 @@ const PERIOD_HOURS: Record<Period, number> = {
 };
 
 /**
- * Status fáze, které ZNAMENAJÍ že sál je v provozu (a tedy se má počítat čas).
- * Podle workflow (`room_status_history.step_name`).
+ * „Sál připraven" je klidový stav mezi výkony — sál nikdo neobsazuje, takže se
+ * jeho čas do nákladů provozu nepočítá. Dřív tu byl naopak výčet provozních
+ * fází, jenže neodpovídal názvům ve workflow (chyběl v něm i „Chirurgický
+ * výkon"), takže se náklady počítaly jen ze zlomku času.
+ *
+ * Porovnání ignoruje diakritiku a velikost písmen, aby přežilo drobné odchylky
+ * v pojmenování statusu.
  */
-const BUSY_STEP_NAMES = new Set([
-  'Pacient zavolán',
-  'Pacient přijel',
-  'Příjezd na sál',
-  'Příprava sálu',
-  'Anestezie',
-  'Operace probíhá',
-  'Probíhá operace',
-  'Operace',
-  'Sutura',
-  'Probuzení',
-  'Úklid sálu',
-  'Úklid',
-]);
+const isIdlePhaseName = (name: string | null | undefined): boolean => {
+  const normalized = (name ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '');
+  return normalized.includes('sal') && normalized.includes('priprav');
+};
 
-const fmtCZK = (v: number) => `${Math.round(v).toLocaleString('cs-CZ')} Kč`;
+const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+
+/** Počet kalendářních dnů, které dané období pokrývá. */
+const PERIOD_DAYS: Record<Period, number> = { 'den': 1, 'týden': 7, 'měsíc': 30, 'rok': 365 };
+const LATEST_PROGRAM_START_GRACE_MINUTES = 60;
+
+const localDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatDuration = (minutes: number) => {
+  const rounded = Math.round(minutes);
+  if (rounded < 60) return `${rounded} min`;
+  const hours = Math.floor(rounded / 60);
+  const rest = rounded % 60;
+  return rest > 0 ? `${hours} h ${rest} min` : `${hours} h`;
+};
+
+/**
+ * Kapacita sálu za období = součet jeho pracovní doby přes jednotlivé dny
+ * (bez přestávek), ne kalendářní čas. Sál s osmihodinovým provozem, který
+ * odslouží šest hodin, má vytížení 75 %, ne 25 % z celého dne.
+ */
+const roomCapacityHours = (room: OperatingRoom, period: Period): number => {
+  const days = PERIOD_DAYS[period];
+  const today = new Date();
+  let minutes = 0;
+
+  for (let i = 0; i < days; i += 1) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const schedule = room.weeklySchedule?.[DAY_KEYS[date.getDay()]];
+    if (!schedule?.enabled) continue;
+
+    const gross = Math.max(
+      0,
+      (schedule.endHour * 60 + schedule.endMinute) - (schedule.startHour * 60 + schedule.startMinute),
+    );
+    const breakMinutes = typeof schedule.breakMinutes === 'number' && schedule.breakMinutes > 0
+      ? Math.min(schedule.breakMinutes, gross)
+      : 0;
+    minutes += gross - breakMinutes;
+  }
+
+  return minutes / 60;
+};
+
+/**
+ * Vrátí průnik intervalu s nastavenou pracovní dobou sálu po jednotlivých
+ * lokálních dnech. Časy mimo povolené okno se nikdy nezapočítají.
+ * `breakMinutes` zde nelze odečíst z konkrétního místa intervalu, protože
+ * databáze ukládá jen délku pauzy, ne její začátek a konec.
+ */
+const roomWorkingOverlapByDay = (
+  room: OperatingRoom,
+  rawStart: Date,
+  rawEnd: Date,
+): Array<{ date: string; seconds: number }> => {
+  const startMs = rawStart.getTime();
+  const endMs = rawEnd.getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return [];
+
+  const overlaps: Array<{ date: string; seconds: number }> = [];
+  const cursor = new Date(rawStart);
+  cursor.setHours(0, 0, 0, 0);
+  const finalDay = new Date(rawEnd);
+  finalDay.setHours(0, 0, 0, 0);
+
+  while (cursor <= finalDay) {
+    const schedule = room.weeklySchedule?.[DAY_KEYS[cursor.getDay()]];
+    if (schedule?.enabled) {
+      const workStart = new Date(cursor);
+      workStart.setHours(schedule.startHour, schedule.startMinute, 0, 0);
+      const workEnd = new Date(cursor);
+      workEnd.setHours(schedule.endHour, schedule.endMinute, 0, 0);
+      const overlapStart = Math.max(startMs, workStart.getTime());
+      const overlapEnd = Math.min(endMs, workEnd.getTime());
+      if (overlapEnd > overlapStart) {
+        overlaps.push({ date: localDateKey(cursor), seconds: (overlapEnd - overlapStart) / 1_000 });
+      }
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return overlaps;
+};
+
+const roomWorkingOverlapSeconds = (room: OperatingRoom, start: Date, end: Date) =>
+  roomWorkingOverlapByDay(room, start, end).reduce((sum, item) => sum + item.seconds, 0);
+
+const isInsideRoomWorkingHours = (room: OperatingRoom, at: Date) => {
+  if (!Number.isFinite(at.getTime())) return false;
+  const schedule = room.weeklySchedule?.[DAY_KEYS[at.getDay()]];
+  if (!schedule?.enabled) return false;
+  const minute = at.getHours() * 60 + at.getMinutes();
+  const start = schedule.startHour * 60 + schedule.startMinute;
+  const end = schedule.endHour * 60 + schedule.endMinute;
+  return minute >= start && minute < end;
+};
+
 const fmtCZKShort = (v: number) => {
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)} M`;
   if (v >= 1_000)     return `${(v / 1_000).toFixed(0)} k`;
@@ -68,23 +191,324 @@ const fmtCZKShort = (v: number) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Prvky ve stylu předlohy — hluboká plocha s barevným nádechem, kruhová ikona
+// vpravo nahoře, oddělovač a řádky štítek/hodnota.
+//
+// Velikosti písma zůstávají shodné se zbytkem aplikace: popisky 10–11 px
+// prostrkaně, hlavní hodnota 24 px (text-2xl), doplňky 11 px.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Karta sálu ve stylu předlohy s hodinami: tlumená jednobarevná plocha,
+ * popisek nahoře, velká číslice uprostřed s drobnou jednotkou a řádek
+ * malých pilulek dole. Barva zůstává jen v tenkém proužku nad kartou.
+ */
+const YieldCard: React.FC<{
+  value: string;
+  unit?: string;
+  sub?: string;
+  caption?: string;
+  color: string;
+  onClick?: () => void;
+  /** Drobné pilulky pod číslem — jako +1 min / +5 min na předloze. */
+  rows: Array<{ label: string; value: string }>;
+}> = ({ value, unit, sub, caption, color, rows, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label={onClick ? `Zobrazit rozpad nákladů: ${sub ?? 'operační sál'}` : undefined}
+    className="group relative rounded-[20px] p-4 flex flex-col overflow-hidden w-full text-left transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
+    style={{
+      background: `linear-gradient(145deg, ${color}0d 0%, var(--stats-surface-2) 48%, var(--stats-surface) 100%)`,
+      border: `1px solid ${color}29`,
+      boxShadow: '0 12px 30px rgba(0, 0, 0, 0.1)',
+    }}
+  >
+    {/* Jemný světelný akcent propojuje kartu s finančním dashboardem. */}
+    <span
+      aria-hidden
+      className="absolute -right-8 -top-10 w-24 h-24 rounded-full blur-3xl opacity-20"
+      style={{ background: color }}
+    />
+    <span
+      aria-hidden
+      className="absolute inset-x-8 top-0 h-px"
+      style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}
+    />
+
+    <div className="relative flex items-start">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase font-bold tracking-[0.15em]" style={{ color }}>
+          Operační sál
+        </p>
+        <p
+          className="text-[15px] sm:text-[16px] font-semibold leading-tight mt-0.5 break-words"
+          style={{ color: C.textHi }}
+          title={sub}
+        >
+          {sub}
+        </p>
+        {caption && (
+          <p className="text-[9px] uppercase tracking-[0.08em] mt-1 truncate" style={{ color: C.faint }} title={caption}>
+            {caption}
+          </p>
+        )}
+      </div>
+    </div>
+
+    <div className="relative mt-3.5 pt-3 flex items-end justify-between gap-3" style={{ borderTop: `1px solid ${C.border}` }}>
+      <p className="text-[9px] uppercase font-semibold tracking-[0.12em] pb-0.5" style={{ color: C.faint }}>
+        Náklady za období
+      </p>
+      <p className="text-[24px] sm:text-[26px] font-semibold tabular-nums tracking-tight leading-none whitespace-nowrap" style={{ color: C.textHi }}>
+        {value}
+        {unit && <span className="text-[12px] font-medium ml-1" style={{ color }}>{unit}</span>}
+      </p>
+    </div>
+
+    {/* Kompaktní řádky drží hodnoty pohromadě a rychle se skenují. */}
+    <div className="relative mt-3 grid grid-cols-2 gap-1.5">
+      {rows.map(row => (
+        <div
+          key={row.label}
+          className="rounded-lg px-2.5 py-1.5 min-w-0 flex items-center justify-between gap-2"
+          style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}
+        >
+          <p className="text-[8px] uppercase font-semibold tracking-[0.07em] truncate" style={{ color: C.faint }}>{row.label}</p>
+          <p className="text-[11px] font-semibold tabular-nums truncate shrink-0" style={{ color: C.text }} title={row.value}>
+            {row.value}
+          </p>
+        </div>
+      ))}
+    </div>
+  </button>
+);
+
+/**
+ * Panel se seznamem ve stylu předlohy: tlumená plocha, nahoře pilulka
+ * s názvem a vpravo pilulka se souhrnem, pod tím řádky s číslicemi.
+ */
+const PanelCard: React.FC<{
+  title: string;
+  badge?: string;
+  note?: string;
+  footer?: { label: string; value: string };
+  icon?: React.ElementType;
+  accent?: string;
+  children: React.ReactNode;
+}> = ({ title, badge, note, footer, icon: Icon = Wallet, accent = C.accent, children }) => (
+  <div
+    className="relative overflow-hidden rounded-[24px] p-4 sm:p-5 flex flex-col"
+    style={{
+      background: 'linear-gradient(145deg, var(--stats-surface-2), var(--stats-surface))',
+      border: `1px solid ${C.border}`,
+    }}
+  >
+    <span
+      aria-hidden
+      className="absolute left-8 right-8 top-0 h-px"
+      style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
+    />
+    <div className="flex items-center gap-2">
+      <span
+        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: `${accent}1f`, color: accent, border: `1px solid ${accent}33` }}
+      >
+        <Icon className="w-4 h-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase font-bold tracking-[0.16em]" style={{ color: accent }}>Finance</p>
+        <p className="text-[15px] font-semibold truncate" style={{ color: C.textHi }}>{title}</p>
+      </div>
+      {badge && (
+        <span
+          className="ml-auto px-3 py-1.5 rounded-full text-[11px] font-semibold tabular-nums shrink-0"
+          style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}2b` }}
+        >
+          {badge}
+        </span>
+      )}
+    </div>
+
+    {note && <p className="text-[11px] mt-2.5" style={{ color: C.muted }}>{note}</p>}
+
+    <div className="mt-4 flex flex-col">{children}</div>
+
+    {footer && (
+      <div
+        className="mt-4 pt-3.5 flex items-center justify-between px-1"
+        style={{ borderTop: `1px solid ${C.border}` }}
+      >
+        <span className="text-[10px] uppercase tracking-[0.12em] font-semibold" style={{ color: C.faint }}>
+          {footer.label}
+        </span>
+        <span className="text-[12px] font-semibold tabular-nums" style={{ color: C.textHi }}>
+          {footer.value}
+        </span>
+      </div>
+    )}
+  </div>
+);
+
+/**
+ * Prstenec rozdělený na fáze cyklu. Každý výsek odpovídá podílu fáze na
+ * nákladech daného sálu, uprostřed je celková částka sálu.
+ */
+const PhaseRing: React.FC<{
+  segments: Array<{ name: string; cost: number; color: string }>;
+  centerValue: string;
+  centerUnit?: string;
+  size?: number;
+}> = ({ segments, centerValue, centerUnit, size = 132 }) => {
+  const total = segments.reduce((sum, s) => sum + s.cost, 0);
+  const R = 46;
+  const CIRC = 2 * Math.PI * R;
+  let offset = 0;
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 108 108" className="absolute inset-0 w-full h-full -rotate-90">
+        <circle cx="54" cy="54" r={R} fill="none" stroke="var(--stats-ghost)" strokeWidth="11" />
+        {total > 0 &&
+          segments.map(segment => {
+            const fraction = segment.cost / total;
+            const dash = fraction * CIRC;
+            const el = (
+              <circle
+                key={segment.name}
+                cx="54"
+                cy="54"
+                r={R}
+                fill="none"
+                stroke={segment.color}
+                strokeWidth="11"
+                strokeDasharray={`${Math.max(dash - 1.5, 0)} ${CIRC}`}
+                strokeDashoffset={-offset}
+              />
+            );
+            offset += dash;
+            return el;
+          })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span
+          className="font-semibold tabular-nums leading-none"
+          style={{ color: C.textHi, fontSize: size >= 180 ? 21 : 15 }}
+        >
+          {centerValue}
+        </span>
+        {centerUnit && (
+          <span className="mt-1 font-medium" style={{ color: C.muted, fontSize: size >= 180 ? 12 : 10 }}>{centerUnit}</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/** Jeden řádek panelu — vlevo popisek, vpravo číslo. */
+const PanelRow: React.FC<{
+  index?: string;
+  label: string;
+  value: string;
+  dot?: string;
+  children?: React.ReactNode;
+}> = ({ index, label, value, dot, children }) => (
+  <div
+    className="flex items-center gap-2 rounded-xl px-3 py-2.5 min-h-11"
+    style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}
+  >
+    {index && (
+      <span className="text-[10px] font-medium tabular-nums w-5 shrink-0" style={{ color: C.faint }}>
+        {index}
+      </span>
+    )}
+    {dot && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />}
+    <span className="text-[11px] truncate min-w-0 flex-1" style={{ color: C.muted }} title={label}>
+      {label}
+    </span>
+    {children ?? (
+      <span className="text-[12px] font-semibold tabular-nums shrink-0" style={{ color: C.textHi }}>
+        {value}
+      </span>
+    )}
+  </div>
+);
+
+/** Odznak v hlavičce — popisek a hodnota v pilulce s kruhovou ikonou. */
+const HeadChip: React.FC<{
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  color: string;
+}> = ({ label, value, icon: Icon, color }) => (
+  <div
+    className="rounded-full pl-1.5 pr-4 py-1.5 flex items-center gap-2.5"
+    style={{ background: 'var(--stats-surface)', border: `1px solid ${color}33` }}
+  >
+    <span
+      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+      style={{ background: `${color}26`, color }}
+    >
+      <Icon className="w-4 h-4" />
+    </span>
+    <span className="text-[12px] font-medium" style={{ color: C.muted }}>
+      {label} <span className="font-semibold tabular-nums" style={{ color }}>({value})</span>
+    </span>
+  </div>
+);
+
+/** Pilulková dlaždice s ikonou ve čtverečku — jako pruh metrik na předloze. */
+const PillMetric: React.FC<{
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  color?: string;
+}> = ({ label, value, icon: Icon, color = C.text }) => (
+  <div
+    className="rounded-2xl px-3.5 py-3 flex items-center gap-3"
+    style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}
+  >
+    <span
+      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+      style={{ background: `${color}1F`, color }}
+    >
+      <Icon className="w-4 h-4" />
+    </span>
+    <div className="min-w-0">
+      <p className="text-[10px] uppercase font-semibold tracking-[0.12em] truncate" style={{ color: C.muted }}>
+        {label}
+      </p>
+      <p className="text-[15px] font-semibold tabular-nums mt-0.5" style={{ color: C.text }}>{value}</p>
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // FinanceTab — vše počítáno z reálných DB dat
 // ─────────────────────────────────────────────────────────────────────────────
 export function FinanceTab({
   rooms,
-  totalOps,
-  avgUtilization,
   periodLabel,
+  view = 'finance',
   statusHistory: providedHistory,
+  notifications: providedNotifications,
 }: FinanceTabProps) {
+  // Barvy fází bereme z nastavení workflow statusů — graf tak odpovídá tomu,
+  // co personál vidí na sále.
+  const { workflowStatuses } = useWorkflowStatusesContext();
   const [history, setHistory] = useState<StatusHistoryRow[]>(providedHistory ?? []);
   const [historyLoading, setHistoryLoading] = useState(!providedHistory);
+  const [notificationRows, setNotificationRows] = useState<NotificationLogRow[]>(providedNotifications ?? []);
+  const [specialtyAllocations, setSpecialtyAllocations] = useState<SpecialtyAllocation[]>([]);
+  const [specialtyDepartments, setSpecialtyDepartments] = useState<SpecialtyDepartment[]>([]);
+  const [delayDataLoading, setDelayDataLoading] = useState(true);
   // Optimistická lokální mapa hodinových sazeb (do doby než parent rerendruje rooms)
   const [hourlyCostOverride, setHourlyCostOverride] = useState<Record<string, number | null>>({});
   // Editor state
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [savingRoomId, setSavingRoomId] = useState<string | null>(null);
+  const [selectedCostRoomId, setSelectedCostRoomId] = useState<string | null>(null);
 
   // Načtení status history pro aktuální období (jen pokud nedostáno odshora)
   useEffect(() => {
@@ -114,17 +538,94 @@ export function FinanceTab({
     return () => { cancelled = true; };
   }, [periodLabel, providedHistory]);
 
+  useEffect(() => {
+    if (providedNotifications) {
+      setNotificationRows(providedNotifications);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const toDate = new Date();
+      const fromDate = new Date(toDate.getTime() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000);
+      const rows = await fetchNotificationsLog({ fromDate, toDate, all: true });
+      if (!cancelled) setNotificationRows(rows ?? []);
+    })();
+    return () => { cancelled = true; };
+  }, [periodLabel, providedNotifications]);
+
+  // Odbornost operatéra je určena výhradně rozpisem sálů v databázi. Rozpis
+  // načítáme pro všechny roky, do kterých zvolené období zasahuje.
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    void (async () => {
+      setDelayDataLoading(true);
+      const now = new Date();
+      const from = new Date(now.getTime() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000);
+      const years = Array.from(new Set([from.getFullYear(), now.getFullYear()]));
+
+      try {
+        const payloads = await Promise.all(years.map(async year => {
+          const response = await fetch(`/api/room-specialty-allocations?year=${year}`, {
+            credentials: 'include',
+            cache: 'no-store',
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error('Rozpis odborností se nepodařilo načíst.');
+          return response.json() as Promise<{
+            allocations?: SpecialtyAllocation[];
+            departments?: SpecialtyDepartment[];
+          }>;
+        }));
+
+        if (cancelled) return;
+        const allocations = payloads.flatMap(payload => payload.allocations ?? []);
+        const departments = new Map<string, SpecialtyDepartment>();
+        payloads.flatMap(payload => payload.departments ?? []).forEach(department => departments.set(department.id, department));
+        setSpecialtyAllocations(allocations);
+        setSpecialtyDepartments(Array.from(departments.values()));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        console.error('[FinanceTab] failed to load specialty schedule', error);
+        if (!cancelled) {
+          setSpecialtyAllocations([]);
+          setSpecialtyDepartments([]);
+        }
+      } finally {
+        if (!cancelled) setDelayDataLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [periodLabel]);
+
   // ── Per-room hodiny provozu spočítané z reálných duration_seconds ─────
   const roomBusyHours = useMemo(() => {
     const map = new Map<string, number>();
+    const roomById = new Map(rooms.map(room => [room.id, room]));
     rooms.forEach(r => map.set(r.id, 0));
     for (const row of history) {
       if (!row.operating_room_id) continue;
-      if (!BUSY_STEP_NAMES.has(row.step_name ?? '')) continue;
+      // Doba fáze je uložená jen u přechodu mezi fázemi. Ostatní události
+      // (příjezd pacienta, konec výkonu) nesou tutéž hodnotu znovu a jejich
+      // započtením by se čas zdvojil.
+      if (row.event_type !== 'step_change') continue;
+      if (isIdlePhaseName(row.step_name)) continue;
       const seconds = Number(row.duration_seconds ?? 0);
       if (!Number.isFinite(seconds) || seconds <= 0) continue;
+      const room = roomById.get(row.operating_room_id);
+      if (!room) continue;
+      const end = new Date(row.timestamp);
+      const start = new Date(end.getTime() - seconds * 1_000);
+      const workingSeconds = roomWorkingOverlapSeconds(room, start, end);
+      if (workingSeconds <= 0) continue;
       const prev = map.get(row.operating_room_id) ?? 0;
-      map.set(row.operating_room_id, prev + seconds / 3600);
+      map.set(row.operating_room_id, prev + workingSeconds / 3600);
     }
     return map;
   }, [history, rooms]);
@@ -135,29 +636,204 @@ export function FinanceTab({
     return room.hourlyOperatingCost ?? null;
   }, [hourlyCostOverride]);
 
+  /**
+   * Skutečné prostoje a incidenty po sálech.
+   *
+   * - prostoj = konec operace → následující začátek ve stejný kalendářní den,
+   * - pozdní start = první začátek dne po hranici pracovní doba + 60 minut,
+   *   ale pouze ve dni, kdy má sál v databázi AM rozpis odbornosti,
+   * - personální/pacientské příčiny = počet reálně odeslaných hlášení.
+   *
+   * Hlášení neobsahují dobu trvání, proto se záměrně nepřevádějí na minuty.
+   */
+  const roomOperationalMetrics = useMemo(() => {
+    type Metric = {
+      downtimeMinutes: number;
+      downtimeIntervals: number;
+      delayedStartMinutes: number;
+      delayedStartDays: number;
+      scheduledDaysWithOperation: number;
+      lateSurgeon: number;
+      lateAnesthesiologist: number;
+      patientNotReady: number;
+      surgeonSpecialties: Map<string, number>;
+    };
+
+    const result = new Map<string, Metric>();
+    const getMetric = (roomId: string) => {
+      const existing = result.get(roomId);
+      if (existing) return existing;
+      const created: Metric = {
+        downtimeMinutes: 0,
+        downtimeIntervals: 0,
+        delayedStartMinutes: 0,
+        delayedStartDays: 0,
+        scheduledDaysWithOperation: 0,
+        lateSurgeon: 0,
+        lateAnesthesiologist: 0,
+        patientNotReady: 0,
+        surgeonSpecialties: new Map<string, number>(),
+      };
+      result.set(roomId, created);
+      return created;
+    };
+    rooms.forEach(room => getMetric(room.id));
+    const roomById = new Map(rooms.map(room => [room.id, room]));
+
+    const departmentById = new Map(specialtyDepartments.map(department => [department.id, department]));
+    const allocationBySlot = new Map(
+      specialtyAllocations.map(allocation => [
+        `${allocation.operating_room_id}|${allocation.allocation_date}|${allocation.day_part}`,
+        allocation,
+      ]),
+    );
+    const analysisFromMs = Date.now() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000;
+
+    const eventsByRoom = new Map<string, StatusHistoryRow[]>();
+    for (const event of history) {
+      if (event.event_type !== 'operation_start' && event.event_type !== 'operation_end') continue;
+      const current = eventsByRoom.get(event.operating_room_id) ?? [];
+      current.push(event);
+      eventsByRoom.set(event.operating_room_id, current);
+    }
+
+    for (const room of rooms) {
+      const metric = getMetric(room.id);
+      const events = (eventsByRoom.get(room.id) ?? [])
+        .filter(event => Number.isFinite(new Date(event.timestamp).getTime()))
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      const firstStartByDay = new Map<string, Date>();
+      let lastEnd: Date | null = null;
+
+      for (const event of events) {
+        const at = new Date(event.timestamp);
+        const dateKey = localDateKey(at);
+        if (event.event_type === 'operation_end') {
+          lastEnd = at;
+          continue;
+        }
+
+        const firstStart = firstStartByDay.get(dateKey);
+        if (!firstStart || at < firstStart) firstStartByDay.set(dateKey, at);
+
+        if (lastEnd && localDateKey(lastEnd) === dateKey && at > lastEnd) {
+          const workingSeconds = roomWorkingOverlapSeconds(room, lastEnd, at);
+          if (workingSeconds > 0) {
+            metric.downtimeMinutes += workingSeconds / 60;
+            metric.downtimeIntervals += 1;
+          }
+        }
+        lastEnd = null;
+      }
+
+      for (const [dateKey, firstStart] of firstStartByDay) {
+        const allocation = allocationBySlot.get(`${room.id}|${dateKey}|AM`);
+        if (!allocation || allocation.allocation_kind !== 'SPECIALTY') continue;
+
+        const schedule = room.weeklySchedule?.[DAY_KEYS[firstStart.getDay()]];
+        if (!schedule?.enabled) continue;
+
+        const plannedStart = new Date(firstStart);
+        plannedStart.setHours(schedule.startHour, schedule.startMinute, 0, 0);
+        // U prvního (částečně zahrnutého) dne období nemusí historie obsahovat
+        // skutečný první výkon. Takový den nelze korektně vyhodnotit.
+        if (plannedStart.getTime() < analysisFromMs) continue;
+        metric.scheduledDaysWithOperation += 1;
+        const latestOnTimeStart = new Date(plannedStart);
+        latestOnTimeStart.setMinutes(latestOnTimeStart.getMinutes() + LATEST_PROGRAM_START_GRACE_MINUTES);
+        const workEnd = new Date(firstStart);
+        workEnd.setHours(schedule.endHour, schedule.endMinute, 0, 0);
+        const countedUntil = Math.min(firstStart.getTime(), workEnd.getTime());
+        const delayMinutes = (countedUntil - latestOnTimeStart.getTime()) / 60_000;
+        if (delayMinutes > 0) {
+          metric.delayedStartMinutes += delayMinutes;
+          metric.delayedStartDays += 1;
+        }
+      }
+    }
+
+    for (const notification of notificationRows) {
+      if (!notification.room_id) continue;
+      const notificationRoom = roomById.get(notification.room_id);
+      const notificationAt = new Date(notification.created_at);
+      if (!notificationRoom || !isInsideRoomWorkingHours(notificationRoom, notificationAt)) continue;
+      const metric = getMetric(notification.room_id);
+      if (notification.notification_type === 'notify_late_surgeon') {
+        metric.lateSurgeon += 1;
+        const slot = notificationAt.getHours() < 12 ? 'AM' : 'PM';
+        const allocation = Number.isFinite(notificationAt.getTime())
+          ? allocationBySlot.get(`${notification.room_id}|${localDateKey(notificationAt)}|${slot}`)
+          : undefined;
+        const specialty = allocation?.allocation_kind === 'SPECIALTY' && allocation.department_id
+          ? departmentById.get(allocation.department_id)?.name ?? 'Neznámá odbornost v rozpisu'
+          : 'Bez odbornosti v rozpisu';
+        metric.surgeonSpecialties.set(specialty, (metric.surgeonSpecialties.get(specialty) ?? 0) + 1);
+      } else if (notification.notification_type === 'notify_late_anesthesiologist') {
+        metric.lateAnesthesiologist += 1;
+      } else if (notification.notification_type === 'notify_patient_not_ready') {
+        metric.patientNotReady += 1;
+      }
+    }
+
+    return result;
+  }, [history, notificationRows, periodLabel, rooms, specialtyAllocations, specialtyDepartments]);
+
   // ── Per-room cost analýza ────────────────────────────────────────────
   const roomFinance = useMemo(() => {
     return rooms.map(r => {
       const rate = getRate(r);
       const hours = roomBusyHours.get(r.id) ?? 0;
       const cost = rate !== null && rate >= 0 ? rate * hours : null;
-      const periodHours = PERIOD_HOURS[periodLabel];
-      const utilizationPct = periodHours > 0 ? Math.min(100, (hours / periodHours) * 100) : 0;
+      // Vytížení se poměřuje proti pracovní době sálu, ne proti kalendáři.
+      const capacityHours = roomCapacityHours(r, periodLabel);
+      const utilizationPct = capacityHours > 0
+        ? Math.min(100, (hours / capacityHours) * 100)
+        : 0;
+      const operational = roomOperationalMetrics.get(r.id);
+      const downtimeMinutes = operational?.downtimeMinutes ?? 0;
+      const delayedStartMinutes = operational?.delayedStartMinutes ?? 0;
       return {
         id: r.id,
         name: r.name,
         department: r.department,
         rate,
         hours,
+        capacityHours,
         cost,
         utilizationPct,
         opsCount: history.filter(row =>
-          row.operating_room_id === r.id && row.event_type === 'operation_start'
+          row.operating_room_id === r.id
+          && row.event_type === 'operation_start'
+          && isInsideRoomWorkingHours(r, new Date(row.timestamp))
         ).length,
         configured: rate !== null && rate >= 0,
+        downtimeMinutes,
+        downtimeIntervals: operational?.downtimeIntervals ?? 0,
+        downtimeCost: rate !== null && rate >= 0 ? (downtimeMinutes / 60) * rate : null,
+        delayedStartMinutes,
+        delayedStartDays: operational?.delayedStartDays ?? 0,
+        scheduledDaysWithOperation: operational?.scheduledDaysWithOperation ?? 0,
+        delayedStartCost: rate !== null && rate >= 0 ? (delayedStartMinutes / 60) * rate : null,
+        lateSurgeon: operational?.lateSurgeon ?? 0,
+        lateAnesthesiologist: operational?.lateAnesthesiologist ?? 0,
+        patientNotReady: operational?.patientNotReady ?? 0,
+        surgeonSpecialties: Array.from(operational?.surgeonSpecialties.entries() ?? [])
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'cs')),
       };
     });
-  }, [rooms, getRate, roomBusyHours, periodLabel, history]);
+  }, [rooms, getRate, roomBusyHours, periodLabel, history, roomOperationalMetrics]);
+
+  const workingOpsCount = useMemo(
+    () => roomFinance.reduce((sum, room) => sum + room.opsCount, 0),
+    [roomFinance],
+  );
+  const workingAvgUtilization = useMemo(
+    () => roomFinance.length > 0
+      ? roomFinance.reduce((sum, room) => sum + room.utilizationPct, 0) / roomFinance.length
+      : 0,
+    [roomFinance],
+  );
 
   // ── Souhrnné metriky ─────────────────────────────────────────────────
   const summary = useMemo(() => {
@@ -233,7 +909,7 @@ export function FinanceTab({
       d.setHours(0, 0, 0, 0);
       d.setDate(d.getDate() - i);
       buckets.push({
-        date: d.toISOString().slice(0, 10),
+        date: localDateKey(d),
         label: d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' }),
         hours: 0,
         cost: 0,
@@ -241,22 +917,29 @@ export function FinanceTab({
     }
     const bucketMap = new Map(buckets.map((b, idx) => [b.date, idx]));
     const ratesByRoom = new Map<string, number | null>();
+    const roomById = new Map(rooms.map(room => [room.id, room]));
     rooms.forEach(r => ratesByRoom.set(r.id, getRate(r)));
 
     for (const row of history) {
       if (!row.operating_room_id) continue;
-      if (!BUSY_STEP_NAMES.has(row.step_name ?? '')) continue;
+      // Stejné pravidlo jako u součtu hodin — jen přechody fází a bez
+      // klidového stavu „Sál připraven".
+      if (row.event_type !== 'step_change') continue;
+      if (isIdlePhaseName(row.step_name)) continue;
       const seconds = Number(row.duration_seconds ?? 0);
       if (!Number.isFinite(seconds) || seconds <= 0) continue;
-      const ts = row.timestamp;
-      if (!ts) continue;
-      const bucketKey = ts.slice(0, 10);
-      const idx = bucketMap.get(bucketKey);
-      if (idx === undefined) continue;
-      const hours = seconds / 3600;
+      const room = roomById.get(row.operating_room_id);
+      if (!room) continue;
+      const end = new Date(row.timestamp);
+      const start = new Date(end.getTime() - seconds * 1_000);
       const rate = ratesByRoom.get(row.operating_room_id) ?? null;
-      buckets[idx].hours += hours;
-      if (rate !== null && rate >= 0) buckets[idx].cost += hours * rate;
+      for (const overlap of roomWorkingOverlapByDay(room, start, end)) {
+        const idx = bucketMap.get(overlap.date);
+        if (idx === undefined) continue;
+        const hours = overlap.seconds / 3600;
+        buckets[idx].hours += hours;
+        if (rate !== null && rate >= 0) buckets[idx].cost += hours * rate;
+      }
     }
     return buckets;
   }, [history, periodLabel, rooms, getRate]);
@@ -282,355 +965,842 @@ export function FinanceTab({
       .sort((a, b) => b.value - a.value);
   }, [roomFinance]);
 
-  // ── Top 5 nejdražších sálů + 5 nejlevnějších ────────────────────────
-  const topCostly = useMemo(
-    () => [...roomFinance].filter(r => r.configured).sort((a, b) => (b.cost ?? 0) - (a.cost ?? 0)).slice(0, 5),
+  // ── Všechny sály seřazené podle nákladů ─────────────────────────────
+  const allRoomsByCost = useMemo(
+    () => [...roomFinance].sort((a, b) => {
+      if (a.configured !== b.configured) return a.configured ? -1 : 1;
+      return (b.cost ?? 0) - (a.cost ?? 0);
+    }),
     [roomFinance],
   );
+  const topCostly = useMemo(
+    () => allRoomsByCost.filter(r => r.configured).slice(0, 5),
+    [allRoomsByCost],
+  );
 
-  // Departmenty pro StackedBar — barvy podle pořadí
+  // Barvy oddělení podle pořadí
   const deptPalette = [C.accent, C.purple, C.green, C.orange, C.pink, C.yellow, C.red, C.blue];
+
+  /* Hero panel ve stejném jazyce jako záložka Přehled: velký prstenec vlevo,
+     pod ním malé prstence s rozpadem a vpravo panel doporučení. Všechna čísla
+     vycházejí ze stejných výpočtů jako zbytek záložky. */
+  const costCoverage = rooms.length > 0
+    ? Math.round((summary.configuredCount / rooms.length) * 100)
+    : 0;
+
+  /** Malé prstence — podíl nákladů pěti nejdražších sálů na celku. */
+  /**
+   * Náklady rozpadlé na jednotlivé fáze cyklu pro každý sál.
+   * Hodiny fáze × hodinová sazba sálu; klidový stav se nezapočítává.
+   */
+  const allRoomPhaseCosts = useMemo(() => {
+    const byRoom = new Map<string, Map<string, number>>();
+    const roomById = new Map(rooms.map(room => [room.id, room]));
+
+    for (const row of history) {
+      if (!row.operating_room_id) continue;
+      if (row.event_type !== 'step_change') continue;
+      if (isIdlePhaseName(row.step_name)) continue;
+      const seconds = Number(row.duration_seconds ?? 0);
+      if (!Number.isFinite(seconds) || seconds <= 0) continue;
+      const sourceRoom = roomById.get(row.operating_room_id);
+      if (!sourceRoom) continue;
+      const end = new Date(row.timestamp);
+      const start = new Date(end.getTime() - seconds * 1_000);
+      const workingSeconds = roomWorkingOverlapSeconds(sourceRoom, start, end);
+      if (workingSeconds <= 0) continue;
+
+      const phase = (row.step_name ?? '').trim() || 'Neurčeno';
+      const phases = byRoom.get(row.operating_room_id) ?? new Map<string, number>();
+      phases.set(phase, (phases.get(phase) ?? 0) + workingSeconds / 3600);
+      byRoom.set(row.operating_room_id, phases);
+    }
+
+    return roomFinance
+      .filter(r => r.configured && (r.cost ?? 0) > 0)
+      .sort((a, b) => (b.cost ?? 0) - (a.cost ?? 0))
+      .map(room => {
+        const rate = room.rate ?? 0;
+        const phases = Array.from(byRoom.get(room.id)?.entries() ?? [])
+          .map(([name, hours]) => ({ name, hours, cost: hours * rate }))
+          .filter(p => p.cost > 0)
+          .sort((a, b) => b.cost - a.cost);
+
+        return {
+          id: room.id,
+          name: room.name,
+          cost: room.cost ?? 0,
+          share: summary.totalCost > 0 ? Math.round(((room.cost ?? 0) / summary.totalCost) * 100) : 0,
+          phases,
+        };
+      });
+  }, [history, roomFinance, rooms, summary.totalCost]);
+
+  const roomPhaseCosts = useMemo(() => allRoomPhaseCosts.slice(0, 5), [allRoomPhaseCosts]);
+
+  /**
+   * Barva fáze se bere z nastavení workflow statusů, aby graf odpovídal
+   * barvám, které vidí personál na sále. Porovnání názvů ignoruje diakritiku
+   * i velikost písmen a snese dvojité mezery (např. „Ukončení  výkonu").
+   * Když status není nastavený, sáhne se do záložní palety.
+   */
+  const phaseColors = useMemo(() => {
+    const normalize = (value: string) =>
+      value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const configured = new Map<string, string>();
+    for (const status of workflowStatuses ?? []) {
+      const color = status.accent_color || status.color;
+      if (!color) continue;
+      for (const label of [status.name, status.title]) {
+        if (label) configured.set(normalize(label), color);
+      }
+    }
+
+    const fallback = [C.accent, C.green, C.orange, C.purple, C.cyan, C.pink, C.yellow, C.blue];
+    const names = Array.from(
+      new Set(allRoomPhaseCosts.flatMap(room => room.phases.map(p => p.name))),
+    );
+
+    const map = new Map<string, string>();
+    let fallbackIndex = 0;
+    for (const name of names) {
+      const fromSettings = configured.get(normalize(name));
+      map.set(name, fromSettings ?? fallback[fallbackIndex++ % fallback.length]);
+    }
+    return map;
+  }, [allRoomPhaseCosts, workflowStatuses]);
+
+  const selectedCostRoom = useMemo(() => {
+    if (!selectedCostRoomId) return null;
+    const finance = roomFinance.find(room => room.id === selectedCostRoomId);
+    if (!finance) return null;
+    const phaseDetail = allRoomPhaseCosts.find(room => room.id === selectedCostRoomId);
+    return {
+      ...finance,
+      share: summary.totalCost > 0 ? Math.round(((finance.cost ?? 0) / summary.totalCost) * 100) : 0,
+      phases: phaseDetail?.phases ?? [],
+    };
+  }, [selectedCostRoomId, roomFinance, allRoomPhaseCosts, summary.totalCost]);
+  const selectedPhaseTotal = useMemo(
+    () => selectedCostRoom?.phases.reduce((sum, phase) => sum + phase.cost, 0) ?? 0,
+    [selectedCostRoom],
+  );
+
+  /** Doporučení odvozená z reálných čísel, ne z odhadů. */
+  const financeInsights = useMemo(() => {
+    const items: Array<{ title: string; text: string; tone?: 'warn' | 'info' | 'good' }> = [];
+
+    if (summary.unconfiguredCount > 0) {
+      items.push({
+        title: 'Doplňte hodinové sazby',
+        text: `${summary.unconfiguredCount} ${summary.unconfiguredCount === 1 ? 'sál nemá' : 'sály nemají'} nastavenou sazbu a nevstupují do výpočtů. Skutečné náklady jsou tedy vyšší, než ukazuje součet.`,
+        tone: 'warn',
+      });
+    }
+
+    const priciest = roomPhaseCosts[0];
+    if (priciest && priciest.share >= 30) {
+      items.push({
+        title: `${priciest.name} tvoří ${priciest.share} % nákladů`,
+        text: 'Jeden sál nese velkou část rozpočtu. Zkontrolujte jeho vytížení — vysoký náklad při nízkém vytížení znamená drahé prostoje.',
+        tone: 'info',
+      });
+    }
+
+    if (summary.costPerOperation > 0) {
+      items.push({
+        title: `Náklad na výkon ${fmtCZKShort(summary.costPerOperation)} Kč`,
+        text: `Počítáno z ${summary.totalHours.toFixed(1)} h provozu a ${workingOpsCount} výkonů uvnitř pracovní doby. Delší prostoje mezi výkony tuhle částku zvedají.`,
+        tone: 'info',
+      });
+    }
+
+    if (summary.unconfiguredCount === 0 && summary.configuredCount > 0) {
+      items.push({
+        title: 'Sazby jsou kompletní',
+        text: 'Všechny sály mají nastavenou hodinovou sazbu, výpočty pokrývají celý provoz.',
+        tone: 'good',
+      });
+    }
+
+    return items;
+  }, [summary, roomPhaseCosts, workingOpsCount]);
+
+  /** Čtyři nejdražší sály do horní řady karet — jako nabídka na předloze. */
+  const featuredRooms = useMemo(
+    () =>
+      roomFinance
+        .filter(r => r.configured)
+        .sort((a, b) => (b.cost ?? 0) - (a.cost ?? 0))
+        .slice(0, 4),
+    [roomFinance],
+  );
+  const featuredPalette = [C.accent, C.green, C.cyan, C.purple];
+
+  const hourlyRatesPanel = (
+    <PanelCard
+      title="Hodinové sazby"
+      badge={`${summary.configuredCount}/${rooms.length}`}
+      note={historyLoading ? 'Načítám historii statusů…' : 'Kliknutím na sazbu ji upravíte'}
+      footer={{ label: 'Průměrná sazba', value: `${fmtCZKShort(summary.avgRate)} Kč/h` }}
+      icon={DollarSign}
+      accent={C.cyan}
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+        {roomFinance.map(rf => {
+          const room = rooms.find(r => r.id === rf.id);
+          if (!room) return null;
+          const isEditing = editingRoomId === rf.id;
+          const isSaving = savingRoomId === rf.id;
+
+          return (
+            <PanelRow key={rf.id} label={rf.name} value="">
+              {isEditing ? (
+                <span className="flex items-center gap-1 shrink-0">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    autoFocus
+                    value={editingValue}
+                    onChange={e => setEditingValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') saveEdit(rf.id);
+                      if (e.key === 'Escape') cancelEdit();
+                    }}
+                    className="w-20 px-2 py-1 rounded-full text-right text-[11px] tabular-nums"
+                    style={{ background: 'var(--stats-ghost)', color: C.text, border: `1px solid ${C.cyan}`, outline: 'none' }}
+                    placeholder="0"
+                    min={0}
+                    step={1}
+                    disabled={isSaving}
+                  />
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={() => saveEdit(rf.id)}
+                    className="w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--stats-ghost)', color: C.green }}
+                    title="Uložit"
+                  >
+                    {isSaving ? <Hourglass size={11} /> : <Check size={11} />}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={cancelEdit}
+                    className="w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--stats-ghost)', color: C.muted }}
+                    title="Zrušit"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => startEdit(room)}
+                  title="Upravit sazbu"
+                  className="px-2.5 py-1 rounded-full text-[11px] font-semibold tabular-nums shrink-0 transition-colors"
+                  style={{
+                    background: 'var(--stats-surface)',
+                    border: `1px solid ${rf.configured ? `${C.cyan}2b` : C.border}`,
+                    color: rf.configured ? C.text : C.faint,
+                  }}
+                >
+                  {rf.configured ? `${Math.round(rf.rate ?? 0).toLocaleString('cs-CZ')} Kč/h` : 'nenastaveno'}
+                </button>
+              )}
+            </PanelRow>
+          );
+        })}
+      </div>
+    </PanelCard>
+  );
+
+  if (view === 'rates') {
+    return (
+      <div className="flex flex-col gap-4">
+        <Card className="relative overflow-hidden p-5 sm:p-6">
+          <span
+            aria-hidden
+            className="absolute inset-x-12 top-0 h-px"
+            style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}, transparent)` }}
+          />
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase font-bold tracking-[0.18em]" style={{ color: C.cyan }}>
+                Správa nákladů
+              </p>
+              <p className="text-2xl font-semibold mt-1.5" style={{ color: C.textHi }}>
+                Hodinové sazby sálů
+              </p>
+              <p className="text-[12px] mt-1.5 max-w-2xl" style={{ color: C.muted }}>
+                Jednotné místo pro nastavení sazeb používaných ve všech finančních výpočtech.
+              </p>
+            </div>
+            <HeadChip
+              label="Průměrná sazba"
+              value={`${fmtCZKShort(summary.avgRate)} Kč/h`}
+              icon={DollarSign}
+              color={C.cyan}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-5">
+            <PillMetric label="Nastavené sály" value={`${summary.configuredCount}/${rooms.length}`} icon={Check} color={C.green} />
+            <PillMetric label="Bez sazby" value={String(summary.unconfiguredCount)} icon={AlertTriangle} color={summary.unconfiguredCount > 0 ? C.yellow : C.green} />
+            <PillMetric label="Pokrytí sazeb" value={`${costCoverage}%`} icon={Activity} color={C.cyan} />
+          </div>
+
+          <div className="mt-4 flex items-center gap-3">
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: C.border }}>
+              <div
+                className="h-full rounded-full transition-[width] duration-500"
+                style={{ width: `${costCoverage}%`, background: `linear-gradient(90deg, ${C.accent}, ${C.cyan})` }}
+              />
+            </div>
+            <span className="text-[11px] font-semibold shrink-0" style={{ color: costCoverage === 100 ? C.green : C.yellow }}>
+              {costCoverage === 100 ? 'Kompletní' : `${summary.unconfiguredCount} doplnit`}
+            </span>
+          </div>
+        </Card>
+
+        {summary.unconfiguredCount > 0 && (
+          <div
+            className="flex items-start gap-2 rounded-xl p-3.5"
+            style={{ background: `${C.yellow}10`, border: `1px solid ${C.yellow}40` }}
+          >
+            <AlertTriangle size={15} color={C.yellow} className="shrink-0 mt-px" />
+            <p className="text-[11px]" style={{ color: C.text }}>
+              <strong>{summary.unconfiguredCount}</strong> {summary.unconfiguredCount === 1 ? 'sál nemá' : 'sály nemají'} nastavenou sazbu a nejsou zahrnuté do finančních výpočtů.
+            </p>
+          </div>
+        )}
+
+        {hourlyRatesPanel}
+      </div>
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-4">
-      {/* ─── HEADER METRICS ───────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-        <KPIBlock
-          label={`Celkové náklady (${periodLabel})`}
-          value={summary.totalCost}
-          format={fmtCZKShort}
-          unit=" Kč"
-          color={C.accent}
-          icon={Wallet}
-          sublabel={`z ${summary.configuredCount}/${rooms.length} nakonfigurovaných sálů`}
-        />
-        <KPIBlock
-          label="Provozní hodiny"
-          value={summary.totalHours}
-          format={(v) => v.toFixed(1)}
-          unit=" h"
-          color={C.cyan}
-          icon={Clock}
-          sublabel={`měřeno z DB historie statusů`}
-        />
-        <KPIBlock
-          label="Náklad / operace"
-          value={summary.costPerOperation}
-          format={fmtCZKShort}
-          unit=" Kč"
-          color={C.green}
-          icon={Coins}
-          sublabel={summary.costPerOperation > 0 ? 'na 1 dokončený výkon' : 'žádné výkony'}
-        />
-        <KPIBlock
-          label="Průměrná sazba"
-          value={summary.avgRate}
-          format={fmtCZKShort}
-          unit=" Kč/h"
-          color={C.purple}
-          icon={DollarSign}
-          sublabel="přes konfigurované sály"
-        />
-      </div>
+      {/* ══ Hlavní panel — rozvržení podle předlohy: vlevo obsah,
+             vpravo úzký sloupec se souhrnem a doporučeními. ══ */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,330px)] items-start">
+        <div className="flex flex-col gap-4">
+          {/* Hlavička s odznaky */}
+          <Card className="p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase font-bold tracking-[0.18em]" style={{ color: C.muted }}>
+                  Finance
+                </p>
+                <p className="text-2xl font-semibold mt-1.5" style={{ color: C.text }}>
+                  Náklady provozu za {periodLabel}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                <HeadChip
+                  label="Celkové náklady"
+                  value={`${fmtCZKShort(summary.totalCost)} Kč`}
+                  icon={Wallet}
+                  color={C.accent}
+                />
+                <HeadChip
+                  label="Provozní hodiny"
+                  value={`${summary.totalHours.toFixed(1)} h`}
+                  icon={Clock}
+                  color={C.green}
+                />
+              </div>
+            </div>
 
-      {/* Upozornění na nenastavené sály */}
-      {summary.unconfiguredCount > 0 && (
-        <div
-          className="flex items-start gap-2 rounded-lg p-3"
-          style={{ background: `${C.yellow}10`, border: `1px solid ${C.yellow}40` }}
-        >
-          <AlertTriangle size={14} color={C.yellow} className="shrink-0 mt-px" />
-          <div className="text-[11px]" style={{ color: C.text }}>
-            <strong>{summary.unconfiguredCount}</strong> {summary.unconfiguredCount === 1 ? 'sál nemá' : 'sály nemají'}
-            {' '}nastavenou hodinovou sazbu. Tyto sály jsou vyloučeny z výpočtů. Vyplňte sazbu v tabulce níže.
-          </div>
+            {/* Karty nejdražších sálů — hodnota, ikona, rozpad, akce */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 mt-5">
+              {featuredRooms.length > 0 ? (
+                featuredRooms.map((room, index) => {
+                  const color = featuredPalette[index % featuredPalette.length];
+                  return (
+                    <YieldCard
+                      key={room.id}
+                      value={fmtCZKShort(room.cost ?? 0)}
+                      unit="Kč"
+                      sub={room.name}
+                      caption={room.department}
+                      color={color}
+                      onClick={() => setSelectedCostRoomId(room.id)}
+                      rows={[
+                        {
+                          label: 'Provoz',
+                          value: room.capacityHours > 0
+                            ? `${room.hours.toFixed(1)} / ${room.capacityHours.toFixed(0)} h`
+                            : `${room.hours.toFixed(1)} h`,
+                        },
+                        { label: 'Prostoje', value: formatDuration(room.downtimeMinutes) },
+                        {
+                          label: 'Pozdní start',
+                          value: room.scheduledDaysWithOperation > 0
+                            ? (room.delayedStartMinutes > 0 ? formatDuration(room.delayedStartMinutes) : 'Včas')
+                            : 'Bez rozpisu',
+                        },
+                        { label: 'Operatér', value: `${room.lateSurgeon}×` },
+                        { label: 'Anesteziolog', value: `${room.lateAnesthesiologist}×` },
+                        { label: 'Pacient', value: `${room.patientNotReady}×` },
+                      ]}
+                    />
+                  );
+                })
+              ) : (
+                <p className="col-span-full text-[12px] text-center py-6" style={{ color: C.muted }}>
+                  Žádný sál zatím nemá nastavenou hodinovou sazbu.
+                </p>
+              )}
+            </div>
+          </Card>
+
+          {/* Rozpad nákladů — prstenec za každý sál, výseky jsou fáze cyklu. */}
+          {roomPhaseCosts.length > 0 && (
+            <Card className="p-6 lg:p-8">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-6">
+                <StatSectionLabel>Podíl na nákladech</StatSectionLabel>
+                <span className="text-[11px]" style={{ color: C.faint }}>
+                  Výseky odpovídají fázím operačního cyklu
+                </span>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-x-7 gap-y-8">
+                {roomPhaseCosts.map(room => (
+                  <div key={room.id} className="flex flex-col items-center gap-2.5" style={{ width: 148 }}>
+                    <PhaseRing
+                      segments={room.phases.map(p => ({
+                        name: p.name,
+                        cost: p.cost,
+                        color: phaseColors.get(p.name) ?? C.accent,
+                      }))}
+                      centerValue={`${room.share}%`}
+                      centerUnit={`${fmtCZKShort(room.cost)} Kč`}
+                    />
+                    <p
+                      className="text-[12px] font-semibold text-center truncate max-w-full"
+                      style={{ color: C.text }}
+                      title={room.name}
+                    >
+                      {room.name}
+                    </p>
+
+                    {/* Fáze s částkami pod prstencem */}
+                    <div className="w-full flex flex-col gap-1">
+                      {room.phases.slice(0, 4).map(phase => (
+                        <div key={phase.name} className="flex items-center gap-1.5">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ background: phaseColors.get(phase.name) ?? C.accent }}
+                          />
+                          <span className="text-[10px] truncate min-w-0 flex-1" style={{ color: C.muted }} title={phase.name}>
+                            {phase.name}
+                          </span>
+                          <span className="text-[10px] font-semibold tabular-nums shrink-0" style={{ color: C.text }}>
+                            {fmtCZKShort(phase.cost)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
-      )}
+
+        {/* ── Boční sloupec ── */}
+        <div className="flex flex-col gap-4">
+          <Card className="p-5">
+            <p className="text-[13px] font-semibold" style={{ color: C.text }}>Souhrn období</p>
+            <p className="text-[11px] mt-0.5" style={{ color: C.muted }}>Celkové náklady provozu</p>
+            <p className="text-3xl font-semibold tabular-nums mt-3" style={{ color: C.accent }}>
+              {fmtCZKShort(summary.totalCost)}
+              <span className="text-base font-medium ml-1.5" style={{ color: C.muted }}>Kč</span>
+            </p>
+
+            <div className="mt-4 pt-4 flex flex-col gap-2.5" style={{ borderTop: `1px solid ${C.border}` }}>
+              {[
+                { label: 'Náklad / hodina', value: `${fmtCZKShort(summary.costPerHour)} Kč` },
+                { label: 'Náklad / výkon', value: `${fmtCZKShort(summary.costPerOperation)} Kč` },
+                { label: 'Průměrná sazba', value: `${fmtCZKShort(summary.avgRate)} Kč/h` },
+                { label: 'Výkonů v pracovní době', value: String(workingOpsCount) },
+              ].map(row => (
+                <div key={row.label} className="flex items-center justify-between gap-2">
+                  <span className="text-[11px]" style={{ color: C.muted }}>{row.label}</span>
+                  <span className="text-[11px] font-semibold tabular-nums" style={{ color: C.text }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <InsightPanel accent={C.accent} items={financeInsights} />
+        </div>
+      </div>
 
       {/* ─── DENNÍ TREND NÁKLADŮ ────────────────────────────────── */}
       {dailySeries.length > 0 && (
         <Card title="Denní vývoj nákladů" subtitle="Skutečné hodiny × hodinová sazba" icon={TrendingUp} accent={C.accent}>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <ComposedChart data={dailySeries} margin={{ top: 8, right: 8, left: 8, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: C.muted }} />
-                <YAxis
-                  yAxisId="left"
-                  tick={{ fontSize: 9, fill: C.muted }}
-                  tickFormatter={(v) => fmtCZKShort(v)}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tick={{ fontSize: 9, fill: C.muted }}
-                  tickFormatter={(v) => `${v.toFixed(1)} h`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: C.surface2,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 6,
-                    fontSize: 11,
-                  }}
-                  formatter={(value: number, name: string) => {
-                    if (name === 'Náklad') return [fmtCZK(value), name];
-                    if (name === 'Hodiny') return [`${value.toFixed(2)} h`, name];
-                    return [value, name];
-                  }}
-                  labelStyle={{ color: C.text }}
-                />
-                <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Area
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="cost"
-                  name="Náklad"
-                  fill={`${C.accent}33`}
-                  stroke={C.accent}
-                  strokeWidth={2}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="hours"
-                  name="Hodiny"
-                  stroke={C.purple}
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Sloupce ve stejném vizuálním jazyce jako Přehled — hodnota nad
+              sloupcem, popisek pod ním, žádné osy a mřížky navíc. */}
+          <StatSectionLabel>Náklady po dnech</StatSectionLabel>
+          <ColumnChart
+            items={dailySeries.map(day => ({ label: day.label, value: day.cost, color: C.accent }))}
+            height={150}
+            format={fmtCZKShort}
+            emptyText="Žádné náklady v tomto období."
+          />
+
         </Card>
       )}
 
-      {/* ─── PER-ROOM SAZBA EDITOR ───────────────────────────────── */}
-      <Card
-        title="Hodinové sazby provozu sálů"
-        subtitle="Nastavte sazbu pro každý sál — vše se okamžitě uloží do DB"
-        icon={Building2}
-        accent={C.accent}
-      >
-        {historyLoading && (
-          <div className="text-[11px] mb-2" style={{ color: C.muted }}>
-            Načítám historii statusů…
-          </div>
-        )}
-        <div className="overflow-x-auto -mx-4">
-          <table className="w-full text-[11px] min-w-[520px]">
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <th className="text-left px-3 py-2 font-medium uppercase tracking-wider text-[9px]" style={{ color: C.muted }}>Sál</th>
-                <th className="text-right px-3 py-2 font-medium uppercase tracking-wider text-[9px]" style={{ color: C.muted }}>Sazba (Kč/h)</th>
-                <th className="text-right px-3 py-2 font-medium uppercase tracking-wider text-[9px]" style={{ color: C.muted }}>Provoz (h)</th>
-                <th className="text-right px-3 py-2 font-medium uppercase tracking-wider text-[9px]" style={{ color: C.muted }}>Náklad</th>
-                <th className="text-right px-3 py-2 font-medium uppercase tracking-wider text-[9px]" style={{ color: C.muted }}>Vytíž.</th>
-                <th className="text-right px-3 py-2 font-medium uppercase tracking-wider text-[9px]" style={{ color: C.muted }}>Akce</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roomFinance.map((rf) => {
-                const room = rooms.find(r => r.id === rf.id);
-                if (!room) return null;
-                const isEditing = editingRoomId === rf.id;
-                const isSaving = savingRoomId === rf.id;
-                const utilColor = rf.utilizationPct >= 70 ? C.green : rf.utilizationPct >= 40 ? C.yellow : C.muted;
+      {/* Náklady podle oddělení */}
+      <PanelCard
+          title="Podle oddělení"
+          badge={`${departmentBreakdown.length}`}
+          note="Součet přes sály oddělení"
+          footer={departmentBreakdown.length > 0
+            ? { label: 'Celkem', value: `${fmtCZKShort(summary.totalCost)} Kč` }
+            : undefined}
+          icon={Building2}
+          accent={C.purple}
+        >
+          {departmentBreakdown.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+              {departmentBreakdown.map((d, i) => {
+                const color = deptPalette[i % deptPalette.length];
+                const share = summary.totalCost > 0 ? (d.value / summary.totalCost) * 100 : 0;
+                const relativeWidth = departmentBreakdown[0]?.value > 0
+                  ? (d.value / departmentBreakdown[0].value) * 100
+                  : 0;
+
                 return (
-                  <tr key={rf.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                    <td className="px-3 py-2">
-                      <div className="font-medium" style={{ color: C.text }}>{rf.name}</div>
-                      <div className="text-[9px]" style={{ color: C.muted }}>{rf.department}</div>
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          autoFocus
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') saveEdit(rf.id);
-                            if (e.key === 'Escape') cancelEdit();
-                          }}
-                          className="w-24 px-2 py-1 rounded text-right text-[11px]"
-                          style={{
-                            background: C.surface2,
-                            color: C.text,
-                            border: `1px solid ${C.accent}`,
-                            outline: 'none',
-                          }}
-                          placeholder="0"
-                          min={0}
-                          step={1}
-                          disabled={isSaving}
-                        />
-                      ) : rf.configured ? (
-                        <span style={{ color: C.text }}>{Math.round(rf.rate ?? 0).toLocaleString('cs-CZ')}</span>
-                      ) : (
-                        <span style={{ color: C.muted, fontStyle: 'italic' }}>nenastaveno</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: C.text }}>
-                      {rf.hours.toFixed(1)}
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">
-                      {rf.cost !== null ? (
-                        <span style={{ color: C.accent }}>{fmtCZK(rf.cost)}</span>
-                      ) : (
-                        <span style={{ color: C.muted }}>—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: utilColor }}>
-                      {rf.utilizationPct.toFixed(0)}%
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {isEditing ? (
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            disabled={isSaving}
-                            onClick={() => saveEdit(rf.id)}
-                            className="p-1 rounded transition-colors"
-                            style={{ background: `${C.green}20`, color: C.green }}
-                            title="Uložit"
-                          >
-                            {isSaving ? <Hourglass size={12} /> : <Check size={12} />}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isSaving}
-                            onClick={cancelEdit}
-                            className="p-1 rounded transition-colors"
-                            style={{ background: `${C.muted}20`, color: C.muted }}
-                            title="Zrušit"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(room)}
-                          className="p-1 rounded transition-colors"
-                          style={{ background: `${C.accent}15`, color: C.accent }}
-                          title="Upravit sazbu"
-                        >
-                          <Pencil size={12} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
+                  <div
+                    key={d.label}
+                    className="relative overflow-hidden rounded-xl px-3 py-2.5"
+                    style={{
+                      background: 'var(--stats-surface-2)',
+                      border: `1px solid ${C.border}`,
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-mono tabular-nums shrink-0"
+                        style={{ background: `${color}16`, color, border: `1px solid ${color}26` }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold truncate" style={{ color: C.textHi }} title={d.label}>
+                          {d.label}
+                        </p>
+                        <p className="text-[9px] mt-0.5" style={{ color: C.faint }}>
+                          {d.hours.toFixed(1)} h · {d.ops} výkonů
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-[13px] font-semibold tabular-nums" style={{ color: C.textHi }}>
+                          {fmtCZKShort(d.value)} <span className="text-[9px]" style={{ color }}>Kč</span>
+                        </p>
+                        <p className="text-[9px] tabular-nums mt-0.5" style={{ color }}>
+                          {share.toFixed(share >= 10 ? 0 : 1)} %
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="absolute inset-x-3 bottom-0 h-px" style={{ background: 'var(--stats-surface)' }}>
+                      <div className="h-full" style={{ width: `${relativeWidth}%`, background: color }} />
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-            <tfoot>
-              <tr style={{ borderTop: `2px solid ${C.border}` }}>
-                <td className="px-3 py-2 font-bold uppercase tracking-wider text-[9px]" style={{ color: C.muted }}>Celkem</td>
-                <td className="px-3 py-2"></td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums font-bold" style={{ color: C.text }}>
-                  {summary.totalHours.toFixed(1)}
-                </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums font-bold" style={{ color: C.accent }}>
-                  {fmtCZK(summary.totalCost)}
-                </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums font-bold" style={{ color: C.text }}>
-                  {avgUtilization.toFixed(0)}%
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </Card>
-
-      {/* ─── BREAKDOWN PO ODDĚLENÍ + TOP 5 ──────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card title="Náklady podle oddělení" icon={BarChart3} accent={C.purple}>
-          {departmentBreakdown.length > 0 ? (
-            <>
-              <StackedBar
-                segments={departmentBreakdown.map((d, i) => ({
-                  label: d.label,
-                  value: d.value,
-                  color: deptPalette[i % deptPalette.length],
-                }))}
-                showLegend
-                formatValue={fmtCZKShort}
-              />
-              <div className="mt-3">
-                <CategoryBarList
-                  items={departmentBreakdown.map((d, i) => ({
-                    label: d.label,
-                    value: d.value,
-                    color: deptPalette[i % deptPalette.length],
-                    sublabel: `${d.hours.toFixed(0)} h · ${d.ops} op.`,
-                  }))}
-                  formatValue={fmtCZKShort}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="text-[11px] text-center py-4" style={{ color: C.muted }}>
-              Žádná oddělení s nakonfigurovanými sazbami.
             </div>
-          )}
-        </Card>
-
-        <Card title="Top 5 nejnákladnějších sálů" icon={TrendingUp} accent={C.orange}>
-          {topCostly.length > 0 ? (
-            <CategoryBarList
-              items={topCostly.map((rf, i) => ({
-                label: rf.name,
-                value: rf.cost ?? 0,
-                color: i === 0 ? C.red : i === 1 ? C.orange : C.accent,
-                sublabel: `${rf.hours.toFixed(0)} h × ${Math.round(rf.rate ?? 0)} Kč/h`,
-              }))}
-              formatValue={fmtCZKShort}
-            />
           ) : (
-            <div className="text-[11px] text-center py-4" style={{ color: C.muted }}>
-              Žádné sály s nakonfigurovanými sazbami.
-            </div>
+            <p className="text-[11px] py-2 px-1" style={{ color: C.faint }}>
+              Žádná oddělení s nastavenými sazbami.
+            </p>
           )}
-        </Card>
-      </div>
+      </PanelCard>
+
+      {/* Náklady podle všech sálů — plná šířka a responzivní mřížka */}
+      <PanelCard
+          title="Náklady podle všech sálů"
+          badge={`${allRoomsByCost.length}`}
+          note="Všechny sály se stejnými provozními údaji jako v záložce Sály"
+          footer={allRoomsByCost.length > 0
+            ? { label: 'Hodin provozu', value: `${summary.totalHours.toFixed(1)} h` }
+            : undefined}
+          icon={Wallet}
+          accent={C.accent}
+        >
+          {allRoomsByCost.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+              {allRoomsByCost.map((rf, i) => {
+                const cardColor = rf.configured
+                  ? featuredPalette[i % featuredPalette.length]
+                  : C.faint;
+
+                return (
+                  <YieldCard
+                    key={rf.id}
+                    value={rf.cost !== null ? fmtCZKShort(rf.cost) : '—'}
+                    unit={rf.cost !== null ? 'Kč' : undefined}
+                    sub={rf.name}
+                    caption={rf.department}
+                    color={cardColor}
+                    onClick={() => setSelectedCostRoomId(rf.id)}
+                    rows={[
+                      {
+                        label: 'Provoz',
+                        value: rf.capacityHours > 0
+                          ? `${rf.hours.toFixed(1)} / ${rf.capacityHours.toFixed(0)} h`
+                          : `${rf.hours.toFixed(1)} h`,
+                      },
+                      { label: 'Prostoje', value: formatDuration(rf.downtimeMinutes) },
+                      {
+                        label: 'Pozdní start',
+                        value: rf.scheduledDaysWithOperation > 0
+                          ? (rf.delayedStartMinutes > 0 ? formatDuration(rf.delayedStartMinutes) : 'Včas')
+                          : 'Bez rozpisu',
+                      },
+                      { label: 'Operatér', value: `${rf.lateSurgeon}×` },
+                      { label: 'Anesteziolog', value: `${rf.lateAnesthesiologist}×` },
+                      { label: 'Pacient', value: `${rf.patientNotReady}×` },
+                    ]}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-[11px] py-2 px-1" style={{ color: C.faint }}>
+              Žádné sály k zobrazení.
+            </p>
+          )}
+      </PanelCard>
 
       {/* ─── EFEKTIVITA NÁKLADŮ ────────────────────────────────── */}
       <Card title="Efektivita nákladů" subtitle="Klíčové indikátory pro řízení sálu" icon={Activity} accent={C.green}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          <MetricTile
-            label="Celkem výkonů"
-            value={formatNumber(totalOps)}
-            sublabel={`za ${periodLabel}`}
-            icon={Activity}
-            color={C.accent}
-          />
-          <MetricTile
+        {/* Pilulkové dlaždice ve stylu předlohy — ikona ve čtverečku vlevo,
+            popisek a hodnota vedle sebe. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
+          <PillMetric label="Výkony v pracovní době" value={formatNumber(workingOpsCount)} icon={Activity} color={C.accent} />
+          <PillMetric
             label="Náklad / hodina"
-            value={fmtCZKShort(summary.costPerHour) + ' Kč'}
-            sublabel="průměr přes provozní hodiny"
+            value={`${fmtCZKShort(summary.costPerHour)} Kč`}
             icon={Clock}
             color={C.cyan}
           />
-          <MetricTile
+          <PillMetric
             label="Náklad / výkon"
-            value={fmtCZKShort(summary.costPerOperation) + ' Kč'}
-            sublabel="průměr na 1 op."
+            value={`${fmtCZKShort(summary.costPerOperation)} Kč`}
             icon={Coins}
             color={C.green}
           />
-          <MetricTile
+          <PillMetric
             label="Vytížení"
-            value={`${avgUtilization.toFixed(0)}%`}
-            sublabel={`za ${periodLabel}`}
+            value={`${workingAvgUtilization.toFixed(0)}%`}
             icon={TrendingUp}
-            color={C.accent}
+            color={C.purple}
           />
         </div>
       </Card>
+
+      {selectedCostRoom && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          style={{ background: 'rgba(2, 8, 23, 0.78)', backdropFilter: 'blur(10px)' }}
+          role="presentation"
+          onClick={() => setSelectedCostRoomId(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="finance-room-detail-title"
+            className="relative w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-[24px] p-5 sm:p-6"
+            style={{
+              background: 'linear-gradient(145deg, var(--stats-surface-2), var(--stats-surface))',
+              border: `1px solid ${C.accent}38`,
+              boxShadow: '0 30px 90px rgba(0, 0, 0, 0.45)',
+            }}
+            onClick={event => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedCostRoomId(null)}
+              aria-label="Zavřít detail nákladů"
+              className="absolute right-4 top-4 w-9 h-9 rounded-full flex items-center justify-center"
+              style={{ background: 'var(--stats-ghost)', color: C.muted, border: `1px solid ${C.border}` }}
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="pr-12">
+              <p className="text-[11px] uppercase font-bold tracking-[0.18em]" style={{ color: C.accent }}>
+                Podíl na nákladech
+              </p>
+              <h3 id="finance-room-detail-title" className="text-2xl font-semibold mt-1" style={{ color: C.textHi }}>
+                {selectedCostRoom.name}
+              </h3>
+              <p className="text-[12px] font-medium mt-1" style={{ color: C.muted }}>{selectedCostRoom.department}</p>
+            </div>
+
+            {selectedCostRoom.phases.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 items-center mt-6">
+                <div className="flex justify-center">
+                  <PhaseRing
+                    size={200}
+                    segments={selectedCostRoom.phases.map(phase => ({
+                      name: phase.name,
+                      cost: phase.cost,
+                      color: phaseColors.get(phase.name) ?? C.accent,
+                    }))}
+                    centerValue={`${selectedCostRoom.share}%`}
+                    centerUnit={`${fmtCZKShort(selectedCostRoom.cost ?? 0)} Kč`}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  {selectedCostRoom.phases.map(phase => {
+                    const color = phaseColors.get(phase.name) ?? C.accent;
+                    const phaseShare = selectedPhaseTotal > 0 ? (phase.cost / selectedPhaseTotal) * 100 : 0;
+                    return (
+                      <div
+                        key={phase.name}
+                        className="rounded-xl px-3.5 py-3"
+                        style={{ background: `${color}12`, border: `1px solid ${color}38` }}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+                          <span className="text-[13px] font-semibold min-w-0 flex-1 leading-tight" style={{ color: C.textHi }} title={phase.name}>
+                            {phase.name}
+                          </span>
+                          <span className="text-[13px] font-semibold tabular-nums shrink-0" style={{ color: C.textHi }}>
+                            {fmtCZKShort(phase.cost)} Kč
+                          </span>
+                          <span className="text-[11px] font-semibold tabular-nums w-10 text-right shrink-0" style={{ color }}>
+                            {phaseShare.toFixed(0)} %
+                          </span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden mt-2.5" style={{ background: 'var(--stats-ghost)' }}>
+                          <div className="h-full rounded-full" style={{ width: `${phaseShare}%`, background: color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl py-10 px-4 text-center mt-6" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}>
+                <p className="text-[13px] font-semibold" style={{ color: C.text }}>Pro tento sál nejsou dostupná data fází.</p>
+                <p className="text-[11px] mt-1" style={{ color: C.faint }}>Graf se zobrazí po zaznamenání provozu v daném období.</p>
+              </div>
+            )}
+
+            <div className="mt-7 pt-6" style={{ borderTop: `1px solid ${C.border}` }}>
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <p className="text-[11px] uppercase font-bold tracking-[0.16em]" style={{ color: C.orange }}>
+                    Prostoje a zpoždění
+                  </p>
+                  <p className="text-[12px] mt-1" style={{ color: C.muted }}>
+                    Skutečné události sálu za zvolené období
+                  </p>
+                </div>
+                <span className="text-[10px] font-medium" style={{ color: delayDataLoading ? C.yellow : C.green }}>
+                  {delayDataLoading ? 'Načítám rozpis…' : 'Data z databáze'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.orange}38` }}>
+                  <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Mezi operacemi</p>
+                  <p className="text-[26px] font-semibold tabular-nums mt-2 leading-none" style={{ color: C.orange }}>
+                    {formatDuration(selectedCostRoom.downtimeMinutes)}
+                  </p>
+                  <div className="flex items-center justify-between gap-3 mt-3 text-[11px]">
+                    <span style={{ color: C.muted }}>{selectedCostRoom.downtimeIntervals} intervalů</span>
+                    <span className="font-semibold tabular-nums" style={{ color: C.textHi }}>
+                      {selectedCostRoom.downtimeCost !== null
+                        ? `${fmtCZKShort(selectedCostRoom.downtimeCost)} Kč`
+                        : 'Sazba chybí'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.yellow}38` }}>
+                  <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Pozdní začátek programu</p>
+                  <p className="text-[26px] font-semibold tabular-nums mt-2 leading-none" style={{ color: C.yellow }}>
+                    {selectedCostRoom.scheduledDaysWithOperation > 0
+                      ? formatDuration(selectedCostRoom.delayedStartMinutes)
+                      : 'Bez rozpisu'}
+                  </p>
+                  <div className="flex items-center justify-between gap-3 mt-3 text-[11px]">
+                    <span style={{ color: C.muted }}>
+                      {selectedCostRoom.scheduledDaysWithOperation > 0
+                        ? `${selectedCostRoom.delayedStartDays} z ${selectedCostRoom.scheduledDaysWithOperation} dnů pozdě`
+                        : 'Nelze porovnat s plánem'}
+                    </span>
+                    <span className="font-semibold tabular-nums" style={{ color: C.textHi }}>
+                      {selectedCostRoom.scheduledDaysWithOperation === 0
+                        ? '—'
+                        : selectedCostRoom.delayedStartCost !== null
+                          ? `${fmtCZKShort(selectedCostRoom.delayedStartCost)} Kč`
+                          : 'Sazba chybí'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.purple}30` }}>
+                  <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Pozdní operatér</p>
+                  <p className="text-[24px] font-semibold tabular-nums mt-1" style={{ color: C.purple }}>{selectedCostRoom.lateSurgeon}×</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {selectedCostRoom.surgeonSpecialties.length > 0 ? selectedCostRoom.surgeonSpecialties.map(item => (
+                      <span
+                        key={item.name}
+                        className="px-2 py-1 rounded-full text-[9px] font-semibold"
+                        style={{ color: C.text, background: `${C.purple}14`, border: `1px solid ${C.purple}28` }}
+                        title={item.name}
+                      >
+                        {item.name} · {item.count}
+                      </span>
+                    )) : (
+                      <span className="text-[10px]" style={{ color: C.faint }}>Bez hlášení</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.cyan}30` }}>
+                  <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Pozdní anesteziolog</p>
+                  <p className="text-[24px] font-semibold tabular-nums mt-1" style={{ color: C.cyan }}>{selectedCostRoom.lateAnesthesiologist}×</p>
+                  <p className="text-[10px] mt-2" style={{ color: C.faint }}>Odeslaná hlášení</p>
+                </div>
+
+                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.pink}30` }}>
+                  <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Nepřipravený pacient</p>
+                  <p className="text-[24px] font-semibold tabular-nums mt-1" style={{ color: C.pink }}>{selectedCostRoom.patientNotReady}×</p>
+                  <p className="text-[10px] mt-2" style={{ color: C.faint }}>Odeslaná hlášení</p>
+                </div>
+              </div>
+
+              <p className="text-[11px] leading-relaxed mt-3" style={{ color: C.muted }}>
+                Všechny hodnoty zahrnují pouze nastavenou pracovní dobu sálu. Minuty prostojů vycházejí z průniku dvojice konec–následující začátek se směnou. Pozdní start se počítá až po překročení hranice začátek směny + 60 minut, pouze ve dnech s AM rozpisem odbornosti. Hlášení mimo pracovní dobu se nezapočítávají; databáze u nich neukládá délku zdržení, proto jsou uvedena jako počet událostí bez odhadované ceny.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

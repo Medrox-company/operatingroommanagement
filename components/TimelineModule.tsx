@@ -46,6 +46,7 @@ import {
 import StatBox from './timeline/StatBox';
 import RoomDetailPopup from './timeline/RoomDetailPopup';
 import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
+import { clearRoomAroOvertimeStart, markRoomAroOvertimeStart } from '../lib/db';
 import { RoomSpecialtyBadges } from './RoomSpecialtyBadge';
 import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
 import { mergeCompletedOperations } from '../lib/completed-operations';
@@ -931,17 +932,18 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
-  /* --- ARO Overtime Tracking - rooms that exceed working hours.
-     
-     Pořadí ARO čísel (1, 2, 3...) je STABILNÍ podle pořadí, ve kterém sály
-     vstoupily do overtime stavu — kdo dříve překročil pracovní dobu, dostane
-     nižší číslo. Persistujeme timestampy v `useRef<Map>`, takže se pořadí
-     nemění když se změní `estimatedEndTime` jiných sálů.
-     
-     Když sál opustí overtime stav (např. operatér zkrátil odhad nebo operace
-     skončí), jeho záznam se vymaže a uvolní místo pro ostatní. */
-  const aroEnteredAtRef = useRef<Map<string, number>>(new Map());
-  
+  /* --- ARO Overtime Tracking — sály, které přesáhly pracovní dobu.
+
+     Pořadové číslo (1, 2, 3…) dostává sál podle toho, kdy přesah zaznamenal
+     jako PRVNÍ. Ten okamžik se ukládá do databáze (`aro_overtime_since`),
+     protože jen tak zůstane pořadí stejné po obnovení stránky a shodné na
+     všech zařízeních. Dřív se držel jen v paměti záložky, takže se po každém
+     načtení přerovnal a čísla neodpovídala skutečnosti.
+
+     Když sál z přesahu vystoupí (operatér zkrátil odhad nebo výkon skončil),
+     příznak se v databázi zruší a uvolní místo ostatním. */
+  const aroWriteInFlightRef = useRef<Set<string>>(new Set());
+
   const aroOvertimeRooms = useMemo(() => {
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
     const todayKey = dayKeys[currentTime.getDay()];
@@ -983,37 +985,53 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       // Check if estimated end exceeds working hours
       if (endTime > workingEndTime) {
         const overtimeMinutes = Math.round((endTime.getTime() - workingEndTime.getTime()) / (1000 * 60));
-        
-        // Stabilní timestamp vstupu do overtime — pokud sál vstupuje poprvé,
-        // zaregistrujeme ho s aktuálním časem; jinak ponecháme původní timestamp.
-        let enteredAt = aroEnteredAtRef.current.get(room.id);
-        if (enteredAt === undefined) {
-          enteredAt = Date.now();
-          aroEnteredAtRef.current.set(room.id, enteredAt);
-        }
-        
+
+        // Okamžik vstupu do přesahu z databáze. Dokud se nezapsal (první
+        // detekce), řadíme sál dočasně na konec — po zápisu a nejbližším
+        // načtení dat se srovná na správné místo.
+        const since = room.aroOvertimeSince ? new Date(room.aroOvertimeSince).getTime() : null;
+
         overtimeList.push({
           roomId: room.id,
           roomName: room.name,
           estimatedEndTime: endTime,
           workingEndTime,
           overtimeMinutes,
-          enteredAt,
+          enteredAt: since ?? Number.MAX_SAFE_INTEGER,
         });
       }
     });
-    
-    // Garbage collection — odstraň timestampy sálů, které už nejsou v overtime,
-    // aby se při návratu sálu do overtime přidělil nový (vyšší) timestamp.
-    const activeIds = new Set(overtimeList.map(r => r.roomId));
-    for (const id of Array.from(aroEnteredAtRef.current.keys())) {
-      if (!activeIds.has(id)) aroEnteredAtRef.current.delete(id);
-    }
-    
-    // Sort podle pořadí vstupu do overtime — kdo první překročil pracovní dobu
-    // dostane ARO #1, druhý #2 atd. Stabilní napříč rerender cykly.
-    return overtimeList.sort((a, b) => a.enteredAt - b.enteredAt);
+
+    // Kdo dřív překročil pracovní dobu, dostane ARO #1. Sály bez zapsaného
+    // času (těsně po detekci) mají shodný klíč — rozhodne jméno, aby pořadí
+    // nekmitalo mezi rerendery.
+    return overtimeList.sort((a, b) =>
+      a.enteredAt - b.enteredAt || a.roomName.localeCompare(b.roomName, 'cs'),
+    );
   }, [rooms, currentTime]);
+
+  /* Zápis a rušení příznaku přesahu. Běží mimo výpočet výše, aby memo zůstalo
+     bez vedlejších efektů. Souběh mezi zařízeními řeší podmíněný zápis
+     v databázi — uloží se jen první záznam. */
+  useEffect(() => {
+    const overtimeIds = new Set(aroOvertimeRooms.map(r => r.roomId));
+
+    for (const room of rooms) {
+      const inOvertime = overtimeIds.has(room.id);
+      const hasFlag = !!room.aroOvertimeSince;
+      if (inOvertime === hasFlag) continue;              // stav sedí, nic neděláme
+      if (aroWriteInFlightRef.current.has(room.id)) continue; // zápis už běží
+
+      aroWriteInFlightRef.current.add(room.id);
+      const done = () => aroWriteInFlightRef.current.delete(room.id);
+
+      if (inOvertime) {
+        void markRoomAroOvertimeStart(room.id, new Date().toISOString()).finally(done);
+      } else {
+        void clearRoomAroOvertimeStart(room.id).finally(done);
+      }
+    }
+  }, [aroOvertimeRooms, rooms]);
 
   const attentionCount = useMemo(() => {
     const flagged = new Set(aroOvertimeRooms.map((room) => room.roomId));

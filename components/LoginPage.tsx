@@ -17,9 +17,9 @@ import {
   Mail,
   Moon,
   Shield,
+  ShieldCheck,
   Stethoscope,
   Sun,
-  User,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -27,7 +27,7 @@ interface LoginPageProps {
   onLoginSuccess?: () => void;
 }
 
-type QuickRoleId = 'admin' | 'user' | 'aro' | 'cos' | 'management' | 'primar';
+type QuickRoleId = 'superadmin' | 'admin' | 'aro' | 'cos' | 'management' | 'primar';
 type DesktopScreen = 'intro' | 'roles' | 'form';
 
 interface LoginHospital {
@@ -45,12 +45,12 @@ const QUICK_ROLES: Array<{
   tone: string;
   description: string;
 }> = [
+  { id: 'superadmin', label: 'Superadministrátor', email: 'superadmin@nemocnice.cz', password: 'super123', icon: ShieldCheck, tone: '#E0574F', description: 'Neomezený přístup' },
   { id: 'admin', label: 'Administrátor', email: 'admin@nemocnice.cz', password: 'admin123', icon: Shield, tone: '#D99C35', description: 'Plný přístup' },
   { id: 'aro', label: 'ARO', email: 'aro@nemocnice.cz', password: 'aro123', icon: Activity, tone: '#24A8C8', description: 'Anestezie' },
   { id: 'cos', label: 'COS', email: 'cos@nemocnice.cz', password: 'cos123', icon: Stethoscope, tone: '#2AAE82', description: 'Operační sály' },
   { id: 'management', label: 'Management', email: 'management@nemocnice.cz', password: 'mgmt123', icon: Briefcase, tone: '#8B7AD8', description: 'Vedení' },
   { id: 'primar', label: 'Primariát', email: 'primar@nemocnice.cz', password: 'primar123', icon: ClipboardList, tone: '#C76F9B', description: 'Primář' },
-  { id: 'user', label: 'Uživatel', email: 'user@nemocnice.cz', password: 'user123', icon: User, tone: '#70839F', description: 'Standardní' },
 ];
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {

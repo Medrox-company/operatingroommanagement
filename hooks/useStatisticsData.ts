@@ -97,8 +97,8 @@ export function useStatisticsData(period: StatisticsPeriod) {
       const now = new Date();
       const fromDate = periodStart(period, now);
       const [history, notifications, devices] = await Promise.all([
-        fetchStatusHistory({ fromDate, toDate: now, limit: 5_000 }),
-        fetchNotificationsLog({ fromDate, toDate: now, limit: 1_000 }),
+        fetchStatusHistory({ fromDate, toDate: now, all: true }),
+        fetchNotificationsLog({ fromDate, toDate: now, all: true }),
         fetchDevices(),
       ]);
       return {
@@ -123,7 +123,7 @@ export function useStatisticsData(period: StatisticsPeriod) {
     async () => {
       const now = new Date();
       const fromDate = new Date(now.getTime() - DAY_HISTORY_DAYS * 24 * 60 * 60 * 1000);
-      return (await fetchStatusHistory({ fromDate, toDate: now, limit: 5_000 })) ?? [];
+      return (await fetchStatusHistory({ fromDate, toDate: now, all: true })) ?? [];
     },
     {
       revalidateOnFocus: true,

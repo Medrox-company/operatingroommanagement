@@ -41,7 +41,7 @@ const DevicesTab = dynamic(() => import('./statistics/DevicesTab').then((module)
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'finance'
+type Tab    = 'prehled' | 'finance' | 'sazby'
             | 'saly' | 'faze' | 'notifikace' | 'zarizeni';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
@@ -1448,6 +1448,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const tabLabelMap: Record<Tab, string> = {
 'prehled':    'Přehled',
 'finance':    'Finance',
+'sazby':      'Sazby',
 'saly':       'Sály',
 'faze':       'Fáze',
 'notifikace': 'Notifikace',
@@ -1983,6 +1984,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 const TABS:{ id:Tab; label:string }[]=[
 {id:'prehled',    label:'Přehled'},
 {id:'finance',    label:'Finance'},
+{id:'sazby',      label:'Sazby'},
 {id:'saly',       label:'Sály'},
 {id:'faze',       label:'Fáze'},
 {id:'notifikace', label:'Notifikace'},
@@ -2155,6 +2157,7 @@ const TABS:{ id:Tab; label:string }[]=[
 tabs={[
 { id: 'prehled', label: 'Přehled' },
 { id: 'finance', label: 'Finance' },
+{ id: 'sazby', label: 'Sazby' },
 { id: 'saly', label: 'Sály' },
 { id: 'faze', label: 'Fáze' },
 { id: 'notifikace', label: 'Notifikace' },
@@ -2257,6 +2260,23 @@ tabs={[
                 avgUtilization={avgUtil}
                 periodLabel={period}
                 statusHistory={statusHistory}
+                notifications={notifications}
+              />
+            </div>
+          )}
+
+          {/* ── Hodinové sazby — samostatná správa nákladových sazeb ── */}
+          {(tab === 'sazby' || isPrinting) && (
+            <div className="flex flex-col gap-3 print-section">
+              {isPrinting && <h2 className="print-tab-header print-only">Hodinové sazby</h2>}
+              <FinanceTab
+                rooms={rooms}
+                totalOps={totalOps}
+                avgUtilization={avgUtil}
+                periodLabel={period}
+                statusHistory={statusHistory}
+                notifications={notifications}
+                view="rates"
               />
             </div>
           )}
@@ -2347,64 +2367,63 @@ tabs={[
         </h1>
       </header>
 
-      {/* ── Row 1: Tab navigation ── */}
-      <div className="statistics-tabs print-hide flex items-center gap-1 overflow-x-auto rounded-xl p-1"
-        style={{
-          border: `1px solid ${C.border}`,
-          scrollbarWidth: 'thin',
-          scrollbarColor: `${C.faint} transparent`,
-        }}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="rounded-lg px-4 py-2 text-[12px] font-medium whitespace-nowrap shrink-0"
-            style={{
-              color: tab === t.id ? C.text : C.muted,
-              background: tab === t.id ? C.surfaceActive : 'transparent',
-              border: `1px solid ${tab === t.id ? C.borderHover : 'transparent'}`,
-            }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Row 2: Period selector + Export ── */}
-      <div className="print-hide flex items-center justify-between gap-4 py-4 mb-2">
-        {/* Period pills */}
-        <div className="flex items-center gap-1 p-1 rounded-lg"
-          style={{ background: C.surface, border: `1px solid ${C.border}` }}>
-          {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
-            <button key={p} onClick={()=>setPeriod(p)}
-              className="px-3 py-1.5 rounded-md text-[12px] font-medium"
+      {/* ── Jeden ovládací řádek: vlevo záložky, vpravo období a export.
+             Dřív to byly dvě řady pod sebou a braly zbytečně místo. ── */}
+      <div
+        className="statistics-tabs print-hide flex flex-wrap items-center gap-2 rounded-xl p-1 mb-4"
+        style={{ border: `1px solid ${C.border}` }}
+      >
+        {/* Záložky */}
+        <div
+          className="flex items-center gap-1 overflow-x-auto min-w-0"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: `${C.faint} transparent` }}
+        >
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="rounded-lg px-4 py-2 text-[12px] font-medium whitespace-nowrap shrink-0"
               style={{
-                background: period === p ? C.surface : 'transparent',
-                color: period === p ? C.text : C.muted,
+                color: tab === t.id ? C.text : C.muted,
+                background: tab === t.id ? C.surfaceActive : 'transparent',
+                border: `1px solid ${tab === t.id ? C.borderHover : 'transparent'}`,
               }}>
-              {p.charAt(0).toUpperCase() + p.slice(1)}
+              {t.label}
             </button>
           ))}
         </div>
-        
-        {/* Export buttons */}
-        <div className="flex items-center gap-2">
+
+        {/* Období a export vpravo, oddělené svislou linkou */}
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <span aria-hidden className="h-6 w-px" style={{ background: C.border }} />
+
+          <div className="flex items-center gap-1 p-1 rounded-lg"
+            style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+            {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
+              <button key={p} onClick={()=>setPeriod(p)}
+                className="px-3 py-1.5 rounded-md text-[12px] font-medium whitespace-nowrap"
+                style={{
+                  background: period === p ? C.surfaceActive : 'transparent',
+                  color: period === p ? C.text : C.muted,
+                }}>
+                {p.charAt(0).toUpperCase() + p.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <span aria-hidden className="h-6 w-px" style={{ background: C.border }} />
+
           <button
             onClick={handlePrint}
             title="Vytisknout aktuální zobrazení"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium"
-            style={{
-              color: C.muted,
-              border: `1px solid ${C.border}`,
-            }}>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap"
+            style={{ color: C.muted, border: `1px solid ${C.border}` }}>
             <Printer className="w-4 h-4" />
             Tisk
           </button>
           <button
             onClick={handleExportPdf}
             title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium"
-            style={{
-              color: C.muted,
-              border: `1px solid ${C.border}`,
-            }}>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap"
+            style={{ color: C.muted, border: `1px solid ${C.border}` }}>
             <FileDown className="w-4 h-4" />
             PDF
           </button>
@@ -2871,6 +2890,27 @@ tabs={[
               avgUtilization={avgUtil}
               periodLabel={period}
               statusHistory={statusHistory}
+              notifications={notifications}
+            />
+          </div>
+        )}
+
+        {/* ── Hodinové sazby — samostatná záložka ── */}
+        {(tab==='sazby' || isPrinting) && (
+          <div key="sazby" className="space-y-5 print-section">
+            {isPrinting && (
+              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+                Hodinové sazby operačních sálů
+              </h2>
+            )}
+            <FinanceTab
+              rooms={rooms}
+              totalOps={totalOps}
+              avgUtilization={avgUtil}
+              periodLabel={period}
+              statusHistory={statusHistory}
+              notifications={notifications}
+              view="rates"
             />
           </div>
         )}
