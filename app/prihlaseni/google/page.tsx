@@ -234,8 +234,11 @@ export default function GoogleLoginCallbackPage() {
         className="pointer-events-none absolute inset-0"
         style={{ background: 'linear-gradient(145deg, #07162B 0%, #0A1029 48%, #08091A 100%)' }}
       />
+      {/* Stejné pozadí jako na přihlašovací stránce — sklo potřebuje čím prosvítat. */}
+      <div aria-hidden className="login-aurora-flow pointer-events-none absolute" />
+      <div aria-hidden className="login-aurora-vignette pointer-events-none absolute inset-0" />
 
-      <main className="relative z-10 w-full max-w-[430px] rounded-[26px] border border-white/[0.08] bg-[#0C1828]/95 p-8 shadow-[0_28px_80px_rgba(0,0,0,0.32)]">
+      <main className="login-glass relative z-10 w-full max-w-[430px] rounded-[26px] p-8">
         {stage === 'loading' && (
           <div className="flex flex-col items-center py-6 text-center">
             <Loader2 className="h-7 w-7 animate-spin text-[#64C2D2]" />
@@ -289,7 +292,7 @@ export default function GoogleLoginCallbackPage() {
                 <p className="mt-2.5 text-center text-[11px] text-white/40">
                   Zadejte do aplikace tento klíč ručně:
                 </p>
-                <p className="mt-1.5 break-all rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2.5 text-center font-mono text-[12px] tracking-wider text-white/75">
+                <p className="mt-1.5 break-all login-glass-field rounded-xl px-3 py-2.5 text-center font-mono text-[12px] tracking-wider text-white/75">
                   {secret}
                 </p>
               </details>
@@ -376,7 +379,7 @@ function CodeForm({ code, setCode, busy, error, onSubmit, label }: CodeFormProps
         value={code}
         onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, CODE_LENGTH))}
         placeholder="000000"
-        className="h-[56px] w-full rounded-xl border border-white/[0.08] bg-white/[0.035] text-center font-mono text-[24px] font-bold tracking-[0.4em] text-white outline-none placeholder:text-white/15 focus:border-[#64B9CD]/45"
+        className="login-glass-field h-[56px] w-full rounded-xl text-center font-mono text-[24px] font-bold tracking-[0.4em] text-white outline-none placeholder:text-white/15 focus:border-[#64B9CD]/45"
       />
 
       {error && (

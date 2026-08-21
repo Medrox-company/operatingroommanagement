@@ -558,7 +558,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         )}
 
         {desktopScreen === 'form' && (
-          <section className="w-full max-w-[440px] rounded-[26px] border border-white/[0.08] bg-[#0C1828]/95 p-8 shadow-[0_28px_80px_rgba(0,0,0,0.32)]">
+          <section className="login-glass w-full max-w-[440px] rounded-[26px] p-8">
             <div className="mb-7 text-center">
               <p className="text-[8px] font-bold uppercase tracking-[0.25em] text-[#64B9CD]">Vlastní účet</p>
               <h2 className="mt-3 text-[28px] font-extrabold tracking-[-0.03em]">Přihlášení</h2>
@@ -577,7 +577,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <label htmlFor="desktop-form-hospital" className="mb-2 block text-[8px] font-bold uppercase tracking-[0.2em] text-white/32">Zdravotnické zařízení</label>
                 <div className="relative">
                   <Building2 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />
-                  <select id="desktop-form-hospital" value={selectedHospitalId} onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }} disabled={hospitalsLoading || hospitals.length === 0} className="h-[50px] w-full appearance-none rounded-xl border border-white/[0.08] bg-white/[0.035] pl-11 pr-11 text-[12px] font-semibold text-white/82 outline-none focus:border-[#64B9CD]/45 disabled:opacity-50">{hospitalOptions}</select>
+                  <select id="desktop-form-hospital" value={selectedHospitalId} onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }} disabled={hospitalsLoading || hospitals.length === 0} className="login-glass-field h-[50px] w-full appearance-none rounded-xl pl-11 pr-11 text-[12px] font-semibold text-white/82 outline-none focus:border-[#64B9CD]/45 disabled:opacity-50">{hospitalOptions}</select>
                   {hospitalsLoading ? <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-white/28" /> : <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />}
                 </div>
               </div>
@@ -586,7 +586,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <label htmlFor="desktop-form-email" className="mb-2 block text-[8px] font-bold uppercase tracking-[0.2em] text-white/32">Uživatelské jméno</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />
-                  <input id="desktop-form-email" type="text" inputMode="email" autoCapitalize="none" autoComplete="username" value={email} onChange={event => setEmail(event.target.value)} placeholder="jmeno.prijmeni" required className="h-[50px] w-full rounded-xl border border-white/[0.08] bg-white/[0.035] pl-11 pr-4 text-[12px] font-semibold text-white outline-none placeholder:text-white/20 focus:border-[#64B9CD]/45" />
+                  <input id="desktop-form-email" type="text" inputMode="email" autoCapitalize="none" autoComplete="username" value={email} onChange={event => setEmail(event.target.value)} placeholder="jmeno.prijmeni" required className="login-glass-field h-[50px] w-full rounded-xl pl-11 pr-4 text-[12px] font-semibold text-white outline-none placeholder:text-white/20 focus:border-[#64B9CD]/45" />
                 </div>
               </div>
 
@@ -594,7 +594,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <label htmlFor="desktop-form-password" className="mb-2 block text-[8px] font-bold uppercase tracking-[0.2em] text-white/32">Heslo</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />
-                  <input id="desktop-form-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••" required className="h-[50px] w-full rounded-xl border border-white/[0.08] bg-white/[0.035] pl-11 pr-12 text-[12px] font-semibold text-white outline-none placeholder:text-white/20 focus:border-[#64B9CD]/45" />
+                  <input id="desktop-form-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••" required className="login-glass-field h-[50px] w-full rounded-xl pl-11 pr-12 text-[12px] font-semibold text-white outline-none placeholder:text-white/20 focus:border-[#64B9CD]/45" />
                   <button type="button" onClick={() => setShowPassword(value => !value)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/28 transition-colors hover:text-white/70" aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>

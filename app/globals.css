@@ -110,6 +110,38 @@ body {
   animation: login-aurora-drift 22s ease-in-out infinite alternate;
 }
 
+/* Skleněný panel přihlášení.
+   Aurora pod ním prosvítá rozostřeně, horní hrana nese jemné světlo.
+   Rozostření pozadí je tu jediné v celé aplikaci — přihlašovací obrazovka má
+   jeden panel, takže výkon neřeší; na dashboardu zůstává odstraněné. */
+.login-glass {
+  background: rgba(16, 32, 52, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(26px) saturate(140%);
+  backdrop-filter: blur(26px) saturate(140%);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* Bez podpory rozostření by panel zprůhlednil na nečitelné pozadí. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .login-glass {
+    background: rgba(12, 24, 40, 0.94);
+  }
+}
+
+/* Pole uvnitř skla snesou o něco víc světla než na plné výplni. */
+.login-glass-field {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.login-glass-field:focus,
+.login-glass-field:focus-within {
+  border-color: rgba(100, 185, 205, 0.45);
+}
+
 .login-aurora-vignette {
   background:
     radial-gradient(ellipse at center, transparent 20%, rgba(3, 8, 20, 0.2) 64%, rgba(2, 6, 15, 0.65) 100%),
