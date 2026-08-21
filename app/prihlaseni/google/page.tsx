@@ -1,8 +1,16 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, KeyRound, Loader2, ShieldCheck, Smartphone } from 'lucide-react';
+import { AlertCircle, Fingerprint, KeyRound, Loader2, ShieldCheck, Smartphone } from 'lucide-react';
 import { getGoogleAuthClient, clearGoogleAuthSession } from '../../../lib/auth/google-client';
+import {
+  areKeysKnownUnavailable,
+  browserSupportsSecurityKey,
+  describeSecurityKeyError,
+  getRelyingParty,
+  isKeyFeatureDisabled,
+  rememberKeysUnavailable,
+} from '../../../lib/auth/webauthn';
 
 /**
  * Návratová stránka po přihlášení přes Google.
@@ -16,10 +24,12 @@ import { getGoogleAuthClient, clearGoogleAuthSession } from '../../../lib/auth/g
  */
 
 type Stage =
-  | 'loading'      // čekáme na relaci z Googlu
-  | 'enroll'       // účet ještě nemá dvoufázové ověření — ukaž QR kód
-  | 'challenge'    // účet ho má — chce jen kód z aplikace
-  | 'finishing'    // ověřeno, dokončujeme na serveru
+  | 'loading'        // čekáme na relaci z Googlu
+  | 'enroll'         // účet ještě nemá dvoufázové ověření — ukaž QR kód
+  | 'key'            // účet má bezpečnostní klíč — stačí potvrdit
+  | 'challenge'      // účet má jen aplikaci — chce šestimístné číslo
+  | 'offer-key'      // ověřeno kódem, nabídneme pohodlnější klíč
+  | 'finishing'      // hotovo, dokončujeme na serveru
   | 'error';
 
 const CODE_LENGTH = 6;
@@ -30,8 +40,10 @@ export default function GoogleLoginCallbackPage() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
   const [factorId, setFactorId] = useState<string | null>(null);
+  const [keyFactorId, setKeyFactorId] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [keySupported, setKeySupported] = useState(true);
 
   // Zabrání dvojímu spuštění v Reactu ve vývojovém strict režimu.
   const startedRef = useRef(false);
@@ -145,20 +157,44 @@ export default function GoogleLoginCallbackPage() {
     }
 
     if (data?.nextLevel === 'aal2') {
-      // Faktor existuje, stačí zadat kód.
       const { data: factors } = await supabase.auth.mfa.listFactors();
-      const verified = (factors?.totp ?? []).find(item => item.status === 'verified');
-      if (!verified) {
-        await startEnrollment();
+      const allFactors = factors?.all ?? [];
+
+      const key = allFactors.find(
+        item => item.factor_type === 'webauthn' && item.status === 'verified',
+      );
+      const totp = (factors?.totp ?? []).find(item => item.status === 'verified');
+
+      if (totp) setFactorId(totp.id);
+
+      // Klíč má přednost — je pohodlnější i odolnější proti podvrženým stránkám.
+      if (key && browserSupportsSecurityKey()) {
+        setKeyFactorId(key.id);
+        setStage('key');
         return;
       }
-      setFactorId(verified.id);
-      setStage('challenge');
+
+      if (totp) {
+        setStage('challenge');
+        return;
+      }
+
+      // Faktor sice existuje, ale tenhle prohlížeč ho neobslouží.
+      if (key) {
+        await failTo('Tento prohlížeč neumí bezpečnostní klíče. Přihlaste se prosím z jiného zařízení.');
+        return;
+      }
+
+      await startEnrollment();
       return;
     }
 
     await startEnrollment();
   }, [failTo, finishOnServer, startEnrollment]);
+
+  useEffect(() => {
+    setKeySupported(browserSupportsSecurityKey() && !areKeysKnownUnavailable());
+  }, []);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -195,6 +231,80 @@ export default function GoogleLoginCallbackPage() {
     })();
   }, [failTo, routeByAssuranceLevel]);
 
+  /**
+   * Potvrzení bezpečnostním klíčem.
+   *
+   * Celou výměnu obslouží prohlížeč: na počítači s Touch ID se objeví systémový
+   * dialog, jinak nabídne QR kód pro telefon. Aplikace jen předá výzvu a vrátí
+   * podepsanou odpověď — soukromý klíč zařízení nikdy neopustí.
+   */
+  const confirmWithKey = useCallback(async () => {
+    if (!keyFactorId || busy) return;
+
+    const supabase = getGoogleAuthClient();
+    if (!supabase) return;
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const { error: keyError } = await supabase.auth.mfa.webauthn.authenticate({
+        factorId: keyFactorId,
+        webauthn: getRelyingParty(),
+      });
+
+      if (keyError) {
+        setError(describeSecurityKeyError(keyError));
+        setBusy(false);
+        return;
+      }
+
+      await finishOnServer();
+    } catch (cause) {
+      setError(describeSecurityKeyError(cause));
+      setBusy(false);
+    }
+  }, [busy, finishOnServer, keyFactorId]);
+
+  /**
+   * Registrace klíče. Spouští se až po úspěšném ověření kódem, kdy relace
+   * dosáhla aal2 — Supabase dřív nový faktor přidat nedovolí.
+   */
+  const registerKey = useCallback(async () => {
+    if (busy) return;
+
+    const supabase = getGoogleAuthClient();
+    if (!supabase) return;
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const { error: keyError } = await supabase.auth.mfa.webauthn.register({
+        friendlyName: `Operatingroom ${new Date().toLocaleDateString('cs-CZ')}`,
+        webauthn: getRelyingParty(),
+      });
+
+      if (keyError) {
+        // Klíče nejsou v projektu zapnuté (Supabase → Authentication → MFA).
+        // Není to chyba uživatele — pustíme ho dál a nabídku už neopakujeme.
+        if (isKeyFeatureDisabled(keyError)) {
+          rememberKeysUnavailable();
+          await finishOnServer();
+          return;
+        }
+        setError(describeSecurityKeyError(keyError));
+        setBusy(false);
+        return;
+      }
+
+      await finishOnServer();
+    } catch (cause) {
+      setError(describeSecurityKeyError(cause));
+      setBusy(false);
+    }
+  }, [busy, finishOnServer]);
+
   /** Ověří kód z autentizační aplikace. */
   const submitCode = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -216,6 +326,14 @@ export default function GoogleLoginCallbackPage() {
     if (verifyError) {
       setCode('');
       setError('Kód nesouhlasí. Zkontrolujte, že opisujete aktuální šestimístné číslo.');
+      return;
+    }
+
+    // Relace je teď na aal2 — jediná chvíle, kdy jde přidat další faktor.
+    // Nabídneme klíč, aby se příště nemuselo nic opisovat.
+    if (keySupported && !keyFactorId) {
+      setCode('');
+      setStage('offer-key');
       return;
     }
 
@@ -311,7 +429,52 @@ export default function GoogleLoginCallbackPage() {
               Uschovejte si přístup k telefonu. Při jeho ztrátě je potřeba dvoufázové ověření
               resetovat v databázi — postup je v dokumentaci projektu.
             </p>
+
+            {keySupported && (
+              <p className="mt-3 text-center text-[11px] leading-relaxed text-white/28">
+                Po dokončení vám nabídneme bezpečnostní klíč — pak už nebude potřeba
+                nic opisovat.
+              </p>
+            )}
           </>
+        )}
+
+        {stage === 'key' && (
+          <div className="text-center">
+            <span className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-[#64C2D2]/12 text-[#64C2D2]">
+              <Fingerprint className="h-5 w-5" />
+            </span>
+            <h1 className="mt-4 text-[22px] font-extrabold tracking-[-0.03em]">Potvrďte bezpečnostním klíčem</h1>
+            <p className="mt-2.5 text-[12px] leading-relaxed text-white/40">
+              Prohlížeč nabídne otisk prstu, obličej nebo QR kód pro telefon.
+            </p>
+
+            {error && (
+              <p className="mt-5 flex items-start gap-2 text-left text-[11.5px] font-semibold leading-snug text-red-300">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {error}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => void confirmWithKey()}
+              disabled={busy}
+              className="mt-6 flex h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-[#E7F2F6] text-[12px] font-extrabold text-[#09243D] transition-colors hover:bg-white disabled:opacity-40"
+            >
+              {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Čekáme na potvrzení…</> : 'Potvrdit'}
+            </button>
+
+            {factorId && (
+              <button
+                type="button"
+                onClick={() => { setError(null); setStage('challenge'); }}
+                className="mt-4 text-[11px] font-semibold text-white/34 transition-colors hover:text-white/75"
+              >
+                Klíč nemám po ruce — zadat kód z aplikace
+              </button>
+            )}
+          </div>
         )}
 
         {stage === 'challenge' && (
@@ -334,7 +497,58 @@ export default function GoogleLoginCallbackPage() {
               onSubmit={submitCode}
               label="Přihlásit se"
             />
+
+            {keyFactorId && (
+              <button
+                type="button"
+                onClick={() => { setError(null); setStage('key'); }}
+                className="mx-auto mt-4 block text-[11px] font-semibold text-white/34 transition-colors hover:text-white/75"
+              >
+                Raději potvrdit bezpečnostním klíčem
+              </button>
+            )}
           </>
+        )}
+
+        {stage === 'offer-key' && (
+          <div className="text-center">
+            <span className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-[#64C2D2]/12 text-[#64C2D2]">
+              <Fingerprint className="h-5 w-5" />
+            </span>
+            <h1 className="mt-4 text-[22px] font-extrabold tracking-[-0.03em]">Příště bez opisování</h1>
+            <p className="mt-2.5 text-[12px] leading-relaxed text-white/40">
+              Můžete si uložit bezpečnostní klíč a místo šestimístného čísla pak jen
+              přiložit prst, ukázat obličej nebo naskenovat QR kód telefonem.
+            </p>
+            <p className="mt-2.5 text-[11.5px] leading-relaxed text-white/28">
+              Kód z aplikace zůstane funkční jako záloha.
+            </p>
+
+            {error && (
+              <p className="mt-5 flex items-start gap-2 text-left text-[11.5px] font-semibold leading-snug text-red-300">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {error}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => void registerKey()}
+              disabled={busy}
+              className="mt-6 flex h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-[#E7F2F6] text-[12px] font-extrabold text-[#09243D] transition-colors hover:bg-white disabled:opacity-40"
+            >
+              {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Ukládáme klíč…</> : 'Uložit bezpečnostní klíč'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void finishOnServer()}
+              disabled={busy}
+              className="mt-4 text-[11px] font-semibold text-white/34 transition-colors hover:text-white/75 disabled:opacity-40"
+            >
+              Teď ne, pokračovat do aplikace
+            </button>
+          </div>
         )}
 
         {stage === 'error' && (
