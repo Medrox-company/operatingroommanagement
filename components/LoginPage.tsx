@@ -17,7 +17,6 @@ import {
   Mail,
   Moon,
   Shield,
-  ShieldCheck,
   Stethoscope,
   Sun,
   type LucideIcon,
@@ -27,7 +26,7 @@ interface LoginPageProps {
   onLoginSuccess?: () => void;
 }
 
-type QuickRoleId = 'superadmin' | 'admin' | 'aro' | 'cos' | 'management' | 'primar';
+type QuickRoleId = 'admin' | 'aro' | 'cos' | 'management' | 'primar';
 type DesktopScreen = 'intro' | 'roles' | 'form';
 
 interface LoginHospital {
@@ -45,13 +44,23 @@ const QUICK_ROLES: Array<{
   tone: string;
   description: string;
 }> = [
-  { id: 'superadmin', label: 'Superadministrátor', email: 'superadmin@nemocnice.cz', password: 'super123', icon: ShieldCheck, tone: '#E0574F', description: 'Neomezený přístup' },
+  // Superadministrátor tu schválně není — přihlašuje se přes Google
+  // s dvoufázovým ověřením, ne heslem uloženým v kódu stránky.
   { id: 'admin', label: 'Administrátor', email: 'admin@nemocnice.cz', password: 'admin123', icon: Shield, tone: '#D99C35', description: 'Plný přístup' },
   { id: 'aro', label: 'ARO', email: 'aro@nemocnice.cz', password: 'aro123', icon: Activity, tone: '#24A8C8', description: 'Anestezie' },
   { id: 'cos', label: 'COS', email: 'cos@nemocnice.cz', password: 'cos123', icon: Stethoscope, tone: '#2AAE82', description: 'Operační sály' },
   { id: 'management', label: 'Management', email: 'management@nemocnice.cz', password: 'mgmt123', icon: Briefcase, tone: '#8B7AD8', description: 'Vedení' },
   { id: 'primar', label: 'Primariát', email: 'primar@nemocnice.cz', password: 'primar123', icon: ClipboardList, tone: '#C76F9B', description: 'Primář' },
 ];
+
+const GoogleMark: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 48 48" className={className} aria-hidden focusable="false">
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+  </svg>
+);
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const { login } = useAuth();
@@ -65,10 +74,69 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [selectedHospitalId, setSelectedHospitalId] = useState('');
   const [hospitalsLoading, setHospitalsLoading] = useState(true);
   const [mobileDarkMode, setMobileDarkMode] = useState(true);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     setMobileDarkMode(document.documentElement.classList.contains('m-dark'));
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch('/api/auth/google/config', { cache: 'no-store' });
+        const json = await response.json().catch(() => ({}));
+        if (!cancelled) setGoogleEnabled(json?.enabled === true);
+      } catch {
+        // Když se konfigurace nenačte, tlačítko se prostě nenabídne.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  /**
+   * Přesměruje na Google. Zbytek (dvoufázové ověření, vystavení session)
+   * dořeší návratová stránka /prihlaseni/google.
+   */
+  const handleGoogleLogin = async () => {
+    setError(null);
+    if (!selectedHospitalId) {
+      setError('Vyberte zdravotnické zařízení');
+      return;
+    }
+
+    setGoogleLoading(true);
+    try {
+      const { getGoogleAuthClient, getGoogleRedirectUrl } = await import('../lib/auth/google-client');
+      const supabase = getGoogleAuthClient();
+      if (!supabase) {
+        setError('Přihlášení přes Google není dostupné.');
+        setGoogleLoading(false);
+        return;
+      }
+
+      // Návratová stránka běží mimo tento komponent, zařízení jí předáme takhle.
+      localStorage.setItem('orm-active-hospital', selectedHospitalId);
+
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: getGoogleRedirectUrl(),
+          queryParams: { prompt: 'select_account' },
+        },
+      });
+
+      if (oauthError) {
+        setError('Přesměrování na Google se nezdařilo.');
+        setGoogleLoading(false);
+      }
+      // Při úspěchu prohlížeč odchází na Google, stav už se nemění.
+    } catch {
+      setError('Přihlášení přes Google není dostupné.');
+      setGoogleLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -145,6 +213,28 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     } catch {
       // Motiv zůstane přepnutý i v prohlížeči, který blokuje lokální úložiště.
     }
+  };
+
+  const renderGoogleButton = (variant: 'mobile' | 'desktop') => {
+    if (!googleEnabled) return null;
+
+    const base = variant === 'mobile'
+      ? 'mobile-login-google flex h-[54px] w-full items-center justify-center gap-2.5 rounded-full text-[14px] font-extrabold'
+      : 'flex h-[50px] w-full items-center justify-center gap-2.5 rounded-xl border border-white/[0.12] bg-white/[0.05] text-[12px] font-bold text-white/85 transition-colors hover:border-white/20 hover:bg-white/[0.09]';
+
+    return (
+      <button
+        type="button"
+        onClick={() => void handleGoogleLogin()}
+        disabled={googleLoading || isLoading || !selectedHospitalId}
+        className={`${base} disabled:cursor-not-allowed disabled:opacity-45`}
+      >
+        {googleLoading
+          ? <Loader2 className="h-4 w-4 animate-spin" />
+          : <GoogleMark className="h-[18px] w-[18px]" />}
+        Přihlásit se přes Google
+      </button>
+    );
   };
 
   const hospitalOptions = hospitals.length === 0
@@ -254,6 +344,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               {isLoading ? <><Loader2 className="h-5 w-5 animate-spin" /> Přihlašování…</> : 'Přihlásit se'}
             </button>
           </form>
+
+          {googleEnabled && (
+            <>
+              <div className="my-6 flex items-center gap-3">
+                <span className="mobile-login-divider h-px flex-1" />
+                <span className="mobile-login-label text-[8px] font-extrabold uppercase tracking-[0.22em]">Správa systému</span>
+                <span className="mobile-login-divider h-px flex-1" />
+              </div>
+              {renderGoogleButton('mobile')}
+            </>
+          )}
 
           <div className="my-6 flex items-center gap-3">
             <span className="mobile-login-divider h-px flex-1" />
@@ -394,6 +495,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   </button>
                 ))}
             </div>
+
+            {googleEnabled && (
+              <div className="mx-auto mt-7 max-w-[430px]">
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-white/[0.07]" />
+                  <span className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/28">Správa systému</span>
+                  <span className="h-px flex-1 bg-white/[0.07]" />
+                </div>
+                {renderGoogleButton('desktop')}
+                <p className="mt-2.5 text-center text-[10px] text-white/25">
+                  Superadministrátor — vyžaduje dvoufázové ověření
+                </p>
+              </div>
+            )}
 
             <button
               type="button"

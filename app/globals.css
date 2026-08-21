@@ -700,6 +700,20 @@ html.capacitor-native select {
   transform: scale(0.985);
 }
 
+/* Přihlášení superadministrátora přes Google — světlé tlačítko v obou motivech,
+   aby logo Google zůstalo čitelné. */
+.mobile-login-google {
+  border: 1px solid var(--login-role-border);
+  background: #ffffff;
+  color: #1f2937;
+  box-shadow: 0 7px 20px rgba(25, 47, 87, 0.08);
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+.mobile-login-google:active {
+  transform: scale(0.985);
+}
+
 .mobile-login-role {
   border: 1px solid var(--login-role-border);
   background: var(--login-role);
