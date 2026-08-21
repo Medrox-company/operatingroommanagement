@@ -141,57 +141,7 @@ Při každém dalším přihlášení už stačí Google + šestimístný kód.
 
 ---
 
-## 6. Bezpečnostní klíč místo opisování kódu
-
-Druhý krok ověření může místo šestimístného čísla obsloužit **bezpečnostní klíč**
-(passkey). Na počítači s Touch ID stačí přiložit prst, jinak prohlížeč ukáže QR
-kód, který vyfotíte mobilem a potvrdíte obličejem. QR kreslí sám prohlížeč —
-aplikace do toho nevstupuje.
-
-Aplikace to už umí, ale **v Supabase je to zatím vypnuté**. Ověřeno voláním
-rozhraní, které vrátilo `mfa_webauthn_enroll_not_enabled`.
-
-### Zapnutí
-
-1. Otevři <https://supabase.com/dashboard/project/krljrxescufmdtfvlaqm/auth/providers>
-2. V sekci **Multi-Factor Authentication** zapni **WebAuthn / Security keys**
-3. Vyplň údaje relying party:
-
-   **Display name:**
-   ```
-   Operatingroom Management
-   ```
-
-   **Relying Party ID** — pozor, bez `www`, bez `https://`:
-   ```
-   operatingroom.eu
-   ```
-
-   **Relying Party Origins:**
-   ```
-   https://operatingroom.eu,https://www.operatingroom.eu,http://localhost:3000
-   ```
-
-> **Relying Party ID se pak už nesmí měnit.** Klíče jsou k němu kryptograficky
-> vázané — po změně přestanou všechny fungovat a musí se registrovat znovu.
-> Proto je tam `operatingroom.eu` bez `www`: klíč pak platí na obou adresách.
-
-### Jak to poběží
-
-- Po přihlášení kódem aplikace nabídne uložení klíče. Souhlas není povinný.
-- Kdo klíč má, uvidí při dalším přihlášení rovnou tlačítko **Potvrdit** —
-  a pod ním odkaz na zadání kódu, kdyby klíč neměl po ruce.
-- Kód z autentizační aplikace zůstává funkční jako záloha.
-- Dokud je funkce v Supabase vypnutá, aplikace nabídku tiše přeskočí
-  a pokračuje kódem. Nic se nerozbije.
-
-Supabase označuje klíče jako **experimentální** a upozorňuje, že se rozhraní
-může změnit bez varování. Proto zůstává kód z aplikace zachovaný — kdyby se
-s klíči něco stalo, přihlášení dál funguje.
-
----
-
-## 7. Ztráta telefonu
+## 6. Ztráta telefonu
 
 Záložní kódy zatím nejsou — místo nich platí, že dvoufázové ověření se
 resetuje přímo v databázi. Reset zvládne jen ten, kdo má přístup k Supabase,
