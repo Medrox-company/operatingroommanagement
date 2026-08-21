@@ -1380,6 +1380,10 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
   );
 
   const submitPassword = useCallback(async (targetUser: HospitalAccessUser) => {
+    if (!hospitalId) {
+      setPasswordError('Není vybráno zdravotnické zařízení.');
+      return;
+    }
     if (passwordValue !== passwordRepeat) {
       setPasswordError('Hesla se neshodují.');
       return;
@@ -1396,7 +1400,7 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: targetUser.id, password: passwordValue }),
+        body: JSON.stringify({ userId: targetUser.id, password: passwordValue, hospitalId }),
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(json.error || 'Heslo se nepodařilo změnit');
@@ -1409,7 +1413,7 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
     } finally {
       setPasswordSaving(false);
     }
-  }, [closePasswordForm, passwordRepeat, passwordValue]);
+  }, [closePasswordForm, hospitalId, passwordRepeat, passwordValue]);
 
   const loadAccess = useCallback(async () => {
     if (!isAdmin || !hospitalId) return;
@@ -1522,7 +1526,10 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
           <div className="flex items-center justify-between gap-4 mb-4">
             <div>
               <h3 className="text-base font-bold text-white">Uživatelé nemocnice</h3>
-              <p className="text-xs text-white/40 mt-1">Povolte uživatelům přihlášení do {hospitalName || 'vybrané nemocnice'}.</p>
+              <p className="text-xs text-white/40 mt-1">
+                Povolte rolím přihlášení do {hospitalName || 'vybrané nemocnice'} a nastavte jim zdejší heslo.
+                Každé zařízení má vlastní hesla — kromě superadministrátora, který se přihlašuje přes Google.
+              </p>
             </div>
             {accessLoading && <Loader2 className="w-5 h-5 animate-spin text-white/40" />}
           </div>
@@ -1582,7 +1589,9 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
                       className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-4"
                     >
                       <p className="mb-3 text-xs text-white/45">
-                        Nové heslo pro <span className="font-semibold text-white/75">{accessUser.name}</span>.
+                        Nové heslo pro <span className="font-semibold text-white/75">{accessUser.name}</span>
+                        {' '}v zařízení <span className="font-semibold text-white/75">{hospitalName || 'vybraném'}</span>.
+                        V ostatních zařízeních zůstane heslo této role beze změny.
                         Uživateli ho předejte bezpečnou cestou — zpětně už ho nikde nepřečtete.
                       </p>
 

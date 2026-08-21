@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
 import { signSession, getSessionCookieOptions } from '@/lib/auth/session';
 import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
-import { isAdminRole } from '../../../../lib/auth/roles';
 
 export const runtime = 'nodejs';
 
@@ -51,10 +50,20 @@ export async function POST(request: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
-  // Ověř heslo přes RPC (pgcrypto bcrypt compare server-side)
-  const { data: match, error: rpcError } = await supabase.rpc('verify_user_password', {
+  const { data: hospital } = await supabase.from('hospitals').select('id').eq('id', hospitalId).maybeSingle();
+  if (!hospital) return NextResponse.json({ error: 'Vybraná nemocnice neexistuje' }, { status: 400 });
+
+  // Heslo se ověřuje proti vybrané nemocnici (bcrypt compare v databázi).
+  // Každá role má v každém zařízení vlastní heslo — viz scripts/17. Funkce
+  // zároveň nahrazuje dřívější samostatnou kontrolu členství: kdo do zařízení
+  // nepatří, nemá tam heslo, takže neprojde.
+  //
+  // Výjimkou je superadministrátor, jehož heslo je vázané na účet, ne na
+  // zařízení. Ten se ale běžně přihlašuje přes Google s dvoufázovým ověřením.
+  const { data: match, error: rpcError } = await supabase.rpc('verify_membership_password', {
     p_email: email,
     p_password: password,
+    p_hospital_id: hospitalId,
   });
 
   if (rpcError) {
@@ -64,22 +73,9 @@ export async function POST(request: NextRequest) {
 
   const user = Array.isArray(match) ? match[0] : match;
   if (!user || !user.id) {
+    // Záměrně nerozlišujeme "špatné heslo" od "nemáte přístup do zařízení" —
+    // jinak by šlo zjišťovat, které role do které nemocnice patří.
     return NextResponse.json({ error: 'Neplatný e-mail nebo heslo' }, { status: 401 });
-  }
-
-  const { data: hospital } = await supabase.from('hospitals').select('id').eq('id', hospitalId).maybeSingle();
-  if (!hospital) return NextResponse.json({ error: 'Vybraná nemocnice neexistuje' }, { status: 400 });
-
-  if (!isAdminRole(user.role)) {
-    const { data: membership } = await supabase
-      .from('hospital_user_memberships')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .eq('hospital_id', hospitalId)
-      .maybeSingle();
-    if (!membership) {
-      return NextResponse.json({ error: 'Pro vybranou nemocnici nemáte oprávnění' }, { status: 403 });
-    }
   }
 
   // Úspěch — vystav session cookie
