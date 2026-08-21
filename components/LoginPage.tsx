@@ -482,74 +482,92 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         )}
 
         {desktopScreen === 'roles' && (
-          <section className="w-full max-w-[760px] text-center">
-            <p className="text-[9px] font-bold uppercase tracking-[0.28em] text-[#64B9CD]">Vstup do systému</p>
-            <h2 className="mt-3 text-[34px] font-extrabold tracking-[-0.035em] text-white">Přihlášení do aplikace</h2>
-            <p className="mt-2 text-[13px] text-white/35">Vyberte zdravotnické zařízení a svou roli</p>
+          // Šířka 600 px je zvolená tak, aby se všech pět rolí vešlo vedle sebe
+          // s plnými názvy. Užší panel by vynutil zkratky typu „Mgmt", a role
+          // ve zdravotnickém systému nemá smysl komolit.
+          <section className="login-glass w-full max-w-[600px] rounded-[26px] p-8 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-[0.26em] text-[#64B9CD]">Vstup do systému</p>
+            <h2 className="mt-3 text-[28px] font-extrabold tracking-[-0.032em] text-white">Přihlášení do aplikace</h2>
+            <p className="mt-1.5 text-[12.5px] text-white/38">Vyberte zařízení a svou roli</p>
 
             {error && (
-              <div className="mx-auto mt-6 flex max-w-[430px] items-start gap-2.5 rounded-xl border border-red-400/20 bg-red-400/[0.08] px-3.5 py-3 text-left text-red-300">
+              <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-red-400/20 bg-red-400/[0.08] px-3.5 py-3 text-left text-red-300">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span className="text-[12px] font-semibold leading-snug">{error}</span>
               </div>
             )}
 
-            <div className="mx-auto mt-7 max-w-[430px] text-left">
-              <label htmlFor="desktop-role-hospital" className="mb-2 block text-[8px] font-bold uppercase tracking-[0.22em] text-white/32">Zdravotnické zařízení</label>
+            <div className="mt-7">
+              <label htmlFor="desktop-role-hospital" className="mb-2.5 block text-[8px] font-bold uppercase tracking-[0.22em] text-white/30">Zdravotnické zařízení</label>
               <div className="relative">
-                <Building2 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#64B9CD]" />
+                <Building2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#64B9CD]" />
                 <select
                   id="desktop-role-hospital"
                   value={selectedHospitalId}
                   onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }}
                   disabled={hospitalsLoading || hospitals.length === 0}
-                  className="h-[52px] w-full appearance-none rounded-xl border border-white/[0.08] bg-[#0C1828] pl-11 pr-11 text-[12px] font-semibold text-white/82 outline-none transition-colors focus:border-[#64B9CD]/45 disabled:opacity-50"
+                  className="login-glass-field h-[50px] w-full appearance-none rounded-xl pl-11 pr-11 text-[12.5px] font-semibold text-white/86 outline-none transition-colors disabled:opacity-50"
                 >
                   {hospitalOptions}
                 </select>
                 {hospitalsLoading
                   ? <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-white/30" />
-                  : <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />}
+                  : <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/32" />}
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              {QUICK_ROLES.map(role => (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() => handleRoleSelect(role.id)}
-                    disabled={isLoading || !selectedHospitalId}
-                    className="group flex min-h-[104px] flex-col items-center justify-center rounded-2xl border border-white/[0.065] bg-white/[0.03] px-5 text-center transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-white/[0.13] hover:bg-white/[0.055] disabled:opacity-40"
-                  >
-                    <span className="block max-w-full truncate text-[15px] font-bold text-white/90">{role.label}</span>
-                    <span className="mt-2 block text-[10px] text-white/30">{role.description}</span>
-                  </button>
-                ))}
+            <div className="mt-6">
+              <span className="mb-2.5 block text-[8px] font-bold uppercase tracking-[0.22em] text-white/30">Role</span>
+              <div className="grid grid-cols-5 gap-2.5">
+                {QUICK_ROLES.map(role => {
+                  const Icon = role.icon;
+                  const active = selectedRole === role.id;
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => handleRoleSelect(role.id)}
+                      disabled={isLoading || !selectedHospitalId}
+                      aria-pressed={active}
+                      className="group flex flex-col items-center gap-2.5 rounded-[15px] border border-white/[0.07] bg-white/[0.032] px-1.5 pb-3.5 pt-4 transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+                      style={active ? { borderColor: `${role.tone}66`, backgroundColor: `${role.tone}12` } : undefined}
+                    >
+                      <span
+                        className="grid h-9 w-9 place-items-center rounded-[11px]"
+                        style={{ color: role.tone, backgroundColor: `${role.tone}18` }}
+                      >
+                        <Icon className="h-[17px] w-[17px]" strokeWidth={1.9} />
+                      </span>
+                      <span className="block whitespace-nowrap text-[11px] font-bold text-white/92">{role.label}</span>
+                      <span className="-mt-1.5 block whitespace-nowrap text-[9px] text-white/32">{role.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <p className="mt-4 text-[11px] text-white/28">
-              Po výběru role zadáte heslo. Každé zdravotnické zařízení má vlastní hesla.
+            <p className="mt-3.5 text-[10px] text-white/26">
+              Po výběru role zadáte heslo. Každé zařízení má vlastní hesla.
             </p>
 
             {googleEnabled && (
-              <div className="mx-auto mt-7 max-w-[430px]">
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="h-px flex-1 bg-white/[0.07]" />
+              <>
+                <div className="mb-4 mt-6 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-white/[0.085]" />
                   <span className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/28">Správa systému</span>
-                  <span className="h-px flex-1 bg-white/[0.07]" />
+                  <span className="h-px flex-1 bg-white/[0.085]" />
                 </div>
                 {renderGoogleButton('desktop')}
-                <p className="mt-2.5 text-center text-[10px] text-white/25">
+                <p className="mt-2.5 text-[10px] text-white/25">
                   Superadministrátor — vyžaduje dvoufázové ověření
                 </p>
-              </div>
+              </>
             )}
 
             <button
               type="button"
               onClick={() => { setError(null); setDesktopScreen('form'); }}
-              className="mx-auto mt-7 inline-flex items-center gap-2 text-[11px] font-semibold text-white/34 transition-colors hover:text-white/75"
+              className="mx-auto mt-6 inline-flex items-center gap-2 text-[11px] font-semibold text-white/34 transition-colors hover:text-white/75"
             >
               <Lock className="h-3.5 w-3.5" />
               Přihlásit se vlastním účtem
