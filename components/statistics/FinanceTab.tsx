@@ -10,7 +10,7 @@ import {
   C, formatNumber,
 } from './shared';
 import { toast } from '@/components/ui/toast';
-import { ColumnChart, StatSectionLabel, InsightPanel } from './AppCharts';
+import { ColumnChart, GlassCalendar, StatSectionLabel } from './AppCharts';
 import type { OperatingRoom } from '../../types';
 import {
   fetchNotificationsLog,
@@ -35,6 +35,8 @@ interface FinanceTabProps {
    * komponenta si načte vlastní řez podle aktuálního období.
    */
   statusHistory?: StatusHistoryRow[];
+  /** Delší databázová historie pro měsíční finanční kalendář. */
+  calendarHistory?: StatusHistoryRow[];
   /** Reálné záznamy odeslaných hlášení za zvolené období. */
   notifications?: NotificationLogRow[] | null;
 }
@@ -94,6 +96,13 @@ const localDateKey = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+const operationalToday = () => {
+  const date = new Date();
+  if (date.getHours() < 7) date.setDate(date.getDate() - 1);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
 const formatDuration = (minutes: number) => {
   const rounded = Math.round(minutes);
   if (rounded < 60) return `${rounded} min`;
@@ -107,9 +116,9 @@ const formatDuration = (minutes: number) => {
  * (bez přestávek), ne kalendářní čas. Sál s osmihodinovým provozem, který
  * odslouží šest hodin, má vytížení 75 %, ne 25 % z celého dne.
  */
-const roomCapacityHours = (room: OperatingRoom, period: Period): number => {
+const roomCapacityHours = (room: OperatingRoom, period: Period, anchorDate = new Date()): number => {
   const days = PERIOD_DAYS[period];
-  const today = new Date();
+  const today = new Date(anchorDate);
   let minutes = 0;
 
   for (let i = 0; i < days; i += 1) {
@@ -491,6 +500,7 @@ export function FinanceTab({
   periodLabel,
   view = 'finance',
   statusHistory: providedHistory,
+  calendarHistory,
   notifications: providedNotifications,
 }: FinanceTabProps) {
   // Barvy fází bereme z nastavení workflow statusů — graf tak odpovídá tomu,
@@ -502,6 +512,11 @@ export function FinanceTab({
   const [specialtyAllocations, setSpecialtyAllocations] = useState<SpecialtyAllocation[]>([]);
   const [specialtyDepartments, setSpecialtyDepartments] = useState<SpecialtyDepartment[]>([]);
   const [delayDataLoading, setDelayDataLoading] = useState(true);
+  const [calendarDay, setCalendarDay] = useState<Date>(() => operationalToday());
+  const [calendarSelectionActive, setCalendarSelectionActive] = useState(false);
+  const [selectedDayHistory, setSelectedDayHistory] = useState<StatusHistoryRow[]>([]);
+  const [selectedDayNotifications, setSelectedDayNotifications] = useState<NotificationLogRow[]>([]);
+  const [selectedDayLoading, setSelectedDayLoading] = useState(false);
   // Optimistická lokální mapa hodinových sazeb (do doby než parent rerendruje rooms)
   const [hourlyCostOverride, setHourlyCostOverride] = useState<Record<string, number | null>>({});
   // Editor state
@@ -554,6 +569,64 @@ export function FinanceTab({
     return () => { cancelled = true; };
   }, [periodLabel, providedNotifications]);
 
+  const handleCalendarDayChange = useCallback((day: Date) => {
+    const normalized = new Date(day);
+    normalized.setHours(0, 0, 0, 0);
+    setCalendarDay(normalized);
+    setCalendarSelectionActive(true);
+  }, []);
+
+  // Změna globálního období ruší denní filtr. Samotný klik v kalendáři pak
+  // vždy načte přesný lokální kalendářní den přímo z databáze.
+  useEffect(() => {
+    setCalendarSelectionActive(false);
+    setCalendarDay(operationalToday());
+  }, [periodLabel]);
+
+  useEffect(() => {
+    if (!calendarSelectionActive) return;
+    let cancelled = false;
+    const fromDate = new Date(calendarDay);
+    fromDate.setHours(0, 0, 0, 0);
+    const toDate = new Date(fromDate);
+    toDate.setDate(toDate.getDate() + 1);
+    toDate.setMilliseconds(-1);
+
+    setSelectedDayLoading(true);
+    setSelectedDayHistory([]);
+    setSelectedDayNotifications([]);
+
+    void Promise.all([
+      fetchStatusHistory({ fromDate, toDate, all: true }),
+      fetchNotificationsLog({ fromDate, toDate, all: true }),
+    ]).then(([statusRows, notifications]) => {
+      if (cancelled) return;
+      setSelectedDayHistory(statusRows ?? []);
+      setSelectedDayNotifications(notifications ?? []);
+    }).catch(error => {
+      console.error('[FinanceTab] failed to load selected calendar day', error);
+      if (!cancelled) {
+        setSelectedDayHistory([]);
+        setSelectedDayNotifications([]);
+        toast.error('Statistiky vybraného dne se nepodařilo načíst.');
+      }
+    }).finally(() => {
+      if (!cancelled) setSelectedDayLoading(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [calendarDay, calendarSelectionActive]);
+
+  const calculationHistory = calendarSelectionActive ? selectedDayHistory : history;
+  const calculationNotifications = calendarSelectionActive ? selectedDayNotifications : notificationRows;
+  const calculationPeriod: Period = calendarSelectionActive ? 'den' : periodLabel;
+  const calculationAnchorDate = calendarSelectionActive ? calendarDay : undefined;
+  const selectedDayStartMs = useMemo(() => {
+    const start = new Date(calendarDay);
+    start.setHours(0, 0, 0, 0);
+    return start.getTime();
+  }, [calendarDay]);
+
   // Odbornost operatéra je určena výhradně rozpisem sálů v databázi. Rozpis
   // načítáme pro všechny roky, do kterých zvolené období zasahuje.
   useEffect(() => {
@@ -564,7 +637,7 @@ export function FinanceTab({
       setDelayDataLoading(true);
       const now = new Date();
       const from = new Date(now.getTime() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000);
-      const years = Array.from(new Set([from.getFullYear(), now.getFullYear()]));
+      const years = Array.from(new Set([from.getFullYear(), now.getFullYear(), calendarDay.getFullYear()]));
 
       try {
         const payloads = await Promise.all(years.map(async year => {
@@ -602,14 +675,14 @@ export function FinanceTab({
       cancelled = true;
       controller.abort();
     };
-  }, [periodLabel]);
+  }, [calendarDay, periodLabel]);
 
   // ── Per-room hodiny provozu spočítané z reálných duration_seconds ─────
   const roomBusyHours = useMemo(() => {
     const map = new Map<string, number>();
     const roomById = new Map(rooms.map(room => [room.id, room]));
     rooms.forEach(r => map.set(r.id, 0));
-    for (const row of history) {
+    for (const row of calculationHistory) {
       if (!row.operating_room_id) continue;
       // Doba fáze je uložená jen u přechodu mezi fázemi. Ostatní události
       // (příjezd pacienta, konec výkonu) nesou tutéž hodnotu znovu a jejich
@@ -628,7 +701,7 @@ export function FinanceTab({
       map.set(row.operating_room_id, prev + workingSeconds / 3600);
     }
     return map;
-  }, [history, rooms]);
+  }, [calculationHistory, rooms]);
 
   // ── Sazba per sál (s lokálním override pro instant feedback) ─────────
   const getRate = useCallback((room: OperatingRoom): number | null => {
@@ -687,10 +760,12 @@ export function FinanceTab({
         allocation,
       ]),
     );
-    const analysisFromMs = Date.now() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000;
+    const analysisFromMs = calendarSelectionActive
+      ? selectedDayStartMs
+      : Date.now() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000;
 
     const eventsByRoom = new Map<string, StatusHistoryRow[]>();
-    for (const event of history) {
+    for (const event of calculationHistory) {
       if (event.event_type !== 'operation_start' && event.event_type !== 'operation_end') continue;
       const current = eventsByRoom.get(event.operating_room_id) ?? [];
       current.push(event);
@@ -752,7 +827,7 @@ export function FinanceTab({
       }
     }
 
-    for (const notification of notificationRows) {
+    for (const notification of calculationNotifications) {
       if (!notification.room_id) continue;
       const notificationRoom = roomById.get(notification.room_id);
       const notificationAt = new Date(notification.created_at);
@@ -776,7 +851,7 @@ export function FinanceTab({
     }
 
     return result;
-  }, [history, notificationRows, periodLabel, rooms, specialtyAllocations, specialtyDepartments]);
+  }, [calculationHistory, calculationNotifications, calendarSelectionActive, periodLabel, rooms, selectedDayStartMs, specialtyAllocations, specialtyDepartments]);
 
   // ── Per-room cost analýza ────────────────────────────────────────────
   const roomFinance = useMemo(() => {
@@ -785,7 +860,7 @@ export function FinanceTab({
       const hours = roomBusyHours.get(r.id) ?? 0;
       const cost = rate !== null && rate >= 0 ? rate * hours : null;
       // Vytížení se poměřuje proti pracovní době sálu, ne proti kalendáři.
-      const capacityHours = roomCapacityHours(r, periodLabel);
+      const capacityHours = roomCapacityHours(r, calculationPeriod, calculationAnchorDate);
       const utilizationPct = capacityHours > 0
         ? Math.min(100, (hours / capacityHours) * 100)
         : 0;
@@ -801,7 +876,7 @@ export function FinanceTab({
         capacityHours,
         cost,
         utilizationPct,
-        opsCount: history.filter(row =>
+        opsCount: calculationHistory.filter(row =>
           row.operating_room_id === r.id
           && row.event_type === 'operation_start'
           && isInsideRoomWorkingHours(r, new Date(row.timestamp))
@@ -822,7 +897,7 @@ export function FinanceTab({
           .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'cs')),
       };
     });
-  }, [rooms, getRate, roomBusyHours, periodLabel, history, roomOperationalMetrics]);
+  }, [rooms, getRate, roomBusyHours, calculationPeriod, calculationAnchorDate, calculationHistory, roomOperationalMetrics]);
 
   const workingOpsCount = useMemo(
     () => roomFinance.reduce((sum, room) => sum + room.opsCount, 0),
@@ -834,6 +909,36 @@ export function FinanceTab({
       : 0,
     [roomFinance],
   );
+
+  /** Intenzita dnů v kalendáři = skutečný náklad uvnitř pracovní doby. */
+  const financeCalendarHeat = useMemo(() => {
+    const source = calendarHistory ?? history;
+    const roomById = new Map(rooms.map(room => [room.id, room]));
+    const costsByDay = new Map<string, number>();
+
+    for (const row of source) {
+      if (row.event_type !== 'step_change' || isIdlePhaseName(row.step_name)) continue;
+      const seconds = Number(row.duration_seconds ?? 0);
+      if (!Number.isFinite(seconds) || seconds <= 0) continue;
+      const room = roomById.get(row.operating_room_id);
+      if (!room) continue;
+      const rate = getRate(room);
+      if (rate === null || rate < 0) continue;
+
+      const end = new Date(row.timestamp);
+      const start = new Date(end.getTime() - seconds * 1_000);
+      for (const overlap of roomWorkingOverlapByDay(room, start, end)) {
+        const cost = (overlap.seconds / 3600) * rate;
+        costsByDay.set(overlap.date, (costsByDay.get(overlap.date) ?? 0) + cost);
+      }
+    }
+
+    const maximum = Math.max(0, ...costsByDay.values());
+    if (maximum <= 0) return {};
+    return Object.fromEntries(
+      Array.from(costsByDay.entries()).map(([date, cost]) => [date, cost / maximum]),
+    );
+  }, [calendarHistory, getRate, history, rooms]);
 
   // ── Souhrnné metriky ─────────────────────────────────────────────────
   const summary = useMemo(() => {
@@ -900,8 +1005,8 @@ export function FinanceTab({
 
   // ── Daily cost time series (pouze pro daily granularitu pokud period >= týden) ──
   const dailySeries = useMemo(() => {
-    if (periodLabel === 'den') return [];
-    const days = periodLabel === 'týden' ? 7 : periodLabel === 'měsíc' ? 30 : 30;
+    if (calculationPeriod === 'den') return [];
+    const days = calculationPeriod === 'týden' ? 7 : calculationPeriod === 'měsíc' ? 30 : 30;
     const now = new Date();
     const buckets: Array<{ date: string; label: string; hours: number; cost: number }> = [];
     for (let i = days - 1; i >= 0; i--) {
@@ -920,7 +1025,7 @@ export function FinanceTab({
     const roomById = new Map(rooms.map(room => [room.id, room]));
     rooms.forEach(r => ratesByRoom.set(r.id, getRate(r)));
 
-    for (const row of history) {
+    for (const row of calculationHistory) {
       if (!row.operating_room_id) continue;
       // Stejné pravidlo jako u součtu hodin — jen přechody fází a bez
       // klidového stavu „Sál připraven".
@@ -942,7 +1047,7 @@ export function FinanceTab({
       }
     }
     return buckets;
-  }, [history, periodLabel, rooms, getRate]);
+  }, [calculationHistory, calculationPeriod, rooms, getRate]);
 
   // ── Cost breakdown by department ─────────────────────────────────────
   const departmentBreakdown = useMemo(() => {
@@ -997,7 +1102,7 @@ export function FinanceTab({
     const byRoom = new Map<string, Map<string, number>>();
     const roomById = new Map(rooms.map(room => [room.id, room]));
 
-    for (const row of history) {
+    for (const row of calculationHistory) {
       if (!row.operating_room_id) continue;
       if (row.event_type !== 'step_change') continue;
       if (isIdlePhaseName(row.step_name)) continue;
@@ -1034,7 +1139,7 @@ export function FinanceTab({
           phases,
         };
       });
-  }, [history, roomFinance, rooms, summary.totalCost]);
+  }, [calculationHistory, roomFinance, rooms, summary.totalCost]);
 
   const roomPhaseCosts = useMemo(() => allRoomPhaseCosts.slice(0, 5), [allRoomPhaseCosts]);
 
@@ -1091,46 +1196,6 @@ export function FinanceTab({
     () => selectedCostRoom?.phases.reduce((sum, phase) => sum + phase.cost, 0) ?? 0,
     [selectedCostRoom],
   );
-
-  /** Doporučení odvozená z reálných čísel, ne z odhadů. */
-  const financeInsights = useMemo(() => {
-    const items: Array<{ title: string; text: string; tone?: 'warn' | 'info' | 'good' }> = [];
-
-    if (summary.unconfiguredCount > 0) {
-      items.push({
-        title: 'Doplňte hodinové sazby',
-        text: `${summary.unconfiguredCount} ${summary.unconfiguredCount === 1 ? 'sál nemá' : 'sály nemají'} nastavenou sazbu a nevstupují do výpočtů. Skutečné náklady jsou tedy vyšší, než ukazuje součet.`,
-        tone: 'warn',
-      });
-    }
-
-    const priciest = roomPhaseCosts[0];
-    if (priciest && priciest.share >= 30) {
-      items.push({
-        title: `${priciest.name} tvoří ${priciest.share} % nákladů`,
-        text: 'Jeden sál nese velkou část rozpočtu. Zkontrolujte jeho vytížení — vysoký náklad při nízkém vytížení znamená drahé prostoje.',
-        tone: 'info',
-      });
-    }
-
-    if (summary.costPerOperation > 0) {
-      items.push({
-        title: `Náklad na výkon ${fmtCZKShort(summary.costPerOperation)} Kč`,
-        text: `Počítáno z ${summary.totalHours.toFixed(1)} h provozu a ${workingOpsCount} výkonů uvnitř pracovní doby. Delší prostoje mezi výkony tuhle částku zvedají.`,
-        tone: 'info',
-      });
-    }
-
-    if (summary.unconfiguredCount === 0 && summary.configuredCount > 0) {
-      items.push({
-        title: 'Sazby jsou kompletní',
-        text: 'Všechny sály mají nastavenou hodinovou sazbu, výpočty pokrývají celý provoz.',
-        tone: 'good',
-      });
-    }
-
-    return items;
-  }, [summary, roomPhaseCosts, workingOpsCount]);
 
   /** Čtyři nejdražší sály do horní řady karet — jako nabídka na předloze. */
   const featuredRooms = useMemo(
@@ -1303,8 +1368,29 @@ export function FinanceTab({
                   Finance
                 </p>
                 <p className="text-2xl font-semibold mt-1.5" style={{ color: C.text }}>
-                  Náklady provozu za {periodLabel}
+                  {calendarSelectionActive
+                    ? `Náklady provozu · ${calendarDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                    : `Náklady provozu za ${periodLabel}`}
                 </p>
+                {calendarSelectionActive && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span
+                      className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                      style={{ color: C.accent, background: `${C.accent}14`, border: `1px solid ${C.accent}30` }}
+                      aria-live="polite"
+                    >
+                      {selectedDayLoading ? 'Načítám vybraný den…' : 'Statistiky vybraného dne'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarSelectionActive(false)}
+                      className="text-[10px] font-semibold transition-opacity hover:opacity-80"
+                      style={{ color: C.muted }}
+                    >
+                      Zpět na období: {periodLabel}
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap gap-2.5">
                 <HeadChip
@@ -1422,7 +1508,9 @@ export function FinanceTab({
         {/* ── Boční sloupec ── */}
         <div className="flex flex-col gap-4">
           <Card className="p-5">
-            <p className="text-[13px] font-semibold" style={{ color: C.text }}>Souhrn období</p>
+            <p className="text-[13px] font-semibold" style={{ color: C.text }}>
+              {calendarSelectionActive ? 'Souhrn vybraného dne' : 'Souhrn období'}
+            </p>
             <p className="text-[11px] mt-0.5" style={{ color: C.muted }}>Celkové náklady provozu</p>
             <p className="text-3xl font-semibold tabular-nums mt-3" style={{ color: C.accent }}>
               {fmtCZKShort(summary.totalCost)}
@@ -1444,7 +1532,15 @@ export function FinanceTab({
             </div>
           </Card>
 
-          <InsightPanel accent={C.accent} items={financeInsights} />
+          <div className="print-hide">
+            <GlassCalendar
+              value={calendarDay}
+              onChange={handleCalendarDayChange}
+              heat={financeCalendarHeat}
+              accent={C.accent}
+              today={operationalToday()}
+            />
+          </div>
         </div>
       </div>
 
@@ -1794,9 +1890,6 @@ export function FinanceTab({
                 </div>
               </div>
 
-              <p className="text-[11px] leading-relaxed mt-3" style={{ color: C.muted }}>
-                Všechny hodnoty zahrnují pouze nastavenou pracovní dobu sálu. Minuty prostojů vycházejí z průniku dvojice konec–následující začátek se směnou. Pozdní start se počítá až po překročení hranice začátek směny + 60 minut, pouze ve dnech s AM rozpisem odbornosti. Hlášení mimo pracovní dobu se nezapočítávají; databáze u nich neukládá délku zdržení, proto jsou uvedena jako počet událostí bez odhadované ceny.
-              </p>
             </div>
           </div>
         </div>

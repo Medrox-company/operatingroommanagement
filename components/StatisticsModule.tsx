@@ -2260,6 +2260,7 @@ tabs={[
                 avgUtilization={avgUtil}
                 periodLabel={period}
                 statusHistory={statusHistory}
+                calendarHistory={dayHistory}
                 notifications={notifications}
               />
             </div>
@@ -2890,6 +2891,7 @@ tabs={[
               avgUtilization={avgUtil}
               periodLabel={period}
               statusHistory={statusHistory}
+              calendarHistory={dayHistory}
               notifications={notifications}
             />
           </div>
