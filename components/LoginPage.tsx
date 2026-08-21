@@ -35,22 +35,32 @@ interface LoginHospital {
   hospital_short_name: string | null;
 }
 
+/**
+ * Role nabízené na přihlašovací stránce.
+ *
+ * Hesla tu schválně nejsou. Dřív se odsud přihlašovalo jedním kliknutím
+ * s heslem zapsaným v kódu, jenže ten kód si stáhne každý návštěvník stránky.
+ * Navíc má od scripts/17 každá role v každé nemocnici vlastní heslo, takže
+ * jedna zapsaná hodnota už ani nemůže platit.
+ *
+ * Kliknutí na roli proto jen předvyplní přihlašovací jméno a vyžádá heslo.
+ *
+ * Superadministrátor tu není vůbec — přihlašuje se přes Google
+ * s dvoufázovým ověřením.
+ */
 const QUICK_ROLES: Array<{
   id: QuickRoleId;
   label: string;
   email: string;
-  password: string;
   icon: LucideIcon;
   tone: string;
   description: string;
 }> = [
-  // Superadministrátor tu schválně není — přihlašuje se přes Google
-  // s dvoufázovým ověřením, ne heslem uloženým v kódu stránky.
-  { id: 'admin', label: 'Administrátor', email: 'admin@nemocnice.cz', password: 'admin123', icon: Shield, tone: '#D99C35', description: 'Plný přístup' },
-  { id: 'aro', label: 'ARO', email: 'aro@nemocnice.cz', password: 'aro123', icon: Activity, tone: '#24A8C8', description: 'Anestezie' },
-  { id: 'cos', label: 'COS', email: 'cos@nemocnice.cz', password: 'cos123', icon: Stethoscope, tone: '#2AAE82', description: 'Operační sály' },
-  { id: 'management', label: 'Management', email: 'management@nemocnice.cz', password: 'mgmt123', icon: Briefcase, tone: '#8B7AD8', description: 'Vedení' },
-  { id: 'primar', label: 'Primariát', email: 'primar@nemocnice.cz', password: 'primar123', icon: ClipboardList, tone: '#C76F9B', description: 'Primář' },
+  { id: 'admin', label: 'Administrátor', email: 'admin@nemocnice.cz', icon: Shield, tone: '#D99C35', description: 'Plný přístup' },
+  { id: 'aro', label: 'ARO', email: 'aro@nemocnice.cz', icon: Activity, tone: '#24A8C8', description: 'Anestezie' },
+  { id: 'cos', label: 'COS', email: 'cos@nemocnice.cz', icon: Stethoscope, tone: '#2AAE82', description: 'Operační sály' },
+  { id: 'management', label: 'Management', email: 'management@nemocnice.cz', icon: Briefcase, tone: '#8B7AD8', description: 'Vedení' },
+  { id: 'primar', label: 'Primariát', email: 'primar@nemocnice.cz', icon: ClipboardList, tone: '#C76F9B', description: 'Primář' },
 ];
 
 const GoogleMark: React.FC<{ className?: string }> = ({ className }) => (
@@ -76,6 +86,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [mobileDarkMode, setMobileDarkMode] = useState(true);
   const [googleEnabled, setGoogleEnabled] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<QuickRoleId | null>(null);
 
   useEffect(() => {
     setMobileDarkMode(document.documentElement.classList.contains('m-dark'));
@@ -195,13 +206,27 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     void submitCredentials(email, password);
   };
 
-  const handleQuickLogin = async (roleId: QuickRoleId) => {
+  /**
+   * Výběr role jen předvyplní přihlašovací jméno a přesune uživatele
+   * k zadání hesla. Heslo se liší podle zvoleného zařízení, takže ho
+   * nelze nikam předvyplnit.
+   */
+  const handleRoleSelect = (roleId: QuickRoleId) => {
     const role = QUICK_ROLES.find(item => item.id === roleId);
     if (!role) return;
 
+    setError(null);
     setEmail(role.email);
-    setPassword(role.password);
-    await submitCredentials(role.email, role.password);
+    setPassword('');
+    setSelectedRole(roleId);
+    setDesktopScreen('form');
+
+    // Na mobilu se jen posuneme do pole s heslem, obrazovky se nepřepínají.
+    window.setTimeout(() => {
+      const field = document.getElementById('login-password')
+        ?? document.getElementById('desktop-form-password');
+      (field as HTMLInputElement | null)?.focus();
+    }, 60);
   };
 
   const toggleMobileTheme = () => {
@@ -358,20 +383,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
           <div className="my-6 flex items-center gap-3">
             <span className="mobile-login-divider h-px flex-1" />
-            <span className="mobile-login-label text-[8px] font-extrabold uppercase tracking-[0.22em]">Rychlý vstup</span>
+            <span className="mobile-login-label text-[8px] font-extrabold uppercase tracking-[0.22em]">Vyberte roli</span>
             <span className="mobile-login-divider h-px flex-1" />
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             {QUICK_ROLES.map(role => {
               const Icon = role.icon;
+              const active = selectedRole === role.id;
               return (
                 <button
                   key={role.id}
                   type="button"
-                  onClick={() => void handleQuickLogin(role.id)}
+                  onClick={() => handleRoleSelect(role.id)}
                   disabled={isLoading || !selectedHospitalId}
+                  aria-pressed={active}
                   className="mobile-login-role flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl px-1.5 py-3 disabled:opacity-40"
+                  style={active ? { borderColor: role.tone, boxShadow: `0 0 0 1px ${role.tone}55` } : undefined}
                 >
                   <span className="grid h-8 w-8 place-items-center rounded-[11px]" style={{ color: role.tone, backgroundColor: `${role.tone}18` }}>
                     <Icon className="h-4 w-4" strokeWidth={1.9} />
@@ -381,6 +409,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               );
             })}
           </div>
+
+          <p className="mobile-login-label mt-3 text-center text-[10px] font-semibold">
+            Role předvyplní přihlašovací jméno. Heslo zadejte výše.
+          </p>
         </section>
 
         <footer className="mt-auto pt-10 text-center">
@@ -486,7 +518,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <button
                     key={role.id}
                     type="button"
-                    onClick={() => void handleQuickLogin(role.id)}
+                    onClick={() => handleRoleSelect(role.id)}
                     disabled={isLoading || !selectedHospitalId}
                     className="group flex min-h-[104px] flex-col items-center justify-center rounded-2xl border border-white/[0.065] bg-white/[0.03] px-5 text-center transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-white/[0.13] hover:bg-white/[0.055] disabled:opacity-40"
                   >
@@ -495,6 +527,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   </button>
                 ))}
             </div>
+
+            <p className="mt-4 text-[11px] text-white/28">
+              Po výběru role zadáte heslo. Každé zdravotnické zařízení má vlastní hesla.
+            </p>
 
             {googleEnabled && (
               <div className="mx-auto mt-7 max-w-[430px]">

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
 import { requireSession, requireAdmin } from '@/lib/auth/server';
-import { isAdminRole } from '../../../../lib/auth/roles';
+import { isAdminRole, isSuperAdminRole } from '../../../../lib/auth/roles';
 
 export const runtime = 'nodejs';
 
@@ -134,6 +134,41 @@ export async function POST(req: NextRequest) {
         hospital_contact_email: null,
         hospital_notes: null,
       });
+    }
+
+    // Zakladatel musí do nového zařízení sám dostat přístup.
+    //
+    // Od scripts/17 se administrátor řídí členstvím jako provozní role, takže
+    // bez tohoto kroku by právě založené zařízení nešlo spravovat. Heslo se
+    // přebírá z členství, přes které je právě přihlášený — jde o týž účet,
+    // takže se nic nesdílí napříč rolemi. Ostatní role zůstávají bez členství
+    // a přístup i heslo jim je potřeba nastavit vědomě; kopírovat sem hesla
+    // z jiné nemocnice by vrátilo přesně ten problém, kvůli kterému jsou
+    // hesla nově oddělená.
+    //
+    // Superadministrátor má přístup ke všem zařízením, ten členství nepotřebuje.
+    if (!isSuperAdminRole(auth.user.role)) {
+      const { data: sourceMembership } = await admin
+        .from('hospital_user_memberships')
+        .select('password_hash')
+        .eq('user_id', auth.user.sub)
+        .eq('hospital_id', auth.user.hospitalId)
+        .maybeSingle();
+
+      const { error: membershipError } = await admin
+        .from('hospital_user_memberships')
+        .upsert(
+          {
+            hospital_id: id,
+            user_id: auth.user.sub,
+            password_hash: sourceMembership?.password_hash ?? null,
+          },
+          { onConflict: 'hospital_id,user_id' },
+        );
+
+      if (membershipError) {
+        console.error('[admin/hospital] Členství zakladatele se nepodařilo založit:', membershipError);
+      }
     }
   }
   return NextResponse.json({ success: true, hospital: data });

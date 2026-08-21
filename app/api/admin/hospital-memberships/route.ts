@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/server';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
-import { isAdminRole } from '../../../../lib/auth/roles';
+import { hasGlobalHospitalAccess } from '../../../../lib/auth/roles';
 
 export const runtime = 'nodejs';
 
@@ -18,19 +18,34 @@ export async function GET(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const [{ data: users, error: usersError }, { data: memberships, error: membershipsError }] = await Promise.all([
     admin.from('app_users').select('id,email,name,role,is_active').order('name'),
-    admin.from('hospital_user_memberships').select('user_id').eq('hospital_id', hospitalId),
+    admin
+      .from('hospital_user_memberships')
+      .select('user_id,password_hash')
+      .eq('hospital_id', hospitalId),
   ]);
   if (usersError || membershipsError) {
     return NextResponse.json({ error: usersError?.message || membershipsError?.message }, { status: 500 });
   }
-  const memberIds = new Set((memberships || []).map(row => String(row.user_id)));
+
+  // Nikdy neposílat samotný otisk hesla — stačí, jestli vůbec existuje.
+  const memberPasswords = new Map(
+    (memberships || []).map(row => [String(row.user_id), Boolean(row.password_hash)]),
+  );
+
   return NextResponse.json({
-    users: (users || []).map(user => ({
-      ...user,
-      id: String(user.id),
-      has_access: isAdminRole(user.role) || memberIds.has(String(user.id)),
-      access_is_global: isAdminRole(user.role),
-    })),
+    users: (users || []).map(user => {
+      const isGlobal = hasGlobalHospitalAccess(user.role);
+      const hasMembership = memberPasswords.has(String(user.id));
+      return {
+        ...user,
+        id: String(user.id),
+        has_access: isGlobal || hasMembership,
+        access_is_global: isGlobal,
+        // Členství bez hesla znamená povolený přístup, kterým se ale nedá
+        // přihlásit. Panel na to musí upozornit, jinak vypadá vše v pořádku.
+        has_password: isGlobal || memberPasswords.get(String(user.id)) === true,
+      };
+    }),
   });
 }
 
@@ -54,12 +69,16 @@ export async function PUT(request: NextRequest) {
     admin.from('app_users').select('id,role').eq('id', userId).maybeSingle(),
   ]);
   if (!hospital || !user) return NextResponse.json({ error: 'Nemocnice nebo uživatel neexistuje' }, { status: 404 });
-  if (isAdminRole(user.role)) return NextResponse.json({ success: true, global: true });
+  // Jen superadministrátor má přístup všude bez členství. Administrátor se od
+  // scripts/17 řídí členstvím stejně jako provozní role.
+  if (hasGlobalHospitalAccess(user.role)) return NextResponse.json({ success: true, global: true });
 
   const result = enabled
+    // Bez `ignoreDuplicates` by opakované povolení přepsalo řádek a smazalo
+    // nastavené heslo. Členství, které už existuje, se nechává být.
     ? await admin.from('hospital_user_memberships').upsert(
         { hospital_id: hospitalId, user_id: userId },
-        { onConflict: 'hospital_id,user_id' },
+        { onConflict: 'hospital_id,user_id', ignoreDuplicates: true },
       )
     : await admin.from('hospital_user_memberships').delete().eq('hospital_id', hospitalId).eq('user_id', userId);
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 });

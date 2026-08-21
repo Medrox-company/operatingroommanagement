@@ -1339,6 +1339,8 @@ interface HospitalAccessUser {
   is_active: boolean;
   has_access: boolean;
   access_is_global: boolean;
+  /** Má role v tomto zařízení nastavené heslo? Bez něj se nepřihlásí. */
+  has_password: boolean;
 }
 
 const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, onLogout, hospitalName, hospitalId }) => {
@@ -1407,6 +1409,10 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
 
       closePasswordForm();
       setPasswordDone(targetUser.id);
+      // Ať zmizí varování "heslo není nastavené" bez nutnosti znovu načítat.
+      setAccessUsers(previous => previous.map(item =>
+        item.id === targetUser.id ? { ...item, has_password: true } : item,
+      ));
       window.setTimeout(() => setPasswordDone(null), 4000);
     } catch (cause) {
       setPasswordError(cause instanceof Error ? cause.message : 'Heslo se nepodařilo změnit');
@@ -1556,6 +1562,12 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
                       <p className="truncate text-xs text-white/35">
                         {accessUser.email} · {ROLE_LABELS[accessUser.role as UserRole] ?? accessUser.role}
                       </p>
+                      {accessUser.has_access && !accessUser.has_password && (
+                        <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-amber-300/85">
+                          <AlertTriangle className="w-3 h-3 shrink-0" />
+                          Heslo pro toto zařízení není nastavené — role se zatím nepřihlásí.
+                        </p>
+                      )}
                     </div>
 
                     {passwordDone === accessUser.id && (
