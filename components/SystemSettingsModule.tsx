@@ -47,9 +47,12 @@ import {
   UserRoundCheck,
   UserRoundX,
   Gauge,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useAuth, UserRole, AppModule, AppSubmodule } from '../contexts/AuthContext';
+import { useAuth, UserRole, AppModule, AppSubmodule, ROLE_LABELS } from '../contexts/AuthContext';
 import { useHospital, type Hospital } from '../contexts/HospitalContext';
 import { logger } from '../lib/logger';
 import { usePWAInstall } from './PWAInstaller';
@@ -123,7 +126,7 @@ const SETTINGS_TAB_SUBMODULE: Record<TabId, string> = {
 };
 
 const SystemSettingsModule: React.FC = () => {
-  const { user, isAdmin, canManageModuleRoles, logout, modules, submodules, toggleModule, toggleModuleRole, toggleSubmoduleRole, hasSubmoduleAccess } = useAuth();
+  const { user, isAdmin, isSuperAdmin, canManageModuleRoles, logout, modules, submodules, toggleModule, toggleModuleRole, toggleSubmoduleRole, hasSubmoduleAccess } = useAuth();
   const { hospitals, activeHospital, activeHospitalId, selectHospital, refreshHospitals, loading: hospitalsLoading } = useHospital();
   // Otevřený panel přežije i případné přemontování komponenty (např. když
   // uložení nastavení vyvolá načtení modulů). Bez toho by uživatele po každé
@@ -677,7 +680,7 @@ const SystemSettingsModule: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="relative"
             >
-              <AccessPanel user={user} isAdmin={isAdmin} onLogout={logout} hospitalName={hospital.hospital_name} hospitalId={activeHospitalId} />
+              <AccessPanel user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} onLogout={logout} hospitalName={hospital.hospital_name} hospitalId={activeHospitalId} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -1322,6 +1325,7 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
 interface AccessPanelProps {
   user: { email: string; name: string; role: string } | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   onLogout: () => void;
   hospitalName?: string | null;
   hospitalId: string | null;
@@ -1337,11 +1341,75 @@ interface HospitalAccessUser {
   access_is_global: boolean;
 }
 
-const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, hospitalName, hospitalId }) => {
+const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, onLogout, hospitalName, hospitalId }) => {
   const [accessUsers, setAccessUsers] = useState<HospitalAccessUser[]>([]);
   const [accessLoading, setAccessLoading] = useState(false);
   const [accessSaving, setAccessSaving] = useState<string | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
+
+  // Změna hesla — otevřeno vždy nejvýš u jednoho účtu.
+  const [passwordFor, setPasswordFor] = useState<string | null>(null);
+  const [passwordValue, setPasswordValue] = useState('');
+  const [passwordRepeat, setPasswordRepeat] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordDone, setPasswordDone] = useState<string | null>(null);
+
+  const closePasswordForm = useCallback(() => {
+    setPasswordFor(null);
+    setPasswordValue('');
+    setPasswordRepeat('');
+    setPasswordVisible(false);
+    setPasswordError(null);
+  }, []);
+
+  const openPasswordForm = useCallback((userId: string) => {
+    setPasswordFor(userId);
+    setPasswordValue('');
+    setPasswordRepeat('');
+    setPasswordVisible(false);
+    setPasswordError(null);
+    setPasswordDone(null);
+  }, []);
+
+  /** Superadministrátorovo heslo smí měnit jen superadministrátor. */
+  const canChangePasswordOf = useCallback(
+    (targetRole: string) => (targetRole === 'superadmin' ? isSuperAdmin : isAdmin),
+    [isAdmin, isSuperAdmin],
+  );
+
+  const submitPassword = useCallback(async (targetUser: HospitalAccessUser) => {
+    if (passwordValue !== passwordRepeat) {
+      setPasswordError('Hesla se neshodují.');
+      return;
+    }
+    if (passwordValue.length < 10) {
+      setPasswordError('Heslo musí mít alespoň 10 znaků.');
+      return;
+    }
+
+    setPasswordSaving(true);
+    setPasswordError(null);
+    try {
+      const response = await fetch('/api/admin/user-password', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: targetUser.id, password: passwordValue }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(json.error || 'Heslo se nepodařilo změnit');
+
+      closePasswordForm();
+      setPasswordDone(targetUser.id);
+      window.setTimeout(() => setPasswordDone(null), 4000);
+    } catch (cause) {
+      setPasswordError(cause instanceof Error ? cause.message : 'Heslo se nepodařilo změnit');
+    } finally {
+      setPasswordSaving(false);
+    }
+  }, [closePasswordForm, passwordRepeat, passwordValue]);
 
   const loadAccess = useCallback(async () => {
     if (!isAdmin || !hospitalId) return;
@@ -1407,10 +1475,14 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, hosp
               value={
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    isAdmin ? 'bg-[#FBBF24]/20 text-[#FBBF24]' : 'bg-white/10 text-white/60'
+                    isSuperAdmin
+                      ? 'bg-[#E0574F]/20 text-[#E0574F]'
+                      : isAdmin
+                        ? 'bg-[#FBBF24]/20 text-[#FBBF24]'
+                        : 'bg-white/10 text-white/60'
                   }`}
                 >
-                  {isAdmin ? 'Administrátor' : 'Uživatel'}
+                  {ROLE_LABELS[user?.role as UserRole] ?? user?.role ?? '—'}
                 </span>
               }
             />
@@ -1462,25 +1534,115 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, onLogout, hosp
           )}
 
           <div className="divide-y divide-white/[0.06]">
-            {accessUsers.map(accessUser => (
-              <div key={accessUser.id} className="flex items-center gap-3 py-3">
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${accessUser.has_access ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-white/25'}`}>
-                  {accessUser.has_access ? <UserRoundCheck className="w-4 h-4" /> : <UserRoundX className="w-4 h-4" />}
+            {accessUsers.map(accessUser => {
+              const passwordAllowed = canChangePasswordOf(accessUser.role);
+              const formOpen = passwordFor === accessUser.id;
+
+              return (
+                <div key={accessUser.id} className="py-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${accessUser.has_access ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-white/25'}`}>
+                      {accessUser.has_access ? <UserRoundCheck className="w-4 h-4" /> : <UserRoundX className="w-4 h-4" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-white">{accessUser.name}</p>
+                      <p className="truncate text-xs text-white/35">
+                        {accessUser.email} · {ROLE_LABELS[accessUser.role as UserRole] ?? accessUser.role}
+                      </p>
+                    </div>
+
+                    {passwordDone === accessUser.id && (
+                      <span className="hidden sm:inline text-xs font-semibold text-emerald-300">Heslo změněno</span>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => (formOpen ? closePasswordForm() : openPasswordForm(accessUser.id))}
+                      disabled={!passwordAllowed}
+                      title={passwordAllowed ? 'Nastavit nové heslo' : 'Heslo superadministrátora může měnit pouze superadministrátor'}
+                      className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${formOpen ? 'border-[#0EA5E9]/35 bg-[#0EA5E9]/12 text-[#7DD3FC]' : 'border-white/10 bg-white/[0.03] text-white/55 hover:bg-white/[0.06]'}`}
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Heslo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void toggleAccess(accessUser)}
+                      disabled={accessUser.access_is_global || accessSaving === accessUser.id || !accessUser.is_active}
+                      className={`min-w-[96px] rounded-xl border px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${accessUser.has_access ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-white/10 bg-white/[0.03] text-white/45'}`}
+                    >
+                      {accessSaving === accessUser.id ? <Loader2 className="mx-auto w-4 h-4 animate-spin" /> : accessUser.access_is_global ? 'Všechny' : accessUser.has_access ? 'Povoleno' : 'Zakázáno'}
+                    </button>
+                  </div>
+
+                  {formOpen && (
+                    <form
+                      onSubmit={event => { event.preventDefault(); void submitPassword(accessUser); }}
+                      className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                    >
+                      <p className="mb-3 text-xs text-white/45">
+                        Nové heslo pro <span className="font-semibold text-white/75">{accessUser.name}</span>.
+                        Uživateli ho předejte bezpečnou cestou — zpětně už ho nikde nepřečtete.
+                      </p>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="relative">
+                          <input
+                            type={passwordVisible ? 'text' : 'password'}
+                            value={passwordValue}
+                            onChange={event => { setPasswordValue(event.target.value); setPasswordError(null); }}
+                            placeholder="Nové heslo"
+                            autoComplete="new-password"
+                            className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 pr-11 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#0EA5E9]/45"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setPasswordVisible(value => !value)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/70"
+                            aria-label={passwordVisible ? 'Skrýt heslo' : 'Zobrazit heslo'}
+                          >
+                            {passwordVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+
+                        <input
+                          type={passwordVisible ? 'text' : 'password'}
+                          value={passwordRepeat}
+                          onChange={event => { setPasswordRepeat(event.target.value); setPasswordError(null); }}
+                          placeholder="Heslo znovu"
+                          autoComplete="new-password"
+                          className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#0EA5E9]/45"
+                        />
+                      </div>
+
+                      {passwordError && (
+                        <p className="mt-3 text-xs font-semibold text-red-300">{passwordError}</p>
+                      )}
+
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          type="submit"
+                          disabled={passwordSaving || passwordValue.length === 0}
+                          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0EA5E9]/15 border border-[#0EA5E9]/30 px-4 text-xs font-bold text-[#7DD3FC] transition-colors hover:bg-[#0EA5E9]/25 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {passwordSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                          Nastavit heslo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={closePasswordForm}
+                          className="h-10 rounded-xl border border-white/10 bg-white/[0.02] px-4 text-xs font-bold text-white/50 transition-colors hover:bg-white/[0.06]"
+                        >
+                          Zrušit
+                        </button>
+                        <span className="ml-auto text-[11px] text-white/30">Nejméně 10 znaků</span>
+                      </div>
+                    </form>
+                  )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-white">{accessUser.name}</p>
-                  <p className="truncate text-xs text-white/35">{accessUser.email} · {accessUser.role}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void toggleAccess(accessUser)}
-                  disabled={accessUser.access_is_global || accessSaving === accessUser.id || !accessUser.is_active}
-                  className={`min-w-[96px] rounded-xl border px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${accessUser.has_access ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-white/10 bg-white/[0.03] text-white/45'}`}
-                >
-                  {accessSaving === accessUser.id ? <Loader2 className="mx-auto w-4 h-4 animate-spin" /> : accessUser.access_is_global ? 'Všechny' : accessUser.has_access ? 'Povoleno' : 'Zakázáno'}
-                </button>
-              </div>
-            ))}
+              );
+            })}
             {!accessLoading && accessUsers.length === 0 && (
               <p className="py-6 text-center text-sm text-white/35">Nebyli nalezeni žádní uživatelé.</p>
             )}
