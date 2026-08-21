@@ -529,14 +529,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       onClick={() => handleRoleSelect(role.id)}
                       disabled={isLoading || !selectedHospitalId}
                       aria-pressed={active}
-                      className="group flex flex-col items-center gap-2.5 rounded-[15px] border border-white/[0.07] bg-white/[0.032] px-1.5 pb-3.5 pt-4 transition-[transform,background-color,border-color] hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
-                      style={active ? { borderColor: `${role.tone}66`, backgroundColor: `${role.tone}12` } : undefined}
+                      className="login-role-tile flex aspect-square flex-col items-center justify-center gap-2.5 rounded-[18px] px-1 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <span
-                        className="grid h-9 w-9 place-items-center rounded-[11px]"
+                        className="grid h-10 w-10 place-items-center rounded-xl"
                         style={{ color: role.tone, backgroundColor: `${role.tone}18` }}
                       >
-                        <Icon className="h-[17px] w-[17px]" strokeWidth={1.9} />
+                        <Icon className="h-5 w-5" strokeWidth={1.9} />
                       </span>
                       <span className="block whitespace-nowrap text-[11px] font-bold text-white/92">{role.label}</span>
                       <span className="-mt-1.5 block whitespace-nowrap text-[9px] text-white/32">{role.description}</span>

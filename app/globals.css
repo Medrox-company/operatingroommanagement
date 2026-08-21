@@ -142,6 +142,22 @@ body {
   border-color: rgba(100, 185, 205, 0.45);
 }
 
+/* Dlaždice rolí — sklo bez ohraničení, jen jemný rozdíl v hustotě. */
+.login-role-tile {
+  background: rgba(255, 255, 255, 0.04);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background-color 0.18s ease;
+}
+
+.login-role-tile:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.login-role-tile[aria-pressed='true'] {
+  background: rgba(255, 255, 255, 0.09);
+}
+
 .login-aurora-vignette {
   background:
     radial-gradient(ellipse at center, transparent 20%, rgba(3, 8, 20, 0.2) 64%, rgba(2, 6, 15, 0.65) 100%),
