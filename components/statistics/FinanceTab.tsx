@@ -208,9 +208,8 @@ const fmtCZKShort = (v: number) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Karta sálu ve stylu předlohy s hodinami: tlumená jednobarevná plocha,
- * popisek nahoře, velká číslice uprostřed s drobnou jednotkou a řádek
- * malých pilulek dole. Barva zůstává jen v tenkém proužku nad kartou.
+ * Kompaktní karta sálu podle dodané předlohy: modře tónované sklo, dominantní
+ * částka a šest rychle čitelných provozních metrik.
  */
 const YieldCard: React.FC<{
   value: string;
@@ -219,78 +218,84 @@ const YieldCard: React.FC<{
   caption?: string;
   color: string;
   onClick?: () => void;
-  /** Drobné pilulky pod číslem — jako +1 min / +5 min na předloze. */
+  costLabel?: string;
   rows: Array<{ label: string; value: string }>;
-}> = ({ value, unit, sub, caption, color, rows, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-label={onClick ? `Zobrazit rozpad nákladů: ${sub ?? 'operační sál'}` : undefined}
-    className="group relative rounded-[20px] p-4 flex flex-col overflow-hidden w-full text-left transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
+}> = ({ value, unit, sub, caption, color, rows, onClick, costLabel = 'Náklady za období' }) => (
+  <div
+    className="group relative rounded-[18px] p-3.5 flex flex-col overflow-hidden w-full text-left transition-all duration-200 hover:-translate-y-0.5"
     style={{
-      background: `linear-gradient(145deg, ${color}0d 0%, var(--stats-surface-2) 48%, var(--stats-surface) 100%)`,
-      border: `1px solid ${color}29`,
-      boxShadow: '0 12px 30px rgba(0, 0, 0, 0.1)',
+      background: `radial-gradient(circle at 88% 8%, ${color}30 0%, transparent 43%), linear-gradient(145deg, ${color}18 0%, var(--stats-surface-2) 47%, var(--stats-surface) 100%)`,
+      border: `1px solid ${color}42`,
+      boxShadow: `inset 0 1px 0 ${color}1f, 0 14px 32px rgba(0, 0, 0, 0.14)`,
     }}
   >
-    {/* Jemný světelný akcent propojuje kartu s finančním dashboardem. */}
+    {onClick && (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`Zobrazit rozpad nákladů sálu ${sub ?? 'operační sál'}`}
+        className="absolute inset-0 z-10 rounded-[18px] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+        style={{ color }}
+      >
+        <span className="sr-only">Zobrazit detail nákladů</span>
+      </button>
+    )}
     <span
       aria-hidden
-      className="absolute -right-8 -top-10 w-24 h-24 rounded-full blur-3xl opacity-20"
+      className="absolute -left-10 -top-12 w-32 h-32 rounded-full blur-3xl opacity-20"
       style={{ background: color }}
     />
     <span
       aria-hidden
-      className="absolute inset-x-8 top-0 h-px"
-      style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}
+      className="absolute inset-x-4 top-0 h-px"
+      style={{ background: `linear-gradient(90deg, transparent, ${color}cc, transparent)` }}
     />
 
-    <div className="relative flex items-start">
+    <div className="relative flex items-start min-h-[50px]">
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase font-bold tracking-[0.15em]" style={{ color }}>
+        <p className="text-[9px] uppercase font-bold tracking-[0.14em]" style={{ color }}>
           Operační sál
         </p>
         <p
-          className="text-[15px] sm:text-[16px] font-semibold leading-tight mt-0.5 break-words"
+          className="text-[15px] sm:text-[16px] font-semibold leading-[1.15] mt-0.5 line-clamp-2"
           style={{ color: C.textHi }}
           title={sub}
         >
           {sub}
         </p>
         {caption && (
-          <p className="text-[9px] uppercase tracking-[0.08em] mt-1 truncate" style={{ color: C.faint }} title={caption}>
+          <p className="text-[8px] uppercase tracking-[0.08em] mt-1 truncate" style={{ color: C.muted }} title={caption}>
             {caption}
           </p>
         )}
       </div>
     </div>
 
-    <div className="relative mt-3.5 pt-3 flex items-end justify-between gap-3" style={{ borderTop: `1px solid ${C.border}` }}>
-      <p className="text-[9px] uppercase font-semibold tracking-[0.12em] pb-0.5" style={{ color: C.faint }}>
-        Náklady za období
+    <div className="relative mt-2.5 pt-2.5 flex items-end justify-between gap-3" style={{ borderTop: `1px solid ${color}25` }}>
+      <p className="text-[8px] uppercase font-semibold tracking-[0.1em] pb-0.5" style={{ color: C.muted }}>
+        {costLabel}
       </p>
-      <p className="text-[24px] sm:text-[26px] font-semibold tabular-nums tracking-tight leading-none whitespace-nowrap" style={{ color: C.textHi }}>
+      <p className="text-[24px] font-semibold tabular-nums tracking-tight leading-none whitespace-nowrap" style={{ color: C.textHi }}>
         {value}
-        {unit && <span className="text-[12px] font-medium ml-1" style={{ color }}>{unit}</span>}
+        {unit && <span className="text-[11px] font-semibold ml-1" style={{ color }}>{unit}</span>}
       </p>
     </div>
 
-    {/* Kompaktní řádky drží hodnoty pohromadě a rychle se skenují. */}
-    <div className="relative mt-3 grid grid-cols-2 gap-1.5">
+    <div className="relative mt-2.5 grid grid-cols-2 gap-1">
       {rows.map(row => (
         <div
           key={row.label}
-          className="rounded-lg px-2.5 py-1.5 min-w-0 flex items-center justify-between gap-2"
-          style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}
+          className="rounded-md px-2 py-1.5 min-w-0 flex items-center justify-between gap-1.5"
+          style={{ background: `${color}0a`, border: `1px solid ${color}1c` }}
         >
-          <p className="text-[8px] uppercase font-semibold tracking-[0.07em] truncate" style={{ color: C.faint }}>{row.label}</p>
-          <p className="text-[11px] font-semibold tabular-nums truncate shrink-0" style={{ color: C.text }} title={row.value}>
+          <p className="text-[7px] uppercase font-semibold tracking-[0.06em] truncate" style={{ color: C.muted }}>{row.label}</p>
+          <p className="text-[10px] font-semibold tabular-nums truncate shrink-0" style={{ color: C.textHi }} title={row.value}>
             {row.value}
           </p>
         </div>
       ))}
     </div>
-  </button>
+  </div>
 );
 
 /**
@@ -1206,7 +1211,7 @@ export function FinanceTab({
         .slice(0, 4),
     [roomFinance],
   );
-  const featuredPalette = [C.accent, C.green, C.cyan, C.purple];
+  const roomCostLabel = `Náklady za ${calculationPeriod}`;
 
   const hourlyRatesPanel = (
     <PanelCard
@@ -1408,11 +1413,11 @@ export function FinanceTab({
               </div>
             </div>
 
-            {/* Karty nejdražších sálů — hodnota, ikona, rozpad, akce */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 mt-5">
+            {/* Karty nejdražších sálů — částka, reálný průběh, metriky a detail */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-5">
               {featuredRooms.length > 0 ? (
-                featuredRooms.map((room, index) => {
-                  const color = featuredPalette[index % featuredPalette.length];
+                featuredRooms.map(room => {
+                  const color = C.blue;
                   return (
                     <YieldCard
                       key={room.id}
@@ -1421,6 +1426,7 @@ export function FinanceTab({
                       sub={room.name}
                       caption={room.department}
                       color={color}
+                      costLabel={roomCostLabel}
                       onClick={() => setSelectedCostRoomId(room.id)}
                       rows={[
                         {
@@ -1641,11 +1647,7 @@ export function FinanceTab({
         >
           {allRoomsByCost.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
-              {allRoomsByCost.map((rf, i) => {
-                const cardColor = rf.configured
-                  ? featuredPalette[i % featuredPalette.length]
-                  : C.faint;
-
+              {allRoomsByCost.map(rf => {
                 return (
                   <YieldCard
                     key={rf.id}
@@ -1653,7 +1655,8 @@ export function FinanceTab({
                     unit={rf.cost !== null ? 'Kč' : undefined}
                     sub={rf.name}
                     caption={rf.department}
-                    color={cardColor}
+                    color={C.blue}
+                    costLabel={roomCostLabel}
                     onClick={() => setSelectedCostRoomId(rf.id)}
                     rows={[
                       {
@@ -1685,7 +1688,7 @@ export function FinanceTab({
       </PanelCard>
 
       {/* ─── EFEKTIVITA NÁKLADŮ ────────────────────────────────── */}
-      <Card title="Efektivita nákladů" subtitle="Klíčové indikátory pro řízení sálu" icon={Activity} accent={C.green}>
+      <Card title="Efektivita nákladů" subtitle="Klíčové indikátory pro řízení sálu" icon={Activity} accent={C.green} headingLevel={2}>
         {/* Pilulkové dlaždice ve stylu předlohy — ikona ve čtverečku vlevo,
             popisek a hodnota vedle sebe. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">

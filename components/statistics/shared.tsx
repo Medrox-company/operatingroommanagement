@@ -164,10 +164,13 @@ export interface CardProps {
   noPadding?: boolean;
   /** Lucide ikona renderovaná v hlavičce vedle title */
   icon?: IconComponent;
+  /** Sémantická úroveň nadpisu; vizuální styl zůstává shodný. */
+  headingLevel?: 2 | 3 | 4;
 }
 export const Card: React.FC<CardProps> = memo(({
-  title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon,
+  title, subtitle, action, accent, className, children, elevated, noPadding, icon: Icon, headingLevel = 3,
 }) => {
+  const HeadingTag = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
   return (
     <div
       className={`rounded-2xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
@@ -198,9 +201,9 @@ export const Card: React.FC<CardProps> = memo(({
             )}
             <div className="min-w-0">
               {title && (
-                <h3 className="text-xs font-bold uppercase tracking-wider truncate" style={{ color: C.textHi }}>
+                <HeadingTag className="text-xs font-bold uppercase tracking-wider truncate" style={{ color: C.textHi }}>
                   {title}
-                </h3>
+                </HeadingTag>
               )}
               {subtitle && (
                 <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>{subtitle}</p>
