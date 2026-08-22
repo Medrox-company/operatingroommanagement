@@ -505,7 +505,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       <main className="relative z-10 flex flex-1 items-center justify-center px-8 pb-16 pt-4">
         <section className="w-full max-w-[1040px] pb-8 text-center">
             <div className="mx-auto max-w-[960px]">
-              <h1 className="login-wordmark text-[clamp(3.45rem,6.8vw,6.8rem)] font-black leading-[0.84] tracking-[-0.075em] text-white">
+              <h1 className="login-wordmark text-[clamp(3.45rem,6.8vw,6.8rem)] font-extrabold leading-[0.84] tracking-[-0.075em] text-white 2xl:font-black">
                 OPERATINGROOM
               </h1>
               <p className="mt-5 text-[clamp(0.72rem,1.25vw,1.05rem)] font-bold uppercase tracking-[0.52em] text-white/72">
