@@ -4,6 +4,7 @@ import {
   Activity,
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
   Briefcase,
   Building2,
   ChevronDown,
@@ -81,6 +82,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [googleEnabled, setGoogleEnabled] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<QuickRoleId | null>(null);
+
+  /** Údaje právě vybrané role — používá je rozbalený řádek s heslem. */
+  const activeRole = QUICK_ROLES.find(role => role.id === selectedRole) ?? null;
 
   useEffect(() => {
     setMobileDarkMode(document.documentElement.classList.contains('m-dark'));
@@ -200,6 +204,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     void submitCredentials(email, password);
   };
 
+  /** Návrat k výběru role — z tlačítka, z klávesy Escape i opětovným klikem na dlaždici. */
   const resetQuickRole = () => {
     setSelectedRole(null);
     setEmail('');
@@ -515,8 +520,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
             )}
 
-            <div className={selectedRole ? 'hidden' : 'mx-auto mt-8 max-w-[760px]'}>
-              <label htmlFor="desktop-role-hospital" className="mb-2.5 block text-[8px] font-bold uppercase tracking-[0.34em] text-white/28">Zdravotnické zařízení</label>
+            {/* Zařízení zůstává vidět i po výběru role, jen ustoupí do pozadí —
+                jinak by uživatel při zadávání hesla ztratil kontext, kam se hlásí. */}
+            <div
+              className="mx-auto mt-8 max-w-[760px] transition-opacity duration-300"
+              style={{ opacity: selectedRole ? 0.4 : 1 }}
+            >
+              <label htmlFor="desktop-role-hospital" className="mb-2.5 block text-[8px] font-semibold uppercase tracking-[0.34em] text-white/24">Zdravotnické zařízení</label>
               <div className="relative">
                 <Building2 className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#64B9CD]" />
                 <select
@@ -534,41 +544,67 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
 
-            <div className={selectedRole ? 'hidden' : 'mx-auto mt-8 max-w-[930px]'}>
+            <div className="mx-auto mt-8 max-w-[930px]">
               <div className="grid grid-cols-5 gap-4">
                 {QUICK_ROLES.map(role => {
                   const Icon = role.icon;
                   const active = selectedRole === role.id;
+                  const dimmed = selectedRole !== null && !active;
                   return (
                     <button
                       key={role.id}
                       type="button"
-                      onClick={() => handleRoleSelect(role.id)}
+                      onClick={() => (active ? resetQuickRole() : handleRoleSelect(role.id))}
                       disabled={isLoading || !selectedHospitalId}
                       aria-pressed={active}
+                      data-dimmed={dimmed ? 'true' : undefined}
                       className="login-role-tile flex aspect-square flex-col items-center justify-center gap-3 rounded-[28px] px-3 disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
                       <span
-                        className="grid h-14 w-14 place-items-center rounded-[20px]"
-                        style={{ color: role.tone, backgroundColor: `${role.tone}18` }}
+                        className="grid h-14 w-14 place-items-center rounded-[20px] transition-colors duration-300"
+                        style={{ color: role.tone, backgroundColor: `${role.tone}${active ? '26' : '14'}` }}
                       >
-                        <Icon className="h-7 w-7" strokeWidth={1.8} />
+                        <Icon className="h-7 w-7" strokeWidth={1.6} />
                       </span>
-                      <span className="block whitespace-nowrap text-[13px] font-bold text-white/92">{role.label}</span>
-                      <span className="-mt-2 block whitespace-nowrap text-[9px] text-white/34">{role.description}</span>
+                      <span className="block whitespace-nowrap text-[12.5px] font-semibold text-white/88">{role.label}</span>
+                      <span
+                        className="-mt-2 block whitespace-nowrap text-[9px] transition-colors duration-300"
+                        style={{ color: active ? role.tone : 'rgba(255,255,255,0.28)' }}
+                      >
+                        {active ? 'Vybráno' : role.description}
+                      </span>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {selectedRole && (
-              <form onSubmit={handleSubmit} className="mx-auto mt-5 max-w-[620px]">
-                <label htmlFor="desktop-role-password" className="sr-only">
-                  Heslo pro roli {QUICK_ROLES.find(role => role.id === selectedRole)?.label}
-                </label>
-                <div className="flex items-stretch gap-3">
+            {/* Heslo se rozbalí pod dlaždicemi, aniž by se odcházelo na jinou
+                stránku. Prvek je v DOM pořád — jinak by nebylo co animovat. */}
+            <div
+              className="login-password-reveal mx-auto max-w-[930px]"
+              data-open={selectedRole ? 'true' : undefined}
+              aria-hidden={selectedRole ? undefined : true}
+            >
+              <div>
+                <form onSubmit={handleSubmit} className="login-glass-field mt-4 flex items-center gap-3.5 rounded-[22px] p-4">
+                  <div className="flex items-center gap-3 pr-4">
+                    <span
+                      className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[13px]"
+                      style={activeRole ? { color: activeRole.tone, backgroundColor: `${activeRole.tone}26` } : undefined}
+                    >
+                      {activeRole ? <activeRole.icon className="h-[19px] w-[19px]" strokeWidth={1.7} /> : null}
+                    </span>
+                    <div className="text-left">
+                      <p className="whitespace-nowrap text-[12.5px] font-semibold text-white/88">{activeRole?.label}</p>
+                      <p className="whitespace-nowrap text-[9px] text-white/28">{activeRole?.email}</p>
+                    </div>
+                  </div>
+
+                  <label htmlFor="desktop-role-password" className="sr-only">
+                    Heslo pro roli {activeRole?.label}
+                  </label>
                   <div className="relative min-w-0 flex-1">
                     <Lock className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />
                     <input
@@ -577,30 +613,45 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       autoComplete="current-password"
                       value={password}
                       onChange={event => setPassword(event.target.value)}
+                      onKeyDown={event => { if (event.key === 'Escape') resetQuickRole(); }}
                       placeholder="Zadejte heslo"
-                      required
-                      className="login-glass-field h-[52px] w-full rounded-[18px] pl-12 pr-12 text-[13px] font-semibold text-white outline-none placeholder:text-white/24"
+                      required={Boolean(selectedRole)}
+                      tabIndex={selectedRole ? undefined : -1}
+                      className="login-glass-field h-[50px] w-full rounded-[16px] pl-12 pr-12 text-[13px] font-medium text-white outline-none placeholder:text-white/24"
                     />
                     <button
                       type="button"
+                      tabIndex={selectedRole ? undefined : -1}
                       onClick={() => setShowPassword(value => !value)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/28 transition-colors hover:text-white/70"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/26 transition-colors hover:text-white/70"
                       aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+
                   <button
                     type="submit"
                     disabled={isLoading || !password || !selectedHospitalId}
-                    className="login-glass-action flex h-[52px] min-w-[170px] items-center justify-center gap-2 rounded-[18px] px-6 text-[12px] font-extrabold text-white/90 disabled:cursor-not-allowed disabled:opacity-45"
+                    tabIndex={selectedRole ? undefined : -1}
+                    className="login-glass-action flex h-[50px] min-w-[158px] items-center justify-center gap-2 rounded-[16px] px-6 text-[12px] font-bold text-white/90 disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4 text-[#64B9CD]" />}
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4 text-[#64B9CD]" />}
                     {isLoading ? 'Přihlašování…' : 'Přihlásit se'}
                   </button>
-                </div>
-              </form>
-            )}
+                </form>
+
+                <button
+                  type="button"
+                  onClick={resetQuickRole}
+                  tabIndex={selectedRole ? undefined : -1}
+                  className="mx-auto mt-3.5 inline-flex items-center gap-2 text-[10.5px] font-medium text-white/30 transition-colors hover:text-white/70"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  Zvolit jinou roli
+                </button>
+              </div>
+            </div>
 
             {googleEnabled && !selectedRole && (
               <>
