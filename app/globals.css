@@ -110,18 +110,20 @@ body {
   animation: login-aurora-drift 22s ease-in-out infinite alternate;
 }
 
+.login-wordmark {
+  text-shadow: 0 18px 54px rgba(39, 110, 201, 0.12);
+}
+
 /* Skleněný panel přihlášení.
    Aurora pod ním prosvítá rozostřeně, horní hrana nese jemné světlo.
    Rozostření pozadí je tu jediné v celé aplikaci — přihlašovací obrazovka má
    jeden panel, takže výkon neřeší; na dashboardu zůstává odstraněné. */
 .login-glass {
-  background: rgba(16, 32, 52, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  -webkit-backdrop-filter: blur(26px) saturate(140%);
-  backdrop-filter: blur(26px) saturate(140%);
-  box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  background: linear-gradient(145deg, rgba(23, 43, 68, 0.40), rgba(10, 22, 42, 0.26));
+  border: 0;
+  -webkit-backdrop-filter: blur(34px) saturate(132%);
+  backdrop-filter: blur(34px) saturate(132%);
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.28);
 }
 
 /* Bez podpory rozostření by panel zprůhlednil na nečitelné pozadí. */
@@ -133,29 +135,49 @@ body {
 
 /* Pole uvnitř skla snesou o něco víc světla než na plné výplni. */
 .login-glass-field {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025));
+  border: 0;
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  backdrop-filter: blur(18px) saturate(125%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.065), 0 12px 30px rgba(0, 0, 0, 0.06);
 }
 
 .login-glass-field:focus,
 .login-glass-field:focus-within {
-  border-color: rgba(100, 185, 205, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 0 0 3px rgba(100, 185, 205, 0.12), 0 14px 34px rgba(0, 0, 0, 0.10);
 }
 
 /* Dlaždice rolí — sklo bez ohraničení, jen jemný rozdíl v hustotě. */
 .login-role-tile {
-  background: rgba(255, 255, 255, 0.04);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  transition: background-color 0.18s ease;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025));
+  border: 0;
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+  backdrop-filter: blur(22px) saturate(125%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.065), 0 12px 30px rgba(0, 0, 0, 0.06);
+  transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .login-role-tile:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.065);
+  transform: translateY(-3px);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.035));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 14px 34px rgba(0, 0, 0, 0.07);
 }
 
 .login-role-tile[aria-pressed='true'] {
-  background: rgba(255, 255, 255, 0.09);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.038));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 12px 30px rgba(0, 0, 0, 0.06);
+}
+
+.login-glass-action {
+  border: 0;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.045));
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(125%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 16px 36px rgba(0, 0, 0, 0.12);
+}
+
+.login-glass-action:hover:not(:disabled) {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.065));
 }
 
 .login-aurora-vignette {
@@ -709,16 +731,20 @@ html.capacitor-native select {
 }
 
 .mobile-login-theme-toggle {
-  border: 1px solid var(--login-toggle-border);
+  border: 0;
   background: var(--login-toggle);
   color: var(--login-title);
-  box-shadow: 0 8px 24px rgba(27, 48, 91, 0.08);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  backdrop-filter: blur(18px) saturate(125%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 24px rgba(27, 48, 91, 0.08);
 }
 
 .mobile-login-field {
-  border: 1px solid var(--login-field-border);
+  border: 0;
   background: var(--login-field);
   color: var(--login-field-text);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  backdrop-filter: blur(18px) saturate(125%);
   box-shadow: 0 7px 22px rgba(24, 49, 91, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
@@ -751,7 +777,7 @@ html.capacitor-native select {
 /* Přihlášení superadministrátora přes Google — světlé tlačítko v obou motivech,
    aby logo Google zůstalo čitelné. */
 .mobile-login-google {
-  border: 1px solid var(--login-role-border);
+  border: 0;
   background: #ffffff;
   color: #1f2937;
   box-shadow: 0 7px 20px rgba(25, 47, 87, 0.08);
@@ -763,10 +789,22 @@ html.capacitor-native select {
 }
 
 .mobile-login-role {
-  border: 1px solid var(--login-role-border);
-  background: var(--login-role);
+  border: 0;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--login-role) 92%, white 8%), var(--login-role));
   color: var(--login-copy);
-  box-shadow: 0 7px 20px rgba(25, 47, 87, 0.045);
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(125%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px rgba(25, 47, 87, 0.07);
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.mobile-login-role:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.mobile-login-role[aria-pressed='true'] {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--login-role) 88%, white 12%), var(--login-role));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 12px 28px rgba(25, 47, 87, 0.07);
 }
 
 .mobile-login-divider {
