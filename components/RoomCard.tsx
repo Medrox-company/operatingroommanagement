@@ -226,7 +226,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
     {/* ===== DESKTOP — původní karta ===== */}
     <div
       onClick={onClick}
-      className={`room-card-shell hidden md:block relative group cursor-pointer w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] ${fill ? 'h-full min-h-[140px]' : 'h-[260px] sm:h-[340px]'}`}
+      className={`room-card-shell hidden md:block relative group cursor-pointer w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] ${fill ? 'h-full min-h-[140px]' : 'h-[clamp(280px,30vw,340px)]'}`}
     >
       {/* Subtle State Pulse Aura (Emergency or Locked) */}
       {(room.isEmergency || room.isLocked) && (
@@ -236,7 +236,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       )}
 
       {/* Main Card Container */}
-      <div className={`absolute inset-0 z-0 rounded-[1.75rem] sm:rounded-[2.5rem] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-shadow duration-500 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]
+      <div className={`absolute inset-0 z-0 rounded-[clamp(1.75rem,3vw,2.5rem)] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-shadow duration-500 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]
         ${room.isEmergency 
             ? 'bg-red-950/20 border-red-500/40' 
             : (room.isLocked 
@@ -274,7 +274,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       )}
 
       {/* Content Container */}
-      <div className="relative h-full w-full z-10 p-3 sm:p-6 flex flex-col">
+      <div className="relative z-10 flex h-full w-full flex-col p-[clamp(0.875rem,1.6vw,1.5rem)]">
 
         {/* Header — centered */}
         <div className="w-full flex flex-col items-center text-center shrink-0">
@@ -283,7 +283,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           `}>
             {room.department}
           </p>
-          <h3 className={`text-sm lg:text-lg xl:text-xl font-bold tracking-tight uppercase leading-[1.1] break-words line-clamp-2 max-w-full transition-colors
+          <h3 className={`w-full max-w-full truncate whitespace-nowrap text-[clamp(0.75rem,1.25vw,1.25rem)] font-bold uppercase leading-none tracking-tight transition-colors
             ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
           `}>
             {room.name}
@@ -301,7 +301,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                 />
                 <svg
                   viewBox="0 0 112 112"
-                  className="w-20 h-20 sm:w-28 sm:h-28 overflow-visible select-none flex-shrink-0"
+                  className="h-[clamp(4.75rem,8vw,7rem)] w-[clamp(4.75rem,8vw,7rem)] flex-shrink-0 select-none overflow-visible"
                   style={{ transform: 'rotate(-90deg)' }}
                 >
                     <circle 

@@ -152,9 +152,9 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
               <p className="text-sm text-[#7C8AA5] md:text-white/40">Načítám operační sály…</p>
             </div>
           ) : (
-            /* Užší karty — na běžný monitor se jich vejde o jednu řadu víc.
-               Hustota roste plynule se šířkou, strop je 6 sloupců. */
-            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-x-5 md:gap-x-6 sm:gap-y-6 md:gap-y-8">
+            /* Tablet na šířku zůstává ve čtyřech sloupcích. Pátý sloupec se
+               zapíná až tam, kde karta bezpečně udrží všechny popisky v řádku. */
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 min-[2200px]:grid-cols-6 gap-3 sm:gap-x-5 md:gap-x-4 xl:gap-x-5 2xl:gap-x-6 sm:gap-y-6 md:gap-y-7 2xl:gap-y-8">
               {rooms.map((room) => (
                 <RoomCard
                   key={room.id}

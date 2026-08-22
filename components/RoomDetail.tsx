@@ -1136,7 +1136,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       <div className="content-safe">
 
       {/* Header — left is wrapper-relative (so 160px total from viewport on desktop) */}
-      <header className="absolute top-4 md:top-8 lg:top-12 left-4 md:left-8 lg:left-16 right-28 md:right-32 lg:right-40 flex justify-between items-start z-50 pointer-events-none">
+      <header className="absolute left-[clamp(1rem,4vw,4rem)] right-[clamp(7rem,14vw,10rem)] top-[clamp(1rem,4vh,3rem)] z-50 flex items-start justify-between pointer-events-none">
         <div className="flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div 
@@ -1144,10 +1144,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="flex items-center gap-6"
+                className="flex min-w-0 items-center gap-[clamp(0.75rem,2vw,1.5rem)]"
             >
               <h1
-                className={`text-[clamp(1.75rem,4.5vw,3.75rem)] font-bold tracking-tight uppercase leading-none truncate max-w-[60vw] ${
+                className={`max-w-[58vw] truncate text-[clamp(1.75rem,min(4.5vw,7vh),3.75rem)] font-bold uppercase leading-none tracking-tight ${
                   room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95')
                 }`}
               >
@@ -1182,12 +1182,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
       {/* Right Column Action Buttons - Absolute Positioning */}
       {/* Close Button and Notification Button - Top Right */}
-      <div className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-4 md:right-6 lg:right-8 flex flex-col gap-2 sm:gap-3 md:gap-4 z-50">
+      <div className="absolute right-[clamp(0.75rem,2.5vw,2rem)] top-[clamp(0.75rem,4vh,2rem)] z-50 flex flex-col gap-[clamp(0.5rem,2vh,1rem)]">
         {/* Close Button */}
         <button 
           onClick={onClose}
           aria-label="Zavřít detail sálu"
-          className="p-2 sm:p-3 md:p-4 hover:bg-white/10 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-70 hover:opacity-100 flex items-center justify-center h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100"
+          className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2 opacity-70 backdrop-blur-md transition-all hover:bg-white/10 hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          style={{ width: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)', height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)' }}
         >
           <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/70" />
         </button>
@@ -1196,7 +1197,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         <motion.button 
           onClick={() => setNotificationOverlayOpen(true)}
           aria-label="Otevřít notifikace"
-          className="p-2 sm:p-3 md:p-4 hover:bg-orange-500/20 rounded-2xl transition-all bg-white/5 border border-white/10 backdrop-blur-md opacity-70 hover:opacity-100 flex flex-col items-center justify-center gap-1 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 hover:border-orange-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100"
+          className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-2 opacity-70 backdrop-blur-md transition-all hover:border-orange-500/40 hover:bg-orange-500/20 hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          style={{ width: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)', height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)' }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -1205,8 +1207,15 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         </motion.button>
       </div>
 
-      {/* Staff Names - Top Right next to close button (Desktop only) */}
-      <div className="hidden lg:flex absolute top-8 right-40 flex-row gap-3 h-24 z-50">
+      {/* Staff Names - Top Right next to close button */}
+      <div
+        className="absolute z-50 flex flex-row gap-[clamp(0.5rem,1vw,0.75rem)]"
+        style={{
+          top: 'clamp(0.75rem, 4vh, 2rem)',
+          right: 'calc(clamp(3.5rem, min(7.5vw, 14vh), 6rem) + clamp(1.5rem, 3vw, 3rem))',
+          height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)',
+        }}
+      >
         {/* Notifikace „Infekční pacient" — zobrazí se POUZE při zvýšeném
             hygienickém režimu, ve stejném řádku a zarovnání jako personál. */}
         <AnimatePresence>
@@ -1246,9 +1255,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         {/* Doctor Button */}
         <button
           onClick={() => { setStaffPickerRole('doctor'); setStaffPickerOpen(true); }}
-          className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md flex flex-col items-center justify-center gap-2 px-1 h-24 w-24 hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-95"
+          aria-label={room?.staff?.doctor?.name ? `Lékař: ${room.staff.doctor.name}` : 'Lékař'}
+          className="flex aspect-square h-full flex-col items-center justify-center gap-1 rounded-2xl border border-white/10 bg-white/5 px-1 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-95"
         >
-          <Stethoscope className="w-8 h-8 text-white/70" strokeWidth={2} />
+          <Stethoscope className="h-[clamp(1.25rem,min(2.5vw,5vh),2rem)] w-[clamp(1.25rem,min(2.5vw,5vh),2rem)] text-white/70" strokeWidth={2} />
           <span className={`text-[10px] font-bold uppercase tracking-widest leading-tight text-center line-clamp-2 ${room?.staff?.doctor?.name ? 'text-violet-300' : 'text-white/70'}`}>
             {room?.staff?.doctor?.name || 'Lékař'}
           </span>
@@ -1256,9 +1266,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         {/* Nurse Button */}
         <button
           onClick={() => { setStaffPickerRole('nurse'); setStaffPickerOpen(true); }}
-          className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md flex flex-col items-center justify-center gap-2 px-1 h-24 w-24 hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-95"
+          aria-label={room?.staff?.nurse?.name ? `Sestra: ${room.staff.nurse.name}` : 'Sestra'}
+          className="flex aspect-square h-full flex-col items-center justify-center gap-1 rounded-2xl border border-white/10 bg-white/5 px-1 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-95"
         >
-          <Syringe className="w-8 h-8 text-white/70" strokeWidth={2} />
+          <Syringe className="h-[clamp(1.25rem,min(2.5vw,5vh),2rem)] w-[clamp(1.25rem,min(2.5vw,5vh),2rem)] text-white/70" strokeWidth={2} />
           <span className={`text-[10px] font-bold uppercase tracking-widest leading-tight text-center line-clamp-2 ${room?.staff?.nurse?.name ? 'text-emerald-300' : 'text-white/70'}`}>
             {room?.staff?.nurse?.name || 'Sestra'}
           </span>
@@ -1267,9 +1278,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
 
       {/* Right Side Buttons Container - All 4 buttons in one row */}
-      <div className="absolute right-2 sm:right-3 md:right-4 lg:right-8 bottom-6 sm:bottom-8 md:bottom-12 lg:bottom-16 flex flex-row gap-2 sm:gap-3 md:gap-4 z-50">
+      <div className="absolute bottom-[clamp(1rem,5vh,4rem)] right-[clamp(0.75rem,2.5vw,2rem)] z-50 flex flex-row gap-[clamp(0.5rem,1.5vw,1rem)]">
         {/* VOLAT and PŘÍJEZD Container - Vertical */}
-        <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
+        <div className="flex flex-col gap-[clamp(0.5rem,2vh,1rem)]">
           {/* Volat Button */}
   <motion.button
             onClick={async () => {
@@ -1289,13 +1300,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             }}
             disabled={!!patientCalledTime}
             aria-label="Volat pacienta"
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-1 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
+            className={`flex flex-col items-center justify-center gap-1 rounded-2xl border backdrop-blur-md transition-all disabled:cursor-not-allowed focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
               patientCalledTime && !patientArrivedTime
                 ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
                 : patientArrivedTime
                 ? 'bg-white/5 border-white/10 opacity-60'
                 : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'
             }`}
+            style={{ width: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)', height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)' }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -1354,13 +1366,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             }}
             disabled={!patientCalledTime || !!patientArrivedTime}
             aria-label="Potvrdit příjezd pacienta"
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
+            className={`flex flex-col items-center justify-center gap-2 rounded-2xl border backdrop-blur-md transition-all disabled:cursor-not-allowed focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
               patientArrivedTime
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
                 : !patientCalledTime
                 ? 'bg-white/5 border-white/10 opacity-40'
                 : 'bg-blue-500/10 border-blue-500/30 opacity-100 hover:opacity-100'
             }`}
+            style={{ width: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)', height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)' }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -1370,7 +1383,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         </div>
 
         {/* HYGIENA and PAUZA Container - Vertical */}
-        <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
+        <div className="flex flex-col gap-[clamp(0.5rem,2vh,1rem)]">
           {/* Enhanced Hygiene Mode Toggle */}
           <motion.button
             onClick={async () => {
@@ -1385,11 +1398,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             }}
             aria-label={room.isEnhancedHygiene ? 'Vypnout hygienický režim' : 'Zapnout hygienický režim'}
             aria-pressed={room.isEnhancedHygiene}
-            className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
+            className={`flex flex-col items-center justify-center gap-2 rounded-2xl border backdrop-blur-md transition-all focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
               room.isEnhancedHygiene
                 ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
                 : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'
             }`}
+            style={{ width: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)', height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)' }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -1418,11 +1432,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               }}
               aria-label={isPaused ? 'Pokračovat ve fázi' : 'Pozastavit fázi'}
               aria-pressed={isPaused}
-              className={`rounded-2xl transition-all backdrop-blur-md flex flex-col items-center justify-center gap-2 border h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:opacity-100 ${
+              className={`flex flex-col items-center justify-center gap-2 rounded-2xl border backdrop-blur-md transition-all focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                 isPaused
                   ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
                   : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'
               }`}
+              style={{ width: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)', height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)' }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -1438,7 +1453,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       </div>
 
       {/* Main Three-Circle Status Display */}
-      <main className="w-full h-full flex items-center justify-center relative z-20 px-2 sm:px-4">
+      <main className="relative z-20 flex h-full w-full items-center justify-center px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]">
         {/* Background decorative rings — hidden on small screens to avoid overflow */}
         <div
           className="hidden lg:block absolute rounded-full border border-white/5 pointer-events-none"
@@ -1451,7 +1466,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         
         <div
           className="flex items-center justify-center relative max-w-full"
-          style={{ gap: 'clamp(0.25rem,4vw,9rem)' }}
+          style={{ gap: 'clamp(0.25rem, min(4vw, 4vh), 9rem)' }}
         >
           {/* Previous Step - Left Circle (smaller) */}
           {(() => {
@@ -1465,7 +1480,7 @@ const prevStep = activeDbStatuses.length > 0
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="relative flex items-center justify-center shrink-0"
-                style={{ width: 'clamp(90px,16vw,280px)', height: 'clamp(90px,16vw,280px)' }}
+                style={{ width: 'clamp(90px, min(16vw, 28vh), 280px)', height: 'clamp(90px, min(16vw, 28vh), 280px)' }}
               >
                 {/* Gradient Glow - transparent from center */}
                 <div 
@@ -1486,7 +1501,7 @@ const prevStep = activeDbStatuses.length > 0
                   <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
                     DOKONČENÁ FÁZE
                   </p>
-                  <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
+                  <h3 className="text-[clamp(0.875rem,min(2.4vw,4vh),1.875rem)] font-bold leading-tight tracking-tight text-white">
                     {prevStep.title}
                   </h3>
                 </div>
@@ -1504,7 +1519,7 @@ const prevStep = activeDbStatuses.length > 0
             className={`relative flex items-center justify-center rounded-full group transition-all focus:outline-none z-10 shrink-0
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
-            style={{ width: 'clamp(180px,30vw,500px)', height: 'clamp(180px,30vw,500px)' }}
+            style={{ width: 'clamp(180px, min(30vw, 58vh), 500px)', height: 'clamp(180px, min(30vw, 58vh), 500px)' }}
             whileTap={isInteractionBlocked ? {} : { scale: 0.96 }}
           >
             {/* Primary Background Glow - subtle */}
@@ -1566,7 +1581,7 @@ const prevStep = activeDbStatuses.length > 0
             </AnimatePresence>
 
             {/* Center Content */}
-            <div className="text-center relative z-20 pointer-events-none px-8">
+            <div className="pointer-events-none relative z-20 px-[clamp(1rem,3vw,2rem)] text-center">
               <AnimatePresence mode="wait">
                 {showCleaningWarning ? (
                   <motion.div
@@ -1711,7 +1726,7 @@ const prevStep = activeDbStatuses.length > 0
                       key={currentStep.title}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`text-[clamp(1.5rem,5vw,3.75rem)] font-bold tracking-tight leading-tight mb-[clamp(0.75rem,2vw,1.5rem)] break-words ${
+                      className={`mb-[clamp(0.5rem,min(2vw,2vh),1.5rem)] break-words text-[clamp(1.4rem,min(5vw,8vh),3.75rem)] font-bold leading-tight tracking-tight ${
                         room.isEmergency ? 'text-red-400' : 'text-white'
                       }`}
                     >
@@ -1732,7 +1747,7 @@ const prevStep = activeDbStatuses.length > 0
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="relative flex items-center justify-center cursor-pointer shrink-0"
-            style={{ width: 'clamp(90px,16vw,280px)', height: 'clamp(90px,16vw,280px)' }}
+            style={{ width: 'clamp(90px, min(16vw, 28vh), 280px)', height: 'clamp(90px, min(16vw, 28vh), 280px)' }}
           >
             {/* Glow - gradient transparent from center */}
             <div 
@@ -1753,7 +1768,7 @@ const prevStep = activeDbStatuses.length > 0
               <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
                 {isFinalStep ? 'NOVÝ CYKLUS' : 'NÁSLEDUJÍCÍ FÁZE'}
               </p>
-              <h3 className="text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
+              <h3 className="text-[clamp(0.875rem,min(2.4vw,4vh),1.875rem)] font-bold leading-tight tracking-tight text-white">
                 {nextStep.title}
               </h3>
             </div>
@@ -1762,41 +1777,49 @@ const prevStep = activeDbStatuses.length > 0
         
         {/* Time adjustment buttons - positioned below center circle, responsive to circle size */}
         {!isInteractionBlocked && (
-          <>
-            {/* Minus button - left of center, below circle */}
+          <div
+            className="pointer-events-none absolute inset-x-0 z-50 flex justify-center px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]"
+            style={{
+              top: 'calc(50% + clamp(90px, min(15vw, 29vh), 250px) + clamp(0.5rem, 1.5vh, 1rem))',
+            }}
+          >
+            <div
+              className="flex items-center justify-between"
+              style={{
+                width: 'calc(clamp(180px, min(30vw, 58vh), 500px) + clamp(4rem, min(7vw, 12vh), 7rem))',
+              }}
+            >
+            {/* Minus button - aligned below the left edge of the center circle */}
             <button 
               onClick={handleDecreaseTime}
-              className="absolute rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50 -translate-x-1/2 -translate-y-1/2"
+              className="pointer-events-auto flex shrink-0 items-center justify-center rounded-full border-2 opacity-80 shadow-lg backdrop-blur-md transition-opacity hover:opacity-90"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                width: 'clamp(5rem,9vw,14rem)',
-                height: 'clamp(5rem,9vw,14rem)',
-                left: 'clamp(20%,32%,35%)',
-                top: 'calc(50% + clamp(130px, 20vw, 320px))',
+                width: 'clamp(4rem, min(7vw, 12vh), 7rem)',
+                height: 'clamp(4rem, min(7vw, 12vh), 7rem)',
               }}
               aria-label="Zkrátit odhadovaný čas"
             >
               <Minus className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
             </button>
 
-            {/* Plus button - right of center, below circle */}
+            {/* Plus button - aligned below the right edge of the center circle */}
             <button 
               onClick={handleIncreaseTime}
-              className="absolute rounded-full border-2 flex items-center justify-center opacity-80 hover:opacity-90 transition-opacity cursor-pointer backdrop-blur-md shadow-lg z-50 translate-x-1/2 -translate-y-1/2"
+              className="pointer-events-auto flex shrink-0 items-center justify-center rounded-full border-2 opacity-80 shadow-lg backdrop-blur-md transition-opacity hover:opacity-90"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
-                width: 'clamp(5rem,9vw,14rem)',
-                height: 'clamp(5rem,9vw,14rem)',
-                right: 'clamp(20%,32%,35%)',
-                top: 'calc(50% + clamp(130px, 20vw, 320px))',
+                width: 'clamp(4rem, min(7vw, 12vh), 7rem)',
+                height: 'clamp(4rem, min(7vw, 12vh), 7rem)',
               }}
               aria-label="Prodloužit odhadovaný čas"
             >
               <Plus className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
             </button>
-          </>
+            </div>
+          </div>
         )}
       </main>
 
