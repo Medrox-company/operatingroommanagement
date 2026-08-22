@@ -1824,7 +1824,10 @@ const prevStep = activeDbStatuses.length > 0
       </main>
 
       {/* Bottom Center - Phase Duration & Navigation */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
+      <div
+        data-testid="room-detail-phase-indicator"
+        className="absolute inset-x-0 bottom-8 z-50 flex flex-col items-center gap-4 px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]"
+      >
         {/* Navigation Indicators - only show active statuses */}
         <div className="flex gap-3">
         {activeDbStatuses.map((status, index) => (
