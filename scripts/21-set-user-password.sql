@@ -7,7 +7,7 @@
 -- Kdo smí heslo měnit, řeší aplikace (app/api/admin/user-password/route.ts).
 -- Funkce je SECURITY DEFINER a volá se výhradně servisním klíčem, takže se
 -- k ní běžný klient nedostane — RLS ani granty pro anon/authenticated
--- na app_users neexistují (viz scripts/14).
+-- na app_users neexistují (viz scripts/19).
 
 BEGIN;
 

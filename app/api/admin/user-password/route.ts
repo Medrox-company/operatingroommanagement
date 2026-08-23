@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 /**
  * Změna hesla role v konkrétní nemocnici.
  *
- * Hesla patří ke dvojici role + zařízení (viz scripts/17), takže požadavek
+ * Hesla patří ke dvojici role + zařízení (viz scripts/22), takže požadavek
  * vždy nese hospitalId. Změna hesla pro COS v Liberci se nedotkne COS
  * v Hradci.
  *

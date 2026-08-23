@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
   ]);
   if (!hospital || !user) return NextResponse.json({ error: 'Nemocnice nebo uživatel neexistuje' }, { status: 404 });
   // Jen superadministrátor má přístup všude bez členství. Administrátor se od
-  // scripts/17 řídí členstvím stejně jako provozní role.
+  // scripts/22 řídí členstvím stejně jako provozní role.
   if (hasGlobalHospitalAccess(user.role)) return NextResponse.json({ success: true, global: true });
 
   const result = enabled

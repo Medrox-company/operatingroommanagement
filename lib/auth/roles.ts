@@ -28,7 +28,7 @@ export function isAdminRole(role: string | null | undefined): boolean {
  * Role, které nejsou vázané na členství v konkrétní nemocnici — vidí a spravují
  * všechna zdravotnická zařízení.
  *
- * Od scripts/17 je to pouze superadministrátor. Administrátor se řídí členstvím
+ * Od scripts/22 je to pouze superadministrátor. Administrátor se řídí členstvím
  * stejně jako provozní role, protože každá nemocnice má vlastního správce
  * s vlastním heslem. Nezaměňovat s `isAdminRole` — ta říká, kdo smí do
  * administrátorského rozhraní, ne ke kolika zařízením.

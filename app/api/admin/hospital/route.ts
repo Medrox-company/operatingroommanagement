@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
 
     // Zakladatel musí do nového zařízení sám dostat přístup.
     //
-    // Od scripts/17 se administrátor řídí členstvím jako provozní role, takže
+    // Od scripts/22 se administrátor řídí členstvím jako provozní role, takže
     // bez tohoto kroku by právě založené zařízení nešlo spravovat. Heslo se
     // přebírá z členství, přes které je právě přihlášený — jde o týž účet,
     // takže se nic nesdílí napříč rolemi. Ostatní role zůstávají bez členství

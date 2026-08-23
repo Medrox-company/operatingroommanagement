@@ -36,7 +36,7 @@ interface LoginHospital {
  *
  * Hesla tu schválně nejsou. Dřív se odsud přihlašovalo jedním kliknutím
  * s heslem zapsaným v kódu, jenže ten kód si stáhne každý návštěvník stránky.
- * Navíc má od scripts/17 každá role v každé nemocnici vlastní heslo, takže
+ * Navíc má od scripts/22 každá role v každé nemocnici vlastní heslo, takže
  * jedna zapsaná hodnota už ani nemůže platit.
  *
  * Kliknutí na roli proto jen předvyplní přihlašovací jméno a vyžádá heslo.

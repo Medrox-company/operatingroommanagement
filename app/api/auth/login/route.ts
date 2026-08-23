@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   if (!hospital) return NextResponse.json({ error: 'Vybraná nemocnice neexistuje' }, { status: 400 });
 
   // Heslo se ověřuje proti vybrané nemocnici (bcrypt compare v databázi).
-  // Každá role má v každém zařízení vlastní heslo — viz scripts/17. Funkce
+  // Každá role má v každém zařízení vlastní heslo — viz scripts/22. Funkce
   // zároveň nahrazuje dřívější samostatnou kontrolu členství: kdo do zařízení
   // nepatří, nemá tam heslo, takže neprojde.
   //
