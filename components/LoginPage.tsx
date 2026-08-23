@@ -5,7 +5,7 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
-  Briefcase,
+  BriefcaseBusiness,
   Building2,
   ChevronDown,
   ClipboardList,
@@ -55,7 +55,7 @@ const QUICK_ROLES: Array<{
   { id: 'admin', label: 'Administrátor', email: 'admin@nemocnice.cz', icon: Shield, tone: '#D99C35', description: 'Plný přístup' },
   { id: 'aro', label: 'ARO', email: 'aro@nemocnice.cz', icon: Activity, tone: '#24A8C8', description: 'Anestezie' },
   { id: 'cos', label: 'COS', email: 'cos@nemocnice.cz', icon: Stethoscope, tone: '#2AAE82', description: 'Operační sály' },
-  { id: 'management', label: 'Management', email: 'management@nemocnice.cz', icon: Briefcase, tone: '#8B7AD8', description: 'Vedení' },
+  { id: 'management', label: 'Management', email: 'management@nemocnice.cz', icon: BriefcaseBusiness, tone: '#8B7AD8', description: 'Vedení' },
   { id: 'primar', label: 'Primariát', email: 'primar@nemocnice.cz', icon: ClipboardList, tone: '#C76F9B', description: 'Primář' },
 ];
 
@@ -368,7 +368,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }}
                   disabled={hospitalsLoading || hospitals.length === 0}
                   required
-                  className="mobile-login-field h-[58px] w-full appearance-none rounded-[17px] pl-12 pr-12 text-[15px] font-bold outline-none disabled:opacity-50"
+                  className="login-hospital-select mobile-login-field h-[58px] w-full appearance-none rounded-[17px] pl-12 pr-12 text-[15px] font-bold outline-none disabled:opacity-50"
+                  style={{ colorScheme: 'dark' }}
                 >
                   {hospitalOptions}
                 </select>
@@ -452,8 +453,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       className="mobile-login-role flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[24px] px-2 disabled:opacity-40"
                       style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
-                      <span className="grid h-11 w-11 place-items-center rounded-[15px]" style={{ color: role.tone, backgroundColor: `${role.tone}18` }}>
-                        <Icon className="h-5 w-5" strokeWidth={1.8} />
+                      <span className="login-role-icon grid h-11 w-11 place-items-center">
+                        <Icon className="h-[26px] w-[26px]" strokeWidth={1.8} />
                       </span>
                       <span className="block w-full truncate text-center text-[10px] font-extrabold">{role.label}</span>
                     </button>
@@ -541,7 +542,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   value={selectedHospitalId}
                   onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }}
                   disabled={hospitalsLoading || hospitals.length === 0}
-                  className="login-glass-field h-[58px] w-full appearance-none rounded-[20px] pl-14 pr-12 text-[14px] font-semibold text-white/86 outline-none transition-colors disabled:opacity-50"
+                  className="login-hospital-select login-glass-field h-[58px] w-full appearance-none rounded-[20px] pl-14 pr-12 text-[14px] font-semibold text-white/86 outline-none transition-colors disabled:opacity-50"
+                  style={{ colorScheme: 'dark' }}
                 >
                   {hospitalOptions}
                 </select>
@@ -568,11 +570,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       className="login-role-tile flex aspect-square flex-col items-center justify-center gap-3 rounded-[28px] px-3 disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
-                      <span
-                        className="grid h-14 w-14 place-items-center rounded-[20px] transition-colors duration-300"
-                        style={{ color: role.tone, backgroundColor: `${role.tone}${active ? '26' : '14'}` }}
-                      >
-                        <Icon className="h-7 w-7" strokeWidth={1.6} />
+                      <span className="login-role-icon grid h-14 w-14 place-items-center">
+                        <Icon className="h-7 w-7" strokeWidth={1.8} />
                       </span>
                       <span className="block whitespace-nowrap text-[12.5px] font-semibold text-white/88">{role.label}</span>
                       <span
@@ -597,11 +596,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <div>
                 <form onSubmit={handleSubmit} className="login-glass-field mt-4 flex items-center gap-3.5 rounded-[22px] p-4">
                   <div className="flex items-center gap-3 pr-4">
-                    <span
-                      className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[13px]"
-                      style={activeRole ? { color: activeRole.tone, backgroundColor: `${activeRole.tone}26` } : undefined}
-                    >
-                      {activeRole ? <activeRole.icon className="h-[19px] w-[19px]" strokeWidth={1.7} /> : null}
+                    <span className="login-role-badge grid h-[38px] w-[38px] shrink-0 place-items-center">
+                      {activeRole ? <activeRole.icon className="h-6 w-6" strokeWidth={1.8} /> : null}
                     </span>
                     <div className="text-left">
                       <p className="whitespace-nowrap text-[12.5px] font-semibold text-white/88">{activeRole?.label}</p>
