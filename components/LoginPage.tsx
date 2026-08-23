@@ -477,7 +477,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background: 'linear-gradient(145deg, #07162B 0%, #0A1029 48%, #08091A 100%)',
+          background: 'linear-gradient(145deg, #0A1B32 0%, #10143A 49%, #100D24 100%)',
         }}
       />
       <div aria-hidden className="login-aurora-flow pointer-events-none absolute" />
@@ -554,8 +554,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
 
             <div className="mx-auto mt-8 max-w-[930px]">
-              <div className="grid grid-cols-5 gap-4">
-                {QUICK_ROLES.map(role => {
+              {/* Šipkami se dá mezi rolemi přejíždět bez tabulátoru — na
+                  dotykovém monitoru u sálu se často pracuje s klávesnicí. */}
+              <div
+                className="grid grid-cols-5 gap-4"
+                onKeyDown={event => {
+                  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                  const tiles = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button')];
+                  const current = tiles.indexOf(document.activeElement as HTMLButtonElement);
+                  if (current === -1) return;
+                  event.preventDefault();
+                  const step = event.key === 'ArrowRight' ? 1 : -1;
+                  tiles[(current + step + tiles.length) % tiles.length]?.focus();
+                }}
+              >
+                {QUICK_ROLES.map((role, index) => {
                   const Icon = role.icon;
                   const active = selectedRole === role.id;
                   const dimmed = selectedRole !== null && !active;
@@ -567,8 +580,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       disabled={isLoading || !selectedHospitalId}
                       aria-pressed={active}
                       data-dimmed={dimmed ? 'true' : undefined}
-                      className="login-role-tile flex aspect-square flex-col items-center justify-center gap-3 rounded-[28px] px-3 disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{ '--login-role-tone': role.tone } as React.CSSProperties}
+                      className="login-role-tile login-rise flex aspect-square flex-col items-center justify-center gap-3 rounded-[28px] px-3 disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{
+                        '--login-role-tone': role.tone,
+                        animationDelay: `${60 + index * 55}ms`,
+                      } as React.CSSProperties}
                     >
                       <span className="login-role-icon grid h-14 w-14 place-items-center">
                         <Icon className="h-7 w-7" strokeWidth={1.8} />
