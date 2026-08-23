@@ -182,20 +182,21 @@ body {
 
 .login-role-icon,
 .login-role-badge {
-  color: #ffffff;
+  color: #e2e9ed;
   background: transparent;
-  opacity: 0.58;
+  opacity: 0.76;
+  filter: drop-shadow(0 3px 10px rgba(204, 231, 241, 0.08));
   transition: opacity 220ms ease;
 }
 
 .login-role-badge {
-  opacity: 0.72;
+  opacity: 0.84;
 }
 
 .login-role-tile:hover:not(:disabled) .login-role-icon,
 .login-role-tile[aria-pressed='true'] .login-role-icon,
 .mobile-login-role:active:not(:disabled) .login-role-icon {
-  opacity: 0.82;
+  opacity: 0.96;
 }
 
 .login-role-tile:hover:not(:disabled):not([data-dimmed='true']) {

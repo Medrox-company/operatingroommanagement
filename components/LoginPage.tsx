@@ -453,8 +453,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       className="mobile-login-role flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[24px] px-2 disabled:opacity-40"
                       style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
-                      <span className="login-role-icon grid h-11 w-11 place-items-center">
-                        <Icon className="h-[26px] w-[26px]" strokeWidth={1.8} />
+                      <span className="login-role-icon grid h-12 w-12 place-items-center">
+                        <Icon className="h-[30px] w-[30px]" strokeWidth={2.05} />
                       </span>
                       <span className="block w-full truncate text-center text-[10px] font-extrabold">{role.label}</span>
                     </button>
@@ -570,8 +570,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       className="login-role-tile flex aspect-square flex-col items-center justify-center gap-3 rounded-[28px] px-3 disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
-                      <span className="login-role-icon grid h-14 w-14 place-items-center">
-                        <Icon className="h-7 w-7" strokeWidth={1.8} />
+                      <span className="login-role-icon grid h-16 w-16 place-items-center">
+                        <Icon className="h-[38px] w-[38px]" strokeWidth={2.1} />
                       </span>
                       <span className="block whitespace-nowrap text-[12.5px] font-semibold text-white/88">{role.label}</span>
                       <span
@@ -597,7 +597,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <form onSubmit={handleSubmit} className="login-glass-field mt-4 flex items-center gap-3.5 rounded-[22px] p-4">
                   <div className="flex items-center gap-3 pr-4">
                     <span className="login-role-badge grid h-[38px] w-[38px] shrink-0 place-items-center">
-                      {activeRole ? <activeRole.icon className="h-6 w-6" strokeWidth={1.8} /> : null}
+                      {activeRole ? <activeRole.icon className="h-[26px] w-[26px]" strokeWidth={2} /> : null}
                     </span>
                     <div className="text-left">
                       <p className="whitespace-nowrap text-[12.5px] font-semibold text-white/88">{activeRole?.label}</p>
