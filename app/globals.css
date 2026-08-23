@@ -86,61 +86,59 @@ body {
 
 /* Login — lightweight fluid aurora. One composited layer, no image, canvas,
    blur filter or JavaScript animation. */
-/* Menší náklon než dřív (±2° místo ±5°). Otočení je to, co nutí vrstvu
-   přesahovat viewport — zmenšením úhlu stačí inset -14 % místo -24 %, což
-   ušetří zhruba čtvrtinu plochy trvale drženého GPU povrchu. */
 @keyframes login-aurora-drift {
   0% {
-    transform: translate3d(-2.5%, -1.5%, 0) rotate(-2deg) scale(1.02);
+    transform: translate3d(-3%, -2%, 0) rotate(-5deg) scale(1.03);
   }
   50% {
-    transform: translate3d(1.5%, 1%, 0) rotate(-0.5deg) scale(1.06);
+    transform: translate3d(2%, 1.5%, 0) rotate(-1deg) scale(1.08);
   }
   100% {
-    transform: translate3d(3%, -1%, 0) rotate(1.5deg) scale(1.03);
+    transform: translate3d(4%, -1%, 0) rotate(3deg) scale(1.04);
   }
 }
 
 .login-aurora-flow {
-  inset: -14%;
+  inset: -24%;
   contain: paint;
-  opacity: 0.86;
+  opacity: 0.9;
   will-change: transform;
   background:
-    radial-gradient(ellipse 46% 34% at 22% 44%, rgba(42, 172, 226, 0.54) 0%, rgba(34, 112, 198, 0.22) 48%, transparent 78%),
-    radial-gradient(ellipse 52% 37% at 52% 49%, rgba(98, 103, 235, 0.50) 0%, rgba(92, 64, 190, 0.22) 52%, transparent 80%),
-    radial-gradient(ellipse 45% 35% at 80% 41%, rgba(197, 75, 169, 0.39) 0%, rgba(132, 52, 153, 0.18) 52%, transparent 79%);
+    radial-gradient(ellipse 36% 25% at 24% 43%, rgba(25, 151, 218, 0.5) 0%, rgba(24, 99, 190, 0.2) 46%, transparent 74%),
+    radial-gradient(ellipse 42% 28% at 53% 48%, rgba(74, 79, 224, 0.5) 0%, rgba(92, 54, 186, 0.2) 50%, transparent 76%),
+    radial-gradient(ellipse 34% 28% at 77% 40%, rgba(190, 58, 151, 0.38) 0%, rgba(123, 43, 144, 0.18) 49%, transparent 75%);
   animation: login-aurora-drift 22s ease-in-out infinite alternate;
-}
-
-/* Na skryté záložce nemá smysl překreslovat. `.app-idle` nasazuje sdílený
-   časovač aplikace, když prohlížeč stránku nezobrazuje. */
-.app-idle .login-aurora-flow {
-  animation-play-state: paused;
 }
 
 .login-wordmark {
   text-shadow: 0 18px 54px rgba(39, 110, 201, 0.12);
 }
 
-/* Sklo bez `backdrop-filter`.
-   ---------------------------------------------------------------------------
-   Původně mělo rozostřené pozadí deset prvků najednou — každý z nich znamená
-   samostatný průchod rozostřením přes celou svou plochu, a to při každém
-   snímku, protože se pod nimi hýbe aurora.
-   Změřeno na produkčním buildu: proti skutečnému `backdrop-filter` se laděná
-   průsvitná výplň liší v průměru o 2,9 % jasu (max 5 %). Důvod je ten, že
-   pozadí pod sklem je hladký přechod — rozostřit už rozostřené nemá co získat.
-   Modravý nádech ve výplni nahrazuje to, co dřív obstarávalo `saturate()`. */
+/* Skleněný panel přihlášení.
+   Aurora pod ním prosvítá rozostřeně, horní hrana nese jemné světlo.
+   Rozostření pozadí je tu jediné v celé aplikaci — přihlašovací obrazovka má
+   jeden panel, takže výkon neřeší; na dashboardu zůstává odstraněné. */
 .login-glass {
-  background: linear-gradient(145deg, rgba(26, 48, 76, 0.62), rgba(11, 24, 45, 0.50));
+  background: linear-gradient(145deg, rgba(23, 43, 68, 0.40), rgba(10, 22, 42, 0.26));
   border: 0;
+  -webkit-backdrop-filter: blur(34px) saturate(132%);
+  backdrop-filter: blur(34px) saturate(132%);
   box-shadow: 0 34px 100px rgba(0, 0, 0, 0.28);
 }
 
+/* Bez podpory rozostření by panel zprůhlednil na nečitelné pozadí. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .login-glass {
+    background: rgba(12, 24, 40, 0.94);
+  }
+}
+
+/* Pole uvnitř skla snesou o něco víc světla než na plné výplni. */
 .login-glass-field {
-  background: linear-gradient(145deg, rgba(186, 214, 255, 0.075), rgba(160, 190, 245, 0.032));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
   border: 0;
+  -webkit-backdrop-filter: blur(18px) saturate(122%);
+  backdrop-filter: blur(18px) saturate(122%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 30px rgba(0, 0, 0, 0.05);
 }
 
@@ -167,41 +165,12 @@ body {
 
 /* Dlaždice rolí — sklo bez ohraničení, jen jemný rozdíl v hustotě. */
 .login-role-tile {
-  background: linear-gradient(145deg, rgba(186, 214, 255, 0.085), rgba(160, 190, 245, 0.042));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
   border: 0;
+  -webkit-backdrop-filter: blur(22px) saturate(122%);
+  backdrop-filter: blur(22px) saturate(122%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 30px rgba(0, 0, 0, 0.05);
   transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1), background 260ms ease, box-shadow 260ms ease, opacity 260ms ease;
-}
-
-/* Nástup dlaždic při otevření stránky.
-   Animuje se jen opacity a transform, tedy vlastnosti, které zvládne
-   kompozitor bez překreslování — proto to nic nestojí ani na tabletu. */
-@keyframes login-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.login-rise {
-  animation: login-rise 620ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .login-rise {
-    animation: none;
-  }
-}
-
-/* Zaostření klávesnicí musí být vidět i bez rámečků. */
-.login-role-tile:focus-visible,
-.login-glass-action:focus-visible {
-  outline: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 0 0 3px rgba(100, 185, 205, 0.5);
 }
 
 .login-role-icon,
@@ -284,23 +253,20 @@ body {
 
 .login-glass-action {
   border: 0;
-  background: linear-gradient(145deg, rgba(202, 224, 255, 0.145), rgba(172, 200, 250, 0.065));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.045));
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(125%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 16px 36px rgba(0, 0, 0, 0.12);
-  transition: background 200ms ease, transform 200ms ease;
 }
 
 .login-glass-action:hover:not(:disabled) {
-  background: linear-gradient(145deg, rgba(214, 232, 255, 0.20), rgba(182, 208, 252, 0.09));
-}
-
-.login-glass-action:active:not(:disabled) {
-  transform: scale(0.985);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.065));
 }
 
 .login-aurora-vignette {
   background:
-    radial-gradient(ellipse at center, transparent 18%, rgba(3, 8, 20, 0.16) 66%, rgba(2, 6, 15, 0.55) 100%),
-    linear-gradient(180deg, rgba(3, 9, 20, 0.01), rgba(2, 7, 16, 0.24));
+    radial-gradient(ellipse at center, transparent 20%, rgba(3, 8, 20, 0.2) 64%, rgba(2, 6, 15, 0.65) 100%),
+    linear-gradient(180deg, rgba(3, 9, 20, 0.02), rgba(2, 7, 16, 0.3));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -801,7 +767,7 @@ html.capacitor-native select {
 
 .m-dark .mobile-login-page {
   color-scheme: dark;
-  --login-bg: linear-gradient(145deg, #0a1b32 0%, #10143a 49%, #100d24 100%);
+  --login-bg: linear-gradient(145deg, #07162b 0%, #0a1029 48%, #08091a 100%);
   --login-title: #ffffff;
   --login-copy: rgba(231, 238, 255, 0.62);
   --login-muted: rgba(211, 222, 248, 0.48);
@@ -851,6 +817,8 @@ html.capacitor-native select {
   border: 0;
   background: var(--login-toggle);
   color: var(--login-title);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  backdrop-filter: blur(18px) saturate(125%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 24px rgba(27, 48, 91, 0.08);
 }
 
@@ -858,6 +826,8 @@ html.capacitor-native select {
   border: 0;
   background: var(--login-field);
   color: var(--login-field-text);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  backdrop-filter: blur(18px) saturate(125%);
   box-shadow: 0 7px 22px rgba(24, 49, 91, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
@@ -905,6 +875,8 @@ html.capacitor-native select {
   border: 0;
   background: linear-gradient(145deg, color-mix(in srgb, var(--login-role) 92%, white 8%), var(--login-role));
   color: var(--login-copy);
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(125%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px rgba(25, 47, 87, 0.07);
   transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
