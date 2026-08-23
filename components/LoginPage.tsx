@@ -308,7 +308,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <h1 className="mobile-login-title mt-5 max-w-[360px] text-[clamp(2rem,9vw,2.8rem)] font-semibold leading-[0.94] tracking-[-0.06em]">
             Operatingroom management system
           </h1>
-          <p className="mobile-login-subtitle mt-4 max-w-[370px] text-[12.5px] font-medium leading-[1.55]">
+          <p className="mobile-login-subtitle mt-4 max-w-[370px] text-[11.5px] font-medium leading-[1.55]">
             Systém pro správu a monitoring operačních sálů v reálném čase. Propojuje živý přehled, tok pacienta, časovou osu, personál, upozornění a provozní statistiky.
           </p>
         </header>
@@ -516,7 +516,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <p className="mt-5 text-[clamp(0.72rem,1.25vw,1.05rem)] font-bold uppercase tracking-[0.52em] text-white/72">
                 Management system
               </p>
-              <p className="mx-auto mt-4 max-w-[680px] text-[clamp(0.7rem,0.9vw,0.875rem)] font-medium leading-[1.6] text-white/46">
+              <p className="mx-auto mt-4 max-w-[680px] text-[clamp(0.64rem,0.78vw,0.78rem)] font-medium leading-[1.6] text-white/46">
                 Systém pro správu a monitoring operačních sálů v reálném čase. Propojuje živý přehled, tok pacienta, časovou osu, personál, upozornění a provozní statistiky.
               </p>
             </div>
@@ -589,12 +589,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {/* Heslo se rozbalí pod dlaždicemi, aniž by se odcházelo na jinou
                 stránku. Prvek je v DOM pořád — jinak by nebylo co animovat. */}
             <div
-              className="login-password-reveal mx-auto max-w-[930px]"
+              className="login-password-reveal mx-auto max-w-[942px]"
               data-open={selectedRole ? 'true' : undefined}
               aria-hidden={selectedRole ? undefined : true}
             >
               <div>
-                <form onSubmit={handleSubmit} className="login-glass-field mt-4 flex items-center gap-3.5 rounded-[22px] p-4">
+                <form onSubmit={handleSubmit} className="login-glass-row mt-4 flex items-center gap-3.5 rounded-[22px] p-4">
                   <div className="flex items-center gap-3 pr-4">
                     <span className="login-role-badge grid h-[38px] w-[38px] shrink-0 place-items-center">
                       {activeRole ? <activeRole.icon className="h-[26px] w-[26px]" strokeWidth={2} /> : null}
