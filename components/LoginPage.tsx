@@ -68,18 +68,6 @@ const GoogleMark: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const LOGIN_BACKGROUND_STYLE: React.CSSProperties = {
-  backgroundImage: "url('/landing-assets/operating-theatre.png')",
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-  backgroundSize: 'cover',
-};
-
-const LOGIN_DESKTOP_OVERLAY_STYLE: React.CSSProperties = {
-  backgroundImage:
-    'linear-gradient(90deg, rgba(5, 23, 43, 0.91), rgba(7, 42, 70, 0.62) 43%, rgba(10, 52, 82, 0.17) 78%), linear-gradient(0deg, rgba(5, 24, 44, 0.55), transparent 55%)',
-};
-
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
@@ -290,7 +278,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   return (
     <>
     <div className="mobile-login-page relative min-h-[100dvh] w-full overflow-x-hidden md:hidden">
-      <div aria-hidden className="pointer-events-none fixed inset-0" style={LOGIN_BACKGROUND_STYLE} />
+      <div aria-hidden className="login-aurora-flow mobile-login-aurora pointer-events-none fixed" />
+      <div aria-hidden className="login-aurora-vignette mobile-login-vignette pointer-events-none fixed inset-0" />
 
       <button
         type="button"
@@ -316,11 +305,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
       <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col px-[clamp(24px,8vw,42px)] pb-[max(28px,env(safe-area-inset-bottom))] pt-[max(68px,calc(env(safe-area-inset-top)+54px))]">
         <header className="flex flex-col items-center text-center">
-          <h1 className="mobile-login-title mt-5 text-[clamp(2.15rem,10vw,3rem)] font-extrabold leading-none tracking-[-0.045em]">Operatingroom manager</h1>
-          <p className="mobile-login-subtitle mt-3 text-[15px] font-medium">Zadejte přihlašovací údaje</p>
+          <h1 className="mobile-login-title mt-5 max-w-[360px] text-[clamp(2rem,9vw,2.8rem)] font-semibold leading-[0.94] tracking-[-0.06em]">
+            Operatingroom management system
+          </h1>
+          <p className="mobile-login-subtitle mt-4 max-w-[370px] text-[12.5px] font-medium leading-[1.55]">
+            Systém pro správu a monitoring operačních sálů v reálném čase. Propojuje živý přehled, tok pacienta, časovou osu, personál, upozornění a provozní statistiky.
+          </p>
         </header>
 
-        <section className="mt-10 sm:mt-12">
+        <section className="mt-8 sm:mt-10">
           {error && (
             <div className="mobile-login-error mb-5 flex items-start gap-2.5 rounded-2xl px-4 py-3.5">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -482,9 +475,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
-        style={LOGIN_BACKGROUND_STYLE}
+        style={{
+          background: 'linear-gradient(145deg, #07162B 0%, #0A1029 48%, #08091A 100%)',
+        }}
       />
-      <div aria-hidden className="pointer-events-none absolute inset-0" style={LOGIN_DESKTOP_OVERLAY_STYLE} />
+      <div aria-hidden className="login-aurora-flow pointer-events-none absolute" />
+      <div aria-hidden className="login-aurora-vignette pointer-events-none absolute inset-0" />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.08]"
@@ -495,7 +491,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         }}
       />
 
-      <header className="relative z-10 flex h-[72px] items-center px-[5vw]">
+      <header className="relative z-10 flex h-[84px] items-center px-9 lg:px-12">
         <div className="flex min-w-[180px] items-center">
           {selectedRole && (
             <button
@@ -510,17 +506,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
       </header>
 
-      <section className="relative z-10 mx-[5vw] mt-[18px] max-w-[720px] text-left">
-        <h1 className="login-wordmark text-[clamp(2.8rem,4.9vw,4.875rem)] font-semibold leading-[0.9] tracking-[-0.06em] text-white">
-          Operatingroom<br />management system
-        </h1>
-        <p className="mt-4 max-w-[590px] text-[clamp(0.72rem,0.92vw,0.875rem)] leading-[1.55] text-white/67">
-          Systém pro správu a monitoring operačních sálů v reálném čase. Propojuje živý přehled, tok pacienta, časovou osu, personál, upozornění a provozní statistiky.
-        </p>
-      </section>
-
-      <main className="absolute left-1/2 top-[59%] z-10 w-[min(1120px,91vw)] -translate-x-1/2 -translate-y-1/2">
-        <section className="w-full text-center">
+      <main className="relative z-10 flex flex-1 items-center justify-center px-8 pb-16 pt-4">
+        <section className="w-full max-w-[1040px] pb-8 text-center">
+            <div className="mx-auto max-w-[960px]">
+              <h1 className="login-wordmark text-[clamp(3.45rem,6.8vw,6.8rem)] font-semibold leading-[0.88] tracking-[-0.06em] text-white">
+                OPERATINGROOM
+              </h1>
+              <p className="mt-5 text-[clamp(0.72rem,1.25vw,1.05rem)] font-bold uppercase tracking-[0.52em] text-white/72">
+                Management system
+              </p>
+              <p className="mx-auto mt-4 max-w-[680px] text-[clamp(0.7rem,0.9vw,0.875rem)] font-medium leading-[1.6] text-white/46">
+                Systém pro správu a monitoring operačních sálů v reálném čase. Propojuje živý přehled, tok pacienta, časovou osu, personál, upozornění a provozní statistiky.
+              </p>
+            </div>
 
             {error && (
               <div className="mx-auto mt-6 flex max-w-[760px] items-start gap-2.5 rounded-xl bg-red-400/[0.08] px-3.5 py-3 text-left text-red-300">
@@ -532,17 +530,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {/* Zařízení zůstává vidět i po výběru role, jen ustoupí do pozadí —
                 jinak by uživatel při zadávání hesla ztratil kontext, kam se hlásí. */}
             <div
-              className="mx-auto max-w-[850px] transition-opacity duration-300"
+              className="mx-auto mt-6 max-w-[760px] transition-opacity duration-300"
               style={{ opacity: selectedRole ? 0.4 : 1 }}
             >
-              <label htmlFor="desktop-role-hospital" className="mb-[11px] block text-[8px] font-bold uppercase tracking-[0.24em] text-white/37">Zdravotnické zařízení</label>
+              <label htmlFor="desktop-role-hospital" className="mb-2.5 block text-[8px] font-semibold uppercase tracking-[0.34em] text-white/24">Zdravotnické zařízení</label>
               <div className="relative">
+                <Building2 className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#64B9CD]" />
                 <select
                   id="desktop-role-hospital"
                   value={selectedHospitalId}
                   onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }}
                   disabled={hospitalsLoading || hospitals.length === 0}
-                  className="login-glass-field h-[58px] w-full appearance-none rounded-[17px] pl-6 pr-12 text-[12px] font-semibold text-white/90 outline-none transition-colors disabled:opacity-50"
+                  className="login-glass-field h-[58px] w-full appearance-none rounded-[20px] pl-14 pr-12 text-[14px] font-semibold text-white/86 outline-none transition-colors disabled:opacity-50"
                 >
                   {hospitalOptions}
                 </select>
@@ -552,7 +551,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
 
-            <div className="mx-auto mt-[27px] max-w-[1120px]">
+            <div className="mx-auto mt-8 max-w-[930px]">
               <div className="grid grid-cols-5 gap-4">
                 {QUICK_ROLES.map(role => {
                   const Icon = role.icon;
@@ -566,17 +565,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       disabled={isLoading || !selectedHospitalId}
                       aria-pressed={active}
                       data-dimmed={dimmed ? 'true' : undefined}
-                      className="login-role-tile flex h-[166px] flex-col items-center justify-center rounded-[24px] px-2 disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{ '--login-role-tone': role.tone, border: '1px solid rgba(222,241,251,0.12)' } as React.CSSProperties}
+                      className="login-role-tile flex aspect-square flex-col items-center justify-center gap-3 rounded-[28px] px-3 disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
                       <span
-                        className="mb-[17px] grid h-[51px] w-[51px] place-items-center text-white/60 transition-colors duration-300"
+                        className="grid h-14 w-14 place-items-center rounded-[20px] transition-colors duration-300"
+                        style={{ color: role.tone, backgroundColor: `${role.tone}${active ? '26' : '14'}` }}
                       >
-                        <Icon className="h-6 w-6" strokeWidth={1.2} />
+                        <Icon className="h-7 w-7" strokeWidth={1.6} />
                       </span>
-                      <span className="block whitespace-nowrap text-[12px] font-semibold text-white/88">{role.label}</span>
+                      <span className="block whitespace-nowrap text-[12.5px] font-semibold text-white/88">{role.label}</span>
                       <span
-                        className="mt-[7px] block whitespace-nowrap text-[9px] transition-colors duration-300"
+                        className="-mt-2 block whitespace-nowrap text-[9px] transition-colors duration-300"
                         style={{ color: active ? role.tone : 'rgba(255,255,255,0.28)' }}
                       >
                         {active ? 'Vybráno' : role.description}
@@ -590,7 +590,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {/* Heslo se rozbalí pod dlaždicemi, aniž by se odcházelo na jinou
                 stránku. Prvek je v DOM pořád — jinak by nebylo co animovat. */}
             <div
-              className="login-password-reveal mx-auto max-w-[1120px]"
+              className="login-password-reveal mx-auto max-w-[930px]"
               data-open={selectedRole ? 'true' : undefined}
               aria-hidden={selectedRole ? undefined : true}
             >
@@ -662,12 +662,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             {googleEnabled && !selectedRole && (
               <>
-                <div className="mx-auto mb-[14px] mt-7 flex max-w-[700px] items-center gap-[18px]">
+                <div className="mx-auto mb-4 mt-8 flex max-w-[760px] items-center gap-5">
                   <span className="h-px flex-1 bg-white/[0.085]" />
                   <span className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/28">Správa systému</span>
                   <span className="h-px flex-1 bg-white/[0.085]" />
                 </div>
-                <div className="mx-auto max-w-[700px]">
+                <div className="mx-auto max-w-[370px]">
                   {renderGoogleButton('desktop')}
                 </div>
                 <p className="mt-2.5 text-[10px] text-white/25">
@@ -679,7 +679,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </section>
       </main>
 
-      <footer className="relative z-10 mt-auto px-8 pb-7 text-center">
+      <footer className="relative z-10 px-8 pb-7 text-center">
         <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/16">MEDROX Czech Republic and Canada</p>
       </footer>
     </div>
