@@ -472,27 +472,38 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </main>
     </div>
 
-    <div className="relative hidden min-h-screen w-full overflow-x-hidden bg-[#06101D] text-white md:flex md:flex-col">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: 'linear-gradient(145deg, #07162B 0%, #0A1029 48%, #08091A 100%)',
-        }}
-      />
-      <div aria-hidden className="login-aurora-flow pointer-events-none absolute" />
-      <div aria-hidden className="login-aurora-vignette pointer-events-none absolute inset-0" />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.08]"
-        style={{
-          background: 'linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)',
-          backgroundSize: '80px 80px',
-          maskImage: 'linear-gradient(to bottom, transparent, black 24%, black 68%, transparent)',
-        }}
-      />
+    {/* Pevná výška okna místo min-h-screen: stránka se nesmí rolovat.
+        Rozměry uvnitř proto počítají i s výškou okna, ne jen se šířkou —
+        na širokém, ale nízkém okně by jinak nadpis zůstal obrovský. */}
+    {/* Rozměry uvnitř počítají i s výškou okna, takže se obsah vejde bez
+        rolování. `overflow-y: auto` je jen pojistka pro extrémně nízké okno —
+        tam je lepší nechat odrolovat než tlačítko oříznout a znepřístupnit. */}
+    <div className="relative hidden h-[100dvh] w-full overflow-x-hidden overflow-y-auto bg-[#06101D] text-white md:flex md:flex-col">
+      {/* Dekorace v ořezávající vrstvě.
+          Aurora má záporný inset, aby při pohybu nikde neodhalila okraj —
+          tím ale přesahovala pod spodní hranu okna o stovky pixelů a dělala
+          ze stránky rolovatelnou plochu. Rolovalo se tedy kvůli pozadí,
+          ne kvůli obsahu. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(145deg, #07162B 0%, #0A1029 48%, #08091A 100%)',
+          }}
+        />
+        <div className="login-aurora-flow absolute" />
+        <div className="login-aurora-vignette absolute inset-0" />
+        <div
+          className="absolute inset-0 opacity-[0.08]"
+          style={{
+            background: 'linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)',
+            backgroundSize: '80px 80px',
+            maskImage: 'linear-gradient(to bottom, transparent, black 24%, black 68%, transparent)',
+          }}
+        />
+      </div>
 
-      <header className="relative z-10 flex h-[84px] items-center px-9 lg:px-12">
+      <header className="relative z-10 flex h-[clamp(48px,7vh,84px)] shrink-0 items-center px-9 lg:px-12">
         <div className="flex min-w-[180px] items-center">
           {selectedRole && (
             <button
@@ -507,16 +518,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
       </header>
 
-      <main className="relative z-10 flex flex-1 items-center justify-center px-8 pb-16 pt-4">
-        <section className="w-full max-w-[1040px] pb-8 text-center">
+      <main className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-8 pb-[clamp(10px,2.6vh,64px)] pt-[clamp(4px,1vh,16px)]">
+        <section className="w-full max-w-[1040px] text-center">
             <div className="mx-auto max-w-[960px]">
-              <h1 className="login-wordmark text-[clamp(3.45rem,6.8vw,6.8rem)] font-semibold leading-[0.88] tracking-[-0.06em] text-white">
+              {/* min(vw, vh) drží nadpis v rozumné velikosti i na širokém,
+                  ale nízkém okně — dřív se řídil jen šířkou. */}
+              <h1 className="login-wordmark text-[clamp(2.2rem,min(6.8vw,10vh),6.8rem)] font-semibold leading-[0.88] tracking-[-0.06em] text-white">
                 OPERATINGROOM
               </h1>
-              <p className="mt-5 text-[clamp(0.72rem,1.25vw,1.05rem)] font-bold uppercase tracking-[0.52em] text-white/72">
+              <p className="mt-[clamp(5px,1.4vh,20px)] text-[clamp(0.6rem,min(1.25vw,1.55vh),1.05rem)] font-bold uppercase tracking-[0.52em] text-white/72">
                 Management system
               </p>
-              <p className="mx-auto mt-4 max-w-[680px] text-[clamp(0.64rem,0.78vw,0.78rem)] font-medium leading-[1.6] text-white/46">
+              <p className="mx-auto mt-[clamp(4px,1.1vh,16px)] max-w-[680px] text-[clamp(0.6rem,min(0.78vw,1.05vh),0.78rem)] font-medium leading-[1.55] text-white/46">
                 Systém pro správu a monitoring operačních sálů v reálném čase. Propojuje živý přehled, tok pacienta, časovou osu, personál, upozornění a provozní statistiky.
               </p>
             </div>
@@ -531,7 +544,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {/* Zařízení zůstává vidět i po výběru role, jen ustoupí do pozadí —
                 jinak by uživatel při zadávání hesla ztratil kontext, kam se hlásí. */}
             <div
-              className="mx-auto mt-6 max-w-[760px] transition-opacity duration-300"
+              className="mx-auto mt-[clamp(10px,2.2vh,28px)] max-w-[760px] transition-opacity duration-300"
               style={{ opacity: selectedRole ? 0.4 : 1 }}
             >
               <label htmlFor="desktop-role-hospital" className="mb-2.5 block text-[8px] font-semibold uppercase tracking-[0.34em] text-white/24">Zdravotnické zařízení</label>
@@ -553,7 +566,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
 
-            <div className="mx-auto mt-8 max-w-[930px]">
+            <div className="mx-auto mt-[clamp(12px,2.6vh,34px)] w-full max-w-[min(930px,74vh)]">
               <div className="grid grid-cols-5 gap-4">
                 {QUICK_ROLES.map(role => {
                   const Icon = role.icon;
@@ -589,7 +602,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {/* Heslo se rozbalí pod dlaždicemi, aniž by se odcházelo na jinou
                 stránku. Prvek je v DOM pořád — jinak by nebylo co animovat. */}
             <div
-              className="login-password-reveal mx-auto max-w-[942px]"
+              className="login-password-reveal mx-auto w-full max-w-[calc(min(930px,74vh)+12px)]"
               data-open={selectedRole ? 'true' : undefined}
               aria-hidden={selectedRole ? undefined : true}
             >
@@ -658,7 +671,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             {googleEnabled && !selectedRole && (
               <>
-                <div className="mx-auto mb-4 mt-8 flex max-w-[760px] items-center gap-5">
+                <div className="mx-auto mb-[clamp(8px,1.6vh,16px)] mt-[clamp(12px,2.6vh,34px)] flex max-w-[760px] items-center gap-5">
                   <span className="h-px flex-1 bg-white/[0.085]" />
                   <span className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/28">Správa systému</span>
                   <span className="h-px flex-1 bg-white/[0.085]" />
