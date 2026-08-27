@@ -303,9 +303,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </button>
       )}
 
-      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col px-[clamp(24px,8vw,42px)] pb-[max(28px,env(safe-area-inset-bottom))] pt-[max(68px,calc(env(safe-area-inset-top)+54px))]">
+      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col px-[clamp(18px,7vw,42px)] pb-[max(28px,env(safe-area-inset-bottom))] pt-[max(68px,calc(env(safe-area-inset-top)+54px))]">
         <header className="flex flex-col items-center text-center">
-          <h1 className="mobile-login-title mt-5 max-w-[360px] text-[clamp(2rem,9vw,2.8rem)] font-semibold leading-[0.94] tracking-[-0.06em]">
+          <h1 className="mobile-login-title mt-5 max-w-[380px] text-balance text-[clamp(1.85rem,8.5vw,2.8rem)] font-semibold leading-[0.98] tracking-[-0.055em]">
             Operatingroom management system
           </h1>
           <p className="mobile-login-subtitle mt-4 max-w-[370px] text-[11.5px] font-medium leading-[1.55]">
@@ -441,7 +441,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
           {!selectedRole && (
             <>
-              <div className="mt-6 grid grid-cols-3 gap-3">
+              <div className="mt-6 grid grid-cols-2 gap-[clamp(10px,3vw,14px)] min-[390px]:grid-cols-3">
                 {QUICK_ROLES.map(role => {
                   const Icon = role.icon;
                   return (
@@ -450,7 +450,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type="button"
                       onClick={() => handleRoleSelect(role.id)}
                       disabled={isLoading || !selectedHospitalId}
-                      className="mobile-login-role flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[24px] px-2 disabled:opacity-40"
+                      className="mobile-login-role flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[clamp(18px,5vw,24px)] px-2 disabled:opacity-40"
                       style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
                       <span className="login-role-icon grid h-12 w-12 place-items-center">
@@ -518,7 +518,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
       </header>
 
-      <main className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-8 pb-[clamp(10px,2.6vh,64px)] pt-[clamp(4px,1vh,16px)]">
+      <main className="login-desktop-main relative z-10 flex min-h-0 flex-1 items-center justify-center px-[clamp(18px,4vw,32px)] pb-[clamp(10px,2.6vh,64px)] pt-[clamp(4px,1vh,16px)]">
         <section className="w-full max-w-[1040px] text-center">
             <div className="mx-auto max-w-[960px]">
               {/* min(vw, vh) drží nadpis v rozumné velikosti i na širokém,
@@ -566,8 +566,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
 
-            <div className="mx-auto mt-[clamp(12px,2.6vh,34px)] w-full max-w-[min(930px,74vh)]">
-              <div className="grid grid-cols-5 gap-4">
+            <div className="mx-auto mt-[clamp(12px,2.6vh,34px)] w-full max-w-[930px]">
+              <div className="grid grid-cols-5 gap-[clamp(8px,1.5vw,16px)]">
                 {QUICK_ROLES.map(role => {
                   const Icon = role.icon;
                   const active = selectedRole === role.id;
@@ -580,15 +580,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       disabled={isLoading || !selectedHospitalId}
                       aria-pressed={active}
                       data-dimmed={dimmed ? 'true' : undefined}
-                      className="login-role-tile flex aspect-square flex-col items-center justify-center gap-3 rounded-[28px] px-3 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="login-role-tile flex aspect-square min-w-0 flex-col items-center justify-center gap-[clamp(7px,1.5vh,12px)] rounded-[clamp(18px,2.3vw,28px)] px-[clamp(6px,1.2vw,12px)] disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
-                      <span className="login-role-icon grid h-16 w-16 place-items-center">
-                        <Icon className="h-[38px] w-[38px]" strokeWidth={2.1} />
+                      <span className="login-role-icon grid h-[clamp(38px,5vw,64px)] w-[clamp(38px,5vw,64px)] place-items-center">
+                        <Icon className="h-[clamp(25px,3vw,38px)] w-[clamp(25px,3vw,38px)]" strokeWidth={2.1} />
                       </span>
-                      <span className="block whitespace-nowrap text-[12.5px] font-semibold text-white/88">{role.label}</span>
+                      <span className="block max-w-full truncate whitespace-nowrap text-[clamp(10px,1vw,12.5px)] font-semibold text-white/88">{role.label}</span>
                       <span
-                        className="-mt-2 block whitespace-nowrap text-[9px] transition-colors duration-300"
+                        className="-mt-1.5 block max-w-full truncate whitespace-nowrap text-[clamp(7.5px,0.72vw,9px)] transition-colors duration-300"
                         style={{ color: active ? role.tone : 'rgba(255,255,255,0.28)' }}
                       >
                         {active ? 'Vybráno' : role.description}
@@ -602,19 +602,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             {/* Heslo se rozbalí pod dlaždicemi, aniž by se odcházelo na jinou
                 stránku. Prvek je v DOM pořád — jinak by nebylo co animovat. */}
             <div
-              className="login-password-reveal mx-auto w-full max-w-[calc(min(930px,74vh)+12px)]"
+              className="login-password-reveal mx-auto w-full max-w-[942px]"
               data-open={selectedRole ? 'true' : undefined}
               aria-hidden={selectedRole ? undefined : true}
             >
               <div>
-                <form onSubmit={handleSubmit} className="login-glass-row mt-4 flex items-center gap-3.5 rounded-[22px] p-4">
-                  <div className="flex items-center gap-3 pr-4">
+                <form onSubmit={handleSubmit} className="login-glass-row mt-4 flex items-center gap-[clamp(8px,1.4vw,14px)] rounded-[22px] p-[clamp(10px,1.6vw,16px)]">
+                  <div className="flex min-w-0 items-center gap-3 pr-[clamp(4px,1vw,16px)]">
                     <span className="login-role-badge grid h-[38px] w-[38px] shrink-0 place-items-center">
                       {activeRole ? <activeRole.icon className="h-[26px] w-[26px]" strokeWidth={2} /> : null}
                     </span>
-                    <div className="text-left">
-                      <p className="whitespace-nowrap text-[12.5px] font-semibold text-white/88">{activeRole?.label}</p>
-                      <p className="whitespace-nowrap text-[9px] text-white/28">{activeRole?.email}</p>
+                    <div className="min-w-0 text-left">
+                      <p className="truncate whitespace-nowrap text-[12.5px] font-semibold text-white/88">{activeRole?.label}</p>
+                      <p className="truncate whitespace-nowrap text-[9px] text-white/28">{activeRole?.email}</p>
                     </div>
                   </div>
 
@@ -650,7 +650,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     type="submit"
                     disabled={isLoading || !password || !selectedHospitalId}
                     tabIndex={selectedRole ? undefined : -1}
-                    className="login-glass-action flex h-[50px] min-w-[158px] items-center justify-center gap-2 rounded-[16px] px-6 text-[12px] font-bold text-white/90 disabled:cursor-not-allowed disabled:opacity-45"
+                    className="login-glass-action flex h-[50px] min-w-[clamp(126px,15vw,158px)] items-center justify-center gap-2 whitespace-nowrap rounded-[16px] px-[clamp(14px,2vw,24px)] text-[clamp(10.5px,1vw,12px)] font-bold text-white/90 disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4 text-[#64B9CD]" />}
                     {isLoading ? 'Přihlašování…' : 'Přihlásit se'}

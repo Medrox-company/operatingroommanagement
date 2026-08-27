@@ -242,6 +242,37 @@ body {
   transform: scale(0.94);
 }
 
+/* Široké, ale nízké displeje (menší notebooky a tablety na šířku) nesmí
+   zmenšovat celou mřížku rolí podle výšky viewportu. Dlaždice se zde pouze
+   zploští a obsah začne nahoře, takže nic nepřetéká ani se nepřekrývá. */
+@media (min-width: 768px) and (max-height: 720px) {
+  .login-desktop-main {
+    align-items: flex-start;
+  }
+
+  .login-role-tile {
+    aspect-ratio: auto;
+    min-height: clamp(96px, 18vh, 126px);
+    padding-block: 10px;
+  }
+}
+
+/* Na velmi úzké desktopové šířce se formulář hesla skládá do dvou řádků
+   místo toho, aby se jeho části začaly vzájemně překrývat. */
+@media (min-width: 768px) and (max-width: 900px) {
+  .login-password-reveal .login-glass-row {
+    flex-wrap: wrap;
+  }
+
+  .login-password-reveal .login-glass-row > div:nth-of-type(2) {
+    flex-basis: calc(100% - 190px);
+  }
+
+  .login-password-reveal .login-glass-action {
+    width: 100%;
+  }
+}
+
 /* Rozbalení pole pro heslo pod dlaždicemi.
    grid-template-rows 0fr → 1fr umí animovat výšku, aniž bychom ji předem
    znali — na rozdíl od max-height, kde by se hodnota musela hádat. */
