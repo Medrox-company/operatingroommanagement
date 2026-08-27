@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Operatingroom Management System — přehled funkcí</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #17202B; font-size: 10.2pt; line-height: 1.55; margin: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  h1 { font-size: 25pt; line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 6px; font-weight: 800; }
+  h2 { font-size: 15pt; margin: 26px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #0E5C7A;
+       color: #0E5C7A; font-weight: 700; letter-spacing: -0.01em; page-break-after: avoid; }
+  h3 { font-size: 11.6pt; margin: 18px 0 5px; font-weight: 700; color: #14364A; page-break-after: avoid; }
+  h4 { font-size: 10.2pt; margin: 12px 0 3px; font-weight: 700; color: #2C4356; page-break-after: avoid; }
+  p { margin: 0 0 8px; }
+  ul { margin: 4px 0 10px; padding-left: 17px; }
+  li { margin-bottom: 3.5px; }
+  .lead { font-size: 11.4pt; color: #3A4A5A; margin-bottom: 4px; }
+  .sub { color: #5B6B7B; font-size: 9.6pt; }
+
+  .cover { border-bottom: 3px solid #0E5C7A; padding-bottom: 18px; margin-bottom: 8px; }
+  .kicker { font-size: 8.4pt; letter-spacing: 0.22em; text-transform: uppercase; color: #0E5C7A; font-weight: 700; margin-bottom: 10px; }
+
+  .box { background: #F3F7FA; border-left: 3px solid #0E5C7A; padding: 11px 14px; margin: 12px 0; page-break-inside: avoid; }
+  .box.warn { background: #FFF8EC; border-left-color: #C8811B; }
+  .box p:last-child { margin-bottom: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9.5pt; page-break-inside: avoid; }
+  th { background: #0E5C7A; color: #fff; text-align: left; padding: 7px 9px; font-weight: 600; font-size: 9.2pt; }
+  td { padding: 6px 9px; border-bottom: 1px solid #DCE5EC; vertical-align: top; }
+  tr:nth-child(even) td { background: #F7FAFC; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 14px; }
+  .card { border: 1px solid #DCE5EC; border-radius: 5px; padding: 10px 12px; page-break-inside: avoid; }
+  .card b { display: block; color: #0E5C7A; margin-bottom: 3px; font-size: 10.4pt; }
+  .card span { font-size: 9.4pt; color: #4A5A6A; }
+
+  .role { font-size: 8.6pt; background: #E4EDF3; color: #14364A; padding: 1.5px 7px; border-radius: 9px;
+          display: inline-block; margin: 1px 3px 1px 0; }
+  .pagebreak { page-break-before: always; }
+  footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #DCE5EC; font-size: 8.6pt; color: #6B7B8B; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <p class="kicker">Přehled funkcí systému</p>
+  <h1>Operatingroom<br>Management System</h1>
+  <p class="lead">Řízení, koordinace a vyhodnocování provozu operačních sálů v reálném čase.</p>
+  <p class="sub">Dokument popisuje funkce systému tak, jak jsou v aplikaci dostupné.</p>
+</div>
+
+<h2>Část 1 — K čemu systém slouží</h2>
+
+<p>Systém sleduje dění na operačních sálech v reálném čase a soustřeďuje na jedno místo to, co je dnes obvykle rozeseté mezi telefonáty, papírové rozpisy a tabulky. Personál na sále mění stav jedním klepnutím, všichni ostatní vidí změnu okamžitě — na velkoplošné obrazovce v traktu, na tabletu i v mobilu.</p>
+
+<h3>Hlavní přínosy</h3>
+
+<div class="grid">
+  <div class="card"><b>Přehled bez telefonování</b><span>Kdokoli s oprávněním vidí, co se právě děje na kterém sále, kdo tam je a jak dlouho výkon trvá. Odpadá dotazování se po telefonu.</span></div>
+  <div class="card"><b>Podklady místo dohadů</b><span>Systém zaznamenává každou změnu stavu. Vytížení sálů, délky jednotlivých fází i náklady tak vycházejí z měřených dat, ne z odhadů.</span></div>
+  <div class="card"><b>Včasné upozornění</b><span>Přesah pracovní doby, septický režim nebo zvýšený hygienický režim jsou vidět hned, ne až ze zpětného hlášení.</span></div>
+  <div class="card"><b>Nastavitelné podle zařízení</b><span>Kroky operačního cyklu, pracovní doby sálů, oddělení i role si nemocnice nastaví podle svých zvyklostí. Nemusí se přizpůsobovat systému.</span></div>
+  <div class="card"><b>Provoz více nemocnic</b><span>Jedna instalace obslouží více zdravotnických zařízení. Data i hesla jsou mezi nimi oddělená.</span></div>
+  <div class="card"><b>Na všech zařízeních</b><span>Běží v prohlížeči na monitoru i tabletu a je k dispozici jako aplikace pro iOS a Android.</span></div>
+</div>
+
+<h3>Pro koho je určen</h3>
+<p>Systém rozlišuje šest rolí, každá vidí jen to, co potřebuje:</p>
+
+<table>
+  <tr><th style="width:26%">Role</th><th>K čemu má přístup</th></tr>
+  <tr><td><b>Superadministrátor</b></td><td>Neomezený přístup ke všem zařízením a nastavením, včetně určení, které role uvidí které moduly.</td></tr>
+  <tr><td><b>Administrátor</b></td><td>Správa svého zdravotnického zařízení — sály, personál, stavy, upozornění, hesla ostatních rolí.</td></tr>
+  <tr><td><b>ARO</b></td><td>Anesteziologické oddělení: dashboard, časová osa a upozornění.</td></tr>
+  <tr><td><b>COS</b></td><td>Centrální operační sály: dashboard, časová osa a upozornění.</td></tr>
+  <tr><td><b>Management</b></td><td>Vedení: dashboard, časová osa, statistiky, personál a upozornění.</td></tr>
+  <tr><td><b>Primariát</b></td><td>Primář oddělení: dashboard, časová osa, statistiky, personál a upozornění.</td></tr>
+</table>
+
+<div class="box">
+  <p><b>Přístup lze kdykoli změnit.</b> Superadministrátor v nastavení určuje, které role vidí které moduly a podmoduly. Přiřazení výše je výchozí, ne pevně dané.</p>
+</div>
+
+<div class="pagebreak"></div>
+<h2>Část 2 — Funkce po modulech</h2>
+
+<h3>1. Dashboard — přehled sálů</h3>
+<p>Úvodní obrazovka se stavem všech sálů vedle sebe. Určená i pro velkoplošný monitor v operačním traktu.</p>
+<ul>
+  <li>Dlaždice každého sálu s názvem, oddělením, aktuálním stavem a počtem dokončených cyklů za den</li>
+  <li>Barevné odlišení stavu podle nastavení zařízení</li>
+  <li>Počet čekajících pacientů ve frontě u sálu</li>
+  <li>Označení <b>septického sálu</b>, <b>akutního příjmu</b> a <b>zvýšeného hygienického režimu</b></li>
+  <li>Uzamčení sálu, pozastavení provozu a pauza</li>
+  <li>Jmenovité obsazení: operatér, sestra, anesteziolog</li>
+  <li>Vzkaz na sál — krátká zpráva s uvedením odesílatele a času</li>
+  <li>Řazení sálů přetažením, pořadí se uloží</li>
+  <li>Automatická aktualizace u všech připojených zařízení bez obnovování stránky</li>
+</ul>
+
+<h4>Detail sálu</h4>
+<ul>
+  <li>Průchod operačním cyklem krok za krokem s měřením času každé fáze</li>
+  <li>Přiřazení personálu ze seznamu</li>
+  <li>Historie dokončených cyklů daného dne</li>
+  <li>Odhad času ukončení výkonu</li>
+  <li>Upozornění na přesah pracovní doby sálu</li>
+</ul>
+
+<h3>2. Timeline — časová osa</h3>
+<p>Denní pohled na dění napříč všemi sály na jedné ose.</p>
+<ul>
+  <li>Průběh dne po sálech s vyznačením jednotlivých fází</li>
+  <li>Ikona ARO u sálů, které přesáhly nastavenou pracovní dobu, s pořadovým číslem podle toho, který přesah nastal jako první</li>
+  <li>Rozklikávací detail výkonu</li>
+  <li>Živé hodiny a stav aktuálně probíhajících výkonů</li>
+</ul>
+
+<h3>3. Tok pacienta</h3>
+<p>Schéma pohybu pacientů operačním traktem s animovaným znázorněním přesunů mezi sály a navazujícími pracovišti.</p>
+
+<h3>4. Statistiky</h3>
+<p>Vyhodnocení provozu za den, týden, měsíc nebo rok. Všechny hodnoty vycházejí ze zaznamenaných změn stavů, ne z ručních vstupů. Podklady lze vytisknout nebo uložit do PDF.</p>
+
+<h4>Finance</h4>
+<ul>
+  <li>Náklady provozu podle hodinové sazby nastavené u každého sálu</li>
+  <li>Podíl jednotlivých fází cyklu na nákladech daného sálu</li>
+  <li>Náklady podle oddělení a přehled nejnákladnějších sálů</li>
+  <li>Vytížení počítané proti <b>skutečné pracovní době sálu</b>, ne proti kalendářnímu času</li>
+  <li>Přípravné časy se do nákladů výkonů nezapočítávají</li>
+</ul>
+
+<h4>Sály, Fáze, Notifikace, Zařízení</h4>
+<ul>
+  <li>Srovnání sálů podle počtu výkonů a odpracovaných hodin</li>
+  <li>Délky jednotlivých fází operačního cyklu a jejich podíl na celkovém čase</li>
+  <li>Přehled odeslaných upozornění</li>
+  <li>Statistika používaných zařízení</li>
+</ul>
+
+<h3>5. Personál</h3>
+<ul>
+  <li>Evidence pracovníků s rolí, úrovní kvalifikace a dostupností</li>
+  <li>Rozlišení kmenových a externích pracovníků</li>
+  <li>Označení doporučených pracovníků</li>
+  <li>Evidence dovolené a nemocnosti</li>
+  <li>Poznámky u jednotlivých osob</li>
+  <li>Přehled personálního obsazení sálů</li>
+</ul>
+
+<h3>6. Upozornění</h3>
+<ul>
+  <li>Pravidla, kdy se má upozornění odeslat, a komu</li>
+  <li>Rozesílání <b>e-mailem</b> podle nastavených pravidel</li>
+  <li>Zvukový signál a oznámení přímo v aplikaci</li>
+  <li>Záznam všech odeslaných upozornění</li>
+  <li>Zkušební odeslání pro ověření nastavení</li>
+</ul>
+
+<div class="box warn">
+  <p><b>Poznámka k rozsahu.</b> Odesílání e-mailů je plně funkční. Kanály <b>SMS</b> a <b>push oznámení</b> jsou v rozhraní připravené, ale zatím nejsou napojené na odesílací službu — jejich zprovoznění je samostatná dodávka.</p>
+</div>
+
+<div class="pagebreak"></div>
+<h3>7. Nastavení</h3>
+<p>Rozdělené do samostatných částí, ke kterým lze pouštět jednotlivé role zvlášť.</p>
+
+<table>
+  <tr><th style="width:30%">Část</th><th>Obsah</th></tr>
+  <tr><td><b>Operační sály</b></td><td>Zakládání sálů, oddělení, pracovní doba na každý den včetně přestávek, hodinová sazba provozu, septický režim, pořadí na dashboardu</td></tr>
+  <tr><td><b>Odbornosti sálů</b></td><td>Přiřazení odborností k sálům podle dnů a částí dne</td></tr>
+  <tr><td><b>Stavy cyklu</b></td><td>Vlastní kroky operačního cyklu — název, barva, pořadí, zapnutí a vypnutí</td></tr>
+  <tr><td><b>Personál</b></td><td>Správa pracovníků a jejich údajů</td></tr>
+  <tr><td><b>Kalendář</b></td><td>Plánování a rozpisy</td></tr>
+  <tr><td><b>Upozornění</b></td><td>Pravidla, příjemci a zkušební odeslání</td></tr>
+  <tr><td><b>Management kontakty</b></td><td>Kontaktní osoby vedení</td></tr>
+  <tr><td><b>Vzhled</b></td><td>Pozadí a vzhled aplikace</td></tr>
+  <tr><td><b>Zdravotnické zařízení</b></td><td>Údaje o nemocnici — název, adresa, IČO, kontakty</td></tr>
+  <tr><td><b>Správa modulů</b></td><td>Které role vidí které moduly a podmoduly</td></tr>
+  <tr><td><b>Přihlášení a přístup</b></td><td>Přehled účtu, oprávnění a nastavení hesel rolí</td></tr>
+  <tr><td><b>Rychlost a připojení</b></td><td>Měření odezvy a stavu spojení</td></tr>
+  <tr><td><b>Administrace databáze</b></td><td>Záloha, export, obnova a vymazání dat</td></tr>
+  <tr><td><b>Správa zařízení</b></td><td>Přehled zařízení s nainstalovanou aplikací</td></tr>
+</table>
+
+<h3>8. Přihlášení a bezpečnost</h3>
+<ul>
+  <li>Přihlášení výběrem role a zadáním hesla pro konkrétní zdravotnické zařízení</li>
+  <li><b>Každé zařízení má vlastní hesla</b> — heslo platné v jedné nemocnici neotevře jinou</li>
+  <li>Superadministrátor se přihlašuje <b>účtem Google s dvoufázovým ověřením</b></li>
+  <li>Administrátor může měnit hesla ostatních rolí, ale pouze ve svém zařízení a nikdy heslo superadministrátora</li>
+  <li>Hesla jsou uložena jako nečitelný otisk, nikde se nezobrazují ani nedají zpětně přečíst</li>
+  <li>Požadavky na sílu hesla: nejméně 10 znaků, zákaz běžných a triviálních hesel</li>
+  <li>Omezení počtu pokusů o přihlášení</li>
+  <li>Data jednotlivých nemocnic jsou oddělena na úrovni databáze</li>
+</ul>
+
+<h3>9. Provoz více zdravotnických zařízení</h3>
+<ul>
+  <li>Jedna instalace obslouží libovolný počet nemocnic</li>
+  <li>Každé zařízení má vlastní sály, personál, oddělení, stavy cyklu i nastavení</li>
+  <li>Zakládající administrátor získá přístup automaticky, ostatním rolím se přiděluje vědomě</li>
+  <li>Role bez nastaveného hesla se do zařízení nepřihlásí, i když má přístup povolený</li>
+</ul>
+
+<h3>10. Zařízení a dostupnost</h3>
+<ul>
+  <li>Webová aplikace pro počítač, velkoplošný monitor i tablet</li>
+  <li>Mobilní aplikace pro <b>iOS a Android</b></li>
+  <li>Instalace na plochu jako aplikace (PWA)</li>
+  <li>Evidence všech zařízení, na kterých je aplikace nainstalovaná</li>
+  <li>Světlý a tmavý režim</li>
+</ul>
+
+<div class="pagebreak"></div>
+<h2>Část 3 — Technické a provozní parametry</h2>
+
+<table>
+  <tr><th style="width:34%">Oblast</th><th>Řešení</th></tr>
+  <tr><td>Aktualizace údajů</td><td>V reálném čase, bez obnovování stránky; změna na jednom zařízení se okamžitě projeví na ostatních</td></tr>
+  <tr><td>Provozní den</td><td>Počítán od 7:00 do 6:59 následujícího dne, aby noční směna zůstala v jednom dni</td></tr>
+  <tr><td>Historie</td><td>Každá změna stavu se ukládá s časem; z toho vycházejí všechny statistiky</td></tr>
+  <tr><td>Zálohování a přenos dat</td><td>Export a import dat, obnova a řízené vymazání</td></tr>
+  <tr><td>Ochrana dat</td><td>Oddělení dat jednotlivých nemocnic na úrovni databáze, přístup přes zabezpečené spojení</td></tr>
+  <tr><td>Přizpůsobení pohybu</td><td>Respektuje systémové nastavení omezeného pohybu pro citlivé uživatele</td></tr>
+  <tr><td>Ovládání klávesnicí</td><td>Přihlašovací obrazovku lze ovládat bez myši</td></tr>
+</table>
+
+<h3>Co systém záměrně neobsahuje</h3>
+<p>Pro úplnost uvádíme hranice dodávky, aby nevznikla mylná očekávání:</p>
+<ul>
+  <li>Nejde o zdravotnickou dokumentaci — systém neeviduje diagnózy, výkony podle číselníků ani zdravotní údaje pacientů</li>
+  <li>Neobsahuje napojení na nemocniční informační systém; propojení je možné doplnit jako samostatnou dodávku</li>
+  <li>SMS a push oznámení jsou v rozhraní připravené, ale nejsou napojené na odesílací službu</li>
+  <li>Systém nenahrazuje objednávkový ani skladový software</li>
+</ul>
+
+<div class="box">
+  <p><b>Nastavení bez zásahu dodavatele.</b> Kroky operačního cyklu, pracovní doby sálů, oddělení, odbornosti, sazby, pravidla upozornění i oprávnění rolí si nemocnice mění sama v aplikaci. Změna nevyžaduje nový vývoj ani odstávku.</p>
+</div>
+
+<footer>
+  MEDROX Czech Republic and Canada — Operatingroom Management System<br>
+  Dokument popisuje funkce dostupné v aplikaci. Rozsah dodávky se řídí smlouvou.
+</footer>
+
+</body>
+</html>

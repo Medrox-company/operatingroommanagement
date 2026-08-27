@@ -201,7 +201,7 @@ export const Card: React.FC<CardProps> = memo(({
             )}
             <div className="min-w-0">
               {title && (
-                <HeadingTag className="text-xs font-bold uppercase tracking-wider truncate" style={{ color: C.textHi }}>
+                <HeadingTag className="truncate text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>
                   {title}
                 </HeadingTag>
               )}
@@ -605,7 +605,7 @@ export const SectionHeader: React.FC<{
       <div className="flex items-center gap-2.5 min-w-0">
         <div className="w-1 h-7 rounded-full" style={{ background: accent }} />
         <div className="min-w-0">
-          <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: C.textHi }}>
+          <h2 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>
             {title}
           </h2>
           {subtitle && (

@@ -141,6 +141,9 @@ function calculateAvgStepDurations(
 
   // Calculate averages in minutes
   return workflowSteps.map(step => {
+    // „Sál připraven“ je klidový stav mezi výkony, nikoli součást operace.
+    // Délku tohoto stavu proto nikdy nepřičítáme k operačnímu cyklu.
+    if (isIdleStatusName(step.title)) return 0;
     const durations = stepDurations[step.title];
     if (durations.length === 0) return 0;
     const avgSeconds = durations.reduce((sum, d) => sum + d, 0) / durations.length;
@@ -169,14 +172,20 @@ function calculateWorkflowDistribution(
     }
   });
 
-  const totalSeconds = Object.values(stepTotals).reduce((sum, v) => sum + v, 0);
+  const totalSeconds = workflowSteps.reduce(
+    (sum, step) => sum + (isIdleStatusName(step.title) ? 0 : stepTotals[step.title]),
+    0,
+  );
   
-  return workflowSteps.map(step => ({
-    title: step.title,
-    color: step.color,
-    pct: totalSeconds > 0 ? Math.round((stepTotals[step.title] / totalSeconds) * 100) : 0,
-    totalMinutes: Math.round(stepTotals[step.title] / 60),
-  }));
+  return workflowSteps.map(step => {
+    const includedSeconds = isIdleStatusName(step.title) ? 0 : stepTotals[step.title];
+    return {
+      title: step.title,
+      color: step.color,
+      pct: totalSeconds > 0 ? Math.round((includedSeconds / totalSeconds) * 100) : 0,
+      totalMinutes: Math.round(includedSeconds / 60),
+    };
+  });
 }
 
 // ── Helper: Calculate per-room workflow distribution from status history ───────
@@ -2289,6 +2298,7 @@ tabs={[
               <MobileSectionLabel>Přehled notifikací</MobileSectionLabel>
               <NotificationsTab
                 notifications={notifications}
+                statusHistory={statusHistory}
                 rooms={rooms}
                 periodLabel={periodLabelMap[period]}
               />
@@ -2961,6 +2971,7 @@ tabs={[
         <div key="notifikace" className="flex flex-col gap-5 print-section">
           <NotificationsTab
             notifications={notifications}
+            statusHistory={statusHistory}
             rooms={rooms}
             periodLabel={periodLabelMap[period]}
           />

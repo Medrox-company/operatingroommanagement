@@ -3,21 +3,18 @@
 import React, { useMemo, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  Cell, PieChart, Pie, LineChart, Line, CartesianGrid, AreaChart, Area,
-  RadialBarChart, RadialBar
+  Cell, CartesianGrid, AreaChart, Area,
 } from 'recharts';
 import {
-  Clock, Timer, TrendingUp, TrendingDown,
-  Zap, Activity, ChevronRight, BarChart3, PieChartIcon,
-  Layers, ArrowRight, CheckCircle2, XCircle
+  Clock, Timer, Zap, BarChart3,
+  Layers, CheckCircle2,
 } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
-import { RoomStatus } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
-  C, Card, KPIBlock, Sparkline, AnimatedCounter,
-  formatMinutes, formatPercent
+  C, Card, AnimatedCounter,
 } from './shared';
+import { GlassCalendar } from './AppCharts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -57,6 +54,77 @@ const TIP = {
   cursor: { fill: 'rgba(255,255,255,0.02)' },
 };
 
+const PHASE_CARD_CLASS = '!rounded-xl [background:var(--stats-surface)!important] [box-shadow:none!important]';
+const INNER_PANEL_STYLE: React.CSSProperties = {
+  background: 'var(--stats-surface-2)',
+  border: `1px solid ${C.border}`,
+};
+
+const DIACRITICS = new RegExp('[\\u0300-\\u036f]', 'g');
+function isIdlePhaseName(name: string): boolean {
+  const normalized = (name || '').toLowerCase().normalize('NFD').replace(DIACRITICS, '');
+  return normalized.includes('priprav') && normalized.includes('sal');
+}
+
+const PhaseMetric: React.FC<{
+  label: string;
+  value: string;
+  detail: string;
+  icon: React.ElementType;
+  color: string;
+}> = ({ label, value, detail, icon: Icon, color }) => (
+  <div className="group relative min-h-[112px] overflow-hidden rounded-xl p-4" style={INNER_PANEL_STYLE}>
+    <span className="absolute inset-x-4 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+    <div className="flex min-h-[44px] items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="truncate text-[11px] font-medium" style={{ color: C.textHi }}>{label}</p>
+        <p className="mt-1 truncate text-[10px]" style={{ color: C.muted }}>{detail}</p>
+      </div>
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-105" style={{ color, border: `1px solid ${color}35`, background: `${color}0e` }}>
+        <Icon className="h-4 w-4" strokeWidth={1.8} />
+      </span>
+    </div>
+    <p className="mt-3 truncate text-[26px] font-light leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
+  </div>
+);
+
+const PhaseRing: React.FC<{
+  label: string;
+  duration: number;
+  percentage: number;
+  color: string;
+}> = ({ label, duration, percentage, color }) => {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const dash = Math.max(0, Math.min(100, percentage)) / 100 * circumference;
+
+  return (
+    <div className="flex w-[126px] shrink-0 flex-col items-center text-center">
+      <div className="relative h-[112px] w-[112px]">
+        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
+          <circle cx="50" cy="50" r={radius} fill="none" stroke={C.ghost} strokeWidth="7" />
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth="7"
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${circumference - dash}`}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xl font-light tabular-nums" style={{ color: C.textHi }}>{Math.round(duration)}</span>
+          <span className="text-[8px] uppercase tracking-wider" style={{ color: C.muted }}>min</span>
+        </div>
+      </div>
+      <p className="mt-2 line-clamp-2 min-h-[30px] text-[10px] font-semibold leading-4" style={{ color: C.textHi }}>{label}</p>
+      <p className="mt-0.5 text-[9px] tabular-nums" style={{ color }}>{percentage} % cyklu</p>
+    </div>
+  );
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase Card Component — jednotlivá fáze s detailem
 // ─────────────────────────────────────────────────────────────────────────────
@@ -77,14 +145,13 @@ const PhaseCard = ({
 }) => {
   return (
     <div
-      className="relative rounded-xl p-4 overflow-hidden group"
+      className="group relative min-h-[176px] overflow-hidden rounded-xl p-4 transition-colors hover:bg-white/[0.025]"
       style={{
-        background: isBottleneck
-          ? `linear-gradient(135deg, ${C.surface2} 0%, rgba(239,68,68,0.08) 100%)`
-          : C.surface,
+        background: isBottleneck ? `linear-gradient(145deg, ${C.red}0d, var(--stats-surface-2))` : C.surface2,
         border: `1px solid ${isBottleneck ? 'rgba(239,68,68,0.3)' : C.border}`,
       }}
     >
+      <span className="absolute inset-x-4 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${step.color}, transparent)` }} />
       {/* Longest measured phase badge */}
       {isBottleneck && (
         <div className="absolute top-2 right-2">
@@ -98,16 +165,13 @@ const PhaseCard = ({
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
           style={{
             background: `${step.color}20`,
             border: `1px solid ${step.color}40`,
           }}
         >
-          <div
-            className="w-4 h-4 rounded-full"
-            style={{ background: step.color }}
-          />
+          <Layers className="h-4 w-4" style={{ color: step.color }} strokeWidth={1.9} />
         </div>
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-semibold text-white truncate">{step.title}</h4>
@@ -124,7 +188,7 @@ const PhaseCard = ({
             Trvání
           </p>
           <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold tabular-nums" style={{ color: step.color }}>
+            <span className="text-[26px] font-light leading-none tabular-nums" style={{ color: C.textHi }}>
               {Math.round(duration)}
             </span>
             <span className="text-xs" style={{ color: C.faint }}>min</span>
@@ -135,7 +199,7 @@ const PhaseCard = ({
             Podíl cyklu
           </p>
           <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold tabular-nums" style={{ color: C.text }}>
+            <span className="text-[26px] font-light leading-none tabular-nums" style={{ color: C.textHi }}>
               {pct}
             </span>
             <span className="text-xs" style={{ color: C.faint }}>%</span>
@@ -174,27 +238,18 @@ const TimelineGantt = ({
 }) => {
   // „Sál připraven" je klidový stav mezi výkony, ne fáze operačního cyklu —
   // v timeline ho vynecháváme, aby nezkresloval podíly ostatních fází.
-  const DIACRITICS = new RegExp('[\\u0300-\\u036f]', 'g');
-  const isIdle = (name: string) => {
-    const n = (name || '').toLowerCase().normalize('NFD').replace(DIACRITICS, '');
-    return n.includes('priprav') && n.includes('sal');
-  };
   const steps = workflowSteps
     .map((step, i) => ({ step, duration: avgStepDurations[i] || 0 }))
-    .filter(({ step }) => !isIdle(step.title) && !isIdle(step.name));
+    .filter(({ step }) => !isIdlePhaseName(step.title) && !isIdlePhaseName(step.name));
 
   const totalDuration = steps.reduce((sum, s) => sum + s.duration, 0);
-  let cumulative = 0;
-
   return (
     <div className="space-y-3">
       {/* Timeline bar */}
-      <div className="relative h-14 rounded-xl overflow-hidden" style={{ background: C.ghost }}>
+      <div className="relative h-14 overflow-hidden rounded-xl" style={INNER_PANEL_STYLE}>
         <div className="absolute inset-0 flex">
           {steps.map(({ step, duration }) => {
             const widthPct = (duration / Math.max(1, totalDuration)) * 100;
-            const startPct = (cumulative / Math.max(1, totalDuration)) * 100;
-            cumulative += duration;
 
             return (
               <div
@@ -208,7 +263,7 @@ const TimelineGantt = ({
                     // Solid accent_color — must match the current-status badge color shown on RoomCard.
                     // Previously a 135° gradient dimmed the bottom-right to 80% opacity, so the same
                     // workflow phase looked visibly different from the room's actual status pill.
-                    background: step.color,
+                    background: `${step.color}c9`,
                   }}
                 >
                   {widthPct > 8 && (
@@ -260,32 +315,110 @@ export function PhasesTab({
   statusHistory,
   periodLabel,
   workflowSteps,
-  avgStepDurations,
-  workflowAgg,
+  avgStepDurations: periodAvgStepDurations,
+  workflowAgg: periodWorkflowAgg,
 }: PhasesTabProps) {
-  const [selectedView, setSelectedView] = useState<'cards' | 'chart'>('cards');
+  const [calendarDay, setCalendarDay] = useState(() => {
+    const day = new Date();
+    if (day.getHours() < 7) day.setDate(day.getDate() - 1);
+    day.setHours(0, 0, 0, 0);
+    return day;
+  });
+  const [calendarSelectionActive, setCalendarSelectionActive] = useState(false);
+
+  const selectedDayHistory = useMemo(() => {
+    if (!calendarSelectionActive) return [];
+    const start = new Date(calendarDay);
+    start.setHours(7, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return statusHistory.filter(event => {
+      const timestamp = new Date(event.timestamp).getTime();
+      return timestamp >= start.getTime() && timestamp < end.getTime();
+    });
+  }, [calendarDay, calendarSelectionActive, statusHistory]);
+
+  const selectedDayStepTotals = useMemo(() => {
+    const totals = new Map<string, number>();
+    selectedDayHistory.forEach(event => {
+      if (event.event_type !== 'step_change' || !event.step_name || !event.duration_seconds) return;
+      if (isIdlePhaseName(event.step_name)) return;
+      totals.set(event.step_name, (totals.get(event.step_name) || 0) + event.duration_seconds);
+    });
+    return totals;
+  }, [selectedDayHistory]);
+
+  const selectedDayStepDurations = useMemo(() => workflowSteps.map(step => {
+    if (isIdlePhaseName(step.title)) return 0;
+    const samples = selectedDayHistory.filter(event => (
+      event.event_type === 'step_change'
+      && event.step_name === step.title
+      && Boolean(event.duration_seconds)
+    ));
+    if (samples.length === 0) return 0;
+    return Math.round(samples.reduce((sum, event) => sum + (event.duration_seconds || 0), 0) / samples.length / 60);
+  }), [selectedDayHistory, workflowSteps]);
+
+  const selectedDayTotalSeconds = useMemo(
+    () => Array.from(selectedDayStepTotals.values()).reduce((sum, value) => sum + value, 0),
+    [selectedDayStepTotals],
+  );
+
+  const selectedDayWorkflowAgg = useMemo(() => workflowSteps.map(step => {
+    const seconds = isIdlePhaseName(step.title) ? 0 : selectedDayStepTotals.get(step.title) || 0;
+    return {
+      title: step.title,
+      color: step.color,
+      pct: selectedDayTotalSeconds > 0 ? Math.round((seconds / selectedDayTotalSeconds) * 100) : 0,
+    };
+  }), [selectedDayStepTotals, selectedDayTotalSeconds, workflowSteps]);
+
+  const avgStepDurations = calendarSelectionActive ? selectedDayStepDurations : periodAvgStepDurations;
+  const workflowAgg = calendarSelectionActive ? selectedDayWorkflowAgg : periodWorkflowAgg;
+
+  const calendarHeat = useMemo(() => {
+    const counts: Record<string, number> = {};
+    statusHistory.forEach(event => {
+      if (event.event_type !== 'step_change' || !event.timestamp || isIdlePhaseName(event.step_name || '')) return;
+      const date = new Date(event.timestamp);
+      if (date.getHours() < 7) date.setDate(date.getDate() - 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    const maximum = Math.max(1, ...Object.values(counts));
+    return Object.fromEntries(Object.entries(counts).map(([key, value]) => [key, value / maximum]));
+  }, [statusHistory]);
 
   // ── Computed metrics ──
+  const cyclePhaseIndices = useMemo(
+    () => workflowSteps
+      .map((step, index) => ({ step, index }))
+      .filter(({ step }) => !isIdlePhaseName(step.title) && !isIdlePhaseName(step.name))
+      .map(({ index }) => index),
+    [workflowSteps],
+  );
+
   const avgCycleDuration = useMemo(
-    () => avgStepDurations.reduce((a, b) => a + b, 0),
-    [avgStepDurations]
+    () => cyclePhaseIndices.reduce((sum, index) => sum + (avgStepDurations[index] || 0), 0),
+    [avgStepDurations, cyclePhaseIndices],
   );
 
   const longestPhaseIdx = useMemo(
-    () => avgStepDurations.reduce((maxIdx, val, i) => (val > avgStepDurations[maxIdx] ? i : maxIdx), 0),
-    [avgStepDurations]
+    () => cyclePhaseIndices.reduce(
+      (maxIdx, index) => (avgStepDurations[index] > (avgStepDurations[maxIdx] || 0) ? index : maxIdx),
+      cyclePhaseIndices[0] ?? 0,
+    ),
+    [avgStepDurations, cyclePhaseIndices],
   );
 
-  const shortestPhaseIdx = useMemo(
-    () => avgStepDurations.reduce((minIdx, val, i) => {
-      if (val === 0) return minIdx;
-      return val < (avgStepDurations[minIdx] || Infinity) ? i : minIdx;
-    }, 0),
-    [avgStepDurations]
-  );
+  const shortestPhaseIdx = useMemo(() => {
+    const measured = cyclePhaseIndices.filter(index => (avgStepDurations[index] || 0) > 0);
+    return measured.reduce(
+      (minIdx, index) => (avgStepDurations[index] < avgStepDurations[minIdx] ? index : minIdx),
+      measured[0] ?? cyclePhaseIndices[0] ?? 0,
+    );
+  }, [avgStepDurations, cyclePhaseIndices]);
 
-  const busyRooms = rooms.filter(r => r.status === RoomStatus.BUSY).length;
-  
   // Room counts per phase
   const roomsPerPhase = useMemo(() => 
     workflowSteps.map((_, i) => rooms.filter(r => r.currentStepIndex === i).length),
@@ -293,393 +426,352 @@ export function PhasesTab({
   );
 
   // Data for charts
-  const barChartData = workflowSteps.map((step, i) => ({
+  const barChartData = cyclePhaseIndices.map(i => ({
+    step: workflowSteps[i],
+    i,
+  })).map(({ step, i }) => ({
     name: step.title.split(' ').slice(-1)[0],
     duration: avgStepDurations[i] || 0,
     color: step.color,
     fullName: step.title,
   }));
 
-  const pieData = workflowAgg.filter(s => s.pct > 0);
-
-  const cumulativeData = workflowSteps.map((step, i) => {
-    const cum = avgStepDurations.slice(0, i + 1).reduce((s, d) => s + d, 0);
+  let cumulativeMinutes = 0;
+  const cumulativeData = cyclePhaseIndices.map(i => {
+    const step = workflowSteps[i];
+    cumulativeMinutes += avgStepDurations[i] || 0;
     return {
       name: step.title.split(' ').slice(-1)[0],
       duration: avgStepDurations[i] || 0,
-      cumulative: cum,
+      cumulative: cumulativeMinutes,
       color: step.color,
     };
   });
 
-  if (!avgStepDurations.some(duration => duration > 0)) {
-    return (
-      <Card className="p-8 text-center">
-        <p className="text-sm font-semibold" style={{ color: C.textHi }}>Bez naměřených dat fází</p>
-        <p className="text-xs mt-1" style={{ color: C.muted }}>
-          Pro zvolené období nejsou v historii zaznamenané délky jednotlivých fází.
-        </p>
-      </Card>
-    );
-  }
+  const cycleWorkflowAgg = cyclePhaseIndices.map(index => ({
+    ...(workflowAgg[index] ?? { title: workflowSteps[index].title, color: workflowSteps[index].color, pct: 0 }),
+    index,
+  }));
+
+  const activePeriodLabel = calendarSelectionActive
+    ? calendarDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })
+    : periodLabel;
 
   return (
-    <div className="space-y-6">
-      {/* ── Hero KPI Row ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="p-0" noPadding>
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: `${C.accent}15`, border: `1px solid ${C.accent}30` }}>
-                <Timer size={16} color={C.accent} />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
-                  Celkový cyklus
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4 xl:order-2">
+          <Card className={`relative overflow-hidden p-5 ${PHASE_CARD_CLASS}`}>
+            <span className="absolute inset-x-10 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}aa, transparent)` }} />
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium" style={{ color: C.muted }}>Fáze</p>
+                <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>
+                  Průběh operačního cyklu
+                </h2>
+                <p className="mt-1 text-[11px]" style={{ color: C.muted }}>
+                  Délky fází, jejich podíl a aktuální rozložení operačních sálů
                 </p>
               </div>
+              <span className="rounded-md px-3 py-2 text-[11px] font-medium" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>
+                Období: {activePeriodLabel}
+              </span>
             </div>
-            <div className="flex items-end">
+
+            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <PhaseMetric label="Průměrný cyklus" value={`${Math.round(avgCycleDuration)} min`} detail="součet průměrných fází" icon={Timer} color={C.accent} />
+              <PhaseMetric label="Nejdelší fáze" value={`${Math.round(avgStepDurations[longestPhaseIdx] || 0)} min`} detail={workflowSteps[longestPhaseIdx]?.title || 'Bez dat'} icon={Clock} color={C.red} />
+              <PhaseMetric label="Nejrychlejší fáze" value={`${Math.round(avgStepDurations[shortestPhaseIdx] || 0)} min`} detail={workflowSteps[shortestPhaseIdx]?.title || 'Bez dat'} icon={Zap} color={C.green} />
+              <PhaseMetric label="Operační sály" value={String(rooms.length)} detail={`${cyclePhaseIndices.filter(index => roomsPerPhase[index] > 0).length} aktivních fází cyklu`} icon={Layers} color={C.purple} />
+            </div>
+          </Card>
+
+          <Card className={`p-5 lg:p-6 ${PHASE_CARD_CLASS}`}>
+            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <AnimatedCounter
-                  value={avgCycleDuration}
-                  format={(v) => Math.round(v).toString()}
-                  className="text-3xl font-bold"
-                  style={{ color: C.accent }}
-                />
-                <span className="text-sm ml-1" style={{ color: C.muted }}>min</span>
+                <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Podíl jednotlivých fází</h3>
+                <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Poměr průměrného času vůči celému operačnímu cyklu</p>
               </div>
+              <span className="rounded-md px-2.5 py-1 text-[10px] font-medium" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>
+                {cycleWorkflowAgg.filter(item => item.pct > 0).length} měřených fází
+              </span>
             </div>
-          </div>
-          <div className="h-1" style={{ background: C.accent }} />
-        </Card>
-
-        <Card className="p-0" noPadding>
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: `${C.red}15`, border: `1px solid ${C.red}30` }}>
-                <Clock size={16} color={C.red} />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
-                  Nejdelší fáze
-                </p>
-              </div>
-            </div>
-            <div>
-              <p className="text-lg font-bold truncate" style={{ color: workflowSteps[longestPhaseIdx]?.color || C.orange }}>
-                {workflowSteps[longestPhaseIdx]?.title.split(' ').slice(-1)[0] || '–'}
-              </p>
-              <p className="text-sm" style={{ color: C.muted }}>
-                {Math.round(avgStepDurations[longestPhaseIdx] || 0)} min ({workflowAgg[longestPhaseIdx]?.pct || 0}%)
-              </p>
-            </div>
-          </div>
-          <div className="h-1" style={{ background: C.red }} />
-        </Card>
-
-        <Card className="p-0" noPadding>
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: `${C.green}15`, border: `1px solid ${C.green}30` }}>
-                <Zap size={16} color={C.green} />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
-                  Nejrychlejší
-                </p>
-              </div>
-            </div>
-            <div>
-              <p className="text-lg font-bold truncate" style={{ color: workflowSteps[shortestPhaseIdx]?.color || C.green }}>
-                {workflowSteps[shortestPhaseIdx]?.title.split(' ').slice(-1)[0] || '–'}
-              </p>
-              <p className="text-sm" style={{ color: C.muted }}>
-                {Math.round(avgStepDurations[shortestPhaseIdx] || 0)} min
-              </p>
-            </div>
-          </div>
-          <div className="h-1" style={{ background: C.green }} />
-        </Card>
-
-      </div>
-
-      {/* ── Timeline Gantt ── */}
-      <Card className="p-5" elevated>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Layers size={16} color={C.accent} />
-            <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: C.textHi }}>
-              Timeline operačního cyklu
-            </h3>
-          </div>
-          <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: C.surface2, color: C.muted }}>
-            {periodLabel}
-          </span>
-        </div>
-        <TimelineGantt workflowSteps={workflowSteps} avgStepDurations={avgStepDurations} />
-      </Card>
-
-      {/* ── View Toggle + Phase Cards/Chart ── */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: C.textHi }}>
-            Detail fází
-          </h3>
-          <div className="flex gap-1 p-1 rounded-lg" style={{ background: C.surface }}>
-            <button
-              onClick={() => setSelectedView('cards')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                selectedView === 'cards' ? 'text-white' : ''
-              }`}
-              style={{
-                background: selectedView === 'cards' ? C.surface2 : 'transparent',
-                color: selectedView === 'cards' ? C.textHi : C.muted,
-              }}
-            >
-              <BarChart3 size={12} />
-              Karty
-            </button>
-            <button
-              onClick={() => setSelectedView('chart')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                selectedView === 'chart' ? 'text-white' : ''
-              }`}
-              style={{
-                background: selectedView === 'chart' ? C.surface2 : 'transparent',
-                color: selectedView === 'chart' ? C.textHi : C.muted,
-              }}
-            >
-              <PieChartIcon size={12} />
-              Graf
-            </button>
-          </div>
-        </div>
-
-        <>
-          {selectedView === 'cards' ? (
-            <div
-              key="cards"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-            >
-              {workflowSteps.map((step, i) => (
-                <PhaseCard
-                  key={step.name}
-                  step={step}
-                  duration={avgStepDurations[i] || 0}
-                  pct={workflowAgg[i]?.pct || 0}
-                  isBottleneck={i === longestPhaseIdx && avgStepDurations[i] > 0}
-                  roomsInPhase={roomsPerPhase[i]}
-                  totalRooms={rooms.length}
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-5">
+              {cycleWorkflowAgg.filter(item => item.pct > 0).map(item => (
+                <PhaseRing
+                  key={`${item.title}-${item.index}`}
+                  label={item.title}
+                  duration={avgStepDurations[item.index] || 0}
+                  percentage={item.pct}
+                  color={item.color}
                 />
               ))}
             </div>
-          ) : (
-            <div
-              key="chart"
-              className="grid grid-cols-1 lg:grid-cols-2 gap-5"
-            >
-              {/* Duration bar chart */}
-              <Card className="p-5">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: C.muted }}>
-                  Trvání fází (minuty)
-                </h4>
-                <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={0}>
-                  <BarChart data={barChartData} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 70 }} barSize={18}>
-                    <CartesianGrid stroke={C.ghost} strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis type="category" dataKey="fullName" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} width={65} />
-                    <Tooltip {...TIP} formatter={(v: number) => [`${Math.round(v)} min`, 'Trvání']} />
-                    <Bar dataKey="duration" radius={[0, 6, 6, 0]}>
-                      {barChartData.map((entry, i) => (
-                        // Solid accent_color at 100% — same color the room shows when in this phase.
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
+          </Card>
 
-              {/* Pie + cumulative */}
-              <Card className="p-5">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: C.muted }}>
-                  Rozložení cyklu
-                </h4>
-                <div className="flex items-center gap-6">
-                  <ResponsiveContainer width="45%" height={180} minWidth={0} minHeight={0}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        dataKey="pct"
-                        nameKey="title"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={45}
-                        outerRadius={70}
-                        paddingAngle={2}
-                        strokeWidth={0}
-                      >
-                        {pieData.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip {...TIP} formatter={(v: number) => [`${v}%`, 'Podíl']} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex-1 space-y-2">
-                    {workflowAgg.map((seg, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-sm" style={{ background: seg.color }} />
-                          <span className="text-xs truncate" style={{ color: C.muted }}>
-                            {seg.title.split(' ').slice(-1)[0]}
-                          </span>
-                        </div>
-                        <span className="text-xs font-bold tabular-nums" style={{ color: seg.color }}>
-                          {seg.pct}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+          <Card className={`p-5 ${PHASE_CARD_CLASS}`}>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ color: C.accent, background: `${C.accent}14`, border: `1px solid ${C.accent}2e` }}>
+                  <Layers size={16} />
+                </span>
+                <div>
+                  <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Timeline operačního cyklu</h3>
+                  <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Průměrná návaznost a délka fází</p>
                 </div>
-              </Card>
+              </div>
+              <span className="rounded-md px-2.5 py-1 text-[10px] font-medium" style={{ background: C.ghost, color: C.muted, border: `1px solid ${C.border}` }}>{activePeriodLabel}</span>
             </div>
-          )}
-        </>
+            <TimelineGantt workflowSteps={workflowSteps} avgStepDurations={avgStepDurations} />
+          </Card>
+
+          <Card className={`relative overflow-hidden p-5 ${PHASE_CARD_CLASS}`}>
+            <span className="absolute inset-x-10 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.green}aa, transparent)` }} />
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-medium" style={{ color: C.green }}>Evropská referenční praxe</p>
+                <h3 className="mt-1 text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Optimální timeline operačního cyklu</h3>
+                <p className="mt-1 text-[10px]" style={{ color: C.muted }}>Procesní benchmark pro elektivní provoz; délka samotného výkonu zůstává závislá na typu operace.</p>
+              </div>
+              <span className="rounded-md px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em]" style={{ color: C.green, background: `${C.green}0d`, border: `1px solid ${C.green}30` }}>NHS England 2025</span>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { order: '01', title: 'Příprava dalšího pacienta', time: '−20 až 0 min', note: 'Probíhá souběžně před uvolněním sálu', color: C.blue },
+                { order: '02', title: 'Převzetí pacienta', time: 'čekání max. 5–10 min', note: 'Pacient nemá čekat zbytečně v anesteziologickém prostoru', color: C.cyan },
+                { order: '03', title: 'Anesteziologický přechod', time: 'kritická cesta ≈ 10 min', note: 'Další pacient je připraven při návratu anesteziologa', color: C.purple },
+                { order: '04', title: 'Operační výkon', time: 'dle výkonu a oboru', note: 'Klinickou délku nelze bezpečně stanovit jedním limitem', color: C.green },
+              ].map(item => (
+                <div key={item.order} className="relative overflow-hidden rounded-xl p-3.5" style={INNER_PANEL_STYLE}>
+                  <span className="absolute inset-x-3 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${item.color}, transparent)` }} />
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-mono" style={{ color: item.color, background: `${item.color}12`, border: `1px solid ${item.color}2a` }}>{item.order}</span>
+                    <p className="text-[10px] font-semibold leading-4" style={{ color: C.textHi }}>{item.title}</p>
+                  </div>
+                  <p className="mt-3 text-[14px] font-light tabular-nums" style={{ color: item.color }}>{item.time}</p>
+                  <p className="mt-1 text-[9px] leading-4" style={{ color: C.muted }}>{item.note}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4" style={{ borderColor: C.border }}>
+              <span className="rounded-md px-2.5 py-1 text-[9px] font-medium" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>Cíl touch-time využití ≥ 85 %</span>
+              <span className="rounded-md px-2.5 py-1 text-[9px] font-medium" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>První pacient bez pozdního startu</span>
+              <a
+                href="https://www.england.nhs.uk/long-read/theatres-surgery-and-perioperative-care/"
+                target="_blank"
+                rel="noreferrer"
+                className="ml-auto text-[9px] font-medium underline decoration-white/20 underline-offset-2 hover:decoration-white/50"
+                style={{ color: C.muted }}
+              >
+                Zdroj a metodika
+              </a>
+            </div>
+          </Card>
+        </div>
+
+        <aside className="flex flex-col gap-4 xl:order-1">
+          <Card className={`relative overflow-hidden p-5 ${PHASE_CARD_CLASS}`}>
+            <div className="absolute -right-14 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: C.accent }} />
+            <div className="relative">
+              <div className="flex items-center justify-between gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl" style={{ color: C.accent, background: `${C.accent}0f`, border: `1px solid ${C.accent}2f` }}>
+                  <Timer className="h-5 w-5" />
+                </span>
+                <span className="rounded-full px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.13em]" style={{ color: C.accent, border: `1px solid ${C.accent}35` }}>reálná data</span>
+              </div>
+              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: C.muted }}>Průměrný cyklus</p>
+              <div className="mt-1 flex items-end gap-2">
+                <AnimatedCounter value={avgCycleDuration} format={value => Math.round(value).toString()} className="text-[52px] font-light leading-none tracking-[-0.05em] tabular-nums" style={{ color: C.textHi }} />
+                <span className="pb-1 text-[11px]" style={{ color: C.muted }}>minut</span>
+              </div>
+              <p className="mt-2 text-[11px]" style={{ color: C.muted }}>{activePeriodLabel} · naměřené fáze výkonu</p>
+
+              <div className="mt-5 flex h-2 overflow-hidden rounded-full" style={{ background: C.ghost }}>
+                {cycleWorkflowAgg.filter(item => item.pct > 0).map(item => (
+                  <span key={`${item.title}-${item.index}`} style={{ width: `${item.pct}%`, background: item.color }} title={`${item.title}: ${item.pct} %`} />
+                ))}
+              </div>
+              <div className="mt-4 space-y-2.5">
+                {[...cycleWorkflowAgg]
+                  .sort((a, b) => b.pct - a.pct)
+                  .slice(0, 4)
+                  .map(item => (
+                    <div key={`${item.title}-${item.index}`} className="flex items-center gap-2.5">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: item.color }} />
+                      <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>{item.title}</span>
+                      <span className="text-[11px] font-semibold tabular-nums" style={{ color: C.textHi }}>{item.pct} %</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+            <div className="relative mt-5 space-y-2.5 border-t pt-4" style={{ borderColor: C.border }}>
+              {[
+                ['Nejdelší fáze', workflowSteps[longestPhaseIdx]?.title || '–'],
+                ['Nejkratší fáze', workflowSteps[shortestPhaseIdx]?.title || '–'],
+                ['Počet fází', String(cyclePhaseIndices.length)],
+                ['Počet sálů', String(rooms.length)],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between gap-3">
+                  <span className="text-[11px]" style={{ color: C.muted }}>{label}</span>
+                  <span className="max-w-[145px] truncate text-[11px] font-semibold" style={{ color: C.textHi }} title={value}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div className="print-hide">
+            <GlassCalendar
+              value={calendarDay}
+              onChange={day => {
+                setCalendarDay(day);
+                setCalendarSelectionActive(true);
+              }}
+              heat={calendarHeat}
+              accent={C.blue}
+            />
+            {calendarSelectionActive && (
+              <button
+                type="button"
+                onClick={() => setCalendarSelectionActive(false)}
+                className="mt-2 w-full rounded-lg px-3 py-2 text-[10px] font-medium transition-colors hover:bg-white/5"
+                style={{ color: C.text, background: C.surface2, border: `1px solid ${C.border}` }}
+              >
+                Zobrazit celé období
+              </button>
+            )}
+          </div>
+        </aside>
       </div>
 
-      {/* ── Cumulative + Current Distribution Row ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Cumulative line/area chart */}
-        <Card className="p-5">
-          <h4 className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: C.muted }}>
-            Kumulativní průběh cyklu
-          </h4>
-          <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={0}>
-            <AreaChart data={cumulativeData} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
-              <defs>
-                <linearGradient id="cumGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={C.accent} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={C.accent} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke={C.ghost} strokeDasharray="3 3" />
-              <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} />
-              <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} />
-              <Tooltip {...TIP} formatter={(v: number, name: string) => [
-                `${Math.round(v)} min`,
-                name === 'cumulative' ? 'Kumulativně' : 'Fáze'
-              ]} />
-              <Area
-                type="monotone"
-                dataKey="cumulative"
-                stroke={C.accent}
-                strokeWidth={2}
-                fill="url(#cumGradient)"
-                dot={{ fill: C.accent, strokeWidth: 0, r: 4 }}
-                activeDot={{ fill: C.accent, strokeWidth: 2, stroke: '#fff', r: 6 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className={`p-5 ${PHASE_CARD_CLASS}`} icon={BarChart3} title="Trvání jednotlivých fází" subtitle="Průměr v minutách" accent={C.blue}>
+          <div className="mt-3 rounded-lg p-3" style={INNER_PANEL_STYLE}>
+            <ResponsiveContainer width="100%" height={190} minWidth={0} minHeight={0}>
+              <BarChart data={barChartData} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 58 }} barSize={13}>
+                <CartesianGrid stroke={C.ghost} strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey="fullName" stroke={C.ghost} fontSize={8} tickLine={false} axisLine={false} width={54} />
+                <Tooltip {...TIP} formatter={(value: number) => [`${Math.round(value)} min`, 'Trvání']} />
+                <Bar dataKey="duration" radius={[0, 5, 5, 0]}>
+                  {barChartData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
 
-        {/* Current room distribution */}
-        <Card className="p-5">
-          <h4 className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: C.muted }}>
-            Aktuální distribuce sálů
-          </h4>
-          <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={0}>
-            <BarChart data={workflowSteps.map((step, i) => ({
-              name: step.title.split(' ').slice(-1)[0],
-              count: roomsPerPhase[i],
-              color: step.color,
-            }))} margin={{ top: 10, right: 0, bottom: 0, left: -20 }} barSize={32}>
-              <CartesianGrid stroke={C.ghost} strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} />
-              <YAxis stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
-              <Tooltip {...TIP} formatter={(v: number) => [`${v} sálů`, 'Počet']} />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                {workflowSteps.map((step, i) => (
-                  <Cell key={i} fill={step.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-3">
-            {workflowSteps.slice(0, 4).map((step, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-sm" style={{ background: step.color }} />
-                <span className="text-[9px]" style={{ color: C.muted }}>
-                  {step.title.split(' ').slice(-1)[0]}
-                </span>
-              </div>
-            ))}
+        <Card className={`p-5 ${PHASE_CARD_CLASS}`} icon={Timer} title="Kumulativní průběh" subtitle="Nárůst času během cyklu" accent={C.cyan}>
+          <div className="mt-3 rounded-lg p-3" style={INNER_PANEL_STYLE}>
+            <ResponsiveContainer width="100%" height={190} minWidth={0} minHeight={0}>
+              <AreaChart data={cumulativeData} margin={{ top: 8, right: 8, bottom: 0, left: -14 }}>
+                <defs>
+                  <linearGradient id="cumGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={C.accent} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={C.accent} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={C.ghost} strokeDasharray="3 3" />
+                <XAxis dataKey="name" stroke={C.ghost} fontSize={8} tickLine={false} axisLine={false} />
+                <YAxis stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} />
+                <Tooltip {...TIP} formatter={(value: number) => [`${Math.round(value)} min`, 'Kumulativně']} />
+                <Area type="monotone" dataKey="cumulative" stroke={C.accent} strokeWidth={2} fill="url(#cumGradient)" dot={{ fill: C.accent, strokeWidth: 0, r: 3 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className={`p-5 ${PHASE_CARD_CLASS}`} icon={Layers} title="Nejvýznamnější fáze" subtitle="Pořadí podle podílu cyklu" accent={C.purple}>
+          <div className="mt-4 space-y-3">
+            {[...cycleWorkflowAgg]
+              .sort((a, b) => b.pct - a.pct)
+              .slice(0, 5)
+              .map((item, rank) => (
+                <div key={`${item.title}-${item.index}`} className="flex items-center gap-3">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[9px] font-semibold tabular-nums" style={{ color: item.color, background: `${item.color}12`, border: `1px solid ${item.color}30` }}>{String(rank + 1).padStart(2, '0')}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="truncate text-[10px] font-medium" style={{ color: C.text }}>{item.title}</span>
+                      <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: C.textHi }}>{item.pct} %</span>
+                    </div>
+                    <div className="mt-1.5 h-1 overflow-hidden rounded-full" style={{ background: C.ghost }}>
+                      <div className="h-full rounded-full" style={{ width: `${item.pct}%`, background: item.color }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
           </div>
         </Card>
       </div>
 
-      {/* ── Detailed Phase Table ── */}
-      <Card className="p-5">
-        <h4 className="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: C.muted }}>
-          Přehled všech fází — podrobnosti
-        </h4>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+      <Card className={`p-5 ${PHASE_CARD_CLASS}`}>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Přehled jednotlivých fází</h3>
+            <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Délka, podíl cyklu a počet sálů v každé fázi</p>
+          </div>
+          <span className="rounded-md px-2.5 py-1 text-[10px] font-medium tabular-nums" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>{cyclePhaseIndices.length} fází</span>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {cyclePhaseIndices.map(index => {
+            const step = workflowSteps[index];
+            return (
+            <PhaseCard
+              key={step.name}
+              step={step}
+              duration={avgStepDurations[index] || 0}
+              pct={workflowAgg[index]?.pct || 0}
+              isBottleneck={index === longestPhaseIdx && avgStepDurations[index] > 0}
+              roomsInPhase={roomsPerPhase[index]}
+              totalRooms={rooms.length}
+            />
+            );
+          })}
+        </div>
+      </Card>
+
+      <Card className={`p-5 ${PHASE_CARD_CLASS}`}>
+        <div className="mb-4 flex items-center gap-2.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ color: C.blue, background: C.ghost, border: `1px solid ${C.border}` }}><Layers className="h-4 w-4" /></span>
+          <div>
+            <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Podrobná evidence fází</h3>
+            <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Úplné pořadí, naměřené časy a aktuální stav sálů</p>
+          </div>
+        </div>
+        <div className="overflow-x-auto rounded-lg" style={INNER_PANEL_STYLE}>
+          <table className="w-full min-w-[680px] text-xs">
             <thead>
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <th className="text-left py-2 px-3 font-semibold" style={{ color: C.muted }}>Fáze</th>
-                <th className="text-right py-2 px-3 font-semibold" style={{ color: C.muted }}>Trvání</th>
-                <th className="text-right py-2 px-3 font-semibold" style={{ color: C.muted }}>Podíl</th>
-                <th className="text-right py-2 px-3 font-semibold" style={{ color: C.muted }}>Sály</th>
-                <th className="text-center py-2 px-3 font-semibold" style={{ color: C.muted }}>Status</th>
+              <tr style={{ background: C.ghost }}>
+                {['Fáze', 'Trvání', 'Podíl', 'Sály', 'Vyhodnocení'].map((label, index) => (
+                  <th key={label} className={`px-3 py-2.5 text-[9px] font-bold uppercase tracking-[0.12em] ${index === 0 ? 'text-left' : index === 4 ? 'text-center' : 'text-right'}`} style={{ color: C.faint }}>{label}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {workflowSteps.map((step, i) => {
-                const duration = avgStepDurations[i] || 0;
-                const pct = workflowAgg[i]?.pct || 0;
-                const isBottleneck = i === longestPhaseIdx && duration > 0;
-                const isFastest = i === shortestPhaseIdx && duration > 0;
-
+              {cyclePhaseIndices.map((index, phasePosition) => {
+                const step = workflowSteps[index];
+                const duration = avgStepDurations[index] || 0;
+                const pct = workflowAgg[index]?.pct || 0;
+                const isBottleneck = index === longestPhaseIdx && duration > 0;
+                const isFastest = index === shortestPhaseIdx && duration > 0;
                 return (
-                  <tr key={step.name} style={{ borderBottom: `1px solid ${C.ghost}` }}>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-sm" style={{ background: step.color }} />
-                        <span className="font-medium" style={{ color: C.text }}>{step.title}</span>
+                  <tr key={step.name} style={{ borderTop: `1px solid ${C.border}` }}>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-mono" style={{ color: step.color, background: `${step.color}14`, border: `1px solid ${step.color}28` }}>{String(phasePosition + 1).padStart(2, '0')}</span>
+                        <span className="font-medium" style={{ color: C.textHi }}>{step.title}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-right">
-                      <span className="font-bold tabular-nums" style={{ color: step.color }}>
-                        {Math.round(duration)} min
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <span className="tabular-nums" style={{ color: C.muted }}>{pct}%</span>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <span className="tabular-nums" style={{ color: C.text }}>{roomsPerPhase[i]}</span>
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      {isBottleneck && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
-                          style={{ background: `${C.red}15`, color: C.red }}>
-                          Nejdelší fáze
-                        </span>
-                      )}
-                      {isFastest && !isBottleneck && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
-                          style={{ background: `${C.green}15`, color: C.green }}>
-                          <CheckCircle2 size={9} />
-                          Nejkratší fáze
-                        </span>
-                      )}
-                      {!isBottleneck && !isFastest && (
-                        <span className="text-[9px]" style={{ color: C.muted }}>—</span>
-                      )}
+                    <td className="px-3 py-3 text-right font-semibold tabular-nums" style={{ color: step.color }}>{Math.round(duration)} min</td>
+                    <td className="px-3 py-3 text-right tabular-nums" style={{ color: C.muted }}>{pct} %</td>
+                    <td className="px-3 py-3 text-right tabular-nums" style={{ color: C.text }}>{roomsPerPhase[index]}</td>
+                    <td className="px-3 py-3 text-center">
+                      {isBottleneck ? (
+                        <span className="inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold" style={{ background: `${C.red}15`, color: C.red }}>Nejdelší fáze</span>
+                      ) : isFastest ? (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold" style={{ background: `${C.green}15`, color: C.green }}><CheckCircle2 size={9} /> Nejkratší fáze</span>
+                      ) : <span className="text-[9px]" style={{ color: C.muted }}>Standardní průběh</span>}
                     </td>
                   </tr>
                 );

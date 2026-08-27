@@ -13,22 +13,18 @@
 
 import React, { useMemo, useState, memo } from 'react';
 import {
-  Activity, Clock, Users, Zap, AlertTriangle, CheckCircle2,
-  ChevronRight, Filter, LayoutGrid, List, TrendingUp, Sparkles
+  Activity, AlertTriangle, CheckCircle2, ChevronRight,
+  LayoutGrid, List, TrendingUp, Sparkles
 } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  Cell, RadialBarChart, RadialBar, Legend, PieChart, Pie
-} from 'recharts';
 
 import type { OperatingRoom } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
-  C, Card, ProgressRing, Sparkline, AnimatedCounter,
+  C, Card,
   formatMinutes, formatPercent, formatNumber
 } from './shared';
 // Čitelné grafy v jazyce aplikace (stejné jako v záložce Přehled)
-import { BarList, SegmentBar, GaugeRing, RingRow, InsightPanel, StatSectionLabel } from './AppCharts';
+import { InsightPanel } from './AppCharts';
 import type { InsightItem } from './AppCharts';
 import type { IconComponent } from './shared';
 
@@ -49,21 +45,73 @@ export interface RoomsTabProps {
   workflowSteps: Array<{ title: string; color: string }>;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tooltip config
-// ─────────────────────────────────────────────────────────────────────────────
-const TIP = {
-  contentStyle: {
-    background: 'rgba(17, 24, 39, 0.95)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    fontSize: 11,
-    padding: '8px 12px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-  },
-  itemStyle: { color: C.text },
-  labelStyle: { color: C.muted, marginBottom: 4 },
-  cursor: { fill: 'rgba(255,255,255,0.03)' },
+const ROOM_CARD_CLASS = '!rounded-xl [background:var(--stats-surface)!important] [box-shadow:none!important]';
+const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+
+/** Vrátí pouze část intervalu, která leží v nastavené pracovní době sálu. */
+function roomWorkingOverlapSeconds(room: OperatingRoom, start: Date, end: Date): number {
+  const startMs = start.getTime();
+  const endMs = end.getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return 0;
+
+  let seconds = 0;
+  const cursor = new Date(start);
+  cursor.setHours(0, 0, 0, 0);
+  const lastDay = new Date(end);
+  lastDay.setHours(0, 0, 0, 0);
+
+  while (cursor <= lastDay) {
+    const schedule = room.weeklySchedule?.[DAY_KEYS[cursor.getDay()]];
+    if (schedule?.enabled) {
+      const workStart = new Date(cursor);
+      workStart.setHours(schedule.startHour, schedule.startMinute, 0, 0);
+      const workEnd = new Date(cursor);
+      workEnd.setHours(schedule.endHour, schedule.endMinute, 0, 0);
+      const overlapStart = Math.max(startMs, workStart.getTime());
+      const overlapEnd = Math.min(endMs, workEnd.getTime());
+      if (overlapEnd > overlapStart) seconds += (overlapEnd - overlapStart) / 1_000;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return seconds;
+}
+
+/** Stejná kruhová vizualizace, jakou používá záložka Fáze. */
+const CyclePhaseRing: React.FC<{
+  label: string;
+  percentage: number;
+  color: string;
+}> = ({ label, percentage, color }) => {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const dash = Math.max(0, Math.min(100, percentage)) / 100 * circumference;
+
+  return (
+    <div className="flex w-[126px] shrink-0 flex-col items-center text-center">
+      <div className="relative h-[112px] w-[112px]">
+        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
+          <circle cx="50" cy="50" r={radius} fill="none" stroke={C.ghost} strokeWidth="7" />
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth="7"
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${circumference - dash}`}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xl font-light tabular-nums" style={{ color: C.textHi }}>{Math.round(percentage)}</span>
+          <span className="text-[8px] uppercase tracking-wider" style={{ color: C.muted }}>%</span>
+        </div>
+      </div>
+      <p className="mt-2 line-clamp-2 min-h-[30px] text-[10px] font-semibold leading-4" style={{ color: C.textHi }}>{label}</p>
+      <p className="mt-0.5 text-[9px]" style={{ color }}>podíl cyklu</p>
+    </div>
+  );
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,8 +121,8 @@ const TIP = {
 /** Status badge mini chip */
 const StatusBadge = memo(({ status, color }: { status: string; color: string }) => (
   <div
-    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider"
-    style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}
+    className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.1em]"
+    style={{ background: `${color}10`, color, border: `1px solid ${color}28` }}
   >
     <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
     {status}
@@ -82,41 +130,19 @@ const StatusBadge = memo(({ status, color }: { status: string; color: string }) 
 ));
 StatusBadge.displayName = 'StatusBadge';
 
-/** Mini metric row inside room cards */
-const MetricRow = memo(({ icon: Icon, label, value, color, unit }: {
-  icon: IconComponent;
-  label: string;
-  value: number | string;
-  color?: string;
-  unit?: string;
-}) => (
-  <div className="flex items-center justify-between py-2 border-b last:border-b-0" style={{ borderColor: C.ghost }}>
-    <div className="flex items-center gap-2">
-      <Icon size={14} style={{ color: color ?? C.muted }} strokeWidth={2} />
-      <span className="text-[12px]" style={{ color: C.muted }}>{label}</span>
-    </div>
-    <span className="text-[14px] font-bold tabular-nums" style={{ color: color ?? C.textHi }}>
-      {value}{unit && <span className="text-[11px] font-normal ml-0.5" style={{ color: C.muted }}>{unit}</span>}
-    </span>
-  </div>
-));
-MetricRow.displayName = 'MetricRow';
-
-/** Enhanced room card with rich details */
+/** Kompaktní karta sálu ve stejném stylu jako finanční a notifikační dlaždice. */
 const RoomCard = memo(({
   room,
   utilization,
   opsCount,
   avgOpTime,
   onClick,
-  statusHistory,
 }: {
   room: OperatingRoom;
   utilization: number;
   opsCount: number;
   avgOpTime: number | null;
   onClick: () => void;
-  statusHistory?: StatusHistoryRow[];
 }) => {
   const statusMap: Record<string, { label: string; color: string }> = {
     'volny': { label: 'Volný', color: C.green },
@@ -129,56 +155,15 @@ const RoomCard = memo(({
 
   const utilColor = utilization >= 80 ? C.green : utilization >= 50 ? C.yellow : utilization > 0 ? C.orange : C.muted;
 
-  // Calculate trend data from REAL statusHistory (last 12 periods/hours)
-  const trend = useMemo(() => {
-    if (!statusHistory || statusHistory.length === 0) {
-      return [];
-    }
-
-    // Filter status history for this room and group by hour (last 12 hours)
-    const now = new Date();
-    const roomHistory = statusHistory
-      .filter(entry => entry.operating_room_id === room.id)
-      .filter(entry => {
-        const entryTime = new Date(entry.created_at).getTime();
-        const hoursDiff = (now.getTime() - entryTime) / (1000 * 60 * 60);
-        return hoursDiff <= 12;
-      })
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-    // Group by hour and calculate utilization for each
-    const hourlyUtilization: number[] = [];
-    for (let i = 0; i < 12; i++) {
-      const hourStart = new Date(now.getTime() - (12 - i) * 60 * 60 * 1000);
-      const hourEnd = new Date(now.getTime() - (11 - i) * 60 * 60 * 1000);
-      
-      const hourEntries = roomHistory.filter(entry => {
-        const entryTime = new Date(entry.created_at);
-        return entryTime >= hourStart && entryTime < hourEnd;
-      });
-
-      if (hourEntries.length > 0) {
-        const operatingCount = hourEntries.filter(
-          e => e.event_type === 'in_use' || e.event_type === 'started' || e.event_type === 'occupied'
-        ).length;
-        const utilPct = Math.round((operatingCount / hourEntries.length) * 100);
-        hourlyUtilization.push(utilPct);
-      } else {
-        hourlyUtilization.push(0);
-      }
-    }
-
-    return hourlyUtilization;
-  }, [room.id, statusHistory]);
-
   return (
     <button type="button" onClick={onClick} className="w-full cursor-pointer text-left group">
-      <Card elevated className="p-4 h-full relative overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3 relative">
+      <Card className={`relative h-full overflow-hidden p-4 ${ROOM_CARD_CLASS}`}>
+        <span className="absolute inset-x-4 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${utilColor}, transparent)` }} />
+        <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-[16px] font-bold truncate leading-tight" style={{ color: C.textHi }}>{room.name}</h3>
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.13em]" style={{ color: C.muted }}>Operační sál</p>
+            <h3 className="mt-1 truncate text-[14px] font-semibold leading-tight" style={{ color: C.textHi }}>{room.name}</h3>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <StatusBadge status={st.label} color={st.color} />
               {room.isSeptic && (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-bold">SEP</span>
@@ -189,47 +174,31 @@ const RoomCard = memo(({
             </div>
           </div>
 
-          {/* Utilization ring */}
-          <ProgressRing
-            value={utilization}
-            size={60}
-            strokeWidth={6}
-            color={utilColor}
-            label={`${Math.round(utilization)}`}
-            sublabel="%"
-          />
+          <div className="shrink-0 text-right">
+            <p className="text-[26px] font-light leading-none tabular-nums" style={{ color: C.textHi }}>{Math.round(utilization)}<span className="ml-0.5 text-[11px]" style={{ color: utilColor }}>%</span></p>
+            <p className="mt-1 text-[8px] uppercase tracking-[0.1em]" style={{ color: C.faint }}>využití</p>
+          </div>
         </div>
 
-        {/* Denní průběh vytížení */}
-        <div className="mb-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: C.muted }}>
-            Průběh dne
-          </p>
-          {trend.length >= 2
-            ? <Sparkline data={trend} width={220} height={36} color={utilColor} />
-            : <p className="text-[11px] py-2" style={{ color: C.faint }}>Bez historických dat</p>}
+        <div className="mt-4 h-1 overflow-hidden rounded-full" style={{ background: C.ghost }}>
+          <div className="h-full rounded-full" style={{ width: `${Math.min(100, utilization)}%`, background: utilColor }} />
         </div>
 
-        {/* Metrics */}
-        <div className="space-y-0">
-          <MetricRow icon={Activity} label="Výkony" value={opsCount} color={C.accent} />
-          <MetricRow icon={Clock} label="Prům. čas" value={avgOpTime === null ? '—' : formatMinutes(avgOpTime)} />
-          <MetricRow icon={Users} label="Fronta" value={room.queueCount ?? 0} unit="pac." />
-          {room.hourlyOperatingCost && (
-            <MetricRow
-              icon={Zap}
-              label="Sazba"
-              value={formatNumber(room.hourlyOperatingCost, 0)}
-              unit="Kč/h"
-            />
-          )}
+        <div className="mt-4 grid grid-cols-2 gap-1.5">
+          {[
+            ['Výkony', String(opsCount)],
+            ['Prům. čas', avgOpTime === null ? '—' : formatMinutes(avgOpTime)],
+            ['Fronta', `${room.queueCount ?? 0} pac.`],
+            ['Sazba', room.hourlyOperatingCost ? `${formatNumber(room.hourlyOperatingCost, 0)} Kč/h` : '—'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-lg px-2.5 py-2" style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}>
+              <p className="text-[8px] uppercase tracking-[0.08em]" style={{ color: C.faint }}>{label}</p>
+              <p className="mt-1 truncate text-[10px] font-semibold tabular-nums" style={{ color: C.textHi }}>{value}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Footer CTA */}
-        <div
-          className="flex items-center justify-end gap-1 mt-3 pt-2 text-[12px] font-semibold"
-          style={{ color: C.accent, borderTop: `1px solid ${C.ghost}` }}
-        >
+        <div className="mt-3 flex items-center justify-end gap-1 border-t pt-2 text-[10px] font-semibold" style={{ color: C.accent, borderColor: C.ghost }}>
           <span>Detail</span>
           <ChevronRight size={12} />
         </div>
@@ -252,26 +221,19 @@ const SummaryKPI = memo(({
   const pct = total > 0 ? (value / total) * 100 : 0;
 
   return (
-    <Card className="p-4 relative overflow-hidden">
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center"
-          style={{ background: `${color}15`, border: `1px solid ${color}25` }}
-        >
-          <Icon size={18} color={color} strokeWidth={2} />
+    <div className="group relative min-h-[112px] overflow-hidden rounded-xl p-4" style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}>
+      <span className="absolute inset-x-4 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+      <div className="flex min-h-[44px] items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-[11px] font-medium" style={{ color: C.textHi }}>{label}</p>
+          <p className="mt-1 truncate text-[10px]" style={{ color: C.muted }}>{Math.round(pct)} % z {total} sálů</p>
         </div>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-105" style={{ color, border: `1px solid ${color}35`, background: `${color}0e` }}>
+          <Icon className="h-4 w-4" strokeWidth={1.8} />
+        </span>
       </div>
-
-      <p className="text-4xl font-bold leading-none mb-1" style={{ color }}>{value}</p>
-      <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: C.muted }}>{label}</p>
-
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: C.ghost }}>
-          <div className="h-full rounded-full" style={{ background: color, width: `${pct}%` }} />
-        </div>
-        <span className="text-[11px] font-semibold tabular-nums" style={{ color }}>{formatPercent(pct, 0)}</span>
-      </div>
-    </Card>
+      <p className="mt-3 truncate text-[26px] font-light leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
+    </div>
   );
 });
 SummaryKPI.displayName = 'SummaryKPI';
@@ -340,30 +302,6 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
 
   const totalOps = useMemo(() => roomsData.reduce((acc, r) => acc + r.operations, 0), [roomsData]);
 
-  // ── Bar chart data ──
-  const barData = useMemo(() => {
-    return sortedRooms.map(r => ({
-      name: r.room.name.replace('Operační sál ', 'OS ').replace('Sál ', 'S'),
-      utilization: Math.round(r.utilization),
-      operations: r.operations,
-      fill: r.utilization >= 80 ? C.green : r.utilization >= 50 ? C.yellow : r.utilization > 0 ? C.orange : C.muted,
-    }));
-  }, [sortedRooms]);
-
-  // ── Radial data for top 6 ──
-  const radialData = useMemo(() => {
-    return sortedRooms.slice(0, 6).map((r, i) => ({
-      name: r.room.name.replace('Operační sál ', 'OS '),
-      value: Math.round(r.utilization),
-      fill: [C.accent, C.green, C.blue, C.purple, C.orange, C.pink][i % 6],
-    }));
-  }, [sortedRooms]);
-
-  // Barva hlavního prstence dle úrovně vytížení
-  const avgUtilColor = avgUtilization >= 80 ? C.green
-    : avgUtilization >= 50 ? C.accent
-    : avgUtilization > 0 ? C.orange : C.muted;
-
   /* ── Doporučení „Co zlepšit a urychlit" — odvozená z reálných dat ── */
   const insights = useMemo<InsightItem[]>(() => {
     const out: InsightItem[] = [];
@@ -417,116 +355,201 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
     return out.slice(0, 3);
   }, [roomsData, avgUtilization]);
 
-  /** Fáze operačního cyklu — podíl času jednotlivých statusů z historie. */
+  /**
+   * Fáze operačního cyklu — podíl reálného času jednotlivých statusů.
+   * Každý uložený interval ořízneme na pracovní dobu příslušného sálu.
+   * „Sál připraven" je součástí přehledu, ale mimo pracovní dobu se stejně
+   * jako ostatní fáze nezapočítá.
+   */
   const phaseRings = useMemo(() => {
     if (!statusHistory || statusHistory.length === 0 || workflowSteps.length === 0) return [];
     const totals: Record<string, number> = {};
+    const roomById = new Map(rooms.map(room => [room.id, room]));
     workflowSteps.forEach(s => { totals[s.title] = 0; });
-    statusHistory
-      .filter(e => e.event_type === 'step_change' && e.duration_seconds)
-      .forEach(e => {
-        if (e.step_name && totals[e.step_name] !== undefined) {
-          totals[e.step_name] += e.duration_seconds || 0;
-        }
+    totals.Pauza = totals.Pauza ?? 0;
+
+    // Pauza má vlastní dvojici databázových událostí pause → resume. Párujeme
+    // je po jednotlivých sálech, aby šlo výhradně o reálně zaznamenaný čas.
+    const pauseStartByRoom = new Map<string, Date>();
+    const pauseIntervalsByRoom = new Map<string, Array<{ start: Date; end: Date }>>();
+    const pauseEvents = statusHistory
+      .filter(event => (event.event_type === 'pause' || event.event_type === 'resume') && event.timestamp)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    pauseEvents.forEach(event => {
+      const room = roomById.get(event.operating_room_id);
+      const timestamp = new Date(event.timestamp);
+      if (!room || !Number.isFinite(timestamp.getTime())) return;
+
+      if (event.event_type === 'pause') {
+        if (!pauseStartByRoom.has(room.id)) pauseStartByRoom.set(room.id, timestamp);
+        return;
+      }
+
+      const pauseStart = pauseStartByRoom.get(room.id);
+      if (!pauseStart) return;
+      const intervals = pauseIntervalsByRoom.get(room.id) ?? [];
+      intervals.push({ start: pauseStart, end: timestamp });
+      pauseIntervalsByRoom.set(room.id, intervals);
+      pauseStartByRoom.delete(room.id);
+    });
+
+    // Otevřená pauza je měřitelná do aktuálního okamžiku pouze tehdy, když je
+    // sál podle aktuálního databázového stavu stále skutečně pozastavený.
+    pauseStartByRoom.forEach((pauseStart, roomId) => {
+      const room = roomById.get(roomId);
+      if (!room?.isPaused) return;
+      const intervals = pauseIntervalsByRoom.get(roomId) ?? [];
+      intervals.push({ start: pauseStart, end: new Date() });
+      pauseIntervalsByRoom.set(roomId, intervals);
+    });
+
+    pauseIntervalsByRoom.forEach((intervals, roomId) => {
+      const room = roomById.get(roomId);
+      if (!room) return;
+      intervals.forEach(interval => {
+        totals.Pauza += roomWorkingOverlapSeconds(room, interval.start, interval.end);
       });
+    });
+
+    // Délky běžných fází jsou uložené na události step_change. Pokud do
+    // intervalu fáze spadá pauza, odečteme ji z fáze a vykážeme samostatně,
+    // takže se stejná minuta nikdy nezapočítá dvakrát.
+    statusHistory
+      .filter(e => e.event_type === 'step_change' && e.duration_seconds && e.step_name)
+      .forEach(e => {
+        const room = roomById.get(e.operating_room_id);
+        const seconds = Number(e.duration_seconds ?? 0);
+        if (!room || !e.step_name || totals[e.step_name] === undefined || !Number.isFinite(seconds) || seconds <= 0) return;
+
+        const end = new Date(e.timestamp);
+        const start = new Date(end.getTime() - seconds * 1_000);
+        const phaseWorkingSeconds = roomWorkingOverlapSeconds(room, start, end);
+        const pausedWorkingSeconds = (pauseIntervalsByRoom.get(room.id) ?? []).reduce((sum, pause) => {
+          const overlapStart = new Date(Math.max(start.getTime(), pause.start.getTime()));
+          const overlapEnd = new Date(Math.min(end.getTime(), pause.end.getTime()));
+          return sum + roomWorkingOverlapSeconds(room, overlapStart, overlapEnd);
+        }, 0);
+        totals[e.step_name] += Math.max(0, phaseWorkingSeconds - pausedWorkingSeconds);
+      });
+
     const total = Object.values(totals).reduce((a, b) => a + b, 0);
     if (total === 0) return [];
-    // „Sál připraven" je klidový stav, ne fáze cyklu — nezobrazujeme
-    const isIdle = (name: string) => {
-      const n = (name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return n.includes('priprav') && n.includes('sal');
-    };
-    return workflowSteps
+    const workflowItems = workflowSteps
       .map(s => ({
         label: s.title,
         percent: (totals[s.title] / total) * 100,
+        duration: totals[s.title] / 60,
         detail: formatMinutes(Math.round(totals[s.title] / 60)),
         color: s.color,
       }))
-      .filter(s => s.percent > 0 && !isIdle(s.label))
+      .filter(s => s.percent > 0)
       .sort((a, b) => b.percent - a.percent);
-  }, [statusHistory, workflowSteps]);
 
-  // ── Status distribution pie ──
-  const statusPieData = useMemo(() => [
-    { name: 'Obsazeno', value: busyCount, fill: C.orange },
-    { name: 'Volno', value: freeCount, fill: C.green },
-    { name: 'Úklid', value: cleanCount, fill: C.accent },
-    { name: 'Údržba', value: maintCount, fill: C.muted },
-  ].filter(d => d.value > 0), [busyCount, freeCount, cleanCount, maintCount]);
+    if (totals.Pauza > 0 && !workflowSteps.some(step => step.title.toLocaleLowerCase('cs-CZ') === 'pauza')) {
+      workflowItems.push({
+        label: 'Pauza',
+        percent: (totals.Pauza / total) * 100,
+        duration: totals.Pauza / 60,
+        detail: formatMinutes(Math.round(totals.Pauza / 60)),
+        color: C.yellow,
+      });
+      workflowItems.sort((a, b) => b.percent - a.percent);
+    }
+
+    return workflowItems;
+  }, [statusHistory, workflowSteps, rooms]);
 
   return (
-    <div className="space-y-5">
-      {/* ── Summary KPIs ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <SummaryKPI
-          label="Obsazeno"
-          value={busyCount}
-          total={rooms.length}
-          color={C.orange}
-          icon={Activity}
-        />
-        <SummaryKPI
-          label="Volno"
-          value={freeCount}
-          total={rooms.length}
-          color={C.green}
-          icon={CheckCircle2}
-        />
-        <SummaryKPI
-          label="Úklid"
-          value={cleanCount}
-          total={rooms.length}
-          color={C.accent}
-          icon={Sparkles}
-        />
-        <SummaryKPI
-          label="Mimo provoz"
-          value={maintCount}
-          total={rooms.length}
-          color={C.faint}
-          icon={AlertTriangle}
-        />
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
+        <main className="flex flex-col gap-4 xl:order-2">
+          <Card className={`relative overflow-hidden p-5 ${ROOM_CARD_CLASS}`}>
+            <span className="absolute inset-x-10 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}aa, transparent)` }} />
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium" style={{ color: C.muted }}>Sály</p>
+                <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>Přehled operačních sálů</h2>
+                <p className="mt-1 text-[11px]" style={{ color: C.muted }}>Využití, provozní stav a výkonnost operačních sálů</p>
+              </div>
+              <span className="rounded-md px-3 py-2 text-[11px] font-medium" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>Období: {periodLabel}</span>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <SummaryKPI label="Obsazeno" value={busyCount} total={rooms.length} color={C.orange} icon={Activity} />
+              <SummaryKPI label="Volno" value={freeCount} total={rooms.length} color={C.green} icon={CheckCircle2} />
+              <SummaryKPI label="Úklid" value={cleanCount} total={rooms.length} color={C.accent} icon={Sparkles} />
+              <SummaryKPI label="Mimo provoz" value={maintCount} total={rooms.length} color={C.faint} icon={AlertTriangle} />
+            </div>
+          </Card>
+
+          {phaseRings.length > 0 && (
+            <Card className={`p-5 ${ROOM_CARD_CLASS}`} icon={Activity} title="Fáze operačního cyklu" subtitle="Podíl času naměřených provozních fází" accent={C.accent}>
+              <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-6">
+                {phaseRings.map(phase => (
+                  <CyclePhaseRing
+                    key={phase.label}
+                    label={phase.label}
+                    percentage={phase.percent}
+                    color={phase.color}
+                  />
+                ))}
+              </div>
+            </Card>
+          )}
+        </main>
+
+        <aside className="flex flex-col gap-4 xl:order-1">
+          <Card className={`relative overflow-hidden p-5 ${ROOM_CARD_CLASS}`}>
+            <div className="absolute -right-14 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: C.accent }} />
+            <div className="relative">
+              <div className="flex items-center justify-between gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl" style={{ color: C.accent, background: `${C.accent}0f`, border: `1px solid ${C.accent}2f` }}><LayoutGrid className="h-5 w-5" /></span>
+                <span className="rounded-full px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.13em]" style={{ color: C.accent, border: `1px solid ${C.accent}35` }}>reálná data</span>
+              </div>
+              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: C.muted }}>Operační sály</p>
+              <p className="mt-1 text-[52px] font-light leading-none tracking-[-0.05em] tabular-nums" style={{ color: C.textHi }}>{rooms.length}</p>
+              <p className="mt-2 text-[11px]" style={{ color: C.muted }}>evidovaných sálů · {periodLabel}</p>
+              <div className="mt-5 flex h-2 overflow-hidden rounded-full" style={{ background: C.ghost }}>
+                {[
+                  [busyCount, C.orange, 'Obsazeno'], [freeCount, C.green, 'Volno'], [cleanCount, C.accent, 'Úklid'], [maintCount, C.muted, 'Mimo provoz'],
+                ].map(([count, color, label]) => Number(count) > 0 && <span key={String(label)} style={{ width: `${(Number(count) / Math.max(1, rooms.length)) * 100}%`, background: String(color) }} title={`${label}: ${count}`} />)}
+              </div>
+              <div className="mt-4 space-y-2.5">
+                {[
+                  ['Obsazeno', busyCount, C.orange], ['Volno', freeCount, C.green], ['Úklid', cleanCount, C.accent],
+                ].map(([label, count, color]) => (
+                  <div key={String(label)} className="flex items-center gap-2.5">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: String(color) }} />
+                    <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>{label}</span>
+                    <span className="text-[11px] font-semibold tabular-nums" style={{ color: C.textHi }}>{count}×</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="relative mt-5 space-y-2.5 border-t pt-4" style={{ borderColor: C.border }}>
+              {[
+                ['Průměrné vytížení', `${Math.round(avgUtilization)} %`],
+                ['Výkonů celkem', String(totalOps)],
+                ['Sálů v provozu', String(busyCount)],
+                ['Mimo provoz', String(maintCount)],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between gap-3">
+                  <span className="text-[11px]" style={{ color: C.muted }}>{label}</span>
+                  <span className="text-[11px] font-semibold tabular-nums" style={{ color: C.textHi }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <InsightPanel title="Co zlepšit a urychlit" icon={<TrendingUp size={14} color={C.accent} />} items={insights} />
+        </aside>
       </div>
 
-      {/* ── Hero panel — velký prstenec vytížení + doporučení ── */}
-      <Card elevated className="p-6 lg:p-8">
-        {/* Vlevo prstenec + fáze pod ním (společně vycentrované), vpravo
-            doporučení — malé prstence tak sedí pod středem velkého grafu. */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] gap-8 items-start">
-          <div className="flex flex-col items-center">
-            <GaugeRing
-              value={avgUtilization}
-              size={300}
-              color={avgUtilColor}
-              kicker="Průměrné vytížení"
-              sublabel={`${totalOps} výkonů · ${busyCount}/${rooms.length} sálů v provozu`}
-            />
-
-            {/* Fáze operačního cyklu — podíl času jednotlivých statusů */}
-            {phaseRings.length > 0 && (
-              <div className="w-full mt-8 pt-7" style={{ borderTop: `1px solid ${C.ghost}` }}>
-                <StatSectionLabel className="mb-6">Fáze operačního cyklu</StatSectionLabel>
-                <RingRow items={phaseRings} />
-              </div>
-            )}
-          </div>
-
-          {/* Doporučení */}
-          <InsightPanel
-            title="Co zlepšit a urychlit"
-            icon={<TrendingUp size={14} color={C.accent} />}
-            items={insights}
-          />
-        </div>
-      </Card>
-
       {/* ── Utilization comparison chart ── */}
-      <Card className="p-5">
+      <Card className={`p-5 ${ROOM_CARD_CLASS}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-[15px] font-bold" style={{ color: C.textHi }}>Využití podle sálů</p>
-            <p className="text-[12px]" style={{ color: C.muted }}>Porovnání efektivity jednotlivých operačních sálů</p>
+            <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Využití podle sálů</h3>
+            <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Porovnání efektivity jednotlivých operačních sálů</p>
           </div>
           <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: C.ghost }}>
             <button
@@ -559,33 +582,37 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
           </div>
         </div>
         
-        {/* Žebříček místo sloupcového grafu s 9px popisky — plné názvy sálů,
-            hodnota vpravo a barevný pruh, stejně jako v záložce Přehled. */}
-        <BarList
-          max={sortBy === 'operations' ? undefined : 100}
-          barHeight={9}
-          items={sortedRooms.map(r => {
+        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8">
+          {sortedRooms.map(r => {
             const color = r.utilization >= 80 ? C.green
               : r.utilization >= 50 ? C.yellow
               : r.utilization > 0 ? C.orange : C.muted;
-            return sortBy === 'operations'
-              ? {
-                  label: r.room.name,
-                  value: r.operations,
-                  display: `${r.operations} výk.`,
-                  sub: `${Math.round(r.utilization)} %`,
-                  color,
-                }
-              : {
-                  label: r.room.name,
-                  value: Math.round(r.utilization),
-                  display: `${Math.round(r.utilization)} %`,
-                  sub: `${r.operations} výk.`,
-                  color,
-                };
+            return (
+              <button
+                type="button"
+                key={r.room.id}
+                onClick={() => onRoomSelect?.(r.room)}
+                aria-label={`${r.room.name}, využití ${Math.round(r.utilization)} procent`}
+                className="group relative aspect-square min-w-0 overflow-hidden rounded-xl p-3 text-center transition-colors hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2"
+                style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}`, color }}
+              >
+                <span className="absolute inset-x-3 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+                <span className="flex h-full flex-col items-center justify-between">
+                  <span className="flex w-full min-w-0 items-center justify-center gap-1.5">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
+                    <span className="truncate text-[9px] font-semibold uppercase tracking-[0.08em]" style={{ color: C.muted }} title={r.room.name}>{r.room.name}</span>
+                  </span>
+                  <span className="flex items-baseline justify-center">
+                    <span className="text-[30px] font-light leading-none tracking-[-0.04em] tabular-nums" style={{ color: C.textHi }}>{Math.round(r.utilization)}</span>
+                    <span className="ml-0.5 text-[10px] font-semibold" style={{ color }}>%</span>
+                  </span>
+                  <span className="text-[9px] tabular-nums" style={{ color: C.faint }}>{r.operations} výkonů</span>
+                </span>
+              </button>
+            );
           })}
-          emptyText="Žádné sály k zobrazení."
-        />
+          {sortedRooms.length === 0 && <p className="col-span-full py-8 text-center text-[11px]" style={{ color: C.muted }}>Žádné sály k zobrazení.</p>}
+        </div>
 
         {/* Legend */}
         <div className="flex items-center justify-center gap-6 mt-4 pt-3" style={{ borderTop: `1px solid ${C.ghost}` }}>
@@ -602,38 +629,28 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
         </div>
       </Card>
 
-      {/* ── Room cards header ── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[15px] font-bold" style={{ color: C.textHi }}>
-            Operační sály ({rooms.length})
-          </p>
-          <p className="text-[12px]" style={{ color: C.muted }}>
-            Kliknutím na kartu zobrazíte podrobné statistiky
-          </p>
+      <Card className={`p-5 ${ROOM_CARD_CLASS}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Operační sály</h3>
+            <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Kliknutím na kartu zobrazíte podrobné statistiky</p>
+          </div>
+          <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: C.ghost, border: `1px solid ${C.border}` }}>
+            <button type="button" onClick={() => setViewMode('grid')} aria-label="Zobrazit sály v mřížce" className={`rounded-md p-1.5 transition-colors ${viewMode === 'grid' ? 'bg-white/10' : ''}`}>
+              <LayoutGrid size={14} style={{ color: viewMode === 'grid' ? C.accent : C.muted }} />
+            </button>
+            <button type="button" onClick={() => setViewMode('list')} aria-label="Zobrazit sály jako seznam" className={`rounded-md p-1.5 transition-colors ${viewMode === 'list' ? 'bg-white/10' : ''}`}>
+              <List size={14} style={{ color: viewMode === 'list' ? C.accent : C.muted }} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: C.ghost }}>
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-white/10' : ''}`}
-          >
-            <LayoutGrid size={14} style={{ color: viewMode === 'grid' ? C.accent : C.muted }} />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-white/10' : ''}`}
-          >
-            <List size={14} style={{ color: viewMode === 'list' ? C.accent : C.muted }} />
-          </button>
-        </div>
-      </div>
 
-      {/* ── Room cards grid ── */}
-      <div
+        <div
           key={viewMode}
-          className={viewMode === 'grid'
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'
+          className={`mt-5 ${viewMode === 'grid'
+            ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
             : 'space-y-2'
+          }`
           }
         >
           {sortedRooms.map(data => (
@@ -644,15 +661,16 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               opsCount={data.operations}
               avgOpTime={data.avgOpTime}
               onClick={() => onRoomSelect?.(data.room)}
-              statusHistory={statusHistory}
             />
           ))}
-      </div>
+        </div>
+      </Card>
 
       {/* ── Performance comparison table ── */}
-      <Card className="p-0 overflow-hidden">
+      <Card className={`p-0 overflow-hidden ${ROOM_CARD_CLASS}`}>
         <div className="p-4 pb-3" style={{ borderBottom: `1px solid ${C.ghost}` }}>
-          <p className="text-[15px] font-bold" style={{ color: C.textHi }}>Srovnávací tabulka výkonnosti</p>
+          <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Srovnávací tabulka výkonnosti</h3>
+          <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Souhrnné porovnání využití, výkonů, času a sazeb</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
