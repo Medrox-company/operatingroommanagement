@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import dynamic from 'next/dynamic';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   TrendingUp, TrendingDown, Activity,
   AlertTriangle, Shield, Clock, Layers, X, BarChart3,
   Printer, FileDown, ChevronLeft, ChevronRight, CalendarDays,
+  Home, DollarSign, BadgeDollarSign, Building2, Bell, Monitor,
+  type LucideIcon,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus, DayWorkingHours } from '../types';
 // Step durations now calculated from real database history
@@ -60,6 +63,152 @@ const C = {
   ghost:   'var(--stats-ghost)',
   text:    'var(--stats-text)',
 };
+
+type StatisticsTabItem = {
+  id: Tab;
+  label: string;
+  icon: LucideIcon;
+  accent: string;
+  glow: string;
+};
+
+const STATISTICS_TABS: StatisticsTabItem[] = [
+  { id: 'prehled', label: 'Přehled', icon: Home, accent: '#38BDF8', glow: 'rgba(56,189,248,0.24)' },
+  { id: 'finance', label: 'Finance', icon: DollarSign, accent: '#34D399', glow: 'rgba(52,211,153,0.22)' },
+  { id: 'sazby', label: 'Sazby', icon: BadgeDollarSign, accent: '#FBBF24', glow: 'rgba(251,191,36,0.22)' },
+  { id: 'saly', label: 'Sály', icon: Building2, accent: '#22D3EE', glow: 'rgba(34,211,238,0.23)' },
+  { id: 'faze', label: 'Fáze', icon: Layers, accent: '#A78BFA', glow: 'rgba(167,139,250,0.23)' },
+  { id: 'notifikace', label: 'Notifikace', icon: Bell, accent: '#FB7185', glow: 'rgba(251,113,133,0.22)' },
+  { id: 'zarizeni', label: 'Zařízení', icon: Monitor, accent: '#60A5FA', glow: 'rgba(96,165,250,0.22)' },
+];
+
+function StatisticsGlowMenu({
+  value,
+  onChange,
+  compact = false,
+}: {
+  value: Tab;
+  onChange: (tab: Tab) => void;
+  compact?: boolean;
+}) {
+  const reduceMotion = useReducedMotion();
+  const transition = reduceMotion
+    ? { duration: 0 }
+    : { type: 'spring' as const, stiffness: 180, damping: 22, mass: 0.7 };
+
+  return (
+    <nav
+      aria-label="Sekce statistik"
+      className={`relative min-w-0 overflow-hidden rounded-xl border ${compact ? 'w-full p-1' : 'p-1.5'}`}
+      style={{
+        background: 'linear-gradient(180deg, color-mix(in srgb, var(--stats-surface) 92%, transparent), color-mix(in srgb, var(--stats-surface-2) 78%, transparent))',
+        borderColor: C.border,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
+      }}
+    >
+      <div
+        role="tablist"
+        aria-label="Záložky modulu Statistiky"
+        className="relative z-10 flex min-w-0 items-center gap-1 overflow-x-auto hide-scrollbar"
+      >
+        {STATISTICS_TABS.map(({ id, label, icon: Icon, accent, glow }) => {
+          const active = value === id;
+          const state = active ? 'active' : 'rest';
+
+          return (
+            <motion.button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              tabIndex={active ? 0 : -1}
+              onClick={() => onChange(id)}
+              onKeyDown={(event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const buttons = Array.from(
+                  event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [],
+                );
+                const currentIndex = buttons.indexOf(event.currentTarget);
+                if (currentIndex < 0 || buttons.length === 0) return;
+                const nextIndex = event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? buttons.length - 1
+                    : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+                const nextTab = STATISTICS_TABS[nextIndex];
+                if (!nextTab) return;
+                onChange(nextTab.id);
+                buttons[nextIndex]?.focus();
+              }}
+              initial={false}
+              animate={state}
+              whileHover={reduceMotion || active ? state : 'hover'}
+              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+              className={`group relative h-10 shrink-0 overflow-visible rounded-[10px] px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent ${compact ? 'min-w-[104px] flex-1' : 'min-w-[106px]'}`}
+              style={{
+                perspective: '650px',
+                color: active ? accent : C.muted,
+                background: active ? `color-mix(in srgb, ${accent} 11%, var(--stats-surface))` : 'transparent',
+              }}
+            >
+              <motion.span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-xl"
+                variants={{
+                  rest: { opacity: 0, scale: 0.82 },
+                  active: { opacity: 0.62, scale: 1 },
+                  hover: { opacity: 0.72, scale: 1.65 },
+                }}
+                transition={transition}
+                style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 70%)` }}
+              />
+
+              <motion.span
+                className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-[10px] px-3 text-[11px] font-semibold whitespace-nowrap"
+                variants={{
+                  rest: { rotateX: 0, opacity: 1 },
+                  active: { rotateX: 0, opacity: 1 },
+                  hover: { rotateX: -90, opacity: 0 },
+                }}
+                transition={transition}
+                style={{ transformStyle: 'preserve-3d', transformOrigin: 'center bottom' }}
+              >
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                <span>{label}</span>
+              </motion.span>
+
+              <motion.span
+                aria-hidden
+                className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-[10px] px-3 text-[11px] font-semibold whitespace-nowrap"
+                variants={{
+                  rest: { rotateX: 90, opacity: 0 },
+                  active: { rotateX: 90, opacity: 0 },
+                  hover: { rotateX: 0, opacity: 1 },
+                }}
+                transition={transition}
+                style={{ color: accent, transformStyle: 'preserve-3d', transformOrigin: 'center top' }}
+              >
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+                <span>{label}</span>
+              </motion.span>
+
+              {active && (
+                <motion.span
+                  layoutId="statistics-active-tab"
+                  aria-hidden
+                  className="absolute inset-x-3 -bottom-px h-px rounded-full"
+                  transition={transition}
+                  style={{ background: accent, boxShadow: `0 0 10px ${glow}` }}
+                />
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
 
 const DEPT_COLORS: Record<string,string> = {
   TRA:'#06B6D4', CHIR:'#F97316', ROBOT:'#A78BFA',
@@ -225,25 +374,12 @@ function calculateRoomWorkflowDistribution(
 
 // ── Helper: Calculate total working minutes for a room across a period ─────────
 function getRoomTotalWorkingMinutes(room: OperatingRoom, period: Period): number {
+  const now = new Date();
   if (period === 'den') {
-    const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-    return getRoomWorkingMinutes(room, todayIndex);
+    const { start, end } = dayBounds(operationalToday(now));
+    return getRoomWorkingMinutesInWindow(room, start, end);
   }
-  
-  if (period === 'týden') {
-    // Sum working minutes for all 7 days
-    return Array.from({ length: 7 }, (_, i) => getRoomWorkingMinutes(room, i)).reduce((a, b) => a + b, 0);
-  }
-  
-  if (period === 'měsíc') {
-    // Approximate: 4 weeks of working days
-    const weeklyMinutes = Array.from({ length: 7 }, (_, i) => getRoomWorkingMinutes(room, i)).reduce((a, b) => a + b, 0);
-    return weeklyMinutes * 4.3; // ~30 days / 7 = 4.3 weeks
-  }
-  
-  // Year: 52 weeks
-  const weeklyMinutes = Array.from({ length: 7 }, (_, i) => getRoomWorkingMinutes(room, i)).reduce((a, b) => a + b, 0);
-  return weeklyMinutes * 52;
+  return getRoomWorkingMinutesInWindow(room, getPeriodStart(period, now), now);
 }
 
 // ── Helper: Count operations within working hours for a room from history ──────
@@ -338,6 +474,92 @@ function buildRoomOperationIntervals(
   return intervals;
 }
 
+/** Sloučí překrývající se intervaly, aby se tatáž minuta nezapočítala vícekrát. */
+function mergeOperationIntervals(
+  intervals: Array<{ start: Date; end: Date }>,
+  windowStart: Date,
+  windowEnd: Date,
+): Array<{ start: Date; end: Date }> {
+  const startLimit = windowStart.getTime();
+  const endLimit = windowEnd.getTime();
+  const clipped = intervals
+    .map(interval => ({
+      start: new Date(Math.max(interval.start.getTime(), startLimit)),
+      end: new Date(Math.min(interval.end.getTime(), endLimit)),
+    }))
+    .filter(interval => interval.end.getTime() > interval.start.getTime())
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  const merged: Array<{ start: Date; end: Date }> = [];
+  clipped.forEach(interval => {
+    const previous = merged[merged.length - 1];
+    if (!previous || interval.start.getTime() > previous.end.getTime()) {
+      merged.push(interval);
+      return;
+    }
+    if (interval.end.getTime() > previous.end.getTime()) previous.end = interval.end;
+  });
+  return merged;
+}
+
+/**
+ * Část zadaných intervalů, která skutečně leží v nastavené pracovní době.
+ * Pauza nemá v rozvrhu konkrétní čas, proto se odečítá poměrem net/gross stejně
+ * v kapacitě i v obsazeném čase.
+ */
+function workingMinutesFromIntervals(
+  room: OperatingRoom,
+  intervals: Array<{ start: Date; end: Date }>,
+): number {
+  let totalMinutes = 0;
+
+  intervals.forEach(interval => {
+    const cursor = new Date(interval.start);
+    cursor.setHours(0, 0, 0, 0);
+    const lastDay = new Date(interval.end);
+    lastDay.setHours(0, 0, 0, 0);
+
+    while (cursor.getTime() <= lastDay.getTime()) {
+      const dayIndex = cursor.getDay() === 0 ? 6 : cursor.getDay() - 1;
+      const hours = getRoomWorkingHours(room, dayIndex);
+      if (hours.enabled) {
+        const workStart = new Date(cursor);
+        workStart.setHours(hours.startHour, hours.startMinute, 0, 0);
+        const workEnd = new Date(cursor);
+        workEnd.setHours(hours.endHour, hours.endMinute, 0, 0);
+        const grossMinutes = Math.max(0, (workEnd.getTime() - workStart.getTime()) / 60_000);
+        const netMinutes = Math.max(0, grossMinutes - Math.min(getDayBreakMinutes(hours), grossMinutes));
+        const overlapStart = Math.max(interval.start.getTime(), workStart.getTime());
+        const overlapEnd = Math.min(interval.end.getTime(), workEnd.getTime());
+        if (overlapEnd > overlapStart && grossMinutes > 0) {
+          totalMinutes += ((overlapEnd - overlapStart) / 60_000) * (netMinutes / grossMinutes);
+        }
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  });
+
+  return totalMinutes;
+}
+
+function getRoomWorkingMinutesInWindow(room: OperatingRoom, start: Date, end: Date): number {
+  return workingMinutesFromIntervals(room, [{ start, end }]);
+}
+
+function calculateActiveMinutesInWorkingWindow(
+  room: OperatingRoom,
+  history: StatusHistoryRow[],
+  start: Date,
+  end: Date,
+): number {
+  // U dnešního provozního dne může konec okna ležet v budoucnu (zítra v 7:00).
+  // Probíhající výkon proto nikdy nesmíme dopočítat dál než do skutečného „teď".
+  const measuredEnd = new Date(Math.min(Date.now(), end.getTime()));
+  const merged = mergeOperationIntervals(buildRoomOperationIntervals(room, history, measuredEnd), start, measuredEnd);
+  const capacity = getRoomWorkingMinutesInWindow(room, start, end);
+  return Math.min(capacity, workingMinutesFromIntervals(room, merged));
+}
+
 // ── Helper: Calculate active time in minutes within working hours ──────────────
 // Sums the overlap between each operation interval and the room's working hours
 // for every day within the selected period.
@@ -350,54 +572,7 @@ function calculateActiveTimeInWorkingHours(
 
   const now = new Date();
   const periodStart = getPeriodStart(period, now);
-  const intervals = buildRoomOperationIntervals(room, history || [], now);
-  if (intervals.length === 0) return 0;
-
-  let totalMins = 0;
-
-  for (const interval of intervals) {
-    // Clip interval to period window
-    const clippedStart = new Date(Math.max(interval.start.getTime(), periodStart.getTime()));
-    const clippedEnd   = new Date(Math.min(interval.end.getTime(),   now.getTime()));
-    if (clippedEnd.getTime() <= clippedStart.getTime()) continue;
-
-    // Walk day-by-day and intersect with each day's working hours
-    const dayCursor = new Date(clippedStart);
-    dayCursor.setHours(0, 0, 0, 0);
-    const lastDay = new Date(clippedEnd);
-    lastDay.setHours(0, 0, 0, 0);
-
-    while (dayCursor.getTime() <= lastDay.getTime()) {
-      const dayOfWeek = dayCursor.getDay();
-      const dayIndex  = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      const hours     = getRoomWorkingHours(room, dayIndex);
-
-      if (hours.enabled) {
-        const whStart = new Date(dayCursor);
-        whStart.setHours(hours.startHour, hours.startMinute, 0, 0);
-        const whEnd = new Date(dayCursor);
-        whEnd.setHours(hours.endHour, hours.endMinute, 0, 0);
-
-        const overlapStart = Math.max(clippedStart.getTime(), whStart.getTime());
-        const overlapEnd   = Math.min(clippedEnd.getTime(),   whEnd.getTime());
-        if (overlapEnd > overlapStart) {
-          const rawOverlapMins = (overlapEnd - overlapStart) / 60000;
-          // Pro-rata break deduction: scale active time by (net / gross) so the
-          // configurable daily break is consistently reflected in utilization.
-          const grossMins  = Math.max(0, (whEnd.getTime() - whStart.getTime()) / 60000);
-          const breakMins  = Math.min(getDayBreakMinutes(hours), grossMins);
-          const netMins    = Math.max(0, grossMins - breakMins);
-          const scale      = grossMins > 0 ? netMins / grossMins : 0;
-          const adjusted   = Math.min(rawOverlapMins * scale, netMins);
-          totalMins += adjusted;
-        }
-      }
-
-      dayCursor.setDate(dayCursor.getDate() + 1);
-    }
-  }
-
-  return totalMins;
+  return calculateActiveMinutesInWorkingWindow(room, history || [], periodStart, now);
 }
 
 // ── Helper: Calculate utilization percentage based on working hours ────────────
@@ -417,7 +592,7 @@ function calculateRoomUtilization(
   if (totalWorkingMinutes === 0) return 0;
 
   const activeMinutes = calculateActiveTimeInWorkingHours(room, history, period);
-  return Math.round((activeMinutes / totalWorkingMinutes) * 100);
+  return Math.min(100, Math.max(0, Math.round((activeMinutes / totalWorkingMinutes) * 100)));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -573,19 +748,17 @@ function countOperationsForDay(
   }).length;
 }
 
-/**
- * Vytížení sálu (%) za provozní den.
- * Hodnota může přesáhnout 100 % — to je právě signál přesahu přes plán.
- */
+/** Vytížení sálu (%) pouze uvnitř nastavené pracovní doby provozního dne. */
 function calculateRoomUtilizationForDay(
   room: OperatingRoom,
   history: StatusHistoryRow[],
   date: Date,
 ): number {
-  const capacity = getRoomWorkingMinutesForDate(room, date);
-  const active = calculateActiveMinutesForDay(room, history, date);
-  if (capacity === 0) return active > 0 ? 100 : 0;
-  return Math.round((active / capacity) * 100);
+  const { start, end } = dayBounds(date);
+  const capacity = getRoomWorkingMinutesInWindow(room, start, end);
+  if (capacity === 0) return 0;
+  const active = calculateActiveMinutesInWorkingWindow(room, history, start, end);
+  return Math.min(100, Math.max(0, Math.round((active / capacity) * 100)));
 }
 
 /**
@@ -1108,10 +1281,15 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   ];
 
   return(
-    <div className="statistics-module fixed inset-0 z-50 flex justify-end" style={{background:'rgba(0,0,0,0.7)'}} onClick={onClose}>
-      <div className="h-full overflow-y-auto hide-scrollbar w-full max-w-3xl"
-        style={{background:'#020B17',borderLeft:`1px solid ${C.border}`}}
-        onClick={e=>e.stopPropagation()}>
+    <div className="statistics-module fixed inset-0 z-50 flex justify-end" style={{background:'rgba(0,0,0,0.7)'}}>
+      <button
+        type="button"
+        aria-label="Zavřít detail operačního sálu"
+        className="absolute inset-0 cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/45"
+        onClick={onClose}
+      />
+      <div className="relative z-10 h-full w-full max-w-3xl overflow-y-auto hide-scrollbar"
+        style={{background:'#020B17',borderLeft:`1px solid ${C.border}`}}>
 
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-7 py-5"
@@ -1990,16 +2168,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return base;
   }), [rooms, roomDistributions, WORKFLOW_STEPS]);
 
-const TABS:{ id:Tab; label:string }[]=[
-{id:'prehled',    label:'Přehled'},
-{id:'finance',    label:'Finance'},
-{id:'sazby',      label:'Sazby'},
-{id:'saly',       label:'Sály'},
-{id:'faze',       label:'Fáze'},
-{id:'notifikace', label:'Notifikace'},
-{id:'zarizeni',   label:'Zařízení'},
-  ];
-
   return(
     <>
       {/* ── Print loading overlay ─────────────────────────────────────────────
@@ -2162,19 +2330,7 @@ const TABS:{ id:Tab; label:string }[]=[
 
           {/* Tab toggle */}
           <div className="print-hide">
-            <MobilePillTabs<Tab>
-tabs={[
-{ id: 'prehled', label: 'Přehled' },
-{ id: 'finance', label: 'Finance' },
-{ id: 'sazby', label: 'Sazby' },
-{ id: 'saly', label: 'Sály' },
-{ id: 'faze', label: 'Fáze' },
-{ id: 'notifikace', label: 'Notifikace' },
-{ id: 'zarizeni', label: 'Zařízení' },
-  ]}
-              value={tab}
-              onChange={setTab}
-            />
+            <StatisticsGlowMenu value={tab} onChange={setTab} compact />
           </div>
 
           {/* ── Přehled ── (vždy renderováno při tisku, bez page-breaks) */}
@@ -2235,10 +2391,13 @@ tabs={[
               <RoomsTab
                 rooms={rooms}
                 statusHistory={statusHistory}
+                calendarHistory={dayHistory}
                 periodLabel={period}
                 onRoomSelect={setSelectedRoom}
                 calculateRoomUtilization={calculateRoomUtilization}
                 countOperationsInWorkingHours={countOperationsInWorkingHours}
+                calculateRoomUtilizationForDay={calculateRoomUtilizationForDay}
+                countOperationsForDay={countOperationsForDay}
                 workflowSteps={WORKFLOW_STEPS}
               />
             </div>
@@ -2385,21 +2544,8 @@ tabs={[
         style={{ border: `1px solid ${C.border}` }}
       >
         {/* Záložky */}
-        <div
-          className="flex items-center gap-1 overflow-x-auto min-w-0"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: `${C.faint} transparent` }}
-        >
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className="rounded-lg px-4 py-2 text-[12px] font-medium whitespace-nowrap shrink-0"
-              style={{
-                color: tab === t.id ? C.text : C.muted,
-                background: tab === t.id ? C.surfaceActive : 'transparent',
-                border: `1px solid ${tab === t.id ? C.borderHover : 'transparent'}`,
-              }}>
-              {t.label}
-            </button>
-          ))}
+        <div className="min-w-0 flex-1">
+          <StatisticsGlowMenu value={tab} onChange={setTab} />
         </div>
 
         {/* Období a export vpravo, oddělené svislou linkou */}
@@ -2677,8 +2823,7 @@ tabs={[
                 const closed = !dayHours.enabled;
                 // Přesah = odoperováno nad rámec plánované kapacity dne
                 const overtimeMins = calculateOvertimeMinutesForDay(r, dayHistory, metricsDay);
-                const utilColor = util > 100 ? C.red
-                  : util >= 80 ? C.green
+                const utilColor = util >= 80 ? C.green
                   : util >= 50 ? C.yellow
                   : util > 0 ? C.orange : C.muted;
 
@@ -2938,10 +3083,13 @@ tabs={[
             <RoomsTab
               rooms={rooms}
               statusHistory={statusHistory}
+              calendarHistory={dayHistory}
               periodLabel={period}
               onRoomSelect={setSelectedRoom}
               calculateRoomUtilization={calculateRoomUtilization}
               countOperationsInWorkingHours={countOperationsInWorkingHours}
+              calculateRoomUtilizationForDay={calculateRoomUtilizationForDay}
+              countOperationsForDay={countOperationsForDay}
               workflowSteps={WORKFLOW_STEPS}
             />
           </div>

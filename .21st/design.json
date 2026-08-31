@@ -1,0 +1,266 @@
+{
+  "version": 1,
+  "project": {
+    "name": "operatingroom",
+    "productType": null,
+    "stack": [
+      "nextjs",
+      "react",
+      "tailwind-v4",
+      "vite"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "app/globals.css"
+    ],
+    "components": [
+      "components/ui"
+    ],
+    "assets": [
+      "public/images"
+    ],
+    "instructions": []
+  },
+  "design": {
+    "colorMode": "dark",
+    "colors": {
+      "--default-ring-width": {
+        "value": "3px",
+        "source": "app/globals.css"
+      },
+      "--default-ring-color": {
+        "value": "var(--color-blue-500)",
+        "source": "app/globals.css"
+      },
+      "--color-primary": {
+        "value": "#06B6D4",
+        "source": "app/globals.css"
+      },
+      "--color-primary-muted": {
+        "value": "rgba(6, 182, 212, 0.15)",
+        "source": "app/globals.css"
+      },
+      "--color-success": {
+        "value": "#10B981",
+        "source": "app/globals.css"
+      },
+      "--color-warning": {
+        "value": "#F59E0B",
+        "source": "app/globals.css"
+      },
+      "--color-danger": {
+        "value": "#EF4444",
+        "source": "app/globals.css"
+      },
+      "--color-info": {
+        "value": "#3B82F6",
+        "source": "app/globals.css"
+      },
+      "--color-purple": {
+        "value": "#8B5CF6",
+        "source": "app/globals.css"
+      },
+      "--color-background": {
+        "value": "#030712",
+        "source": "app/globals.css"
+      },
+      "--color-surface": {
+        "value": "rgba(15, 23, 42, 0.6)",
+        "source": "app/globals.css"
+      },
+      "--color-surface-elevated": {
+        "value": "rgba(30, 41, 59, 0.8)",
+        "source": "app/globals.css"
+      },
+      "--color-border": {
+        "value": "rgba(148, 163, 184, 0.1)",
+        "source": "app/globals.css"
+      },
+      "--color-border-hover": {
+        "value": "rgba(148, 163, 184, 0.2)",
+        "source": "app/globals.css"
+      },
+      "--color-text-primary": {
+        "value": "rgba(255, 255, 255, 0.95)",
+        "source": "app/globals.css"
+      },
+      "--color-text-secondary": {
+        "value": "rgba(255, 255, 255, 0.70)",
+        "source": "app/globals.css"
+      },
+      "--color-text-muted": {
+        "value": "rgba(255, 255, 255, 0.45)",
+        "source": "app/globals.css"
+      },
+      "--m-border": {
+        "value": "rgba(158, 137, 255, 0.22)",
+        "source": "app/globals.css"
+      },
+      "--m-muted": {
+        "value": "rgba(255, 255, 255, 0.55)",
+        "source": "app/globals.css"
+      },
+      "--m-accent": {
+        "value": "#925CFF",
+        "source": "app/globals.css"
+      },
+      "--m-accent-rgb": {
+        "value": "146, 92, 255",
+        "source": "app/globals.css"
+      },
+      "--m-accent-soft": {
+        "value": "rgba(146, 92, 255, 0.18)",
+        "source": "app/globals.css"
+      },
+      "--m-on-accent": {
+        "value": "#090B15",
+        "source": "app/globals.css"
+      },
+      "--stats-border": {
+        "value": "#DDE5F0",
+        "source": "app/globals.css"
+      },
+      "--stats-border-hover": {
+        "value": "#CCD8E8",
+        "source": "app/globals.css"
+      },
+      "--stats-border-active": {
+        "value": "#B9C9DE",
+        "source": "app/globals.css"
+      },
+      "--stats-muted": {
+        "value": "#74829C",
+        "source": "app/globals.css"
+      },
+      "--login-muted": {
+        "value": "rgba(211, 222, 248, 0.48)",
+        "source": "app/globals.css"
+      },
+      "--login-field-border": {
+        "value": "rgba(139, 152, 212, 0.24)",
+        "source": "app/globals.css"
+      },
+      "--login-role-border": {
+        "value": "rgba(133, 147, 209, 0.18)",
+        "source": "app/globals.css"
+      },
+      "--login-toggle-border": {
+        "value": "rgba(151, 165, 220, 0.22)",
+        "source": "app/globals.css"
+      },
+      "--room-action-color": {
+        "value": "#34D399",
+        "source": "app/globals.css"
+      }
+    },
+    "typography": {
+      "--font-sans": {
+        "value": "\"Segoe UI\", \"Inter\", \"Helvetica Neue\", Arial, sans-serif",
+        "source": "app/globals.css"
+      },
+      "--font-mono": {
+        "value": "\"JetBrains Mono\", \"SFMono-Regular\", Menlo, Monaco, Consolas, \"Liberation Mono\", monospace",
+        "source": "app/globals.css"
+      },
+      "--m-text": {
+        "value": "#F2F4FA",
+        "source": "app/globals.css"
+      },
+      "--m-text-strong": {
+        "value": "#FFFFFF",
+        "source": "app/globals.css"
+      },
+      "--stats-text": {
+        "value": "#33415F",
+        "source": "app/globals.css"
+      },
+      "--stats-text-strong": {
+        "value": "#17233F",
+        "source": "app/globals.css"
+      },
+      "--login-field-text": {
+        "value": "#f7f9ff",
+        "source": "app/globals.css"
+      }
+    },
+    "spacing": {},
+    "radius": {},
+    "shadows": {
+      "--m-card-shadow": {
+        "value": "0 14px 34px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.055)",
+        "source": "app/globals.css"
+      },
+      "--m-card-shadow-strong": {
+        "value": "0 22px 56px rgba(0, 0, 0, 0.46), 0 0 28px rgba(139, 92, 246, 0.08)",
+        "source": "app/globals.css"
+      },
+      "--login-button-shadow": {
+        "value": "0 15px 34px rgba(66, 83, 205, 0.27)",
+        "source": "app/globals.css"
+      }
+    },
+    "motion": {},
+    "density": "compact"
+  },
+  "components": {
+    "installed": [
+      "ConfirmDialog",
+      "Drawer",
+      "DropdownMenu",
+      "toast",
+      "Tooltip"
+    ],
+    "preferredPrimitives": [
+      "radix-ui"
+    ],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [
+      "Keep all existing Czech statistics tab labels and their behavior.",
+      "Preserve the dark statistics surfaces, responsive overflow, keyboard navigation, and reduced-motion behavior."
+    ],
+    "avoid": [
+      "Do not add theme switching or demo-page structure to the statistics module.",
+      "Do not use glow effects that reduce label contrast."
+    ]
+  },
+  "decisions": [
+    "Statistics navigation uses a restrained icon-and-label glow menu with a 3D hover transition, persistent active state, horizontal mobile scrolling, and the original Czech tab names.",
+    "Individual statistics tab buttons have no visible outline; selection is communicated by color, background tint, icon, and a short bottom indicator.",
+    "Distribution cards in Finance, Rooms, Phases, Notifications, and Devices share the Finance card pattern: cyan eyebrow and top rule, 24px semibold title, 11px subtitle, compact uppercase badge, 132px segmented ring, and a compact legend.",
+    "The Rooms tab prioritizes actionable improvement insights in the main column and places the shared heat calendar directly below the operating-room summary in the sidebar."
+  ],
+  "evidence": [
+    {
+      "fact": "components.installed",
+      "source": "components/ui"
+    },
+    {
+      "fact": "design.colorMode:light",
+      "source": "app/globals.css"
+    },
+    {
+      "fact": "design.tokens",
+      "source": "app/globals.css"
+    },
+    {
+      "fact": "project.stack:nextjs",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:react",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:tailwind-v4",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:vite",
+      "source": "package.json"
+    }
+  ],
+  "generatedAt": "2026-08-29T17:22:13.388Z"
+}

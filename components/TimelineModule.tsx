@@ -611,16 +611,9 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
     const todayKey = dayKeys[currentTime.getDay()];
     const now = currentTime.getTime();
 
-    // Hranice dnešního dne — vše počítáme JEN z dnešního dne
+    // Hranice dnešního dne; samotné využití níže navíc ořízneme na směnu sálu.
     const dayStart = new Date(currentTime); dayStart.setHours(0, 0, 0, 0);
     const startMs = dayStart.getTime();
-    const endMs = startMs + 24 * 60 * 60 * 1000;
-    const isToday = (iso?: string | null): boolean => {
-      if (!iso) return false;
-      const t = new Date(iso).getTime();
-      return Number.isFinite(t) && t >= startMs && t < endMs;
-    };
-
     // Mapa barev/názvů fází podle POZICE v poli activeStatuses (stejně jako hlavní timeline)
     const stepColorMap: Record<number, string> = {};
     const stepNameMap: Record<number, string> = {};
@@ -636,12 +629,26 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
       const today = schedule[todayKey];
       let workingMinutes = 0;
+      let workStartMs = 0;
+      let workEndMs = 0;
+      let workingScale = 0;
       if (today?.enabled) {
         const startM = today.startHour * 60 + today.startMinute;
         const endM = today.endHour * 60 + today.endMinute;
         const breakM = today.breakMinutes ?? DEFAULT_DAILY_BREAK_MINUTES;
-        workingMinutes = Math.max(0, endM - startM - breakM);
+        const grossMinutes = Math.max(0, endM - startM);
+        workingMinutes = Math.max(0, grossMinutes - Math.min(breakM, grossMinutes));
+        workStartMs = startMs + startM * 60_000;
+        workEndMs = startMs + endM * 60_000;
+        workingScale = grossMinutes > 0 ? workingMinutes / grossMinutes : 0;
       }
+
+      const workingOverlapMs = (intervalStart: number, intervalEnd: number) => {
+        if (workingMinutes <= 0 || intervalEnd <= intervalStart) return 0;
+        const overlapStart = Math.max(intervalStart, workStartMs);
+        const overlapEnd = Math.min(intervalEnd, workEndMs);
+        return overlapEnd > overlapStart ? (overlapEnd - overlapStart) * workingScale : 0;
+      };
 
       let occupiedMs = 0;
       let operations = 0;
@@ -655,50 +662,48 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
           const segStart = new Date(entry.startedAt).getTime();
           const next = history[idx + 1];
           const segEnd = next ? new Date(next.startedAt).getTime() : opEndMs;
-          const dur = Math.max(0, segEnd - segStart);
+          const dur = workingOverlapMs(segStart, segEnd);
           if (dur > 0) phaseMs[entry.stepIndex] = (phaseMs[entry.stepIndex] || 0) + dur;
         });
       };
 
-      // Dnešní dokončené operace (filtr na dnešní den dle startedAt)
+      // Dokončené operace — započítá se výhradně průnik se směnou.
       (room.completedOperations || []).forEach((op) => {
-        if (!isToday(op.startedAt)) return;
         const s = new Date(op.startedAt).getTime();
         const e = new Date(op.endedAt).getTime();
         if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
-          occupiedMs += e - s;
-          operations++;
+          const occupiedInShift = workingOverlapMs(s, e);
+          if (occupiedInShift <= 0) return;
+          occupiedMs += occupiedInShift;
+          operations += 1;
           accumulatePhases(op.statusHistory, e);
         }
       });
 
-      // Probíhající operace — pouze pokud začala dnes; pauza se NEpočítá
+      // Probíhající operace — pouze její část uvnitř směny; pauza se nepočítá.
       const isRunning = room.currentStepIndex > 0 && room.currentStepIndex < 6 && !room.isLocked;
-      if (isRunning && isToday(room.operationStartedAt)) {
-        operations++;
+      if (isRunning && room.operationStartedAt) {
         const s = new Date(room.operationStartedAt as string).getTime();
         const pauseStart = room.isPaused && room.pausedAt ? new Date(room.pausedAt).getTime() : NaN;
         const measuredEnd = Number.isFinite(pauseStart) ? Math.min(now, pauseStart) : now;
-        if (measuredEnd > s) occupiedMs += measuredEnd - s;
-        accumulatePhases(room.statusHistory, measuredEnd);
-        if (Number.isFinite(pauseStart) && now > pauseStart) pausedMs = now - pauseStart;
+        const occupiedInShift = workingOverlapMs(s, measuredEnd);
+        if (occupiedInShift > 0) {
+          operations += 1;
+          occupiedMs += occupiedInShift;
+          accumulatePhases(room.statusHistory, measuredEnd);
+        }
+        if (Number.isFinite(pauseStart) && now > pauseStart) pausedMs = workingOverlapMs(pauseStart, now);
       }
 
+      // Databázové duplicity ani souběžné intervaly nesmí překročit kapacitu.
+      occupiedMs = Math.min(occupiedMs, workingMinutes * 60_000);
       const occupiedMinutes = Math.round(occupiedMs / 60000);
       
-      // Vytížení se počítá jako procento z pracovní kapacity (z rozvrhu).
-      // Pokud je sál dnes zavřený (workingMinutes == 0), ale má operace,
-      // pak se počítá z reálného času operací (od první do poslední operace).
-      let utilizationPct = 0;
-      if (workingMinutes > 0) {
-        // Standardní výpočet: procento z pracovní doby
-        utilizationPct = Math.round((occupiedMinutes / workingMinutes) * 100);
-      } else if (occupiedMinutes > 0) {
-        // Sál je zavřený podle rozvrhu, ale má operace dnes
-        // Počítáme % vytížení z reálného span času (od první do poslední operace)
-        // Zde použijeme arbitrary 8h = 480m jako baseline (typická pracovní doba)
-        utilizationPct = Math.round((occupiedMinutes / 480) * 100);
-      }
+      // Využití = obsazené minuty uvnitř směny / čistá pracovní kapacita.
+      // Sál bez nastavené pracovní doby má 0 %, nikoli náhradní osmihodinový základ.
+      const utilizationPct = workingMinutes > 0
+        ? Math.min(100, Math.max(0, Math.round((occupiedMinutes / workingMinutes) * 100)))
+        : 0;
 
       const avgOpMin = operations > 0 ? Math.round(occupiedMs / 60000 / operations) : 0;
 
@@ -756,7 +761,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       { operations: 0, workingMinutes: 0, occupiedMinutes: 0, completedOperations: 0, totalOperatingMs: 0, allRoomsCount: 0, activeRoomsCount: 0, freeRoomsCount: 0, pausedRoomsCount: 0, emergencyRoomsCount: 0 }
     );
     const totalUtilizationPct = totals.workingMinutes > 0
-      ? Math.round((totals.occupiedMinutes / totals.workingMinutes) * 100)
+      ? Math.min(100, Math.max(0, Math.round((totals.occupiedMinutes / totals.workingMinutes) * 100)))
       : 0;
 
     return { rows, totals: { ...totals, utilizationPct: totalUtilizationPct } };

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   Loader2,
@@ -39,20 +38,14 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
           className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4"
           onClick={onClose}
         >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white md:bg-black border border-transparent md:border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl"
           >
@@ -62,30 +55,28 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Napište důvod notifikace..."
-              className="w-full px-5 py-4 rounded-2xl bg-[#F2F5FA] md:bg-white/[0.03] border border-[#E1E8F3] md:border-white/10 text-[#17233F] md:text-white placeholder:text-[#9AA7BF] md:placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 transition-all resize-none mb-6 text-lg"
+              className="w-full px-5 py-4 rounded-2xl bg-[#F2F5FA] md:bg-white/[0.03] border border-[#E1E8F3] md:border-white/10 text-[#17233F] md:text-white placeholder:text-[#9AA7BF] md:placeholder:text-white/30 focus:outline-none focus:border-purple-500/50 resize-none mb-6 text-lg"
               rows={4}
               autoFocus
             />
             <div className="flex gap-4">
               <button
                 onClick={onClose}
-                className="flex-1 px-6 py-4 bg-[#F2F5FA] md:bg-white/5 border border-[#E1E8F3] md:border-white/10 text-[#17233F] md:text-white font-semibold rounded-2xl hover:bg-black/5 md:hover:bg-white/10 transition-all"
+                className="flex-1 px-6 py-4 bg-[#F2F5FA] md:bg-white/5 border border-[#E1E8F3] md:border-white/10 text-[#17233F] md:text-white font-semibold rounded-2xl hover:bg-black/5 md:hover:bg-white/10"
               >
                 Zrušit
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!reason.trim() || loading}
-                className="flex-1 px-6 py-4 bg-purple-500 text-white font-bold rounded-2xl hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-4 bg-purple-500 text-white font-bold rounded-2xl hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {loading ? <Loader2 className="w-5 h-5" /> : null}
                 Odeslat
               </button>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+        </div>
   );
 };
 
@@ -156,14 +147,9 @@ export default function NotificationOverlay({
 
   return (
     <>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
+      {isOpen && (
+          <div
             key="notif-mobile"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
             className="md:hidden fixed inset-0 z-[200] flex flex-col overflow-hidden"
             style={{ background: 'var(--m-bg)' }}
           >
@@ -179,7 +165,7 @@ export default function NotificationOverlay({
               <div className="flex items-center gap-3.5 mb-6">
                 <button
                   onClick={onClose}
-                  className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
+                  className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center outline-none select-none"
                   style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
                 >
                   <ChevronLeft className="w-[19px] h-[19px]" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
@@ -201,22 +187,18 @@ export default function NotificationOverlay({
 
               {/* List of notification actions — full-width cards */}
               <div className="flex flex-col gap-3">
-                {NOTIFICATION_TYPES.map((notif, index) => {
+                {NOTIFICATION_TYPES.map((notif) => {
                   const isLoading = loading === notif.id;
                   const Icon = MOBILE_ICON_MAP[notif.id] ?? MessageSquare;
                   const label = notif.label.replace(/\s+/g, ' ').trim();
                   const isDisabled = loading !== null && !isLoading;
 
                   return (
-                    <motion.button
+                    <button
                       key={notif.id}
                       onClick={() => handleSendNotification(notif.id)}
                       disabled={loading !== null}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05 * index, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full flex items-center gap-4 rounded-[20px] p-4 outline-none select-none transition-all disabled:opacity-60"
+                      className="w-full flex items-center gap-4 rounded-[20px] p-4 outline-none select-none disabled:opacity-60"
                       style={{
                         background: 'var(--m-card)',
                         boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
@@ -229,7 +211,7 @@ export default function NotificationOverlay({
                         style={{ background: `${notif.color}16`, border: `1.5px solid ${notif.color}45` }}
                       >
                         {isLoading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" style={{ color: notif.color }} strokeWidth={2.25} />
+                          <Loader2 className="w-5 h-5" style={{ color: notif.color }} strokeWidth={2.25} />
                         ) : (
                           <Icon className="w-5 h-5" style={{ color: notif.color }} strokeWidth={2} />
                         )}
@@ -247,23 +229,17 @@ export default function NotificationOverlay({
                         style={{ color: 'var(--m-faint)' }}
                         strokeWidth={2.25}
                       />
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
+      {isOpen && (
+          <div
             key="notif-desktop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="hidden md:flex fixed inset-0 z-[200] items-center justify-center overflow-hidden"
           >
             {/* Background - same style as main app */}
@@ -289,7 +265,7 @@ export default function NotificationOverlay({
             {/* Close button - top right */}
             <button 
               onClick={onClose} 
-              className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 opacity-40 hover:opacity-100 active:scale-95 transition-all z-20 outline-none select-none"
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 opacity-40 hover:opacity-100 z-20 outline-none select-none"
             >
               <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
             </button>
@@ -298,191 +274,136 @@ export default function NotificationOverlay({
             <div className="flex flex-col items-center relative z-10 px-4">
               
               {/* Title section - matching app typography */}
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="text-center mb-8 md:mb-12"
-              >
+              <div className="text-center mb-8 md:mb-12">
                 <p className="text-[10px] sm:text-[11px] font-bold text-white/30 tracking-[0.5em] uppercase mb-4">
                   POSLAT NOTIFIKACI
                 </p>
-                <AnimatePresence mode="wait">
-                  <motion.h2
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white"
-                  >
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
                     {roomName}
-                  </motion.h2>
-                </AnimatePresence>
-              </motion.div>
+                  </h2>
+              </div>
 
               {/* First Row - 3 circles */}
               <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16 mb-4 sm:mb-6 md:mb-10 lg:mb-16">
-                {firstRow.map((notif, index) => {
+                {firstRow.map((notif) => {
                   const isLoading = loading === notif.id;
                   return (
-                    <motion.button
+                    <button
                       key={notif.id}
                       onClick={() => handleSendNotification(notif.id)}
                       disabled={loading !== null}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.2 + index * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.96 }}
                       className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer disabled:opacity-50"
                     >
                       {/* Primary Background Glow - matching main circle */}
                       <div 
-                        className="absolute inset-0 rounded-full blur-[100px] transition-all duration-700 opacity-25 group-hover:opacity-40"
+                        className="absolute inset-0 rounded-full blur-[100px] opacity-25 group-hover:opacity-40"
                         style={{ backgroundColor: notif.color }}
                       />
 
                       {/* Inner Glow Core */}
                       <div 
-                        className="absolute inset-8 sm:inset-10 rounded-full blur-[80px] opacity-20 group-hover:opacity-35 transition-all duration-500"
+                        className="absolute inset-8 sm:inset-10 rounded-full blur-[80px] opacity-20 group-hover:opacity-35"
                         style={{ backgroundColor: notif.color }}
                       />
 
-                      {/* Animated Ring - matching main circle SVG style */}
+                      {/* Statický prstenec — stejná grafika bez vykreslovací animace. */}
                       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">
                         <circle cx="110" cy="110" r="100" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-                        <motion.circle 
+                        <circle
                           cx="110" cy="110" r="100" fill="none"
                           stroke={notif.color} strokeWidth="4" strokeLinecap="round"
                           strokeDasharray="628"
-                          initial={{ strokeDashoffset: 628 }}
-                          animate={{ strokeDashoffset: 0 }}
-                          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                          strokeDashoffset="0"
                           style={{ filter: `drop-shadow(0 0 15px ${notif.color}80)` }}
                           className="opacity-80"
                         />
                       </svg>
 
-                      {/* Pulsing Animation Ring - matching main circle */}
-                      <motion.div
+                      {/* Druhý prstenec zůstává statický. */}
+                      <div
                         className="absolute inset-0 rounded-full border-2"
-                        style={{ borderColor: notif.color }}
-                        animate={{ 
-                          scale: [1, 1.08, 1],
-                          opacity: [0.4, 0.1, 0.4]
-                        }}
-                        transition={{
-                          duration: 2.5,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
+                        style={{ borderColor: notif.color, opacity: 0.4 }}
                       />
 
                       {/* Center Content - Text only, centered */}
                       <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
                         {isLoading ? (
-                          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
+                          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90" />
                         ) : (
-                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
+                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
                       </div>
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
 
               {/* Second Row - 2 circles (centered) */}
               <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16">
-                {secondRow.map((notif, index) => {
+                {secondRow.map((notif) => {
                   const isLoading = loading === notif.id;
                   return (
-                    <motion.button
+                    <button
                       key={notif.id}
                       onClick={() => handleSendNotification(notif.id)}
                       disabled={loading !== null}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5 + index * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.96 }}
                       className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer disabled:opacity-50"
                     >
                       {/* Primary Background Glow - matching main circle */}
                       <div 
-                        className="absolute inset-0 rounded-full blur-[100px] transition-all duration-700 opacity-30 group-hover:opacity-50"
+                        className="absolute inset-0 rounded-full blur-[100px] opacity-30 group-hover:opacity-50"
                         style={{ backgroundColor: notif.color }}
                       />
 
                       {/* Inner Glow Core */}
                       <div 
-                        className="absolute inset-8 sm:inset-10 rounded-full blur-[80px] opacity-25 group-hover:opacity-40 transition-all duration-500"
+                        className="absolute inset-8 sm:inset-10 rounded-full blur-[80px] opacity-25 group-hover:opacity-40"
                         style={{ backgroundColor: notif.color }}
                       />
 
-                      {/* Animated Ring - matching main circle SVG style */}
+                      {/* Statický prstenec — stejná grafika bez vykreslovací animace. */}
                       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">
                         <circle cx="110" cy="110" r="100" fill="none" stroke="white" strokeWidth="1" className="opacity-5" />
-                        <motion.circle 
+                        <circle
                           cx="110" cy="110" r="100" fill="none"
                           stroke={notif.color} strokeWidth="4" strokeLinecap="round"
                           strokeDasharray="628"
-                          initial={{ strokeDashoffset: 628 }}
-                          animate={{ strokeDashoffset: 0 }}
-                          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                          strokeDashoffset="0"
                           style={{ filter: `drop-shadow(0 0 15px ${notif.color}99)` }}
                           className="opacity-90"
                         />
                       </svg>
 
-                      {/* Pulsing Animation Ring - matching main circle */}
-                      <motion.div
+                      {/* Dva doplňkové prstence zůstávají statické. */}
+                      <div
                         className="absolute inset-0 rounded-full border-2"
-                        style={{ borderColor: notif.color }}
-                        animate={{ 
-                          scale: [1, 1.08, 1],
-                          opacity: [0.5, 0.15, 0.5]
-                        }}
-                        transition={{
-                          duration: 2.5,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
+                        style={{ borderColor: notif.color, opacity: 0.5 }}
                       />
 
-                      {/* Second pulsing ring */}
-                      <motion.div
+                      <div
                         className="absolute inset-0 rounded-full border"
-                        style={{ borderColor: `${notif.color}50` }}
-                        animate={{ 
-                          scale: [1, 1.15, 1],
-                          opacity: [0.3, 0, 0.3]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeOut",
-                          delay: 0.5
-                        }}
+                        style={{ borderColor: `${notif.color}50`, opacity: 0.3 }}
                       />
 
                       {/* Center Content - Text only, centered */}
                       <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
                         {isLoading ? (
-                          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90 animate-spin" />
+                          <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90" />
                         ) : (
-                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white transition-colors duration-300 text-center leading-tight whitespace-pre-line">
+                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
                       </div>
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Custom Reason Modal */}
       <CustomReasonModal

@@ -66,7 +66,13 @@ const resolveRapidTransition = (
 interface RapidSurgeryWarningProps {
   room: OperatingRoom;
   statuses: WorkflowStatus[];
-  variant?: 'mobile' | 'desktop';
+  /**
+   * `rail` je svislá karta do pravého sloupce mezi horní a spodní ikony
+   * v detailu sálu. Drží stejný tvar jako tlačítka kolem — zaoblení, vlasový
+   * rámeček, průsvitná výplň a rozostřené pozadí — jen v jantarové barvě,
+   * aby zůstala čitelná při kterékoli barvě fáze.
+   */
+  variant?: 'mobile' | 'desktop' | 'rail';
   className?: string;
 }
 
@@ -98,6 +104,64 @@ const RapidSurgeryWarningComponent = ({
   }, [isMobilePopupOpen, transition]);
 
   if (!transition) return null;
+
+  if (variant === 'rail') {
+    if (dismissedEventKey === transition.eventKey) return null;
+
+    return (
+      <section
+        role="status"
+        aria-live="polite"
+        className={`relative overflow-hidden rounded-2xl border border-amber-300/25 bg-white/[0.05] p-3 text-center backdrop-blur-md ${className}`}
+        style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.28)' }}
+      >
+        {/* Vlasová linka nahoře — stejný prvek jako u ostatních karet aplikace. */}
+        <span
+          aria-hidden
+          className="absolute inset-x-6 top-0 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, #FBBF24, transparent)' }}
+        />
+
+        <button
+          type="button"
+          onClick={() => setDismissedEventKey(transition.eventKey)}
+          aria-label="Skrýt upozornění"
+          className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-lg text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
+        >
+          <X className="h-3 w-3" strokeWidth={2.2} />
+        </button>
+
+        <span
+          className="mx-auto grid h-9 w-9 place-items-center rounded-xl"
+          style={{ background: 'rgba(251,191,36,0.14)', color: '#FBBF24' }}
+        >
+          <AlertTriangle className="h-[18px] w-[18px]" strokeWidth={1.9} />
+        </span>
+
+        <p
+          className="mt-2.5 text-[8px] font-medium uppercase tracking-[0.18em]"
+          style={{ color: 'rgba(251,191,36,0.75)' }}
+        >
+          Krátký interval
+        </p>
+
+        <p className="mt-1.5 text-[10px] font-normal leading-snug text-white/70">
+          Od příjezdu na sál<br />do výkonu uplynulo
+        </p>
+
+        <p
+          className="mt-2 text-[26px] font-normal leading-none tabular-nums"
+          style={{ color: '#FBBF24' }}
+          aria-label={`Naměřený interval ${transition.formattedDuration}`}
+        >
+          {transition.formattedDuration}
+        </p>
+        <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.16em] text-white/30">
+          minut
+        </p>
+      </section>
+    );
+  }
 
   if (isMobile) {
     if (!isMobilePopupOpen) return null;

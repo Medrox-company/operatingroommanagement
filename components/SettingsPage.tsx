@@ -95,7 +95,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
     {
       id: 'background',
       title: 'Pozadí',
-      description: 'Nastavení barev a obrázků pozadí',
+      description: 'Nastavení barev a CSS efektů pozadí',
       icon: Palette,
       accentColor: '#8B5CF6',
     },

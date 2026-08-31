@@ -1573,16 +1573,67 @@ html.capacitor-native select {
   }
 }
 
-/* Potvrzení přechodu — mobilní barvy přes téma, desktop zůstává tmavý */
-.step-confirm-bg { background: var(--m-bg); }
+/* Potvrzení přechodu — stejná hloubka jako pozadí notifikací, bez animace. */
+.step-confirm-bg {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 24%, rgba(0, 0, 0, 0.95) 100%),
+    linear-gradient(90deg, rgba(229, 72, 77, 0.16) 0%, transparent 27%, transparent 73%, rgba(16, 185, 129, 0.16) 100%),
+    #000;
+}
+.step-confirm-action-disc {
+  width: clamp(128px, min(20vw, 34vh), 268px);
+  height: clamp(128px, min(20vw, 34vh), 268px);
+}
+.step-confirm-action-disc::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--confirm-color) 42%, transparent);
+  pointer-events: none;
+}
 .step-confirm-text { color: var(--m-text); }
 .step-confirm-muted { color: var(--m-muted); }
 .step-confirm-disc { background: var(--m-card-solid); box-shadow: 0 12px 32px rgba(23, 43, 99, 0.10); }
+/* Potvrzovací akce je o stupeň výraznější než zrušení. */
+.step-confirm-strong { color: var(--m-text); }
+/* Kontextová pilulka „z fáze … · 2:38" — sklo v jazyce zbytku aplikace. */
+.step-confirm-pill {
+  background: var(--m-card-solid);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 8px 22px rgba(23, 43, 99, 0.08);
+}
+.step-confirm-sep { background: rgba(23, 43, 99, 0.14); }
+.step-confirm-warn {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
 @media (min-width: 768px) {
-  .step-confirm-bg { background: #000; }
+  .step-confirm-bg {
+    background:
+      radial-gradient(circle at 50% 50%, transparent 25%, rgba(0, 0, 0, 0.95) 100%),
+      linear-gradient(90deg, rgba(229, 72, 77, 0.18) 0%, transparent 26%, transparent 74%, rgba(16, 185, 129, 0.18) 100%),
+      #000;
+  }
   .step-confirm-text { color: #fff; }
-  .step-confirm-muted { color: rgba(255, 255, 255, 0.3); }
+  .step-confirm-muted { color: rgba(255, 255, 255, 0.42); }
   .step-confirm-disc { background: transparent; box-shadow: none; }
+  .step-confirm-strong { color: rgba(255, 255, 255, 0.9); }
+  .step-confirm-pill {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+  .step-confirm-sep { background: rgba(255, 255, 255, 0.14); }
+  .step-confirm-warn {
+    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.22);
+  }
+}
+
+@media (max-height: 720px) {
+  .step-confirm-action-disc {
+    width: clamp(116px, 25vh, 170px);
+    height: clamp(116px, 25vh, 170px);
+  }
 }
 
 /* Safe area for mobile bottom navigation — plovoucí lišta (~70 px + odsazení) */

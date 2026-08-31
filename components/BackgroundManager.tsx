@@ -16,7 +16,6 @@ import {
   CircleDot,
   Eye,
   EyeOff,
-  Image as ImageIcon,
   Layers3,
   Loader2,
   Palette,
@@ -36,7 +35,7 @@ import {
 } from '../lib/db';
 import AnimatedBackground, { backgroundGradientCSS } from './AnimatedBackground';
 
-type EditorTab = 'color' | 'image' | 'animation';
+type EditorTab = 'color' | 'animation';
 
 const COLORS = {
   cyan: '#36D9EC',
@@ -135,17 +134,6 @@ const auroraPreviewBackground = (colors: BackgroundSettings['colors']) => {
   return `radial-gradient(ellipse 55% 70% at 18% 45%, ${first}CC, transparent 72%), radial-gradient(ellipse 55% 75% at 55% 50%, ${second}B8, transparent 74%), radial-gradient(ellipse 48% 70% at 88% 42%, ${third}9E, transparent 74%), ${base}`;
 };
 
-const GALLERY_IMAGES = [
-  { url: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000', name: 'Operační sál' },
-  { url: 'https://images.unsplash.com/photo-1551190822-a9333d879b1f?auto=format&fit=crop&q=80&w=2000', name: 'Moderní nemocnice' },
-  { url: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=2000', name: 'Chirurgický tým' },
-  { url: 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?auto=format&fit=crop&q=80&w=2000', name: 'Nemocniční chodba' },
-  { url: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000', name: 'Zdravotní péče' },
-  { url: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&q=80&w=2000', name: 'Nemocniční pokoj' },
-  { url: 'https://images.unsplash.com/photo-1504439468489-c8920d796a29?auto=format&fit=crop&q=80&w=2000', name: 'Lékařské vybavení' },
-  { url: 'https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&q=80&w=2000', name: 'Abstraktní medicína' },
-];
-
 const DEFAULT_SETTINGS: BackgroundSettings = {
   type: 'linear',
   colors: [
@@ -154,8 +142,8 @@ const DEFAULT_SETTINGS: BackgroundSettings = {
   ],
   direction: 'to bottom',
   opacity: 100,
-  imageUrl: GALLERY_IMAGES[0].url,
-  imageOpacity: 15,
+  imageUrl: '',
+  imageOpacity: 0,
   imageBlur: 0,
   animation: 'none',
   animationSpeed: 3,
@@ -234,7 +222,9 @@ const BackgroundManager: React.FC = () => {
     const loadSettings = async () => {
       try {
         const storedSettings = await fetchBackgroundSettings();
-        if (mounted && storedSettings) setSettings(storedSettings);
+        if (mounted && storedSettings) {
+          setSettings({ ...storedSettings, imageUrl: '', imageOpacity: 0, imageBlur: 0 });
+        }
       } catch (error) {
         console.error('[BackgroundManager] Failed to load settings:', error);
       } finally {
@@ -310,22 +300,6 @@ const BackgroundManager: React.FC = () => {
     }
   }, [settings]);
 
-  const selectGalleryImage = async (imageUrl: string) => {
-    const nextSettings = { ...settings, imageUrl };
-    setSettings(nextSettings);
-    setSaving(true);
-    try {
-      await saveBackgroundSettings(nextSettings);
-      dispatchSettings(nextSettings);
-      setHasChanges(false);
-    } catch (error) {
-      console.error('[BackgroundManager] Failed to save image:', error);
-      setHasChanges(true);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const resetToDefaults = async () => {
     setSettings(DEFAULT_SETTINGS);
     setSelectedColorIndex(0);
@@ -392,7 +366,7 @@ const BackgroundManager: React.FC = () => {
           className="absolute inset-x-24 top-0 h-px"
           style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.45), transparent)' }}
         />
-        <div className="grid grid-cols-2 gap-1.5 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3">
           {[
             {
               label: 'Barevná vrstva',
@@ -402,13 +376,6 @@ const BackgroundManager: React.FC = () => {
               icon: Palette,
             },
             {
-              label: 'Obrazová vrstva',
-              value: settings.imageUrl ? 'Aktivní' : 'Vypnutá',
-              detail: `${settings.imageOpacity}% intenzita`,
-              color: settings.imageUrl ? COLORS.green : 'rgba(255,255,255,0.35)',
-              icon: ImageIcon,
-            },
-            {
               label: 'Pohyb pozadí',
               value: animationLabel,
               detail: settings.animation === 'none' || !settings.animation ? 'Statický režim' : speedLabels[(settings.animationSpeed || 3) - 1],
@@ -416,9 +383,9 @@ const BackgroundManager: React.FC = () => {
               icon: Sparkles,
             },
             {
-              label: 'Výsledná intenzita',
+              label: 'Barevná intenzita',
               value: `${settings.opacity}%`,
-              detail: settings.imageBlur ? `Rozmazání ${settings.imageBlur}px` : 'Bez rozmazání',
+              detail: 'Lehká CSS vrstva',
               color: COLORS.amber,
               icon: Layers3,
             },
@@ -451,7 +418,6 @@ const BackgroundManager: React.FC = () => {
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto hide-scrollbar">
           {([
             ['color', 'Barvy a gradient', Palette],
-            ['image', 'Obrazová vrstva', ImageIcon],
             ['animation', 'Pohyb a efekty', Sparkles],
           ] as const).map(([id, label, Icon]) => {
             const active = activeTab === id;
@@ -702,85 +668,12 @@ const BackgroundManager: React.FC = () => {
             </>
           )}
 
-          {activeTab === 'image' && (
-            <>
-              <SectionPanel title="Galerie prostředí" description="Vyberte decentní medicínský motiv pro obrazovou vrstvu.">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {GALLERY_IMAGES.map(image => {
-                    const selected = settings.imageUrl === image.url;
-                    return (
-                      <button
-                        key={image.url}
-                        type="button"
-                        onClick={() => void selectGalleryImage(image.url)}
-                        disabled={saving}
-                        className="group relative aspect-[4/3] overflow-hidden rounded-xl border text-left disabled:opacity-40"
-                        style={{ borderColor: selected ? COLORS.cyan : 'rgba(255,255,255,0.08)' }}
-                      >
-                        <img src={image.url} alt="" className="absolute inset-0 h-full w-full object-cover grayscale" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#03070b] via-transparent to-transparent" />
-                        <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2">
-                          <span className="truncate text-[9px] font-semibold text-white/75">{image.name}</span>
-                          {selected && (
-                            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-cyan-300 text-[#071019]">
-                              <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </SectionPanel>
-
-              <SectionPanel title="Vlastní obraz" description="Použijte veřejnou adresu obrázku v dostatečném rozlišení.">
-                <div className="relative">
-                  <ImageIcon className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/28" />
-                  <input
-                    type="url"
-                    value={settings.imageUrl}
-                    onChange={event => updateSettings({ imageUrl: event.target.value })}
-                    placeholder="https://…"
-                    disabled={saving}
-                    className="h-11 w-full rounded-xl border border-white/[0.08] bg-black/10 pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/30 disabled:opacity-40"
-                  />
-                </div>
-              </SectionPanel>
-
-              <SectionPanel title="Zpracování obrazu" description="Obraz musí zůstat podřízený obsahu a zachovat čitelnost rozhraní.">
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <RangeControl
-                    label="Viditelnost obrázku"
-                    valueLabel={`${settings.imageOpacity}%`}
-                    min={0}
-                    max={100}
-                    value={settings.imageOpacity}
-                    onChange={imageOpacity => updateSettings({ imageOpacity })}
-                    disabled={saving}
-                    color={COLORS.green}
-                  />
-                  <RangeControl
-                    label="Rozostření"
-                    valueLabel={`${settings.imageBlur}px`}
-                    min={0}
-                    max={20}
-                    value={settings.imageBlur}
-                    onChange={imageBlur => updateSettings({ imageBlur })}
-                    disabled={saving}
-                    color={COLORS.amber}
-                  />
-                </div>
-              </SectionPanel>
-            </>
-          )}
-
           {activeTab === 'animation' && (
             <>
               <SectionPanel title="Aurora předvolby" description="Lehké barevné kompozice bez obrázků a náročného rozostření.">
                 <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
                   {AURORA_PRESETS.map(preset => {
                     const active = settings.animation === 'aurora'
-                      && settings.imageUrl === ''
                       && settings.colors.map(color => color.color).join('|') === preset.colors.map(color => color.color).join('|');
 
                     return (
@@ -882,17 +775,6 @@ const BackgroundManager: React.FC = () => {
               </div>
 
               <div className="relative h-[440px] overflow-hidden rounded-[20px] border border-white/[0.08] sm:h-[520px]">
-                {settings.imageUrl && (
-                  <img
-                    src={settings.imageUrl}
-                    alt=""
-                    className="absolute inset-0 h-full w-full scale-105 object-cover grayscale"
-                    style={{
-                      opacity: settings.imageOpacity / 100,
-                      filter: settings.imageBlur ? `blur(${settings.imageBlur}px)` : undefined,
-                    }}
-                  />
-                )}
                 <AnimatedBackground settings={settings} />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_55%_20%,transparent_0%,rgba(0,0,0,0.52)_100%)]" />
 

@@ -17,7 +17,7 @@ import {
   MessageSquare, MapPin, ChevronDown, Calculator, X, Building2,
 } from 'lucide-react';
 import {
-  C, Card, formatNumber,
+  C, Card, DistributionHeader, DistributionRing, formatNumber,
 } from './shared';
 import { GlassCalendar } from './AppCharts';
 import {
@@ -154,40 +154,6 @@ const NotificationMetric: React.FC<{
     <p className="mt-3 whitespace-nowrap text-[26px] font-light leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
   </div>
 );
-
-const NotificationRing: React.FC<{
-  label: string;
-  count: number;
-  recipients: number;
-  percentage: number;
-  color: string;
-}> = ({ label, count, recipients, percentage, color }) => {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const dash = Math.max(0, Math.min(100, percentage)) / 100 * circumference;
-
-  return (
-    <div className="flex w-[132px] shrink-0 flex-col items-center text-center">
-      <div className="relative h-[118px] w-[118px]">
-        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
-          <circle cx="50" cy="50" r={radius} fill="none" stroke={C.ghost} strokeWidth="8" />
-          <circle
-            cx="50" cy="50" r={radius} fill="none" stroke={color} strokeWidth="8"
-            strokeLinecap="round" strokeDasharray={`${dash} ${circumference - dash}`}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[20px] font-light tabular-nums" style={{ color: C.textHi }}>{percentage.toFixed(0)} %</span>
-          <span className="mt-1 text-[10px] font-semibold tabular-nums" style={{ color: C.faint }}>{count}×</span>
-        </div>
-      </div>
-      <p className="mt-2.5 line-clamp-2 min-h-[32px] text-[12px] font-semibold leading-4" style={{ color: C.textHi }} title={label}>
-        {label}
-      </p>
-      <p className="mt-1 text-[9px] tabular-nums" style={{ color: C.faint }}>{recipients} příjemců</p>
-    </div>
-  );
-};
 
 const CompactColumnChart: React.FC<{
   items: Array<{ label: string; value: number; dimmed?: boolean }>;
@@ -826,24 +792,37 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
             </Card>
           )}
 
-          {stats.byType.length > 0 && <Card className={`p-5 lg:p-6 ${SHAD_CARD_CLASS}`}>
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Podíl podle typu</h3>
-                <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Rozložení odeslaných hlášení podle jejich typu</p>
-              </div>
-              <span className="rounded-md px-2.5 py-1 text-[10px] font-medium" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>{stats.byType.length} kategorií</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-x-5 gap-y-6">
+          {stats.byType.length > 0 && <Card className={`relative overflow-hidden p-5 ${SHAD_CARD_CLASS}`}>
+            <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+            <DistributionHeader
+              eyebrow="Notifikace"
+              title="Podíl podle typu"
+              subtitle="Rozložení odeslaných hlášení podle jejich typu"
+              badge={`${stats.byType.length} kategorií`}
+            />
+            <div className="mt-6 grid gap-x-5 gap-y-8 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
               {stats.byType.map(type => (
-                <NotificationRing
-                  key={type.type}
-                  label={type.label}
-                  count={type.count}
-                  recipients={type.recipients}
-                  percentage={type.pct}
-                  color={type.color}
-                />
+                <div key={type.type} className="flex min-w-0 flex-col items-center gap-2.5">
+                  <DistributionRing
+                    segments={[{ name: type.label, cost: type.pct, color: type.color }]}
+                    totalValue={100}
+                    centerValue={`${Math.round(type.pct)}%`}
+                    centerUnit={`${type.count}×`}
+                  />
+                  <p className="max-w-full truncate text-center text-[12px] font-semibold" style={{ color: C.text }} title={type.label}>{type.label}</p>
+                  <div className="w-full max-w-[170px] space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: type.color }} />
+                      <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>Odesláno</span>
+                      <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: C.text }}>{type.count}×</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: C.cyan }} />
+                      <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>Příjemci</span>
+                      <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: C.text }}>{type.recipients}</span>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </Card>}

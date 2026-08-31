@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { C } from './shared';
+import { C, DistributionHeader } from './shared';
 
 /* =============================================================================
    AppCharts — čitelné grafy v jazyce aplikace (bez recharts)
@@ -297,7 +297,7 @@ export const DayNavigator: React.FC<{
             const d = new Date(`${e.target.value}T00:00:00`);
             if (!Number.isNaN(d.getTime())) onChange(d);
           }}
-          className="bg-transparent text-[13px] font-semibold focus:outline-none [color-scheme:dark] tabular-nums"
+          className="bg-transparent text-[13px] font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 [color-scheme:dark] tabular-nums"
           style={{ color: C.text }}
         />
       </label>
@@ -842,7 +842,7 @@ export const OrbitRings: React.FC<{
         onClick={() => onSelect?.(it.id)}
         onMouseEnter={() => setHovered(it.id)}
         onMouseLeave={() => setHovered(null)}
-        className="absolute flex flex-col items-center outline-none"
+        className="absolute flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
         style={{
           left: '50%',
           top: '50%',
@@ -1134,30 +1134,49 @@ const TONE_COLOR: Record<InsightTone, string> = {
 
 export const InsightPanel: React.FC<{
   title?: string;
+  eyebrow?: string;
+  subtitle?: string;
+  badge?: string;
   /** Barva ikony nadpisu (typicky barva hlavní metriky) */
   accent?: string;
   icon?: React.ReactNode;
   items: InsightItem[];
   className?: string;
-}> = ({ title = 'Co zlepšit a urychlit', accent = C.accent, icon, items, className = '' }) => (
-  <div
-    className={`rounded-2xl p-4 ${className}`}
-    style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}
-  >
-    <p
-      className="text-[11px] uppercase font-bold flex items-center gap-2 mb-3"
-      style={{ color: C.muted, letterSpacing: '0.18em' }}
+}> = ({ title = 'Co zlepšit a urychlit', eyebrow, subtitle, badge, accent = C.accent, icon, items, className = '' }) => {
+  const hasSectionHeader = Boolean(eyebrow || subtitle || badge);
+
+  return (
+    <div
+      className={`relative overflow-hidden ${hasSectionHeader ? 'rounded-xl p-5' : 'rounded-2xl p-4'} ${className}`}
+      style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}
     >
-      {icon ?? <span className="w-2 h-2 rounded-full" style={{ background: accent }} />}
-      {title}
-    </p>
-    <div className="flex flex-col gap-2.5">
+      {hasSectionHeader ? (
+        <>
+          <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
+          <DistributionHeader
+            eyebrow={eyebrow ?? 'Přehled'}
+            title={title}
+            subtitle={subtitle ?? ''}
+            badge={badge ?? `${items.length} doporučení`}
+            accent={accent}
+          />
+        </>
+      ) : (
+        <p
+          className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase"
+          style={{ color: C.muted, letterSpacing: '0.18em' }}
+        >
+          {icon ?? <span className="h-2 w-2 rounded-full" style={{ background: accent }} />}
+          {title}
+        </p>
+      )}
+      <div className={hasSectionHeader ? 'mt-6 grid grid-cols-1 gap-2.5 md:grid-cols-3' : 'flex flex-col gap-2.5'}>
       {items.map((it, i) => {
         const col = TONE_COLOR[it.tone ?? 'info'];
         return (
           <div
             key={`${it.title}-${i}`}
-            className="flex items-start gap-2.5 rounded-xl p-2.5"
+            className="flex h-full items-start gap-2.5 rounded-xl p-2.5"
             style={{ background: `${col}10`, border: `1px solid ${col}33` }}
           >
             <span className="w-4 h-4 mt-0.5 shrink-0 rounded-full" style={{ background: `${col}33`, boxShadow: `0 0 8px ${col}55` }} />
@@ -1173,9 +1192,10 @@ export const InsightPanel: React.FC<{
           Žádná doporučení — provoz běží podle plánu.
         </p>
       )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ScatterGrid — srovnání dvou metrik jako čitelná bublinová mapa

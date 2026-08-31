@@ -766,18 +766,53 @@ const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses
   useEffect(() => { const id = requestAnimationFrame(() => setOn(true)); return () => cancelAnimationFrame(id); }, []);
 
   const data = useMemo(() => {
+    // Směna vybraného dne. Všechny fáze se před součtem oříznou na tento
+    // interval; sál bez nastavené pracovní doby má nulovou produktivitu.
+    const selectedDate = new Date(`${dateStr}T00:00:00`);
+    const selectedDayStart = selectedDate.getTime();
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const sched = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
+    const day = sched[dayKeys[selectedDate.getDay()]];
+    let workingMs = 0;
+    let workStartMs = 0;
+    let workEndMs = 0;
+    let workingScale = 0;
+    if (day?.enabled) {
+      const startM = day.startHour * 60 + day.startMinute;
+      const endM = day.endHour * 60 + day.endMinute;
+      const grossMinutes = Math.max(0, endM - startM);
+      const breakM = Math.min(day.breakMinutes ?? DEFAULT_DAILY_BREAK_MINUTES, grossMinutes);
+      workingMs = Math.max(0, grossMinutes - breakM) * 60_000;
+      workStartMs = selectedDayStart + startM * 60_000;
+      workEndMs = selectedDayStart + endM * 60_000;
+      workingScale = grossMinutes > 0 ? (grossMinutes - breakM) / grossMinutes : 0;
+    }
+    const workingOverlapMs = (start: number, end: number) => {
+      if (workingMs <= 0 || end <= start) return 0;
+      const overlapStart = Math.max(start, workStartMs);
+      const overlapEnd = Math.min(end, workEndMs);
+      return overlapEnd > overlapStart ? (overlapEnd - overlapStart) * workingScale : 0;
+    };
+
     const totals = new Map<number, number>();
     const add = (idx: number, ms: number) => { if (ms > 0) totals.set(idx, (totals.get(idx) || 0) + ms); };
     (room.completedOperations || []).forEach((op) => {
-      if (localDate(new Date(op.startedAt).getTime()) !== dateStr) return;
       const segs = op.statusHistory || [];
       segs.forEach((s, i) => {
         const st = new Date(s.startedAt).getTime();
         const en = i < segs.length - 1 ? new Date(segs[i + 1].startedAt).getTime() : new Date(op.endedAt).getTime();
-        add(s.stepIndex, en - st);
+        add(s.stepIndex, workingOverlapMs(st, en));
       });
     });
-    if (dateStr === todayStr) roomSegments(room, now).forEach((s) => add(s.stepIndex, s.ms));
+    if (dateStr === todayStr) {
+      const currentSegments = room.statusHistory || [];
+      currentSegments.forEach((segment, index) => {
+        const start = new Date(segment.startedAt).getTime();
+        const next = currentSegments[index + 1];
+        const end = next ? new Date(next.startedAt).getTime() : now;
+        add(segment.stepIndex, workingOverlapMs(start, end));
+      });
+    }
     const arr = [...totals.entries()]
       .map(([idx, ms]) => ({ idx, ms, c: colorByIndex(idx, statuses), name: nameByIndex(idx, statuses) }))
       .sort((a, b) => b.ms - a.ms);
@@ -786,22 +821,10 @@ const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses
     const R = 130, CIRC = 2 * Math.PI * R;
     const segs = arr.map((s) => { const len = total > 0 ? (s.ms / total) * CIRC : 0; const start = acc; acc += len; return { ...s, len, start, frac: total > 0 ? s.ms / total : 0 }; });
 
-    // Pracovní kapacita dne (ms) podle rozvrhu sálu pro daný den v týdnu.
-    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
-    const sched = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
-    const day = sched[dayKeys[new Date(dateStr + 'T00:00:00').getDay()]];
-    let workingMs = 0;
-    if (day?.enabled) {
-      const startM = day.startHour * 60 + day.startMinute;
-      const endM = day.endHour * 60 + day.endMinute;
-      const breakM = day.breakMinutes ?? DEFAULT_DAILY_BREAK_MINUTES;
-      workingMs = Math.max(0, endM - startM - breakM) * 60000;
-    }
-    // Vytížení = obsazený čas / pracovní kapacita. Pokud je sál dnes zavřený, ale
-    // má odpracovaný čas, počítáme z 8h baseline (stejně jako modul Timeline).
+    // Využití je vždy v rozsahu 0–100 % a nevychází z času mimo směnu.
     const utilPct = workingMs > 0
-      ? (total / workingMs) * 100
-      : (total > 0 ? (total / (480 * 60000)) * 100 : 0);
+      ? Math.min(100, Math.max(0, (total / workingMs) * 100))
+      : 0;
 
     return { segs, total, R, CIRC, workingMs, utilPct };
   }, [room, dateStr, statuses, now, todayStr]);
@@ -815,9 +838,7 @@ const StatusBreakdown: React.FC<{ room: OperatingRoom; dateStr: string; statuses
     const pct = data.utilPct;
     const idleMs = data.workingMs > 0 ? Math.max(0, data.workingMs - data.total) : 0;
     // 1) Vytížení
-    if (pct > 100) {
-      out.push({ tone: 'warn', title: 'Překročená kapacita', text: `Sál běžel ${fmtDur(data.total)}, tj. ${Math.round(pct)} % plánu. Riziko přesčasů — naplánuj realističtější program nebo přesuň výkon na jiný sál.` });
-    } else if (pct < 50) {
+    if (pct < 50) {
       out.push({ tone: 'warn', title: 'Nízké vytížení', text: `Využito jen ${Math.round(pct)} % pracovní doby${data.workingMs > 0 ? `, volných ${fmtDur(idleMs)}` : ''}. Doplň program nebo sem přesuň výkony z přetížených sálů.` });
     } else if (pct < 60) {
       out.push({ tone: 'info', title: 'Podprůměrné vytížení', text: `Vytížení ${Math.round(pct)} %. Zrychlením přípravy a úklidu lze uvolnit čas na další výkon${data.workingMs > 0 ? ` (volných ${fmtDur(idleMs)})` : ''}.` });

@@ -13,7 +13,7 @@ import {
   Smartphone, Monitor, Tablet, AlertTriangle, Clock, CheckCircle2,
   Wifi, WifiOff, Download, Globe, Cpu,
 } from 'lucide-react';
-import { C, Card, formatNumber } from './shared';
+import { C, Card, DistributionHeader, DistributionRing, formatNumber } from './shared';
 import type { DeviceRow } from '../../lib/db';
 
 interface DevicesTabProps {
@@ -262,10 +262,42 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
             </div>
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card className={`p-5 ${DEVICE_CARD_CLASS}`} icon={Smartphone} title="Typ zařízení" subtitle="Rozložení přístupů" accent={C.accent}>
-              <RankingList items={stats.byType.map(item => ({ key: item.type, label: item.label, count: item.count, pct: item.pct, color: item.color }))} />
-            </Card>
+          <Card className={`relative overflow-hidden p-5 ${DEVICE_CARD_CLASS}`}>
+            <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+            <DistributionHeader
+              eyebrow="Zařízení"
+              title="Podíl podle typu zařízení"
+              subtitle="Rozložení registrovaných zařízení podle používaného typu"
+              badge={`${stats.byType.length} typy`}
+            />
+            <div className="mt-6 grid gap-x-5 gap-y-8 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+              {stats.byType.map(item => (
+                <div key={item.type} className="flex min-w-0 flex-col items-center gap-2.5">
+                  <DistributionRing
+                    segments={[{ name: item.label, cost: item.pct, color: item.color }]}
+                    totalValue={100}
+                    centerValue={`${Math.round(item.pct)}%`}
+                    centerUnit={`${item.count}×`}
+                  />
+                  <p className="max-w-full truncate text-center text-[12px] font-semibold" style={{ color: C.text }} title={item.label}>{item.label}</p>
+                  <div className="w-full max-w-[170px] space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.color }} />
+                      <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>Registrováno</span>
+                      <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: C.text }}>{item.count}×</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: C.cyan }} />
+                      <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>Podíl zařízení</span>
+                      <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: C.text }}>{item.pct.toFixed(1)} %</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card className={`p-5 ${DEVICE_CARD_CLASS}`} icon={Globe} title="Platforma" subtitle="Používané operační systémy" accent={C.purple}>
               <RankingList items={stats.byPlatform.map(item => ({ key: item.platform, label: item.platform, count: item.count, pct: item.pct, color: item.color }))} />
             </Card>

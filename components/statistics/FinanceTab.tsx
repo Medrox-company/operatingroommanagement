@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import {
   Card,
-  C, formatNumber,
+  C, DistributionHeader, DistributionRing, formatNumber,
 } from './shared';
 import { toast } from '@/components/ui/toast';
 import { ColumnChart, GlassCalendar, StatSectionLabel } from './AppCharts';
@@ -359,61 +359,6 @@ const PanelCard: React.FC<{
     )}
   </div>
 );
-
-/**
- * Prstenec rozdělený na fáze cyklu. Každý výsek odpovídá podílu fáze na
- * nákladech daného sálu, uprostřed je celková částka sálu.
- */
-const PhaseRing: React.FC<{
-  segments: Array<{ name: string; cost: number; color: string }>;
-  centerValue: string;
-  centerUnit?: string;
-  size?: number;
-}> = ({ segments, centerValue, centerUnit, size = 132 }) => {
-  const total = segments.reduce((sum, s) => sum + s.cost, 0);
-  const R = 46;
-  const CIRC = 2 * Math.PI * R;
-  let offset = 0;
-
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 108 108" className="absolute inset-0 w-full h-full -rotate-90">
-        <circle cx="54" cy="54" r={R} fill="none" stroke="var(--stats-ghost)" strokeWidth="11" />
-        {total > 0 &&
-          segments.map(segment => {
-            const fraction = segment.cost / total;
-            const dash = fraction * CIRC;
-            const el = (
-              <circle
-                key={segment.name}
-                cx="54"
-                cy="54"
-                r={R}
-                fill="none"
-                stroke={segment.color}
-                strokeWidth="11"
-                strokeDasharray={`${Math.max(dash - 1.5, 0)} ${CIRC}`}
-                strokeDashoffset={-offset}
-              />
-            );
-            offset += dash;
-            return el;
-          })}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span
-          className="font-semibold tabular-nums leading-none"
-          style={{ color: C.textHi, fontSize: size >= 180 ? 21 : 15 }}
-        >
-          {centerValue}
-        </span>
-        {centerUnit && (
-          <span className="mt-1 font-medium" style={{ color: C.muted, fontSize: size >= 180 ? 12 : 10 }}>{centerUnit}</span>
-        )}
-      </div>
-    </div>
-  );
-};
 
 /** Jeden řádek panelu — vlevo popisek, vpravo číslo. */
 const PanelRow: React.FC<{
@@ -1550,21 +1495,17 @@ export function FinanceTab({
           {roomPhaseCosts.length > 0 && (
             <Card className={`relative overflow-hidden p-5 ${STATS_CARD_CLASS}`}>
               <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase font-medium tracking-[0.15em]" style={{ color: C.accent }}>Finance</p>
-                  <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>Podíl na nákladech</h2>
-                  <p className="mt-1 text-[11px]" style={{ color: C.muted }}>Rozdělení nákladů jednotlivých sálů podle fází operačního cyklu</p>
-                </div>
-                <span className="rounded-md px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.accent, background: `${C.accent}12`, border: `1px solid ${C.accent}28` }}>
-                  {roomPhaseCosts.length} sálů
-                </span>
-              </div>
+              <DistributionHeader
+                eyebrow="Finance"
+                title="Podíl na nákladech"
+                subtitle="Rozdělení nákladů jednotlivých sálů podle fází operačního cyklu"
+                badge={`${roomPhaseCosts.length} sálů`}
+              />
 
               <div className="mt-6 grid gap-x-5 gap-y-8 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
                 {roomPhaseCosts.map(room => (
                   <div key={room.id} className="flex min-w-0 flex-col items-center gap-2.5">
-                    <PhaseRing
+                    <DistributionRing
                       segments={room.phases.map(p => ({
                         name: p.name,
                         cost: p.cost,
@@ -1874,7 +1815,7 @@ export function FinanceTab({
             {selectedCostRoom.phases.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 items-center mt-6">
                 <div className="flex justify-center">
-                  <PhaseRing
+                  <DistributionRing
                     size={200}
                     segments={selectedCostRoom.phases.map(phase => ({
                       name: phase.name,

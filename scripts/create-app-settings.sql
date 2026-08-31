@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS app_settings (
   background_colors JSONB DEFAULT '[{"color": "#0a0a12", "position": 0}, {"color": "#1a1a2e", "position": 100}]',
   background_direction TEXT DEFAULT 'to bottom',
   background_opacity INTEGER DEFAULT 100,
-  background_image_url TEXT DEFAULT 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000',
-  background_image_opacity INTEGER DEFAULT 15,
+  background_image_url TEXT DEFAULT '',
+  background_image_opacity INTEGER DEFAULT 0,
   background_image_blur INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

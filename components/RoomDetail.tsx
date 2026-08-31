@@ -10,7 +10,7 @@ import {
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone,
   Utensils,
 } from 'lucide-react';
-import { recordStatusEvent, fetchBackgroundSettings, BackgroundSettings } from '../lib/db';
+import { recordStatusEvent } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
@@ -99,7 +99,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
   const [staffPickerOpen, setStaffPickerOpen] = useState(false);
   const [notificationOverlayOpen, setNotificationOverlayOpen] = useState(false);
-  const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings | null>(null);
   const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
   const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
   const [pendingStepElapsedSeconds, setPendingStepElapsedSeconds] = useState<number | null>(null);
@@ -169,23 +168,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     const totalSeconds = Math.floor((sharedNowMs - pauseStartTime.getTime()) / 1000);
     setPauseElapsedTime(formatElapsed(totalSeconds));
   }, [sharedNowMs, isPaused, pauseStartedAt]);
-
-  // Load background settings and listen for changes
-  useEffect(() => {
-    const loadBackgroundSettings = async () => {
-      const settings = await fetchBackgroundSettings();
-      if (settings) setBackgroundSettings(settings);
-    };
-    loadBackgroundSettings();
-
-    const handleBackgroundChange = (e: CustomEvent<BackgroundSettings>) => {
-      setBackgroundSettings(e.detail);
-    };
-    window.addEventListener('backgroundSettingsChanged', handleBackgroundChange as EventListener);
-    return () => {
-      window.removeEventListener('backgroundSettingsChanged', handleBackgroundChange as EventListener);
-    };
-  }, []);
 
   // Patient call timer - update every second
   useEffect(() => {
@@ -1105,20 +1087,23 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       ) : null}
 
 
-      {/* Background Layer */}
+      {/* Statické CSS pozadí detailu — bez fotografií a síťových požadavků. */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <img 
-          src={backgroundSettings?.imageUrl || "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000"} 
-          alt="Operating Environment" 
-          className="w-full h-full object-cover grayscale scale-105"
-          style={{ 
-            opacity: (backgroundSettings?.imageOpacity ?? 20) / 100,
-            filter: `blur(${backgroundSettings?.imageBlur ?? 0}px) grayscale(1)`
-          }}
-        />
+        <div className="absolute inset-0 bg-black" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/80" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_transparent_25%,_rgba(0,0,0,0.9)_100%)]" />
       </div>
+
+      {/* Prostředí laděné barvou probíhající fáze — obrazovka jako celek
+          nese barvu kroku, ne jen prstenec. Barva pochází z nastavení stavů
+          (workflow_statuses.accent_color), takže si ji nemocnice řídí sama. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0 transition-colors duration-700"
+        style={{
+          background: `radial-gradient(ellipse 70% 55% at 50% 48%, ${activeColor}1f 0%, ${activeColor}0d 42%, transparent 72%)`,
+        }}
+      />
 
       {/* Atmospheric Edge Glows - static, color via inline style */}
       <div 
@@ -1167,15 +1152,24 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               ) : null}
             </motion.div>
           </AnimatePresence>
-          <p className="text-[clamp(8px,0.8vw,11px)] font-black text-white/30 tracking-[0.5em] uppercase mt-[clamp(0.75rem,1.5vw,1.25rem)]">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
+          <p className="text-[clamp(8px,0.8vw,11px)] font-medium text-white/32 tracking-[0.42em] uppercase mt-[clamp(0.75rem,1.5vw,1.25rem)]">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
       </header>
 
-      <div className="absolute left-1/2 top-[clamp(6.5rem,15vh,10rem)] z-50 w-[min(560px,58vw)] -translate-x-1/2">
+      {/* Upozornění na krátký interval sedí v pravém sloupci mezi horními
+          a spodními ikonami. Dřív viselo přes střed obrazovky a překrývalo
+          název fáze. Šířka odpovídá dvojici tlačítek pod ním, takže sloupec
+          drží jednu svislou linku. */}
+      <div
+        className="absolute right-[clamp(0.75rem,2.5vw,2rem)] top-1/2 z-50 -translate-y-1/2"
+        style={{
+          width: 'calc(2 * clamp(3.5rem, min(7.5vw, 14vh), 6rem) + clamp(0.5rem, 1.5vw, 1rem))',
+        }}
+      >
         <RapidSurgeryWarning
           room={room}
           statuses={activeDbStatuses}
-          variant="desktop"
+          variant="rail"
         />
       </div>
 
@@ -1486,22 +1480,22 @@ const prevStep = activeDbStatuses.length > 0
                 <div 
                   className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
                   style={{
-                    background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+                    background: `radial-gradient(circle at center, ${activeColor}00 0%, ${activeColor}1a 100%)`
                   }}
                 />
                 
                 {/* Ring */}
                 <div 
-                  className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
-                  style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+                  className="absolute inset-0 rounded-full border transition-colors duration-500"
+                  style={{ borderColor: `${activeColor}2e` }}
                 />
                 
                 {/* Inner content */}
                 <div className="relative z-10 text-center px-4">
-                  <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
+                  <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-medium tracking-[0.24em] uppercase text-white/35 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
                     DOKONČENÁ FÁZE
                   </p>
-                  <h3 className="text-[clamp(0.875rem,min(2.4vw,4vh),1.875rem)] font-bold leading-tight tracking-tight text-white">
+                  <h3 className="text-[clamp(0.875rem,min(2.4vw,4vh),1.875rem)] font-normal leading-tight tracking-[-0.01em] text-white/85">
                     {prevStep.title}
                   </h3>
                 </div>
@@ -1715,9 +1709,8 @@ const prevStep = activeDbStatuses.length > 0
                     exit={{ opacity: 0 }}
                   >
                     <p
-                      className={`text-[clamp(8px,0.8vw,10px)] font-black tracking-[0.2em] mb-[clamp(0.75rem,2vw,1.5rem)] uppercase ${
-                        room.isEmergency ? 'text-red-400' : 'text-white/25'
-                      }`}
+                      className="text-[clamp(8px,0.8vw,10px)] font-medium tracking-[0.24em] mb-[clamp(0.75rem,2vw,1.5rem)] uppercase transition-colors duration-500"
+                      style={{ color: `${activeColor}b3` }}
                     >
                       PROBÍHAJÍCÍ FÁZE
                     </p>
@@ -1726,7 +1719,7 @@ const prevStep = activeDbStatuses.length > 0
                       key={currentStep.title}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`mb-[clamp(0.5rem,min(2vw,2vh),1.5rem)] break-words text-[clamp(1.4rem,min(5vw,8vh),3.75rem)] font-bold leading-tight tracking-tight ${
+                      className={`mb-[clamp(0.5rem,min(2vw,2vh),1.5rem)] break-words text-[clamp(1.4rem,min(5vw,8vh),3.75rem)] font-normal leading-[1.08] tracking-[-0.022em] ${
                         room.isEmergency ? 'text-red-400' : 'text-white'
                       }`}
                     >
@@ -1753,22 +1746,22 @@ const prevStep = activeDbStatuses.length > 0
             <div 
               className="absolute inset-0 rounded-full blur-[60px] transition-colors duration-700"
               style={{
-                background: `radial-gradient(circle at center, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 100%)`
+                background: `radial-gradient(circle at center, ${activeColor}00 0%, ${activeColor}1a 100%)`
               }}
             />
             
             {/* Ring */}
             <div 
-              className="absolute inset-0 rounded-full border-2 opacity-30 transition-colors duration-500"
-              style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+              className="absolute inset-0 rounded-full border transition-colors duration-500"
+              style={{ borderColor: `${activeColor}2e` }}
             />
             
             {/* Inner content */}
             <div className="relative z-10 text-center px-4">
-              <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-black tracking-[0.2em] uppercase text-white/25 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
+              <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-medium tracking-[0.24em] uppercase text-white/35 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
                 {isFinalStep ? 'NOVÝ CYKLUS' : 'NÁSLEDUJÍCÍ FÁZE'}
               </p>
-              <h3 className="text-[clamp(0.875rem,min(2.4vw,4vh),1.875rem)] font-bold leading-tight tracking-tight text-white">
+              <h3 className="text-[clamp(0.875rem,min(2.4vw,4vh),1.875rem)] font-normal leading-tight tracking-[-0.01em] text-white/85">
                 {nextStep.title}
               </h3>
             </div>
@@ -1828,19 +1821,32 @@ const prevStep = activeDbStatuses.length > 0
         data-testid="room-detail-phase-indicator"
         className="absolute inset-x-0 bottom-8 z-50 flex flex-col items-center gap-4 px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]"
       >
-        {/* Navigation Indicators - only show active statuses */}
-        <div className="flex gap-3">
-        {activeDbStatuses.map((status, index) => (
-          <div 
-            key={status.id} 
-            className="h-1.5 rounded-full transition-all duration-500"
-            style={{
-              width: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 32 : 8,
-              backgroundColor: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? activeColor : 'rgba(255,255,255,0.22)',
-              opacity: index === Math.min(currentStepIndex, activeDbStatuses.length - 1) ? 1 : 0.55
-            }}
-          />
-        ))}
+        {/* Průběh cyklu: stejně široké úseky s názvem fáze pod nimi.
+            Aktivní úsek svítí barvou fáze, ostatní zůstávají tlumené — obsluha
+            tak na jeden pohled vidí, kde v cyklu je. */}
+        <div className="flex items-start gap-[clamp(0.5rem,1.4vw,1.25rem)]">
+        {activeDbStatuses.map((status, index) => {
+          const activeIndex = Math.min(currentStepIndex, activeDbStatuses.length - 1);
+          const isCurrent = index === activeIndex;
+          return (
+            <div key={status.id} className="flex flex-col items-center gap-2">
+              <div
+                className="h-1 rounded-full transition-all duration-500"
+                style={{
+                  width: 'clamp(48px,6vw,88px)',
+                  backgroundColor: isCurrent ? activeColor : 'rgba(255,255,255,0.14)',
+                  boxShadow: isCurrent ? `0 0 14px ${activeColor}, 0 0 4px ${activeColor}` : 'none',
+                }}
+              />
+              <span
+                className="whitespace-nowrap text-[clamp(7px,0.62vw,9px)] font-medium uppercase tracking-[0.18em] transition-colors duration-500"
+                style={{ color: isCurrent ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.28)' }}
+              >
+                {status.name}
+              </span>
+            </div>
+          );
+        })}
         </div>
       </div>
       </div>{/* end content-safe wrapper */}

@@ -12,21 +12,17 @@
 'use client';
 
 import React, { useMemo, useState, memo } from 'react';
-import {
-  Activity, AlertTriangle, CheckCircle2, ChevronRight,
-  LayoutGrid, List, TrendingUp, Sparkles
-} from 'lucide-react';
+import { Activity, ArrowDownAZ, BarChart3, ChevronRight, LayoutGrid, List } from 'lucide-react';
 
 import type { OperatingRoom } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
-  C, Card,
+  C, Card, DistributionHeader, DistributionRing,
   formatMinutes, formatPercent, formatNumber
 } from './shared';
 // Čitelné grafy v jazyce aplikace (stejné jako v záložce Přehled)
-import { InsightPanel } from './AppCharts';
+import { GlassCalendar, InsightPanel } from './AppCharts';
 import type { InsightItem } from './AppCharts';
-import type { IconComponent } from './shared';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & Props
@@ -38,15 +34,41 @@ type ViewMode = 'grid' | 'list';
 export interface RoomsTabProps {
   rooms: OperatingRoom[];
   statusHistory: StatusHistoryRow[];
+  /** Delší databázová historie určená pro výběr konkrétního dne v kalendáři. */
+  calendarHistory: StatusHistoryRow[];
   periodLabel: Period;
   onRoomSelect?: (room: OperatingRoom) => void;
   calculateRoomUtilization: (room: OperatingRoom, history: StatusHistoryRow[], period: Period) => number;
   countOperationsInWorkingHours: (room: OperatingRoom, history: StatusHistoryRow[], period: Period) => number;
+  calculateRoomUtilizationForDay: (room: OperatingRoom, history: StatusHistoryRow[], date: Date) => number;
+  countOperationsForDay: (room: OperatingRoom, history: StatusHistoryRow[], date: Date) => number;
   workflowSteps: Array<{ title: string; color: string }>;
 }
 
 const ROOM_CARD_CLASS = '!rounded-xl [background:var(--stats-surface)!important] [box-shadow:none!important]';
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+const OPERATIONAL_DAY_START_HOUR = 7;
+
+function operationalToday(now: Date = new Date()): Date {
+  const day = new Date(now);
+  if (day.getHours() < OPERATIONAL_DAY_START_HOUR) day.setDate(day.getDate() - 1);
+  day.setHours(0, 0, 0, 0);
+  return day;
+}
+
+function operationalDayBounds(date: Date): { start: Date; end: Date } {
+  const start = new Date(date);
+  start.setHours(OPERATIONAL_DAY_START_HOUR, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
+function operationalDayKey(timestamp: Date): string {
+  const day = new Date(timestamp);
+  if (day.getHours() < OPERATIONAL_DAY_START_HOUR) day.setDate(day.getDate() - 1);
+  return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+}
 
 /** Vrátí pouze část intervalu, která leží v nastavené pracovní době sálu. */
 function roomWorkingOverlapSeconds(room: OperatingRoom, start: Date, end: Date): number {
@@ -76,43 +98,6 @@ function roomWorkingOverlapSeconds(room: OperatingRoom, start: Date, end: Date):
 
   return seconds;
 }
-
-/** Stejná kruhová vizualizace, jakou používá záložka Fáze. */
-const CyclePhaseRing: React.FC<{
-  label: string;
-  percentage: number;
-  color: string;
-}> = ({ label, percentage, color }) => {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const dash = Math.max(0, Math.min(100, percentage)) / 100 * circumference;
-
-  return (
-    <div className="flex w-[126px] shrink-0 flex-col items-center text-center">
-      <div className="relative h-[112px] w-[112px]">
-        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
-          <circle cx="50" cy="50" r={radius} fill="none" stroke={C.ghost} strokeWidth="7" />
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth="7"
-            strokeLinecap="round"
-            strokeDasharray={`${dash} ${circumference - dash}`}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-light tabular-nums" style={{ color: C.textHi }}>{Math.round(percentage)}</span>
-          <span className="text-[8px] uppercase tracking-wider" style={{ color: C.muted }}>%</span>
-        </div>
-      </div>
-      <p className="mt-2 line-clamp-2 min-h-[30px] text-[10px] font-semibold leading-4" style={{ color: C.textHi }}>{label}</p>
-      <p className="mt-0.5 text-[9px]" style={{ color }}>podíl cyklu</p>
-    </div>
-  );
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-components
@@ -208,35 +193,35 @@ const RoomCard = memo(({
 });
 RoomCard.displayName = 'RoomCard';
 
-/** Summary KPI card */
-const SummaryKPI = memo(({
-  label, value, total, color, icon: Icon
-}: {
+const SortChip: React.FC<{
   label: string;
-  value: number;
-  total: number;
-  color: string;
-  icon: IconComponent;
-}) => {
-  const pct = total > 0 ? (value / total) * 100 : 0;
-
-  return (
-    <div className="group relative min-h-[112px] overflow-hidden rounded-xl p-4" style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}>
-      <span className="absolute inset-x-4 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-      <div className="flex min-h-[44px] items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[11px] font-medium" style={{ color: C.textHi }}>{label}</p>
-          <p className="mt-1 truncate text-[10px]" style={{ color: C.muted }}>{Math.round(pct)} % z {total} sálů</p>
-        </div>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-105" style={{ color, border: `1px solid ${color}35`, background: `${color}0e` }}>
-          <Icon className="h-4 w-4" strokeWidth={1.8} />
-        </span>
-      </div>
-      <p className="mt-3 truncate text-[26px] font-light leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
-    </div>
-  );
-});
-SummaryKPI.displayName = 'SummaryKPI';
+  detail: string;
+  active: boolean;
+  icon: React.ElementType;
+  onClick: () => void;
+}> = ({ label, detail, active, icon: Icon, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={active}
+    className="flex min-w-[138px] items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2"
+    style={{
+      background: 'var(--stats-surface-2)',
+      border: `1px solid ${active ? `${C.accent}55` : C.border}`,
+    }}
+  >
+    <span
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+      style={{ background: `${C.accent}${active ? '20' : '10'}`, color: active ? C.accent : C.muted, border: `1px solid ${C.accent}${active ? '38' : '20'}` }}
+    >
+      <Icon className="h-4 w-4" />
+    </span>
+    <span className="text-[10px] font-medium" style={{ color: C.muted }}>
+      {label}
+      <span className="mt-0.5 block text-[11px] font-semibold" style={{ color: active ? C.textHi : C.text }}>{detail}</span>
+    </span>
+  </button>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
@@ -244,14 +229,44 @@ SummaryKPI.displayName = 'SummaryKPI';
 export const RoomsTab: React.FC<RoomsTabProps> = memo(({
   rooms,
   statusHistory,
+  calendarHistory,
   periodLabel,
   onRoomSelect,
   calculateRoomUtilization,
   countOperationsInWorkingHours,
+  calculateRoomUtilizationForDay,
+  countOperationsForDay,
   workflowSteps,
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<'name' | 'utilization' | 'operations'>('utilization');
+  const [calendarDay, setCalendarDay] = useState(() => operationalToday());
+  const [calendarSelectionActive, setCalendarSelectionActive] = useState(false);
+
+  const selectedDayBounds = useMemo(() => operationalDayBounds(calendarDay), [calendarDay]);
+  const selectedDayLabel = useMemo(() => calendarDay.toLocaleDateString('cs-CZ', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  }), [calendarDay]);
+  const activePeriodLabel = calendarSelectionActive ? selectedDayLabel : periodLabel;
+  const analysisHistory = calendarSelectionActive ? calendarHistory : statusHistory;
+  const calendarMinDate = useMemo(() => {
+    const day = operationalToday();
+    day.setDate(day.getDate() - 30);
+    return day;
+  }, []);
+
+  const calendarHeat = useMemo(() => {
+    const counts: Record<string, number> = {};
+    calendarHistory.forEach(event => {
+      if (!event.timestamp) return;
+      const date = new Date(event.timestamp);
+      if (!Number.isFinite(date.getTime())) return;
+      const key = operationalDayKey(date);
+      counts[key] = (counts[key] ?? 0) + 1;
+    });
+    const maximum = Math.max(1, ...Object.values(counts));
+    return Object.fromEntries(Object.entries(counts).map(([key, count]) => [key, count / maximum]));
+  }, [calendarHistory]);
 
   // ── Status counts ──
   const { busyCount, freeCount, cleanCount, maintCount } = useMemo(() => {
@@ -269,11 +284,22 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
   // ── Room data with computed metrics ──
   const roomsData = useMemo(() => {
     return rooms.map(r => {
-      const util = calculateRoomUtilization(r, statusHistory, periodLabel);
-      const ops = countOperationsInWorkingHours(r, statusHistory, periodLabel);
+      const util = calendarSelectionActive
+        ? calculateRoomUtilizationForDay(r, calendarHistory, calendarDay)
+        : calculateRoomUtilization(r, statusHistory, periodLabel);
+      const ops = calendarSelectionActive
+        ? countOperationsForDay(r, calendarHistory, calendarDay)
+        : countOperationsInWorkingHours(r, statusHistory, periodLabel);
 
       // Compute average operation time from history
-      const roomHistory = statusHistory.filter(h => h.operating_room_id === r.id);
+      const roomHistory = analysisHistory.filter(h => {
+        if (h.operating_room_id !== r.id) return false;
+        if (!calendarSelectionActive) return true;
+        const timestamp = new Date(h.timestamp).getTime();
+        return Number.isFinite(timestamp)
+          && timestamp >= selectedDayBounds.start.getTime()
+          && timestamp < selectedDayBounds.end.getTime();
+      });
       const opDurations = roomHistory
         .filter(h => h.step_name === 'Operace' || h.step_name === 'Zákrok')
         .map(h => h.duration_seconds ?? 0);
@@ -283,7 +309,12 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
 
       return { room: r, utilization: util, operations: ops, avgOpTime };
     });
-  }, [rooms, statusHistory, periodLabel, calculateRoomUtilization, countOperationsInWorkingHours]);
+  }, [
+    rooms, statusHistory, calendarHistory, analysisHistory, periodLabel,
+    calendarSelectionActive, calendarDay, selectedDayBounds,
+    calculateRoomUtilization, countOperationsInWorkingHours,
+    calculateRoomUtilizationForDay, countOperationsForDay,
+  ]);
 
   // ── Sorted rooms ──
   const sortedRooms = useMemo(() => {
@@ -362,7 +393,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
    * jako ostatní fáze nezapočítá.
    */
   const phaseRings = useMemo(() => {
-    if (!statusHistory || statusHistory.length === 0 || workflowSteps.length === 0) return [];
+    if (!analysisHistory || analysisHistory.length === 0 || workflowSteps.length === 0) return [];
     const totals: Record<string, number> = {};
     const roomById = new Map(rooms.map(room => [room.id, room]));
     workflowSteps.forEach(s => { totals[s.title] = 0; });
@@ -372,7 +403,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
     // je po jednotlivých sálech, aby šlo výhradně o reálně zaznamenaný čas.
     const pauseStartByRoom = new Map<string, Date>();
     const pauseIntervalsByRoom = new Map<string, Array<{ start: Date; end: Date }>>();
-    const pauseEvents = statusHistory
+    const pauseEvents = analysisHistory
       .filter(event => (event.event_type === 'pause' || event.event_type === 'resume') && event.timestamp)
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
@@ -408,22 +439,34 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
       const room = roomById.get(roomId);
       if (!room) return;
       intervals.forEach(interval => {
-        totals.Pauza += roomWorkingOverlapSeconds(room, interval.start, interval.end);
+        const start = calendarSelectionActive
+          ? new Date(Math.max(interval.start.getTime(), selectedDayBounds.start.getTime()))
+          : interval.start;
+        const end = calendarSelectionActive
+          ? new Date(Math.min(interval.end.getTime(), selectedDayBounds.end.getTime()))
+          : interval.end;
+        totals.Pauza += roomWorkingOverlapSeconds(room, start, end);
       });
     });
 
     // Délky běžných fází jsou uložené na události step_change. Pokud do
     // intervalu fáze spadá pauza, odečteme ji z fáze a vykážeme samostatně,
     // takže se stejná minuta nikdy nezapočítá dvakrát.
-    statusHistory
+    analysisHistory
       .filter(e => e.event_type === 'step_change' && e.duration_seconds && e.step_name)
       .forEach(e => {
         const room = roomById.get(e.operating_room_id);
         const seconds = Number(e.duration_seconds ?? 0);
         if (!room || !e.step_name || totals[e.step_name] === undefined || !Number.isFinite(seconds) || seconds <= 0) return;
 
-        const end = new Date(e.timestamp);
-        const start = new Date(end.getTime() - seconds * 1_000);
+        const rawEnd = new Date(e.timestamp);
+        const rawStart = new Date(rawEnd.getTime() - seconds * 1_000);
+        const start = calendarSelectionActive
+          ? new Date(Math.max(rawStart.getTime(), selectedDayBounds.start.getTime()))
+          : rawStart;
+        const end = calendarSelectionActive
+          ? new Date(Math.min(rawEnd.getTime(), selectedDayBounds.end.getTime()))
+          : rawEnd;
         const phaseWorkingSeconds = roomWorkingOverlapSeconds(room, start, end);
         const pausedWorkingSeconds = (pauseIntervalsByRoom.get(room.id) ?? []).reduce((sum, pause) => {
           const overlapStart = new Date(Math.max(start.getTime(), pause.start.getTime()));
@@ -458,47 +501,138 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
     }
 
     return workflowItems;
-  }, [statusHistory, workflowSteps, rooms]);
+  }, [analysisHistory, workflowSteps, rooms, calendarSelectionActive, selectedDayBounds]);
+
+  const roomsInOperation = calendarSelectionActive
+    ? roomsData.filter(item => item.operations > 0 || item.utilization > 0).length
+    : busyCount;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
-        <main className="flex flex-col gap-4 xl:order-2">
-          <Card className={`relative overflow-hidden p-5 ${ROOM_CARD_CLASS}`}>
-            <span className="absolute inset-x-10 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}aa, transparent)` }} />
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-[10px] font-medium" style={{ color: C.muted }}>Sály</p>
-                <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>Přehled operačních sálů</h2>
-                <p className="mt-1 text-[11px]" style={{ color: C.muted }}>Využití, provozní stav a výkonnost operačních sálů</p>
-              </div>
-              <span className="rounded-md px-3 py-2 text-[11px] font-medium" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>Období: {periodLabel}</span>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <SummaryKPI label="Obsazeno" value={busyCount} total={rooms.length} color={C.orange} icon={Activity} />
-              <SummaryKPI label="Volno" value={freeCount} total={rooms.length} color={C.green} icon={CheckCircle2} />
-              <SummaryKPI label="Úklid" value={cleanCount} total={rooms.length} color={C.accent} icon={Sparkles} />
-              <SummaryKPI label="Mimo provoz" value={maintCount} total={rooms.length} color={C.faint} icon={AlertTriangle} />
-            </div>
-          </Card>
+      <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
+        <main className="flex h-full flex-col gap-4 xl:order-2">
+          <InsightPanel
+            eyebrow="Sály"
+            title="Co zlepšit a urychlit"
+            subtitle="Doporučení odvozená z využití a výkonnosti operačních sálů"
+            badge={`${insights.length} doporučení${calendarSelectionActive ? ` · ${selectedDayLabel}` : ''}`}
+            accent={C.accent}
+            items={insights}
+          />
 
           {phaseRings.length > 0 && (
-            <Card className={`p-5 ${ROOM_CARD_CLASS}`} icon={Activity} title="Fáze operačního cyklu" subtitle="Podíl času naměřených provozních fází" accent={C.accent}>
-              <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-6">
+            <Card className={`relative overflow-hidden p-5 ${ROOM_CARD_CLASS}`}>
+              <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+              <DistributionHeader
+                eyebrow="Sály"
+                title="Fáze operačního cyklu"
+                subtitle="Podíl času naměřených provozních fází"
+                badge={`${phaseRings.length} měřených fází`}
+              />
+              <div className="mt-6 grid gap-x-5 gap-y-8 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
                 {phaseRings.map(phase => (
-                  <CyclePhaseRing
-                    key={phase.label}
-                    label={phase.label}
-                    percentage={phase.percent}
-                    color={phase.color}
-                  />
+                  <div key={phase.label} className="flex min-w-0 flex-col items-center gap-2.5">
+                    <DistributionRing
+                      segments={[{ name: phase.label, cost: phase.percent, color: phase.color }]}
+                      totalValue={100}
+                      centerValue={`${Math.round(phase.percent)}%`}
+                      centerUnit={phase.detail}
+                    />
+                    <p className="max-w-full truncate text-center text-[12px] font-semibold" style={{ color: C.text }} title={phase.label}>{phase.label}</p>
+                    <div className="w-full max-w-[170px] space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: phase.color }} />
+                        <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>Podíl cyklu</span>
+                        <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: C.text }}>{phase.percent.toFixed(1)} %</span>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </Card>
           )}
+
+          <Card className={`relative overflow-hidden p-5 xl:mt-auto ${ROOM_CARD_CLASS}`}>
+            <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+            <DistributionHeader
+              eyebrow="Sály"
+              title="Využití podle sálů"
+              subtitle="Porovnání efektivity jednotlivých operačních sálů"
+              action={(
+                <div className="flex flex-wrap items-center justify-end gap-2.5">
+                  <SortChip
+                    label="Využití"
+                    detail="Podle procent"
+                    active={sortBy === 'utilization'}
+                    icon={Activity}
+                    onClick={() => setSortBy('utilization')}
+                  />
+                  <SortChip
+                    label="Výkony"
+                    detail="Podle počtu"
+                    active={sortBy === 'operations'}
+                    icon={BarChart3}
+                    onClick={() => setSortBy('operations')}
+                  />
+                  <SortChip
+                    label="Název"
+                    detail="Abecedně"
+                    active={sortBy === 'name'}
+                    icon={ArrowDownAZ}
+                    onClick={() => setSortBy('name')}
+                  />
+                </div>
+              )}
+            />
+
+            <div className="mt-4 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-16">
+              {sortedRooms.map(r => {
+                const color = r.utilization >= 80 ? C.green
+                  : r.utilization >= 50 ? C.yellow
+                  : r.utilization > 0 ? C.orange : C.muted;
+                return (
+                  <button
+                    type="button"
+                    key={r.room.id}
+                    onClick={() => onRoomSelect?.(r.room)}
+                    aria-label={`${r.room.name}, využití ${Math.round(r.utilization)} procent`}
+                    className="group relative aspect-square min-w-0 overflow-hidden rounded-lg p-1.5 text-center transition-colors hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2"
+                    style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}`, color }}
+                  >
+                    <span className="absolute inset-x-2 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+                    <span className="flex h-full flex-col items-center justify-between">
+                      <span className="flex w-full min-w-0 items-center justify-center gap-1">
+                        <span className="h-1 w-1 shrink-0 rounded-full" style={{ background: color }} />
+                        <span className="truncate text-[7px] font-semibold uppercase tracking-[0.04em]" style={{ color: C.muted }} title={r.room.name}>{r.room.name}</span>
+                      </span>
+                      <span className="flex items-baseline justify-center">
+                        <span className="text-[18px] font-light leading-none tracking-[-0.04em] tabular-nums" style={{ color: C.textHi }}>{Math.round(r.utilization)}</span>
+                        <span className="ml-0.5 text-[7px] font-semibold" style={{ color }}>%</span>
+                      </span>
+                      <span className="text-[7px] tabular-nums" style={{ color: C.faint }}>{r.operations} výkonů</span>
+                    </span>
+                  </button>
+                );
+              })}
+              {sortedRooms.length === 0 && <p className="col-span-full py-8 text-center text-[11px]" style={{ color: C.muted }}>Žádné sály k zobrazení.</p>}
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t pt-3" style={{ borderColor: C.ghost }}>
+              {[
+                { label: 'Vysoké (80 % +)', color: C.green },
+                { label: 'Střední (50–80 %)', color: C.yellow },
+                { label: 'Nízké (< 50 %)', color: C.orange },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-sm" style={{ background: item.color }} />
+                  <span className="text-[11px]" style={{ color: C.muted }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
         </main>
 
-        <aside className="flex flex-col gap-4 xl:order-1">
+        <aside className="flex h-full flex-col gap-4 xl:order-1">
           <Card className={`relative overflow-hidden p-5 ${ROOM_CARD_CLASS}`}>
             <div className="absolute -right-14 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: C.accent }} />
             <div className="relative">
@@ -508,29 +642,18 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               </div>
               <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: C.muted }}>Operační sály</p>
               <p className="mt-1 text-[52px] font-light leading-none tracking-[-0.05em] tabular-nums" style={{ color: C.textHi }}>{rooms.length}</p>
-              <p className="mt-2 text-[11px]" style={{ color: C.muted }}>evidovaných sálů · {periodLabel}</p>
-              <div className="mt-5 flex h-2 overflow-hidden rounded-full" style={{ background: C.ghost }}>
+              <p className="mt-2 text-[11px]" style={{ color: C.muted }}>evidovaných sálů · {activePeriodLabel}</p>
+              {!calendarSelectionActive && <div className="mt-5 flex h-2 overflow-hidden rounded-full" style={{ background: C.ghost }}>
                 {[
                   [busyCount, C.orange, 'Obsazeno'], [freeCount, C.green, 'Volno'], [cleanCount, C.accent, 'Úklid'], [maintCount, C.muted, 'Mimo provoz'],
                 ].map(([count, color, label]) => Number(count) > 0 && <span key={String(label)} style={{ width: `${(Number(count) / Math.max(1, rooms.length)) * 100}%`, background: String(color) }} title={`${label}: ${count}`} />)}
-              </div>
-              <div className="mt-4 space-y-2.5">
-                {[
-                  ['Obsazeno', busyCount, C.orange], ['Volno', freeCount, C.green], ['Úklid', cleanCount, C.accent],
-                ].map(([label, count, color]) => (
-                  <div key={String(label)} className="flex items-center gap-2.5">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: String(color) }} />
-                    <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>{label}</span>
-                    <span className="text-[11px] font-semibold tabular-nums" style={{ color: C.textHi }}>{count}×</span>
-                  </div>
-                ))}
-              </div>
+              </div>}
             </div>
             <div className="relative mt-5 space-y-2.5 border-t pt-4" style={{ borderColor: C.border }}>
               {[
                 ['Průměrné vytížení', `${Math.round(avgUtilization)} %`],
                 ['Výkonů celkem', String(totalOps)],
-                ['Sálů v provozu', String(busyCount)],
+                ['Sálů v provozu', String(roomsInOperation)],
                 ['Mimo provoz', String(maintCount)],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between gap-3">
@@ -540,94 +663,31 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               ))}
             </div>
           </Card>
-          <InsightPanel title="Co zlepšit a urychlit" icon={<TrendingUp size={14} color={C.accent} />} items={insights} />
-        </aside>
-      </div>
-
-      {/* ── Utilization comparison chart ── */}
-      <Card className={`p-5 ${ROOM_CARD_CLASS}`}>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Využití podle sálů</h3>
-            <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Porovnání efektivity jednotlivých operačních sálů</p>
-          </div>
-          <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: C.ghost }}>
-            <button
-              onClick={() => setSortBy('utilization')}
-              className={`px-2.5 py-1 rounded text-[12px] font-semibold transition-colors ${
-                sortBy === 'utilization' ? 'bg-white/10' : ''
-              }`}
-              style={{ color: sortBy === 'utilization' ? C.accent : C.muted }}
-            >
-              Využití
-            </button>
-            <button
-              onClick={() => setSortBy('operations')}
-              className={`px-2.5 py-1 rounded text-[12px] font-semibold transition-colors ${
-                sortBy === 'operations' ? 'bg-white/10' : ''
-              }`}
-              style={{ color: sortBy === 'operations' ? C.accent : C.muted }}
-            >
-              Výkony
-            </button>
-            <button
-              onClick={() => setSortBy('name')}
-              className={`px-2.5 py-1 rounded text-[12px] font-semibold transition-colors ${
-                sortBy === 'name' ? 'bg-white/10' : ''
-              }`}
-              style={{ color: sortBy === 'name' ? C.accent : C.muted }}
-            >
-              Název
-            </button>
-          </div>
-        </div>
-        
-        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8">
-          {sortedRooms.map(r => {
-            const color = r.utilization >= 80 ? C.green
-              : r.utilization >= 50 ? C.yellow
-              : r.utilization > 0 ? C.orange : C.muted;
-            return (
+          <div className="print-hide xl:mt-auto">
+            <GlassCalendar
+              value={calendarDay}
+              onChange={day => {
+                setCalendarDay(day);
+                setCalendarSelectionActive(true);
+              }}
+              minDate={calendarMinDate}
+              today={operationalToday()}
+              heat={calendarHeat}
+              accent={C.accent}
+            />
+            {calendarSelectionActive && (
               <button
                 type="button"
-                key={r.room.id}
-                onClick={() => onRoomSelect?.(r.room)}
-                aria-label={`${r.room.name}, využití ${Math.round(r.utilization)} procent`}
-                className="group relative aspect-square min-w-0 overflow-hidden rounded-xl p-3 text-center transition-colors hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2"
-                style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}`, color }}
+                onClick={() => setCalendarSelectionActive(false)}
+                className="mt-2 w-full rounded-xl px-3 py-2 text-[10px] font-semibold transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2"
+                style={{ color: C.accent, background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}
               >
-                <span className="absolute inset-x-3 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-                <span className="flex h-full flex-col items-center justify-between">
-                  <span className="flex w-full min-w-0 items-center justify-center gap-1.5">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
-                    <span className="truncate text-[9px] font-semibold uppercase tracking-[0.08em]" style={{ color: C.muted }} title={r.room.name}>{r.room.name}</span>
-                  </span>
-                  <span className="flex items-baseline justify-center">
-                    <span className="text-[30px] font-light leading-none tracking-[-0.04em] tabular-nums" style={{ color: C.textHi }}>{Math.round(r.utilization)}</span>
-                    <span className="ml-0.5 text-[10px] font-semibold" style={{ color }}>%</span>
-                  </span>
-                  <span className="text-[9px] tabular-nums" style={{ color: C.faint }}>{r.operations} výkonů</span>
-                </span>
+                Zobrazit celé období ({periodLabel})
               </button>
-            );
-          })}
-          {sortedRooms.length === 0 && <p className="col-span-full py-8 text-center text-[11px]" style={{ color: C.muted }}>Žádné sály k zobrazení.</p>}
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-6 mt-4 pt-3" style={{ borderTop: `1px solid ${C.ghost}` }}>
-          {[
-            { label: 'Vysoké (80 % +)', color: C.green },
-            { label: 'Střední (50–80 %)', color: C.yellow },
-            { label: 'Nízké (< 50 %)', color: C.orange },
-          ].map(l => (
-            <div key={l.label} className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: l.color }} />
-              <span className="text-[11px]" style={{ color: C.muted }}>{l.label}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
+            )}
+          </div>
+        </aside>
+      </div>
 
       <Card className={`p-5 ${ROOM_CARD_CLASS}`}>
         <div className="flex flex-wrap items-start justify-between gap-3">

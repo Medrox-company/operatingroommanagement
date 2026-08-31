@@ -219,6 +219,86 @@ export const Card: React.FC<CardProps> = memo(({
 });
 Card.displayName = 'Card';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Distribution visuals — jednotný vzor pro prstencové přehledy Statistik
+// ─────────────────────────────────────────────────────────────────────────────
+export const DistributionHeader: React.FC<{
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  badge?: string;
+  action?: React.ReactNode;
+  accent?: string;
+}> = ({ eyebrow, title, subtitle, badge, action, accent = C.accent }) => (
+  <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="min-w-0">
+      <p className="text-[10px] font-medium uppercase tracking-[0.15em]" style={{ color: accent }}>{eyebrow}</p>
+      <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>{title}</h2>
+      <p className="mt-1 text-[11px]" style={{ color: C.muted }}>{subtitle}</p>
+    </div>
+    {action ?? (badge ? (
+      <span
+        className="rounded-md px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em]"
+        style={{ color: accent, background: `${accent}12`, border: `1px solid ${accent}28` }}
+      >
+        {badge}
+      </span>
+    ) : null)}
+  </div>
+);
+
+export const DistributionRing: React.FC<{
+  segments: Array<{ name: string; cost: number; color: string }>;
+  centerValue: string;
+  centerUnit?: string;
+  size?: number;
+  totalValue?: number;
+}> = ({ segments, centerValue, centerUnit, size = 132, totalValue }) => {
+  const segmentTotal = segments.reduce((sum, segment) => sum + segment.cost, 0);
+  const total = Math.max(totalValue ?? segmentTotal, segmentTotal);
+  const radius = 46;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 108 108" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden="true">
+        <circle cx="54" cy="54" r={radius} fill="none" stroke="var(--stats-ghost)" strokeWidth="11" />
+        {total > 0 && segments.map(segment => {
+          const fraction = segment.cost / total;
+          const dash = fraction * circumference;
+          const ring = (
+            <circle
+              key={segment.name}
+              cx="54"
+              cy="54"
+              r={radius}
+              fill="none"
+              stroke={segment.color}
+              strokeWidth="11"
+              strokeDasharray={`${Math.max(dash - 1.5, 0)} ${circumference}`}
+              strokeDashoffset={-offset}
+            />
+          );
+          offset += dash;
+          return ring;
+        })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span
+          className="font-semibold leading-none tabular-nums"
+          style={{ color: C.textHi, fontSize: size >= 180 ? 21 : 15 }}
+        >
+          {centerValue}
+        </span>
+        {centerUnit && (
+          <span className="mt-1 font-medium" style={{ color: C.muted, fontSize: size >= 180 ? 12 : 10 }}>{centerUnit}</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ──────────────────�����──────────────────────────────────────────────────────────
 // AnimatedCounter — plynule animuje číslo z 0 → value při mount
 // ─────────────────────────────────────────────────────────────────────────────

@@ -47,8 +47,8 @@ const DEFAULT_BG_SETTINGS: BackgroundSettings = {
   ],
   direction: 'to bottom',
   opacity: 100,
-  imageUrl: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000',
-  imageOpacity: 15,
+  imageUrl: '',
+  imageOpacity: 0,
   imageBlur: 0,
 };
 
@@ -536,23 +536,8 @@ const AppContent: React.FC = () => {
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
       {!hospitalLoading && activeHospitalId && <DeviceRegistration key={activeHospitalId} />}
-      {/* Dynamic Background Layer - Controlled by BackgroundManager settings */}
+      {/* Lehké CSS pozadí řízené nastavením — bez fotografií a síťových obrázků. */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Background Image Layer - lazy loaded for performance */}
-        {bgSettings.imageUrl && (
-          <img
-            src={bgSettings.imageUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover grayscale scale-105 transition-opacity duration-500"
-            style={{
-              opacity: bgSettings.imageOpacity / 100,
-              filter: bgSettings.imageBlur > 0 ? `blur(${bgSettings.imageBlur}px)` : undefined,
-            }}
-          />
-        )}
-        
         {/* Color/Gradient Overlay + animovaný efekt */}
         <AnimatedBackground settings={bgSettings} />
 

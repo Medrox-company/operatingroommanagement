@@ -12,7 +12,7 @@ import {
 import type { OperatingRoom } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
-  C, Card, AnimatedCounter,
+  C, Card, AnimatedCounter, DistributionHeader, DistributionRing, formatMinutes,
 } from './shared';
 import { GlassCalendar } from './AppCharts';
 
@@ -87,43 +87,6 @@ const PhaseMetric: React.FC<{
     <p className="mt-3 truncate text-[26px] font-light leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
   </div>
 );
-
-const PhaseRing: React.FC<{
-  label: string;
-  duration: number;
-  percentage: number;
-  color: string;
-}> = ({ label, duration, percentage, color }) => {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const dash = Math.max(0, Math.min(100, percentage)) / 100 * circumference;
-
-  return (
-    <div className="flex w-[126px] shrink-0 flex-col items-center text-center">
-      <div className="relative h-[112px] w-[112px]">
-        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
-          <circle cx="50" cy="50" r={radius} fill="none" stroke={C.ghost} strokeWidth="7" />
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth="7"
-            strokeLinecap="round"
-            strokeDasharray={`${dash} ${circumference - dash}`}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-light tabular-nums" style={{ color: C.textHi }}>{Math.round(duration)}</span>
-          <span className="text-[8px] uppercase tracking-wider" style={{ color: C.muted }}>min</span>
-        </div>
-      </div>
-      <p className="mt-2 line-clamp-2 min-h-[30px] text-[10px] font-semibold leading-4" style={{ color: C.textHi }}>{label}</p>
-      <p className="mt-0.5 text-[9px] tabular-nums" style={{ color }}>{percentage} % cyklu</p>
-    </div>
-  );
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase Card Component — jednotlivá fáze s detailem
@@ -486,25 +449,32 @@ export function PhasesTab({
             </div>
           </Card>
 
-          <Card className={`p-5 lg:p-6 ${PHASE_CARD_CLASS}`}>
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Podíl jednotlivých fází</h3>
-                <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Poměr průměrného času vůči celému operačnímu cyklu</p>
-              </div>
-              <span className="rounded-md px-2.5 py-1 text-[10px] font-medium" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>
-                {cycleWorkflowAgg.filter(item => item.pct > 0).length} měřených fází
-              </span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-5">
+          <Card className={`relative overflow-hidden p-5 ${PHASE_CARD_CLASS}`}>
+            <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+            <DistributionHeader
+              eyebrow="Fáze"
+              title="Podíl jednotlivých fází"
+              subtitle="Poměr průměrného času vůči celému operačnímu cyklu"
+              badge={`${cycleWorkflowAgg.filter(item => item.pct > 0).length} měřených fází`}
+            />
+            <div className="mt-6 grid gap-x-5 gap-y-8 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
               {cycleWorkflowAgg.filter(item => item.pct > 0).map(item => (
-                <PhaseRing
-                  key={`${item.title}-${item.index}`}
-                  label={item.title}
-                  duration={avgStepDurations[item.index] || 0}
-                  percentage={item.pct}
-                  color={item.color}
-                />
+                <div key={`${item.title}-${item.index}`} className="flex min-w-0 flex-col items-center gap-2.5">
+                  <DistributionRing
+                    segments={[{ name: item.title, cost: item.pct, color: item.color }]}
+                    totalValue={100}
+                    centerValue={`${Math.round(item.pct)}%`}
+                    centerUnit={formatMinutes(avgStepDurations[item.index] || 0)}
+                  />
+                  <p className="max-w-full truncate text-center text-[12px] font-semibold" style={{ color: C.text }} title={item.title}>{item.title}</p>
+                  <div className="w-full max-w-[170px] space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.color }} />
+                      <span className="min-w-0 flex-1 truncate text-[10px]" style={{ color: C.muted }}>Podíl cyklu</span>
+                      <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: C.text }}>{item.pct.toFixed(1)} %</span>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </Card>
