@@ -46,6 +46,34 @@ const contrastText = (hex: string): string => {
 const CLEANING_WARNING_THRESHOLD_MS = 30 * 60 * 1000;
 const CLEANING_WARNING_VISIBLE_MS = 10 * 1000;
 
+// Dvouslovné názvy hlavních provozních fází držíme v kruhové grafice vždy
+// na dvou vyvážených řádcích. U ostatních, uživatelsky definovaných fází
+// zůstává zachované přirozené responzivní zalamování.
+const PHASE_TITLE_LINES: Record<string, [string, string]> = {
+  'sál připraven': ['Sál', 'připraven'],
+  'příjezd na sál': ['Příjezd', 'na sál'],
+  'ukončení výkonu': ['Ukončení', 'výkonu'],
+  'chirurgický výkon': ['Chirurgický', 'výkon'],
+  'odjezd ze sálu': ['Odjezd', 'ze sálu'],
+  'začátek anestezie': ['Začátek', 'anestezie'],
+  'ukončení anestezie': ['Ukončení', 'anestezie'],
+};
+
+const renderPhaseTitle = (title?: string): React.ReactNode => {
+  const safeTitle = title?.trim() || 'Waiting';
+  const lines = PHASE_TITLE_LINES[safeTitle.toLocaleLowerCase('cs-CZ')];
+
+  if (!lines) return safeTitle;
+
+  return (
+    <>
+      <span className="whitespace-nowrap">{lines[0]}</span>
+      <br />
+      <span className="whitespace-nowrap">{lines[1]}</span>
+    </>
+  );
+};
+
 const resolvePhaseStartTime = (room: OperatingRoom): Date => {
   const latestSegment = room.statusHistory?.[room.statusHistory.length - 1];
   const rawStart = room.phaseStartedAt
@@ -1496,7 +1524,7 @@ const prevStep = activeDbStatuses.length > 0
                     DOKONČENÁ FÁZE
                   </p>
                   <h3 className="text-[clamp(0.875rem,min(2.4vw,4vh),1.875rem)] font-normal leading-tight tracking-[-0.01em] text-white/85">
-                    {prevStep.title}
+                    {renderPhaseTitle(prevStep.title)}
                   </h3>
                 </div>
               </motion.div>
@@ -1723,7 +1751,7 @@ const prevStep = activeDbStatuses.length > 0
                         room.isEmergency ? 'text-red-400' : 'text-white'
                       }`}
                     >
-                      {currentStep.title}
+                      {renderPhaseTitle(currentStep.title)}
                     </motion.h2>
 
 
@@ -1762,7 +1790,7 @@ const prevStep = activeDbStatuses.length > 0
                 {isFinalStep ? 'NOVÝ CYKLUS' : 'NÁSLEDUJÍCÍ FÁZE'}
               </p>
               <h3 className="text-[clamp(0.875rem,min(2.4vw,4vh),1.875rem)] font-normal leading-tight tracking-[-0.01em] text-white/85">
-                {nextStep.title}
+                {renderPhaseTitle(nextStep.title)}
               </h3>
             </div>
           </motion.div>
@@ -1771,7 +1799,7 @@ const prevStep = activeDbStatuses.length > 0
         {/* Time adjustment buttons - positioned below center circle, responsive to circle size */}
         {!isInteractionBlocked && (
           <div
-            className="pointer-events-none absolute inset-x-0 z-50 flex justify-center px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]"
+            className="room-detail-time-controls pointer-events-none absolute inset-x-0 z-50 flex justify-center px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]"
             style={{
               top: 'calc(50% + clamp(90px, min(15vw, 29vh), 250px) + clamp(0.5rem, 1.5vh, 1rem))',
             }}
@@ -1785,7 +1813,7 @@ const prevStep = activeDbStatuses.length > 0
             {/* Minus button - aligned below the left edge of the center circle */}
             <button 
               onClick={handleDecreaseTime}
-              className="pointer-events-auto flex shrink-0 items-center justify-center rounded-full border-2 opacity-80 shadow-lg backdrop-blur-md transition-opacity hover:opacity-90"
+              className="room-detail-time-control pointer-events-auto flex shrink-0 items-center justify-center rounded-full border-2 opacity-80 shadow-lg backdrop-blur-md transition-opacity hover:opacity-90"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
@@ -1794,13 +1822,13 @@ const prevStep = activeDbStatuses.length > 0
               }}
               aria-label="Zkrátit odhadovaný čas"
             >
-              <Minus className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
+              <Minus className="room-detail-time-control-icon w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
             </button>
 
             {/* Plus button - aligned below the right edge of the center circle */}
             <button 
               onClick={handleIncreaseTime}
-              className="pointer-events-auto flex shrink-0 items-center justify-center rounded-full border-2 opacity-80 shadow-lg backdrop-blur-md transition-opacity hover:opacity-90"
+              className="room-detail-time-control pointer-events-auto flex shrink-0 items-center justify-center rounded-full border-2 opacity-80 shadow-lg backdrop-blur-md transition-opacity hover:opacity-90"
               style={{
                 borderColor: `${activeColor}66`,
                 backgroundColor: 'rgba(255,255,255,0.03)',
@@ -1809,7 +1837,7 @@ const prevStep = activeDbStatuses.length > 0
               }}
               aria-label="Prodloužit odhadovaný čas"
             >
-              <Plus className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
+              <Plus className="room-detail-time-control-icon w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
             </button>
             </div>
           </div>

@@ -26,3 +26,24 @@
 
 - Náhledová trasa izoluje samotný dialog; levé menu z reference zůstává v reálném detailu sálu pod overlayem.
 - Barevné plochy jsou vytvořené statickými CSS přechody, aby byl zachován vzhled bez runtime animací.
+
+---
+
+# Design QA — responzivní detail sálu
+
+## Ověřené rozměry
+
+- 2138 × 1042 px: mezera mezi ovládáním času a rezervovaným prostorem časové osy 95 px.
+- 1280 × 720 px: mezera 28 px.
+- 1024 × 768 px: mezera 78 px.
+
+## Kontroly
+
+- Kružnice `+` a `−` se na obrazovkách s menší výškou proporcionálně zmenšují.
+- Při výšce do 760 px se ovládání posune o 8 px výše.
+- Hlavní kruhová grafika, boční ovládání a spodní časová osa nemění svou strukturu.
+- Ve všech ověřených rozměrech je překrytí nulové.
+- Konzole náhledu neobsahuje chyby ani varování.
+- Produkční sestavení prošlo bez chyby.
+
+final result: passed

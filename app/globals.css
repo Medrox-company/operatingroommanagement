@@ -1636,6 +1636,27 @@ html.capacitor-native select {
   }
 }
 
+/* Detail sálu: na nižších obrazovkách musí ovládání času skončit nad popisky
+   průběhu cyklu. Zmenšuje se pouze dvojice +/−; poloha hlavních fází i spodní
+   navigace zůstávají beze změny. */
+@media (min-width: 768px) and (max-height: 1100px) {
+  .room-detail-time-control {
+    width: clamp(3.5rem, 9vh, 5.5rem) !important;
+    height: clamp(3.5rem, 9vh, 5.5rem) !important;
+  }
+
+  .room-detail-time-control-icon {
+    width: clamp(2rem, 5vh, 3rem) !important;
+    height: clamp(2rem, 5vh, 3rem) !important;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 760px) {
+  .room-detail-time-controls {
+    transform: translateY(-0.5rem);
+  }
+}
+
 /* Safe area for mobile bottom navigation — plovoucí lišta (~70 px + odsazení) */
 .pb-mobile-nav {
   padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
