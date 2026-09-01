@@ -9,6 +9,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel } from '../types';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useHospital } from '../contexts/HospitalContext';
+import ModulePageHeading from './ModulePageHeading';
 
 // Types from database
 interface StaffMember {
@@ -641,14 +642,8 @@ export default function StaffManager() {
   return (
     <>
       <div className="min-h-full w-full pb-8 font-sans">
-      <header className="mb-7 space-y-3">
-        <div className="flex items-center gap-3">
-          <Shield className="h-4 w-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#FBBF24]">STAFF DIRECTORY</p>
-        </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-          Personál <span className="text-white/20">MANAGEMENT</span>
-        </h1>
+      <header className="mb-7">
+        <ModulePageHeading icon={Shield} kicker="STAFF DIRECTORY" title="PERSONÁL" mutedTitle="MANAGEMENT" />
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <p className="text-sm font-medium text-white/40">
             Správa anesteziologických lékařů, sálových sester a jejich dostupnosti

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import ModulePageHeading from './ModulePageHeading';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings as SettingsIcon,
@@ -468,14 +469,8 @@ const SystemSettingsModule: React.FC = () => {
 
   return (
     <div className="min-h-full w-full pb-8 font-sans">
-      <header className="mb-7 space-y-3">
-        <div className="flex items-center gap-3">
-          <SettingsIcon className="h-4 w-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#FBBF24]">SYSTEM CONTROL</p>
-        </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-          Nastavení <span className="text-white/20">SYSTÉMU</span>
-        </h1>
+      <header className="mb-7">
+        <ModulePageHeading icon={SettingsIcon} kicker="SYSTEM CONTROL" title="NASTAVENÍ" mutedTitle="SYSTÉMU" />
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <p className="text-sm font-medium text-white/40">
             Identita zařízení, dostupné moduly, zabezpečení a správa dat

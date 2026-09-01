@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Building2, Calendar, Users, Stethoscope, Settings as SettingsIcon, ArrowRight, Phone, Clock, Bell, Briefcase, BarChart3, Activity, Palette, ChevronLeft, Smartphone, ClipboardList } from 'lucide-react';
+import { Building2, Calendar, Users, Settings as SettingsIcon, ArrowLeft, ArrowRight, Clock, Bell, Briefcase, BarChart3, Activity, Smartphone, ClipboardList } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom, WeeklySchedule } from '../types';
 import { useHospital } from '../contexts/HospitalContext';
+import ModulePageHeading from './ModulePageHeading';
 
 const OperatingRoomsManager = dynamic(() => import('./OperatingRoomsManager'), { ssr: false });
 const RoomSpecialtyScheduleManager = dynamic(() => import('./RoomSpecialtyScheduleManager'), { ssr: false });
@@ -14,7 +15,6 @@ const StatisticsModule = dynamic(() => import('./StatisticsModule'), { ssr: fals
 const StaffManager = dynamic(() => import('./StaffManager'), { ssr: false });
 const StaffOverviewModule = dynamic(() => import('./StaffOverviewModule'), { ssr: false });
 const StatusesManager = dynamic(() => import('./StatusesManager'), { ssr: false });
-const BackgroundManager = dynamic(() => import('./BackgroundManager'), { ssr: false });
 const ManagementManager = dynamic(() => import('./ManagementManager'), { ssr: false });
 const DevicesManager = dynamic(() => import('./DevicesManager'), { ssr: false });
 const CalendarManager = dynamic(() => import('./CalendarManager'), { ssr: false });
@@ -30,6 +30,11 @@ interface SettingsPageProps {
 const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, onScheduleUpdate, resetTrigger = 0 }) => {
   const { activeHospitalId } = useHospital();
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  const [activeModuleIndex, setActiveModuleIndex] = useState(0);
+  const [carouselPaused, setCarouselPaused] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(1440);
+  const pointerStartX = useRef<number | null>(null);
+  const wheelLocked = useRef(false);
   
   useEffect(() => {
     setSelectedModule(null);
@@ -93,18 +98,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       accentColor: '#06B6D4',
     },
     {
-      id: 'background',
-      title: 'Pozadí',
-      description: 'Nastavení barev a CSS efektů pozadí',
-      icon: Palette,
-      accentColor: '#8B5CF6',
-    },
-    {
       id: 'management',
       title: 'Management',
       description: 'Správa kontaktů na management',
       icon: Briefcase,
-      accentColor: '#06B6D4',
+      accentColor: '#F97316',
     },
     {
       id: 'devices',
@@ -122,6 +120,37 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
     },
   ];
 
+  useEffect(() => {
+    const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+    updateViewportWidth();
+    window.addEventListener('resize', updateViewportWidth);
+    return () => window.removeEventListener('resize', updateViewportWidth);
+  }, []);
+
+  useEffect(() => {
+    if (selectedModule || carouselPaused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const autoplay = window.setInterval(() => {
+      setActiveModuleIndex(current => (current + 1) % settings.length);
+    }, 5200);
+
+    return () => window.clearInterval(autoplay);
+  }, [carouselPaused, selectedModule, settings.length]);
+
+  const goToModule = (index: number) => {
+    setActiveModuleIndex((index + settings.length) % settings.length);
+  };
+
+  const signedModuleDistance = (index: number) => {
+    let distance = index - activeModuleIndex;
+    const half = settings.length / 2;
+    if (distance > half) distance -= settings.length;
+    if (distance < -half) distance += settings.length;
+    return distance;
+  };
+
+  const carouselStep = Math.min(250, Math.max(viewportWidth < 840 ? 92 : 138, viewportWidth * 0.145));
+
   // Module wrapper with error boundary
   const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
@@ -138,10 +167,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
   );
 
   return (
-    // Rozcestník (bez vybraného modulu) potřebuje definovanou výšku (h-full),
-    // aby FitGrid správně změřil plochu a neproblikával. Po výběru modulu
-    // necháme min-h-screen, ať se obsah může rolovat.
-    <div className={`relative w-full ${selectedModule ? 'min-h-screen' : 'h-full'}`}>
+    // Rozcestník vždy přesně vyplní dostupný viewport bez stránkového scrollu.
+    // Delší obsah vybraných administračních modulů roluje pouze uvnitř této plochy.
+    <div className={`relative h-full min-h-0 w-full ${selectedModule ? 'hide-scrollbar overflow-y-auto' : 'overflow-hidden'}`}>
       {selectedModule === 'rooms' ? (
         <ModuleWrapper>
           <OperatingRoomsManager 
@@ -180,10 +208,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         <ModuleWrapper>
           <StatusesManager />
         </ModuleWrapper>
-      ) : selectedModule === 'background' ? (
-        <ModuleWrapper>
-          <BackgroundManager />
-        </ModuleWrapper>
       ) : selectedModule === 'calendar' ? (
         <ModuleWrapper>
           <CalendarManager />
@@ -201,90 +225,125 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           <SystemSettingsModule />
         </ModuleWrapper>
       ) : (
-        <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
-          <div className="max-w-[2400px] mx-auto w-full">
-            {/* Settings Header */}
-            <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-4 md:mb-10 lg:mb-12 flex-shrink-0">
-              <div className="text-center lg:text-left">
-                <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-                  <SettingsIcon className="w-4 h-4 text-[#8B5CF6]" />
-                  <p className="text-[10px] font-bold text-[#8B5CF6] tracking-[0.4em] uppercase">SYSTEM CONFIGURATION</p>
-                </div>
-                <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-                  NASTAVENÍ <span className="text-white/20">SYSTÉMU</span>
-                </h1>
-              </div>
+        <div className="relative h-full min-h-0 w-full overflow-hidden">
+          <div className="relative z-10 h-full min-h-0 overflow-hidden">
+            <header className="absolute inset-x-0 top-0 z-40 select-none px-4 py-[clamp(1rem,3.4dvh,2.5rem)] sm:px-6 md:pl-32 md:pr-10">
+              <ModulePageHeading
+                icon={SettingsIcon}
+                kicker="SYSTEM CONFIGURATION"
+                title="NASTAVENÍ"
+                mutedTitle="SYSTÉMU"
+              />
             </header>
 
-            {/* Settings Grid — stejný design jako dashboard (responzivní mřížka s rolováním) */}
-            <div className="pb-20 px-0 sm:px-2">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-5 md:gap-x-6 gap-y-4 sm:gap-y-6 md:gap-y-8">
-                {settings.map((setting, index) => {
-                  const Icon = setting.icon;
-                  const hasModuleContent = true;
-                  return (
-                    <div
-                      key={setting.id}
-                      onClick={() => {
-                        if (hasModuleContent) setSelectedModule(setting.id);
-                      }}
-                      className={`relative group h-[260px] sm:h-[340px] w-full transition-transform duration-300 ${hasModuleContent ? 'cursor-pointer hover:-translate-y-1 hover:z-50' : 'cursor-default'}`}
-                      style={{ zIndex: 1 }}
-                    >
-                      {/* Main Card Container */}
-                      <div className="absolute inset-0 z-0 rounded-[2.5rem] border transition-colors duration-200 bg-white/[0.025] border-white/[0.07] group-hover:bg-white/[0.045] group-hover:border-white/[0.12]" />
+            <section
+              data-settings-carousel
+              className="relative grid h-full min-h-0 place-items-center overflow-hidden [perspective:1500px] md:ml-[5.5rem]"
+              aria-label="Moduly nastavení"
+              onMouseEnter={() => setCarouselPaused(true)}
+              onMouseLeave={() => setCarouselPaused(false)}
+              onFocusCapture={() => setCarouselPaused(true)}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setCarouselPaused(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowRight') goToModule(activeModuleIndex + 1);
+                if (event.key === 'ArrowLeft') goToModule(activeModuleIndex - 1);
+                if (event.key === 'Home') goToModule(0);
+                if (event.key === 'End') goToModule(settings.length - 1);
+              }}
+              onWheel={(event) => {
+                event.preventDefault();
+                if (wheelLocked.current || Math.abs(event.deltaX) + Math.abs(event.deltaY) < 8) return;
+                wheelLocked.current = true;
+                goToModule(activeModuleIndex + ((event.deltaX || event.deltaY) > 0 ? 1 : -1));
+                window.setTimeout(() => { wheelLocked.current = false; }, 520);
+              }}
+              onPointerDown={(event) => {
+                if ((event.target as HTMLElement).closest('button')) return;
+                pointerStartX.current = event.clientX;
+              }}
+              onPointerUp={(event) => {
+                if (pointerStartX.current === null) return;
+                const distance = event.clientX - pointerStartX.current;
+                if (Math.abs(distance) > 45) goToModule(activeModuleIndex + (distance < 0 ? 1 : -1));
+                pointerStartX.current = null;
+              }}
+              onPointerCancel={() => { pointerStartX.current = null; }}
+            >
+              <button
+                type="button"
+                aria-label="Předchozí modul"
+                onClick={() => goToModule(activeModuleIndex - 1)}
+                className="absolute left-4 z-30 grid h-11 w-11 place-items-center rounded-full border border-[#93A1BD]/30 bg-[#0B1224]/70 text-[#D7DEEA] transition-colors hover:border-[#ABB8D3]/60 hover:bg-[#131F3B]/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF] sm:left-8 sm:h-13 sm:w-13 md:left-[clamp(2rem,4vw,4rem)]"
+              >
+                <ArrowLeft className="h-5 w-5" strokeWidth={1.4} />
+              </button>
 
-                      {/* Content Container */}
-                      <div className="relative h-full w-full z-10 p-6 flex flex-col">
-                        
-                        {/* Header */}
-                        <div className="w-full flex justify-center items-center min-w-0 gap-2 shrink-0 mb-4">
-                          <div className="flex flex-col min-w-0 flex-1 text-center">
-                            <p className="text-[9px] font-bold tracking-[0.3em] uppercase leading-none mb-2 truncate text-slate-500">
-                              MODUL
-                            </p>
-                            <h3 className="text-lg font-bold tracking-tight uppercase leading-none text-white/60 group-hover:text-white transition-colors duration-200 truncate">
-                              {setting.title}
-                            </h3>
-                          </div>
-                        </div>
+              <div className="absolute inset-0 grid place-items-center [perspective:1300px] [transform-style:preserve-3d]">
+                <div className="relative h-[clamp(16.25rem,48dvh,31.25rem)] w-[clamp(13rem,21vw,21.25rem)] [transform-style:preserve-3d]">
+                  {settings.map((setting, index) => {
+                    const Icon = setting.icon;
+                    const distance = signedModuleDistance(index);
+                    const absoluteDistance = Math.abs(distance);
+                    const isActive = distance === 0;
+                    const isVisible = absoluteDistance <= 4;
+                    const scale = Math.max(0.68, 1 - absoluteDistance * 0.095);
 
-                        {/* Central Content Wrapper */}
-                        <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-                          {/* Icon Container */}
-                          <div className="relative flex items-center justify-center mb-4">
-                            {/* Main Icon Box */}
-                            <div
-                              className="w-24 h-24 rounded-2xl border border-white/10 bg-white/[0.025] flex items-center justify-center group-hover:border-white/20 transition-colors duration-200"
-                            >
-                              <div style={{ color: setting.accentColor }}>
-                                <Icon className="w-16 h-16" strokeWidth={1.5} />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Description */}
-                          <p className="text-xs leading-relaxed text-center text-white/30 group-hover:text-white/50 transition-colors duration-200">
-                            {setting.description}
-                          </p>
-                        </div>
-
-                        {/* Bottom Info */}
-                        <div className="w-full space-y-3 shrink-0">
-                          <div className="flex items-center justify-center pt-3 border-t border-white/5">
-                            {hasModuleContent && (
-                              <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                <ArrowRight className="w-4 h-4" style={{ color: setting.accentColor }} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    return (
+                      <button
+                        key={setting.id}
+                        type="button"
+                        aria-label={`${index + 1} z ${settings.length}: ${setting.title}`}
+                        aria-current={isActive ? 'true' : undefined}
+                        aria-hidden={!isVisible}
+                        tabIndex={isActive ? 0 : -1}
+                        onClick={() => isActive ? setSelectedModule(setting.id) : goToModule(index)}
+                        className="group absolute inset-0 flex cursor-pointer flex-col overflow-hidden rounded-[24px] border p-[clamp(1.5rem,3vw,2.375rem)] text-left transition-[transform,opacity,filter,border-color,background-color] duration-700 ease-[cubic-bezier(0.2,0.72,0.22,1)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF]"
+                        style={{
+                          transform: `translate3d(${distance * carouselStep}px, ${absoluteDistance * 9}px, ${-absoluteDistance * 118}px) rotateY(${distance * -11}deg) scale(${scale})`,
+                          opacity: isVisible ? Math.max(0.18, 1 - absoluteDistance * 0.18) : 0,
+                          filter: `brightness(${Math.max(0.42, 1 - absoluteDistance * 0.13)})`,
+                          zIndex: 20 - absoluteDistance,
+                          pointerEvents: isVisible ? 'auto' : 'none',
+                          color: isActive ? '#E8EDF7' : '#B4BFD3',
+                          borderColor: isActive ? `${setting.accentColor}70` : 'rgba(139,158,193,0.2)',
+                          background: isActive
+                            ? `linear-gradient(180deg, ${setting.accentColor}4D 0%, ${setting.accentColor}1F 46%, rgba(5,10,23,0.92) 100%)`
+                            : 'linear-gradient(180deg, rgba(18,27,51,0.3), rgba(5,10,23,0.74))',
+                          boxShadow: '0 24px 70px rgba(0,0,0,0.28)',
+                        }}
+                      >
+                        <span className="mb-auto text-center text-[9px] font-semibold uppercase tracking-[0.38em] text-[#9EABC2]">
+                          MODUL
+                        </span>
+                        <Icon
+                          className="mb-7 h-[clamp(3.25rem,5vw,4rem)] w-[clamp(3.25rem,5vw,4rem)]"
+                          style={{ color: isActive ? setting.accentColor : '#B3BFD3' }}
+                          strokeWidth={1.25}
+                        />
+                        <span className="mb-2.5 text-[clamp(1.25rem,2vw,1.875rem)] font-normal uppercase leading-[1.05] tracking-[-0.035em] text-[#F1F4FA]">
+                          {setting.title}
+                        </span>
+                        <span className="min-h-[42px] text-xs leading-[1.55] text-[#919DB2]">
+                          {setting.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+
+              <button
+                type="button"
+                aria-label="Následující modul"
+                onClick={() => goToModule(activeModuleIndex + 1)}
+                className="absolute right-4 z-30 grid h-11 w-11 place-items-center rounded-full border border-[#93A1BD]/30 bg-[#0B1224]/70 text-[#D7DEEA] transition-colors hover:border-[#ABB8D3]/60 hover:bg-[#131F3B]/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF] sm:right-8 sm:h-13 sm:w-13 md:right-[clamp(2rem,4vw,4rem)]"
+              >
+                <ArrowRight className="h-5 w-5" strokeWidth={1.4} />
+              </button>
+            </section>
+
           </div>
         </div>
       )}

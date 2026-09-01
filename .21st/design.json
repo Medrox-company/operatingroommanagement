@@ -230,7 +230,13 @@
     "Statistics navigation uses a restrained icon-and-label glow menu with a 3D hover transition, persistent active state, horizontal mobile scrolling, and the original Czech tab names.",
     "Individual statistics tab buttons have no visible outline; selection is communicated by color, background tint, icon, and a short bottom indicator.",
     "Distribution cards in Finance, Rooms, Phases, Notifications, and Devices share the Finance card pattern: cyan eyebrow and top rule, 24px semibold title, 11px subtitle, compact uppercase badge, 132px segmented ring, and a compact legend.",
-    "The Rooms tab prioritizes actionable improvement insights in the main column and places the shared heat calendar directly below the operating-room summary in the sidebar."
+    "The Rooms tab prioritizes actionable improvement insights in the main column and places the shared heat calendar directly below the operating-room summary in the sidebar.",
+    "Authenticated modules share the Settings landing-page background and header typography; the operating-room detail intentionally preserves its own phase-driven background.",
+    "The Settings carousel is centered in the full viewport; its central card always shows a unique per-module accent that appears at the top and blends smoothly into the dark surface toward the bottom.",
+    "Application backgrounds are fixed CSS surfaces; the former background/design settings module, runtime background configuration, image backgrounds, and decorative background animation are removed.",
+    "The operating-room schedule uses the same restrained dark surfaces, compact KPI hierarchy, typography, borders, and cyan accents as Statistics → Rooms; its summary metrics and planning-period controls form one uninterrupted horizontal row with overflow access on narrow screens while preserving week, month, year, assignment, repetition, and database behaviors.",
+    "The Settings hub is constrained to the available application viewport without page scrolling; its carousel scales with viewport height, its page heading remains outside the gesture layer and stationary, while long selected administration modules scroll only inside their content area.",
+    "The operating-room schedule marks Czech public holidays with a restrained amber accent in week, month, and year views and repeats the holiday name in the assignment dialog without blocking exceptional scheduling."
   ],
   "evidence": [
     {

@@ -24,6 +24,7 @@ import type { OperatingRoom } from '../types';
 import { useStaffData } from '../hooks/useStaffData';
 import { MobileHeaderMetrics, MobileModuleHeader } from './mobile/MobileShell';
 import { useIsMobileDark } from '../hooks/useIsMobileDark';
+import ModulePageHeading from './ModulePageHeading';
 
 interface RoomWithStaff {
   id: string;
@@ -356,18 +357,14 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
         </MobileModuleHeader>
       </div>
 
-      <header className="hidden md:block mb-7 space-y-3">
-        <div className="flex items-center gap-3">
-          <Users className="w-4 h-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">REAL-TIME OVERVIEW</p>
-        </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-          Přehled <span className="text-white/20">PERSONÁLU</span>
-        </h1>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <p className="text-white/40 text-sm font-medium">
-            Živá mapa týmů, obsazení sálů a okamžité dostupnosti
-          </p>
+      <header className="hidden md:block mb-7">
+        <ModulePageHeading
+          icon={Users}
+          kicker="REAL-TIME OVERVIEW"
+          title="PŘEHLED"
+          mutedTitle="PERSONÁLU"
+        />
+        <div className="mt-3 flex justify-end">
           <div className="inline-flex items-center gap-2 text-[9px] tracking-[0.16em] font-bold text-emerald-300/75">
             <span className="relative flex w-2 h-2">
               <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-50" />

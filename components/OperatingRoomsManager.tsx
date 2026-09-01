@@ -6,6 +6,7 @@ import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEE
 import { updateOperatingRoom, createOperatingRoom, deleteOperatingRoom } from '../lib/db';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { useHospital } from '../contexts/HospitalContext';
+import ModulePageHeading from './ModulePageHeading';
 import {
   Plus, Trash2, Edit2, X, Check, AlertCircle, Calendar,
   Building2, ChevronDown, ChevronUp, Power, GripVertical, Search,
@@ -818,14 +819,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         backgroundSize: '20px 20px',
       }}
     >
-      <header className="mb-7 space-y-3">
-        <div className="flex items-center gap-3">
-          <span className="h-2 w-2 rounded-full bg-cyan-400" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-300/80">OR CONTROL</p>
-        </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-          Operační <span className="text-white">SÁLY</span>
-        </h1>
+      <header className="mb-7">
+        <ModulePageHeading icon={Building2} kicker="OR CONTROL" title="OPERAČNÍ" mutedTitle="SÁLY" />
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <p className="text-sm font-medium text-white/64">
             Konfigurace sálů, provozních režimů a týdenních rozvrhů

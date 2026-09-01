@@ -47,3 +47,25 @@
 - Produkční sestavení prošlo bez chyby.
 
 final result: passed
+
+---
+
+# Design QA — stránka nastavení systému
+
+## Zdroj
+
+- Reference: `design-qa-settings-reference.png`
+- Rozměr zachycení: 1440 × 1000 px
+- Referenční stav: první karta „Operační sály“ uprostřed karuselu
+
+## Implementace
+
+- Produkční komponenta: `components/SettingsPage.tsx`
+- Produkční sestavení Next.js prošlo včetně TypeScript kontroly.
+- Karusel zachovává všech 12 stávajících modulů a otevírá původní funkční obsah.
+
+## Blokace vizuálního porovnání
+
+Lokální aplikace se v ověřovacím prohlížeči otevřela na přihlašovací stránce. Bez přihlášené administrátorské relace nelze zachytit implementovanou stránku nastavení ve stejném stavu jako referenci. Zdrojový snímek je dostupný, výsledný produkční snímek zatím ne.
+
+final result: blocked

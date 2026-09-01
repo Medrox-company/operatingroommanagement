@@ -61,6 +61,62 @@
   --glow-red: 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
+/* Jednotný vizuální rámec hlavních modulů. Hodnoty odpovídají titulku a
+   pozadí úvodní obrazovky Nastavení systému. */
+.app-module-background {
+  background:
+    radial-gradient(80% 72% at 24% 2%, rgba(45, 51, 112, 0.9) 0%, rgba(25, 31, 72, 0.74) 34%, transparent 72%),
+    radial-gradient(55% 58% at 96% 100%, rgba(89, 44, 85, 0.48), transparent 72%),
+    #080d1b;
+}
+
+/* Pevný podklad detailu sálu. Fázové barevné vrstvy zůstávají uvnitř
+   RoomDetailu; shell už nenačítá uživatelskou konfiguraci ani animace. */
+.app-room-detail-background {
+  background: linear-gradient(180deg, #0a0a12 0%, #1a1a2e 100%);
+}
+
+.app-module-kicker {
+  color: #a8b3c8;
+  display: block;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.38em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.app-module-kicker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+}
+
+.app-module-title {
+  color: #f4f6fb;
+  display: block;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-size: clamp(2.25rem, 4.35vw, 4.5rem);
+  font-style: normal;
+  font-weight: 300;
+  letter-spacing: -0.055em;
+  line-height: 0.96;
+  text-transform: uppercase;
+}
+
+.module-page-heading {
+  min-width: 0;
+  text-align: left;
+}
+
+.app-module-title-muted {
+  color: #707da3;
+}
+
 :root {
   --font-sans: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -1017,9 +1073,16 @@ html.capacitor-native select {
      rozmazání takového podkladu není okem rozeznatelné, ale mobilní GPU za něj
      platí plnou cenu při každém posunu seznamu. */
 
-  .mobile-theme-surface {
-    background: var(--m-page-bg) !important;
+  .mobile-theme-surface:not(.mobile-timeline-room-detail) {
+    background:
+      radial-gradient(80% 72% at 24% 2%, rgba(45, 51, 112, 0.9) 0%, rgba(25, 31, 72, 0.74) 34%, transparent 72%),
+      radial-gradient(55% 58% at 96% 100%, rgba(89, 44, 85, 0.48), transparent 72%),
+      #080d1b !important;
     transition: background 240ms ease;
+  }
+
+  .mobile-timeline-room-detail.mobile-theme-surface {
+    background: var(--m-page-bg) !important;
   }
 
   .m-dark .mobile-glass-card {
@@ -1706,67 +1769,6 @@ html.capacitor-native select {
     transition-duration: 0.01ms !important;
   }
 }
-
-/* ════════════════ ANIMOVANÉ POZADÍ APLIKACE (lehké, CSS) ════════════════ */
-
-/* 1) Plynulý posun gradientu */
-@keyframes bg-gradient-pan {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-.bg-anim-gradient {
-  background-size: 220% 220% !important;
-  animation: bg-gradient-pan var(--bg-dur, 18s) ease infinite;
-  will-change: background-position;
-}
-
-/* 2) Jemné „dýchání" / pulz */
-@keyframes bg-breathe {
-  0%, 100% { filter: saturate(1) brightness(1); }
-  50%      { filter: saturate(1.25) brightness(1.12); }
-}
-.bg-anim-pulse {
-  animation: bg-breathe var(--bg-dur, 9s) ease-in-out infinite;
-  will-change: filter;
-}
-
-/* 3) Aurora — jedna GPU-kompozitní vrstva bez náročného blur filtru */
-@keyframes bg-aurora-drift {
-  0%   { transform: translate3d(-3%, -2%, 0) rotate(-5deg) scale(1.03); }
-  50%  { transform: translate3d(2%, 1.5%, 0) rotate(-1deg) scale(1.08); }
-  100% { transform: translate3d(4%, -1%, 0) rotate(3deg) scale(1.04); }
-}
-.bg-aurora-flow {
-  position: absolute;
-  inset: -24%;
-  contain: paint;
-  will-change: transform;
-  pointer-events: none;
-  animation: bg-aurora-drift var(--bg-dur, 22s) ease-in-out infinite alternate;
-}
-
-/* 4) Plovoucí částice / bokeh */
-@keyframes bg-rise {
-  0%   { transform: translateY(10vh) scale(0.5); opacity: 0; }
-  12%  { opacity: var(--p-op, 0.5); }
-  88%  { opacity: var(--p-op, 0.5); }
-  100% { transform: translateY(-110vh) scale(1); opacity: 0; }
-}
-.bg-particle {
-  position: absolute;
-  bottom: -8vh;
-  border-radius: 9999px;
-  will-change: transform, opacity;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bg-anim-gradient, .bg-anim-pulse, .bg-aurora-flow, .bg-particle { animation: none !important; }
-  .bg-aurora-flow { transform: translate3d(0, 0, 0) rotate(-2deg) scale(1.05); will-change: auto; }
-  .bg-particle { display: none !important; }
-}
-
 
 /* ── Print styles for Statistics Module export ─────────────────────────────────
    Strategie: BÍLÉ MINIMALISTICKÉ POZADÍ + plná data + barevné accenty.

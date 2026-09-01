@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Edit2, ChevronDown, X, Check, AlertCircle, Stethoscope } from 'lucide-react';
 import { DEFAULT_DEPARTMENTS, Department, SubDepartment } from '../constants';
+import ModulePageHeading from './ModulePageHeading';
 
 const DepartmentsManager: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>(DEFAULT_DEPARTMENTS);
@@ -70,16 +71,8 @@ const DepartmentsManager: React.FC = () => {
 
   return (
     <div className="w-full">
-      <header className="flex flex-col items-center lg:items-start justify-between gap-6 mb-16">
-        <div className="text-center lg:text-left">
-          <div className="flex items-center justify-center lg:justify-start gap-3 mb-2 opacity-60">
-            <Stethoscope className="w-4 h-4 text-[#FBBF24]" />
-            <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">DEPARTMENTS MANAGEMENT</p>
-          </div>
-          <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-            ODDELENI <span className="text-white/20">KLINIKY</span>
-          </h1>
-        </div>
+      <header className="mb-16 flex flex-col items-start justify-between gap-6">
+        <ModulePageHeading icon={Stethoscope} kicker="DEPARTMENTS MANAGEMENT" title="ODDĚLENÍ" mutedTitle="KLINIKY" />
       </header>
 
       <AnimatePresence>

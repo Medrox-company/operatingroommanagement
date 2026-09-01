@@ -57,7 +57,6 @@ Aplikace slouží pro **řízení a monitoring operačních sálů** v nemocnič
 │   ├── DepartmentsManager.tsx # Správa oddělení
 │   ├── ScheduleManager.tsx    # Správa rozvrhů
 │   ├── ShiftScheduleManager.tsx # Správa směn
-│   ├── BackgroundManager.tsx  # Správa pozadí
 │   ├── NotificationsManager.tsx # Správa notifikací
 │   └── PlaceholderView.tsx    # Placeholder komponenta
 ├── contexts/
@@ -232,7 +231,6 @@ interface DayWorkingHours {
 - `selectedRoomId` - ID vybraného sálu pro detail
 - `currentView` - Aktuální modul (dashboard, timeline, statistics...)
 - `isDbConnected` - Stav připojení k databázi
-- `bgSettings` - Nastavení pozadí
 
 **Klíčové funkce**:
 ```typescript
@@ -425,7 +423,6 @@ const DEFAULT_WEEKLY_SCHEDULE = {
 - Workflow statusy (StatusesManager)
 - Oddělení (DepartmentsManager)
 - Směny (ShiftScheduleManager)
-- Pozadí (BackgroundManager)
 - Notifikace (NotificationsManager)
 
 ### 5.9 LoginPage.tsx - Přihlášení

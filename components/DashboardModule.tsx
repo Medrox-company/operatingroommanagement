@@ -1,15 +1,15 @@
 'use client';
 
 import React, { memo, useMemo } from 'react';
-import { Activity, AlertTriangle, Bell, LayoutGrid, Lock, Shield } from 'lucide-react';
+import { Activity, Bell, LayoutGrid, Shield } from 'lucide-react';
 import type { OperatingRoom } from '../types';
-import AnimatedCounter from './AnimatedCounter';
 import LiveClock from './LiveClock';
 import RoomCard from './RoomCard';
 import { MobileHeaderMetrics, MobileModuleHeader } from './mobile/MobileShell';
 import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
 import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
 import { mergeCompletedOperations } from '../lib/completed-operations';
+import ModulePageHeading from './ModulePageHeading';
 
 interface DashboardModuleProps {
   rooms: OperatingRoom[];
@@ -56,13 +56,6 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
       noticeCount: rooms.filter((room) => room.noticeMessage).length + emergencyRooms.length,
     };
   }, [rooms]);
-
-  const desktopMetrics = [
-    { label: 'AKTIVNÍ', value: metrics.activeRooms.length, icon: Activity, color: 'text-[#22D3EE]', valueColor: '#22D3EE', show: true, pulse: false },
-    { label: 'PŘIPRAVENO', value: metrics.readyRooms.length, icon: LayoutGrid, color: 'text-[#34D399]', valueColor: '#34D399', show: true, pulse: false },
-    { label: 'NOUZE', value: metrics.emergencyRooms.length, icon: AlertTriangle, color: 'text-[#FF453A]', valueColor: '#FF453A', show: metrics.emergencyRooms.length > 0, pulse: true },
-    { label: 'UZAMČENO', value: metrics.lockedRooms.length, icon: Lock, color: 'text-[#FBBF24]', valueColor: '#FBBF24', show: metrics.lockedRooms.length > 0, pulse: false },
-  ].filter((metric) => metric.show);
 
   return (
     <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
@@ -111,38 +104,16 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
         {/* Hlavička: na tabletu (md–lg) skládaná na střed, třísloupcová mřížka
             se zapíná až od xl — na užších displejích se do ní titulek, hodiny
             a panel metrik nevešly a překrývaly se. */}
-        <header className="hidden md:flex md:flex-col md:items-center md:gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-end xl:gap-8 mb-6 md:mb-8 lg:mb-12 flex-shrink-0">
-          <div className="min-w-0 text-center xl:text-left">
-            <div className="flex items-center justify-center xl:justify-start gap-2 sm:gap-3 mb-1 sm:mb-2 opacity-60">
-              <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-[#FBBF24] shrink-0" />
-              <p className="text-[9px] sm:text-[10px] font-bold text-[#FBBF24] tracking-[0.2em] sm:tracking-[0.3em] xl:tracking-[0.4em] uppercase">APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ</p>
-            </div>
-            <h1 className="text-[clamp(1.5rem,4vw,4.5rem)] font-bold tracking-tight uppercase leading-none truncate flex items-center gap-3 sm:gap-4 justify-center xl:justify-start">
-              <span className="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0">
-                <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: '#34D399' }} />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ background: '#34D399', boxShadow: '0 0 10px #34D39988' }} />
-              </span>
-              <span>OPERAČNÍ <span className="text-white/20">SÁLY</span></span>
-            </h1>
-          </div>
+        <header className="hidden md:flex md:flex-col md:items-start md:gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-end xl:gap-8 mb-6 md:mb-8 lg:mb-12 flex-shrink-0">
+          <ModulePageHeading
+            icon={Shield}
+            kicker="APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ"
+            title="OPERAČNÍ"
+            mutedTitle="SÁLY"
+            titleClassName="truncate"
+          />
           <LiveClock />
-          <div className="flex min-w-0 max-w-full items-end justify-center xl:justify-end">
-            <div className="flex items-stretch gap-1 md:gap-2 p-1.5 md:p-2 bg-white/[0.04] border border-white/10 backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-              <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-              {desktopMetrics.map((stat, index) => (
-                <React.Fragment key={stat.label}>
-                  {index > 0 && <div className="w-px self-stretch my-2 bg-gradient-to-b from-transparent via-white/10 to-transparent" />}
-                  <div className={`flex flex-col items-center justify-center px-3 sm:px-5 xl:px-9 py-2 sm:py-3 md:py-4 rounded-2xl md:rounded-3xl hover:bg-white/5 transition-all min-w-[84px] sm:min-w-[104px] xl:min-w-[140px] z-10 ${stat.pulse ? 'animate-pulse' : ''}`}>
-                    <div className="flex items-center gap-1.5 sm:gap-2.5 mb-1 sm:mb-2">
-                      <stat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${stat.color}`} />
-                      <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/45">{stat.label}</p>
-                    </div>
-                    <div style={{ color: stat.valueColor }}><AnimatedCounter to={stat.value} /></div>
-                  </div>
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
+          <div aria-hidden />
         </header>
 
         <div className="pb-20 px-0 sm:px-2">

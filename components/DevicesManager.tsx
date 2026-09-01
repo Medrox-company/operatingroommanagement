@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import ModulePageHeading from './ModulePageHeading';
 import { 
   Smartphone, 
   Monitor, 
@@ -182,13 +183,7 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
       >
         <div className="flex items-center gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2 opacity-60">
-              <Smartphone className="w-4 h-4 text-blue-400" />
-              <p className="text-[10px] font-bold text-blue-400 tracking-[0.4em] uppercase">SPRÁVA ZAŘÍZENÍ</p>
-            </div>
-            <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-              REGISTROVANÁ <span className="text-white/20">ZAŘÍZENÍ</span>
-            </h1>
+            <ModulePageHeading icon={Smartphone} kicker="SPRÁVA ZAŘÍZENÍ" title="REGISTROVANÁ" mutedTitle="ZAŘÍZENÍ" />
           </div>
         </div>
         <button

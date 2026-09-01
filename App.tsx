@@ -24,12 +24,11 @@ const SettingsPage = dynamic(() => import('./components/SettingsPage'), { ssr: f
 const FlowMonitorModule = dynamic(() => import('./components/FlowMonitorModule'), { ssr: false, loading: ModuleLoader });
 import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import AnimatedBackground from './components/AnimatedBackground';
 import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { AlertTriangle } from 'lucide-react';
-import { updateOperatingRoom, fetchBackgroundSettings, BackgroundSettings, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
+import { updateOperatingRoom, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HospitalProvider, useHospital } from './contexts/HospitalContext';
 import { RealtimeProvider } from './contexts/RealtimeContext';
@@ -39,19 +38,6 @@ import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 import { useOperatingRoomsData } from './hooks/useOperatingRoomsData';
 
 // Main App Content - Operating Rooms Management System
-const DEFAULT_BG_SETTINGS: BackgroundSettings = {
-  type: 'linear',
-  colors: [
-    { color: '#0a0a12', position: 0 },
-    { color: '#1a1a2e', position: 100 },
-  ],
-  direction: 'to bottom',
-  opacity: 100,
-  imageUrl: '',
-  imageOpacity: 0,
-  imageBlur: 0,
-};
-
 type CompletedOperations = NonNullable<OperatingRoom['completedOperations']>;
 type RoomStatusHistory = NonNullable<OperatingRoom['statusHistory']>;
 type StaffAssignmentField = 'doctor_id' | 'nurse_id' | 'anesthesiologist_id';
@@ -73,7 +59,6 @@ const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
-  const [bgSettings, setBgSettings] = useState<BackgroundSettings>(DEFAULT_BG_SETTINGS);
   const {
     rooms,
     roomsLoaded,
@@ -123,27 +108,6 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('load', register);
   }, []);
 
-  // Load background settings from database
-  useEffect(() => {
-    const loadBgSettings = async () => {
-      const dbSettings = await fetchBackgroundSettings();
-      if (dbSettings) {
-        setBgSettings(dbSettings);
-      }
-    };
-    loadBgSettings();
-  }, [activeHospitalId]);
-
-  // Listen for background settings changes
-  useEffect(() => {
-    const handleBgChange = (e: CustomEvent<BackgroundSettings>) => {
-      setBgSettings(e.detail);
-    };
-    window.addEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
-    return () => window.removeEventListener('backgroundSettingsChanged', handleBgChange as EventListener);
-  }, []);
-
-  // Generate CSS gradient from settings - memoized
   // Emergency audio je směrované pouze na stanici s otevřeným příslušným sálem.
   // Globální přehledy zachovají vizuální upozornění, ale zvuk nepřehrávají.
   useEmergencyAlert(rooms, selectedRoomId);
@@ -536,10 +500,11 @@ const AppContent: React.FC = () => {
     <ErrorBoundary>
     <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
       {!hospitalLoading && activeHospitalId && <DeviceRegistration key={activeHospitalId} />}
-      {/* Lehké CSS pozadí řízené nastavením — bez fotografií a síťových obrázků. */}
+      {/* Statická CSS pozadí — bez fotografií, vzdálených zdrojů a runtime konfigurace. */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Color/Gradient Overlay + animovaný efekt */}
-        <AnimatedBackground settings={bgSettings} />
+        <div
+          className={`${currentView === 'dashboard' && selectedRoom ? 'app-room-detail-background' : 'app-module-background'} absolute inset-0`}
+        />
 
       </div>
 
@@ -655,7 +620,7 @@ const AppContent: React.FC = () => {
 
             {/* Settings */}
             {currentView === 'settings' && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar">
+              <div className="h-full min-h-0 w-full overflow-hidden">
                 <SettingsPage 
                   rooms={rooms} 
                   onRoomsChange={setRooms} 

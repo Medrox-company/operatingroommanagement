@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import ModulePageHeading from './ModulePageHeading';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import {
   Activity,
@@ -329,14 +330,8 @@ const StatusesManager: React.FC = () => {
 
   return (
     <div className="min-h-full w-full pb-8 font-sans">
-      <header className="mb-7 space-y-3">
-        <div className="flex items-center gap-3">
-          <Activity className="h-4 w-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#FBBF24]">WORKFLOW CONTROL</p>
-        </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-          Správa <span className="text-white/20">STATUSŮ</span>
-        </h1>
+      <header className="mb-7">
+        <ModulePageHeading icon={Activity} kicker="WORKFLOW CONTROL" title="SPRÁVA" mutedTitle="STATUSŮ" />
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <p className="text-sm font-medium text-white/40">
             Fáze operačního workflow, barevné značení a pravidla statistik

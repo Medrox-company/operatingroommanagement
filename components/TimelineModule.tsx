@@ -1109,7 +1109,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   return (
     <div
       ref={moduleRootRef}
-      className="w-full h-full text-white overflow-hidden flex flex-col relative antialiased"
+      className={`w-full h-full text-white overflow-hidden flex flex-col relative antialiased ${isFullscreen ? 'app-module-background' : ''}`}
       style={{
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
@@ -1117,9 +1117,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
         // Kořen modulu bez pozadí i rámečku — tmavou plochu nese samotná
         // časová osa (shell). Ve fullscreenu tmavý přechod, aby plocha
         // za osou nebyla prázdná.
-        background: isFullscreen
-          ? 'radial-gradient(120% 90% at 50% 38%, #241b4f 0%, #140f2e 38%, #0a0a18 70%, #07070f 100%)'
-          : 'transparent',
+        background: 'transparent',
       }}
     >
       {/* Tečkovaná textura jen ve fullscreenu (jinak prosvítá pozadí dashboardu) */}

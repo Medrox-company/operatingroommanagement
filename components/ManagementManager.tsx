@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import ModulePageHeading from './ModulePageHeading';
 import { useHospital } from '../contexts/HospitalContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -517,14 +518,8 @@ export default function ManagementManager() {
 
   return (
     <div className="w-full min-h-full pb-8 font-sans">
-      <header className="mb-7 space-y-3">
-        <div className="flex items-center gap-3">
-          <BriefcaseBusiness className="h-4 w-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#FBBF24]">MANAGEMENT DIRECTORY</p>
-        </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-          Management <span className="text-white/20">KONTAKTY</span>
-        </h1>
+      <header className="mb-7">
+        <ModulePageHeading icon={BriefcaseBusiness} kicker="MANAGEMENT DIRECTORY" title="MANAGEMENT" mutedTitle="KONTAKTY" />
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <p className="text-sm font-medium text-white/40">
             Kontaktní síť vedení, distribuční pravidla a krizová komunikace

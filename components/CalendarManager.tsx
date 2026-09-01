@@ -9,6 +9,7 @@ import {
   GripVertical, Printer, FileText, Save, RefreshCw, Type, AlignLeft,
   AlignCenter, AlignRight, Merge, ChevronDown,
 } from 'lucide-react';
+import ModulePageHeading from './ModulePageHeading';
 
 // ─────────────────── Types ───────────────────
 type FontSize = 'xs' | 'sm' | 'base' | 'lg';
@@ -1184,15 +1185,7 @@ const CalendarManager: React.FC = () => {
     <div className="w-full h-full flex flex-col overflow-hidden select-none" onMouseLeave={() => { if (isDragging) handleMouseUp(); }}>
   {/* Header */}
   <header className="flex items-start justify-between gap-6 mb-4 flex-shrink-0">
-    <div className="text-left">
-      <div className="flex items-center gap-3 mb-2 opacity-60">
-        <Calendar className="w-4 h-4 text-[#FBBF24]" />
-        <p className="text-[10px] font-bold text-[#FBBF24] tracking-[0.4em] uppercase">SPRÁVA KALENDÁŘE</p>
-      </div>
-      <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold tracking-tight uppercase leading-none">
-        KALENDÁŘ <span className="text-white/20">UDÁLOSTÍ</span>
-      </h1>
-    </div>
+    <ModulePageHeading icon={Calendar} kicker="SPRÁVA KALENDÁŘE" title="KALENDÁŘ" mutedTitle="UDÁLOSTÍ" />
 
     {/* Month navigation - Right side */}
     <div className="flex items-center gap-2 mt-2">

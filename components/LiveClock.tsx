@@ -18,11 +18,10 @@ const LiveClock: React.FC = () => {
 
   return (
     <div className="hidden md:flex min-w-0 flex-col items-center justify-end leading-none select-none">
-      <span className="mb-1 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.3em] text-[#FBBF24] opacity-60 sm:mb-2 sm:text-[10px] sm:tracking-[0.4em]">
+      <span className="app-module-kicker mb-2 whitespace-nowrap opacity-60">
         {date}
       </span>
-      {/* Menší základ (4vw) — se 7vw se hodiny na tabletu překrývaly s titulkem */}
-      <span className="whitespace-nowrap text-[clamp(1.75rem,4vw,4.5rem)] font-bold tabular-nums tracking-tight text-white/90">
+      <span className="app-module-title whitespace-nowrap tabular-nums">
         {time}
       </span>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import ModulePageHeading from './ModulePageHeading';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -453,14 +454,8 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({ onNotificat
 
   return (
     <div className="w-full min-h-full pb-8 font-sans">
-      <header className="mb-7 space-y-3">
-        <div className="flex items-center gap-3">
-          <BellRing className="h-4 w-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#FBBF24]">NOTIFICATION CONTROL</p>
-        </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-          Notifikační <span className="text-white/20">CENTRUM</span>
-        </h1>
+      <header className="mb-7">
+        <ModulePageHeading icon={BellRing} kicker="NOTIFICATION CONTROL" title="NOTIFIKAČNÍ" mutedTitle="CENTRUM" />
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <p className="text-sm font-medium text-white/40">
             Komunikační kanály, systémová upozornění a kontrola doručování

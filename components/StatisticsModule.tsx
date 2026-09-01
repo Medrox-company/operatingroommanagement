@@ -35,6 +35,7 @@ import {
 // Čitelné grafy v jazyce aplikace (náhrada nečitelných recharts vizualizací)
 import { BarList, ColumnChart, SegmentBar, ScatterGrid, GaugeRing, RingRow, InsightPanel, StatSectionLabel, DayNavigator, OrbitRings, GlassCalendar, PhasePanel } from './statistics/AppCharts';
 import type { InsightItem, OrbitItem } from './statistics/AppCharts';
+import ModulePageHeading from './ModulePageHeading';
 const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
 const RoomsTab = dynamic(() => import('./statistics/RoomsTab').then((module) => module.RoomsTab), { ssr: false });
 const PhasesTab = dynamic(() => import('./statistics/PhasesTab').then((module) => module.PhasesTab), { ssr: false });
@@ -2526,15 +2527,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
       {/* ── Module header — stejný vzor jako ostatní desktopové moduly ── */}
       <header className="mb-8 print-hide">
-        <div className="mb-2 flex items-center gap-3 opacity-60">
-          <BarChart3 className="h-4 w-4 text-[#FBBF24]" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#FBBF24]">
-            OPERATINGROOM CONTROL
-          </p>
-        </div>
-        <h1 className="text-[clamp(2.25rem,7vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-          STATISTIKY
-        </h1>
+        <ModulePageHeading
+          icon={BarChart3}
+          kicker="OPERATINGROOM CONTROL"
+          title="STATISTIKY"
+        />
       </header>
 
       {/* ── Jeden ovládací řádek: vlevo záložky, vpravo období a export.
