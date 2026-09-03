@@ -264,7 +264,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           className={`dashboard-workspace-card-outline-path ${room.isEmergency
             ? 'dashboard-workspace-card-outline-path--emergency'
             : (room.isLocked ? 'dashboard-workspace-card-outline-path--locked' : '')}`}
-          d="M 85 0 H 606 A 76 76 0 0 1 682 76 A 78 78 0 0 0 760 154 H 898 A 82 82 0 0 1 980 236 V 663 A 86 86 0 0 1 894 749 H 86 A 86 86 0 0 1 0 663 V 85 A 85 85 0 0 1 85 0 Z"
+          d="M 85 0 H 600 A 76 76 0 0 1 676 76 A 84 84 0 0 0 760 160 H 898 A 82 82 0 0 1 980 242 V 663 A 86 86 0 0 1 894 749 H 86 A 86 86 0 0 1 0 663 V 85 A 85 85 0 0 1 85 0 Z"
           vectorEffect="non-scaling-stroke"
         />
       </svg>

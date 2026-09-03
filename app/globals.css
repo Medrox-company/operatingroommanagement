@@ -33,27 +33,27 @@
   --font-mono: "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
   
   /* Primary Colors */
-  --color-primary: #06B6D4;
-  --color-primary-muted: rgba(6, 182, 212, 0.15);
+  --color-primary: #14CBE8;
+  --color-primary-muted: rgba(20, 203, 232, 0.18);
   
   /* Status Colors - Medical */
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
-  --color-purple: #8B5CF6;
+  --color-success: #20C997;
+  --color-warning: #FFB020;
+  --color-danger: #FF5560;
+  --color-info: #5B8DEF;
+  --color-purple: #A878FF;
   
   /* Surface Colors */
-  --color-background: #030712;
-  --color-surface: rgba(15, 23, 42, 0.6);
-  --color-surface-elevated: rgba(30, 41, 59, 0.8);
-  --color-border: rgba(148, 163, 184, 0.1);
-  --color-border-hover: rgba(148, 163, 184, 0.2);
+  --color-background: #040816;
+  --color-surface: rgba(20, 30, 56, 0.68);
+  --color-surface-elevated: rgba(35, 48, 82, 0.86);
+  --color-border: rgba(166, 181, 215, 0.14);
+  --color-border-hover: rgba(176, 193, 229, 0.24);
   
   /* Text Colors */
   --color-text-primary: rgba(255, 255, 255, 0.95);
-  --color-text-secondary: rgba(255, 255, 255, 0.70);
-  --color-text-muted: rgba(255, 255, 255, 0.45);
+  --color-text-secondary: rgba(255, 255, 255, 0.76);
+  --color-text-muted: rgba(255, 255, 255, 0.52);
   
   /* Glow Effects */
   --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3);
@@ -65,9 +65,29 @@
    pozadí úvodní obrazovky Nastavení systému. */
 .app-module-background {
   background:
-    radial-gradient(80% 72% at 24% 2%, rgba(45, 51, 112, 0.9) 0%, rgba(25, 31, 72, 0.74) 34%, transparent 72%),
-    radial-gradient(55% 58% at 96% 100%, rgba(89, 44, 85, 0.48), transparent 72%),
-    #080d1b;
+    radial-gradient(80% 72% at 24% 2%, rgba(53, 62, 137, 0.96) 0%, rgba(27, 35, 84, 0.84) 35%, transparent 72%),
+    radial-gradient(55% 58% at 96% 100%, rgba(112, 48, 106, 0.58), transparent 72%),
+    #060b18;
+}
+
+/* Systémová volba vyššího kontrastu přidá rezervu pro starší SDR panely.
+   Barvy zůstávají stejné; mění se jen jejich oddělení od tmavého podkladu. */
+@media (prefers-contrast: more) {
+  :root {
+    --color-surface: rgba(27, 39, 72, 0.82);
+    --color-surface-elevated: rgba(43, 58, 96, 0.94);
+    --color-border: rgba(188, 202, 234, 0.22);
+    --color-text-secondary: rgba(255, 255, 255, 0.84);
+    --color-text-muted: rgba(255, 255, 255, 0.64);
+  }
+
+  .statistics-module {
+    --stats-surface: rgba(255, 255, 255, 0.055);
+    --stats-surface-2: rgba(255, 255, 255, 0.075);
+    --stats-border: rgba(210, 221, 250, 0.14);
+    --stats-muted: rgba(255, 255, 255, 0.68);
+    --stats-faint: rgba(255, 255, 255, 0.46);
+  }
 }
 
 /* Pevný podklad detailu sálu. Fázové barevné vrstvy zůstávají uvnitř
@@ -135,7 +155,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background: linear-gradient(180deg, #030712 0%, #0F172A 100%);
+  background: linear-gradient(180deg, #02050d 0%, #101a35 100%);
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -1513,19 +1533,19 @@ html.capacitor-native select {
   /* Statistiky mají na desktopu vlastní tmavý vizuální jazyk. Mobilní
      světlá varianta tyto tokeny přepisuje níže pouze uvnitř modulu. */
   --stats-bg: #0A0A0A;
-  --stats-surface: rgba(255, 255, 255, 0.025);
-  --stats-surface-2: rgba(255, 255, 255, 0.04);
-  --stats-surface-3: rgba(255, 255, 255, 0.06);
-  --stats-surface-hover: rgba(255, 255, 255, 0.08);
-  --stats-surface-active: rgba(255, 255, 255, 0.10);
-  --stats-border: rgba(255, 255, 255, 0.06);
-  --stats-border-hover: rgba(255, 255, 255, 0.12);
-  --stats-border-active: rgba(255, 255, 255, 0.18);
+  --stats-surface: rgba(255, 255, 255, 0.035);
+  --stats-surface-2: rgba(255, 255, 255, 0.055);
+  --stats-surface-3: rgba(255, 255, 255, 0.075);
+  --stats-surface-hover: rgba(255, 255, 255, 0.095);
+  --stats-surface-active: rgba(255, 255, 255, 0.12);
+  --stats-border: rgba(199, 211, 242, 0.08);
+  --stats-border-hover: rgba(205, 218, 250, 0.15);
+  --stats-border-active: rgba(211, 223, 255, 0.22);
   --stats-text: rgba(255, 255, 255, 0.88);
   --stats-text-strong: rgba(255, 255, 255, 0.95);
-  --stats-muted: rgba(255, 255, 255, 0.50);
-  --stats-faint: rgba(255, 255, 255, 0.25);
-  --stats-ghost: rgba(255, 255, 255, 0.08);
+  --stats-muted: rgba(255, 255, 255, 0.58);
+  --stats-faint: rgba(255, 255, 255, 0.34);
+  --stats-ghost: rgba(255, 255, 255, 0.11);
 }
 
 /* Statistiky používají napříč tabulkami, kartami, grafy a dialogy jediný
@@ -1592,22 +1612,22 @@ html.capacitor-native select {
   color-scheme: dark;
   --m-bg: #050A15;
   --m-page-bg:
-    radial-gradient(88% 42% at 50% -5%, rgba(111, 78, 255, 0.38) 0%, rgba(64, 43, 151, 0.16) 42%, transparent 72%),
-    radial-gradient(70% 30% at 50% 104%, rgba(16, 185, 129, 0.13) 0%, transparent 72%),
-    linear-gradient(180deg, #0A1023 0%, #07101E 48%, #040A14 100%);
-  --m-card: linear-gradient(145deg, rgba(27, 35, 65, 0.92) 0%, rgba(10, 18, 34, 0.96) 100%);
+    radial-gradient(88% 42% at 50% -5%, rgba(127, 88, 255, 0.48) 0%, rgba(72, 48, 172, 0.22) 42%, transparent 72%),
+    radial-gradient(70% 30% at 50% 104%, rgba(20, 201, 146, 0.18) 0%, transparent 72%),
+    linear-gradient(180deg, #0B1228 0%, #071121 48%, #030915 100%);
+  --m-card: linear-gradient(145deg, rgba(32, 42, 80, 0.94) 0%, rgba(10, 19, 38, 0.97) 100%);
   --m-card-solid: #10182B;
   --m-card-2: rgba(255, 255, 255, 0.055);
   --m-track: rgba(255, 255, 255, 0.10);
-  --m-border: rgba(158, 137, 255, 0.22);
-  --m-gridline: rgba(255, 255, 255, 0.07);
+  --m-border: rgba(174, 153, 255, 0.28);
+  --m-gridline: rgba(210, 221, 255, 0.09);
   --m-text: #F2F4FA;
   --m-text-strong: #FFFFFF;
-  --m-muted: rgba(255, 255, 255, 0.55);
-  --m-faint: rgba(255, 255, 255, 0.35);
-  --m-accent: #925CFF;
-  --m-accent-rgb: 146, 92, 255;
-  --m-accent-soft: rgba(146, 92, 255, 0.18);
+  --m-muted: rgba(255, 255, 255, 0.62);
+  --m-faint: rgba(255, 255, 255, 0.44);
+  --m-accent: #A36EFF;
+  --m-accent-rgb: 163, 110, 255;
+  --m-accent-soft: rgba(163, 110, 255, 0.22);
   --m-chip-track: rgba(255, 255, 255, 0.07);
   --m-nav-bg: linear-gradient(180deg, rgba(15, 25, 42, 0.94), rgba(8, 18, 30, 0.98));
   --m-nav-fg: rgba(255, 255, 255, 0.40);
@@ -1830,9 +1850,9 @@ html.capacitor-native select {
 
   .mobile-theme-surface:not(.mobile-timeline-room-detail) {
     background:
-      radial-gradient(80% 72% at 24% 2%, rgba(45, 51, 112, 0.9) 0%, rgba(25, 31, 72, 0.74) 34%, transparent 72%),
-      radial-gradient(55% 58% at 96% 100%, rgba(89, 44, 85, 0.48), transparent 72%),
-      #080d1b !important;
+      radial-gradient(80% 72% at 24% 2%, rgba(53, 62, 137, 0.96) 0%, rgba(27, 35, 84, 0.84) 35%, transparent 72%),
+      radial-gradient(55% 58% at 96% 100%, rgba(112, 48, 106, 0.58), transparent 72%),
+      #060b18 !important;
     transition: background 240ms ease;
   }
 
