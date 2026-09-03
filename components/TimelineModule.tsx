@@ -27,8 +27,6 @@ import {
   ROOM_LABEL_WIDTH,
   MIN_ROW_HEIGHT,
   MAX_ROW_HEIGHT,
-  ROW_GAP_PX,
-  ROW_PADDING_PX,
   ROOM_COLOR_ORDER,
   ROOM_COLORS,
   STEP_INDEX_COLORS,
@@ -67,7 +65,7 @@ const TimelineClockDisplay: React.FC<{ initialTime: Date }> = React.memo(() => {
 
   return (
     <div
-      className="timeline-clock-clean relative flex h-14 w-auto min-w-[108px] xl:min-w-[124px] xl:w-44 shrink-0 flex-col items-center justify-center px-1.5 xl:px-3 py-1"
+      className="timeline-clock-clean relative flex h-12 w-auto min-w-[108px] xl:min-w-[124px] xl:w-44 shrink-0 flex-col items-center justify-center px-1.5 xl:px-3 py-1"
       aria-label={`Aktuální čas ${clockTime.toLocaleTimeString('cs-CZ')}`}
     >
       <motion.p
@@ -254,7 +252,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   const [showPhaseOptimizer, setShowPhaseOptimizer] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   // --- Nové funkce: vyhledávání, filtr stavu, zoom časové osy, hover tooltip ---
-  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   // Zoom odstraněn — osa vždy zobrazuje celý den (konstanta ponechána, aby
   // navazující logika (minimapa, sub-hodinové dílky) zůstala typově konzistentní).
@@ -298,7 +295,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
     return () => ro.disconnect();
   }, []);
   const rowsContainerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const moduleRootRef = useRef<HTMLDivElement>(null);
   // TV / fullscreen režim — pro nástěnnou obrazovku na operačním traktu
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -411,7 +407,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
     if (timelineRef.current) timelineRef.current.scrollTo({ left: target, behavior: 'smooth' });
   }, []);
 
-  // Klávesové zkratky: T = skok na teď, + / − = zoom, / = hledání.
+  // Klávesové zkratky: T = skok na teď, F = celá obrazovka.
   // Ignorují se, když uživatel píše do inputu.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -420,9 +416,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 't' || e.key === 'T') {
         scrollToNow();
-      } else if (e.key === '/') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
       } else if (e.key === 'f' || e.key === 'F') {
         toggleFullscreen();
       } else if (e.key === 'Escape') {
@@ -478,18 +471,12 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
     );
   }, [currentTime]);
 
-  // --- Filtrované sály: vyhledávání (název / oddělení) + filtr stavu ---
+  // --- Filtrované sály podle provozního stavu ---
   // Stav odvozujeme z currentStepIndex: 0 = volný (Sál připraven), >0 = probíhá.
   // Sály ve stavu nouze se zobrazují vždy (kritické).
   const displayRooms = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
     const filtered = sortedRooms.filter((room) => {
       if (room.isEmergency) return true;
-      const matchesSearch =
-        !q ||
-        room.name?.toLowerCase().includes(q) ||
-        room.department?.toLowerCase().includes(q);
-      if (!matchesSearch) return false;
       const isRoomActive = room.currentStepIndex > 0 || room.isLocked || room.isPaused;
       if (statusFilter === 'active') return isRoomActive;
       if (statusFilter === 'free') return !isRoomActive;
@@ -508,18 +495,11 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       return [...filtered].sort((a, b) => rank(a) - rank(b) || (a.name || '').localeCompare(b.name || '', 'cs'));
     }
     return filtered; // 'default' = původní pořadí (sort_order z DB)
-  }, [sortedRooms, searchQuery, statusFilter, sortMode, roomRequiresAttention]);
+  }, [sortedRooms, statusFilter, sortMode, roomRequiresAttention]);
 
   // Pro statistiky zobrazujeme VŠECHNY sály bez filtrování
   const allRoomsForStats = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const filtered = sortedRooms.filter((room) => {
-      const matchesSearch =
-        !q ||
-        room.name?.toLowerCase().includes(q) ||
-        room.department?.toLowerCase().includes(q);
-      return matchesSearch;
-    });
+    const filtered = sortedRooms;
     
     if (sortMode === 'name') {
       return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'cs'));
@@ -530,7 +510,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       return [...filtered].sort((a, b) => rank(a) - rank(b) || (a.name || '').localeCompare(b.name || '', 'cs'));
     }
     return filtered;
-  }, [sortedRooms, searchQuery, sortMode]);
+  }, [sortedRooms, sortMode]);
   
   // Calculate responsive row height — všechny sály se MUSÍ vejít bez scrollování.
   // useLayoutEffect: výška se nastaví PŘED prvním vykreslením → žádné poskočení/blikání.
@@ -543,8 +523,11 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
         if (density === 'comfort') { setRowHeight(88); return; }
         // 'auto' — všechny sály se vejdou bez scrollování.
         const containerHeight = rowsContainerRef.current.clientHeight;
-        const totalGapPx = (count - 1) * ROW_GAP_PX;
-        const totalPaddingPx = ROW_PADDING_PX * 2; // top + bottom
+        // Řádky tvoří souvislou tabulku bez mezer a bez svislého odsazení.
+        // Dostupnou výšku proto rozdělíme celou, aby poslední sál vždy dosedl
+        // přesně na spodní hranu kontejneru.
+        const totalGapPx = 0;
+        const totalPaddingPx = 0;
         const availableHeight = Math.max(0, containerHeight - totalGapPx - totalPaddingPx);
         // Math.floor → zaokrouhli dolů, aby ani 1px subpixel rounding nezpůsobil overflow
         const calculatedHeight = Math.floor(availableHeight / count);
@@ -1114,19 +1097,8 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
         textRendering: 'optimizeLegibility',
-        // Kořen modulu bez pozadí i rámečku — tmavou plochu nese samotná
-        // časová osa (shell). Ve fullscreenu tmavý přechod, aby plocha
-        // za osou nebyla prázdná.
-        background: 'transparent',
       }}
     >
-      {/* Tečkovaná textura jen ve fullscreenu (jinak prosvítá pozadí dashboardu) */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none opacity-[0.06] z-0"
-        style={{ display: isFullscreen ? 'block' : 'none', backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '26px 26px' }}
-      />
-
       {/* Room Detail Popup */}
       <AnimatePresence>
         {detailRoom && (
@@ -1190,37 +1162,38 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
             : 'conic-gradient(rgba(255,255,255,.08) 0% 100%)';
           return (
             <motion.div
-              className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+              className="timeline-popup-overlay fixed inset-0 z-[120] flex items-center justify-center p-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setStatsRoomId(null)}
-              style={{ background: 'rgba(5,8,16,0.72)', backdropFilter: 'blur(6px)' }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Statistiky sálu ${sr.name}`}
             >
               <motion.div
-                className="w-full max-w-5xl max-h-[calc(100vh-32px)] overflow-y-auto rounded-2xl"
+                className="timeline-popup-panel w-full max-w-5xl max-h-[calc(100vh-32px)] overflow-y-auto"
                 initial={{ scale: 0.96, y: 12 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.96, y: 12 }}
                 onClick={(e) => e.stopPropagation()}
-                style={{ background: 'linear-gradient(180deg, rgba(17,24,39,0.98) 0%, rgba(10,15,26,0.98) 100%)', border: `1px solid ${C.borderStrong}`, boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}
               >
                 {/* Hlavička */}
-                <div className="flex items-center justify-between gap-4 px-5 py-4" style={{ borderBottom: `1px solid ${C.border}`, borderLeft: `4px solid ${col}` }}>
+                <div className="timeline-popup-header flex items-center justify-between gap-4 px-5 py-4" style={{ borderLeft: `4px solid ${col}` }}>
                   <div className="flex flex-col leading-tight min-w-0">
-                    <span className="text-base font-bold truncate" style={{ color: C.textHi }}>
+                    <h2 className="truncate" style={{ color: C.textHi }}>
                       {sr.name}
                       {sr.isEmergency && <span className="ml-2 text-[9px] font-bold uppercase" style={{ color: C.red }}>NOUZE</span>}
                       {sr.isPaused && <span className="ml-2 text-[9px] font-bold uppercase" style={{ color: C.yellow }}>PAUZA</span>}
-                    </span>
-                    <span className="text-[11px] text-white/40">
+                    </h2>
+                    <p className="mt-1 uppercase">
                       {sr.department || 'Operační sál'} · statistiky pro {currentTime.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </span>
+                    </p>
                   </div>
                   <button
                     onClick={() => setStatsRoomId(null)}
                     aria-label="Zavřít"
-                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10 flex-shrink-0"
+                    className="timeline-popup-close w-9 h-9 flex items-center justify-center transition-colors flex-shrink-0"
                   >
                     <X className="w-4 h-4 text-white/60" />
                   </button>
@@ -1229,7 +1202,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 {/* KPI mřížka */}
                 <div className="grid grid-cols-3 gap-2 px-5 pt-4">
                   {kpis.map((k, i) => (
-                    <div key={i} className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
+                    <div key={i} className="timeline-popup-metric flex flex-col items-center justify-center gap-1 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
                       <span className="text-lg font-bold tabular-nums leading-none" style={{ color: k.color }}>{k.value}</span>
                       <span className="text-[9px] uppercase tracking-wider text-white/40 text-center leading-tight">{k.label}</span>
                     </div>
@@ -1237,7 +1210,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 </div>
 
                 {/* Cesta výkonu — stejné grafické vyjádření jako detail fáze. */}
-                <div className="px-5 py-5">
+                <div className="timeline-popup-chart mx-5 my-4 p-5">
                   <div className="flex items-end justify-between mb-3">
                     <div>
                       <span className="text-[10px] uppercase tracking-[0.22em] font-bold text-white/40">Cesta výkonu</span>
@@ -1246,7 +1219,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                     <span className="text-[10px] font-mono text-white/35">100 %</span>
                   </div>
 
-                  <div className="flex w-full h-11 rounded-xl overflow-hidden gap-[2px] bg-white/[0.035] p-[2px] mb-5">
+                  <div className="timeline-popup-data-bar flex w-full h-11 rounded-xl overflow-hidden gap-[2px] bg-white/[0.035] p-[2px] mb-5">
                     {summaryPhases.map((phase, index) => {
                       const share = summaryTotalMs > 0 ? (phase.ms / summaryTotalMs) * 100 : 0;
                       const labelColor = getReadableTextColor(phase.color);
@@ -1277,7 +1250,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                       {summaryPhases.slice(0, Math.ceil(summaryPhases.length / 2)).map((phase) => {
                         const share = summaryTotalMs > 0 ? (phase.ms / summaryTotalMs) * 100 : 0;
                         return (
-                          <div key={phase.name} className="rounded-xl px-3 py-2.5 flex items-center gap-3" style={{ background: `${phase.color}12`, border: `1px solid ${phase.color}35` }}>
+                          <div key={phase.name} className="timeline-popup-row rounded-xl px-3 py-2.5 flex items-center gap-3" style={{ background: `${phase.color}12`, border: `1px solid ${phase.color}35` }}>
                             <span className="w-2.5 h-9 rounded-full" style={{ background: phase.color }} />
                             <span className="min-w-0 flex-1 text-[13px] font-bold text-white truncate">{phase.name}</span>
                             <span className="text-right"><strong className="block text-lg font-black" style={{ color: phase.color }}>{share.toFixed(1)} %</strong><small className="text-[9px] text-white/35">{phase.minutes} min</small></span>
@@ -1287,7 +1260,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                     </div>
 
                     <motion.div className="w-[190px] h-[190px] rounded-full p-[14px] mx-auto" style={{ background: summaryGradient }} initial={{ scale: .9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                      <div className="w-full h-full rounded-full flex flex-col items-center justify-center text-center" style={{ background: 'radial-gradient(circle at 40% 30%, #172238, #080e1b 72%)' }}>
+                      <div className="w-full h-full rounded-full flex flex-col items-center justify-center text-center" style={{ background: 'radial-gradient(circle at 38% 26%, rgba(77,92,165,.96), rgba(31,42,82,.98) 74%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.1)' }}>
                         <span className="text-[9px] uppercase tracking-[.2em] text-white/35">Celý den</span>
                         <strong className="text-[38px] font-black text-white mt-1">{sr.operations}</strong>
                         <span className="text-[10px] text-white/45">{sr.operations === 1 ? 'cyklus' : 'cykly'}</span>
@@ -1299,7 +1272,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                       {summaryPhases.slice(Math.ceil(summaryPhases.length / 2)).map((phase) => {
                         const share = summaryTotalMs > 0 ? (phase.ms / summaryTotalMs) * 100 : 0;
                         return (
-                          <div key={phase.name} className="rounded-xl px-3 py-2.5 flex items-center gap-3" style={{ background: `${phase.color}12`, border: `1px solid ${phase.color}35` }}>
+                          <div key={phase.name} className="timeline-popup-row rounded-xl px-3 py-2.5 flex items-center gap-3" style={{ background: `${phase.color}12`, border: `1px solid ${phase.color}35` }}>
                             <span className="w-2.5 h-9 rounded-full" style={{ background: phase.color }} />
                             <span className="min-w-0 flex-1 text-[13px] font-bold text-white truncate">{phase.name}</span>
                             <span className="text-right"><strong className="block text-lg font-black" style={{ color: phase.color }}>{share.toFixed(1)} %</strong><small className="text-[9px] text-white/35">{phase.minutes} min</small></span>
@@ -1507,7 +1480,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
           background: 'transparent',
         }}
       >
-        <div className={`${isFullscreen ? 'px-4' : 'px-5'} -mt-1 pt-1 pb-3`}>
+        <div className="px-5 -mt-1 pt-1 pb-3">
 
           {/* Jediná horní lišta — nástroje vlevo, čas uprostřed, zoom a ARO vpravo */}
           <div className="timeline-commandbar relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 xl:gap-3">
@@ -1517,7 +1490,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               <div className="hidden md:flex items-center min-w-0 max-w-full overflow-visible">
             {/* Akční cluster: živá data / souhrn / řazení */}
             <div
-              className="timeline-toolbar-float hidden md:flex items-center h-14 shrink-0 rounded-2xl px-1 xl:px-2 gap-0.5 xl:gap-1"
+              className="timeline-toolbar-float hidden md:flex items-center h-12 shrink-0 rounded-lg px-1 xl:px-2 gap-0.5 xl:gap-1"
             >
               {/* Indikátor živých dat + ruční obnovení */}
               <button
@@ -1618,7 +1591,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 <AnimatePresence>
                   {showLegend && (
                     <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowLegend(false)} />
+                      <button type="button" aria-label="Zavřít legendu časové osy" className="fixed inset-0 z-40 cursor-default" onClick={() => setShowLegend(false)} />
                       <motion.div
                         initial={{ opacity: 0, y: -6, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1626,7 +1599,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                         transition={{ duration: 0.12 }}
                         role="dialog"
                         aria-label="Legenda časové osy"
-                        className="absolute left-0 top-11 z-50 w-[360px] rounded-xl overflow-hidden p-4"
+                        className="timeline-popup-panel absolute left-0 top-11 z-50 w-[360px] overflow-hidden p-4"
                         style={{
                           background: 'rgba(5,14,24,0.98)',
                           border: `1px solid ${C.borderStrong}`,
@@ -1642,7 +1615,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                           <button
                             onClick={() => setShowLegend(false)}
                             aria-label="Zavřít legendu"
-                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/5"
+                            className="timeline-popup-close w-7 h-7 flex items-center justify-center transition-colors"
                           >
                             <X className="w-3.5 h-3.5 text-white/50" />
                           </button>
@@ -1695,14 +1668,14 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 <AnimatePresence>
                   {showToolsMenu && (
                     <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowToolsMenu(false)} />
+                      <button type="button" aria-label="Zavřít nabídku nástrojů" className="fixed inset-0 z-40 cursor-default" onClick={() => setShowToolsMenu(false)} />
                       <motion.div
                         initial={{ opacity: 0, y: -6, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.12 }}
                         role="menu"
-                        className="absolute left-0 top-11 z-50 w-64 rounded-2xl overflow-hidden p-1.5"
+                        className="timeline-popup-panel absolute left-0 top-11 z-50 w-64 overflow-hidden p-1.5"
                         style={{
                           background: 'rgba(7,16,25,0.98)',
                           border: `1px solid ${C.borderStrong}`,
@@ -1837,14 +1810,14 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 <AnimatePresence>
                   {showSortMenu && (
                     <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
+                      <button type="button" aria-label="Zavřít nabídku řazení" className="fixed inset-0 z-40 cursor-default" onClick={() => setShowSortMenu(false)} />
                       <motion.div
                         initial={{ opacity: 0, y: -6, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.12 }}
                         role="menu"
-                        className="absolute right-0 top-11 z-50 w-44 rounded-xl overflow-hidden py-1"
+                        className="timeline-popup-panel absolute right-0 top-11 z-50 w-44 overflow-hidden py-1"
                         style={{ background: '#0f141c', border: `1px solid ${C.borderStrong}`, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}
                       >
                         {([
@@ -1883,7 +1856,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
             {aroOvertimeRooms.length > 0 ? (
               <motion.button
                 onClick={() => setShowAroPopup(true)}
-                className="relative flex-shrink-0 h-14 rounded-2xl px-4 py-2 overflow-hidden transition-transform duration-300 hover:scale-[1.02] cursor-pointer"
+                className="relative flex-shrink-0 h-12 rounded-lg px-4 py-2 overflow-hidden transition-transform duration-300 hover:scale-[1.02] cursor-pointer"
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 style={{
@@ -1916,7 +1889,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               </motion.button>
             ) : (
               <div
-                className="timeline-status-calm flex-shrink-0 h-14 rounded-2xl px-4 py-2 flex items-center gap-2.5"
+                className="timeline-status-calm flex-shrink-0 h-12 rounded-lg px-4 py-2 flex items-center gap-2.5"
                 style={{
                   background: `linear-gradient(135deg, ${C.green}15 0%, ${C.green}05 100%)`,
                 }}
@@ -1940,66 +1913,28 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
 
       {/* ======== Main Timeline ======== */}
-      <div className={`timeline-scheduler-shell flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden rounded-[30px] ${isFullscreen ? 'mx-4' : 'mx-4 sm:mx-6'}`}>
+      <div className="timeline-scheduler-shell mx-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg sm:mx-6 relative z-10">
 
         {/* Time Axis Header — tmavší pás nad řádky; vnější hranu kreslí shell */}
         <div
-          className="flex flex-shrink-0 rounded-t-[24px] relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(180deg, rgba(7,10,20,0.95) 0%, rgba(4,6,14,0.45) 100%)',
-            borderBottom: '1px solid rgba(156,169,218,0.10)',
-            boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.35)',
-          }}
+          className="timeline-axis-header flex flex-shrink-0 relative overflow-hidden"
         >
           {/* Jemný horní akcent bez záře */}
           <div className="absolute top-0 left-12 right-12 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(92,221,232,0.22), transparent)' }} />
           
-          {/* Room label header — vyhledávání + filtr stavu */}
+          {/* Room label header — filtr stavu přes celou šířku sloupce */}
           <div 
-            className="flex-shrink-0 flex flex-col justify-center px-4 py-1.5 gap-1.5"
+            className="flex-shrink-0 flex items-center px-4 py-1.5"
             style={{ 
               width: ROOM_LABEL_WIDTH, 
               minWidth: ROOM_LABEL_WIDTH, 
+              background: 'rgba(255,255,255,0.035)',
               borderRight: '1px solid rgba(160,174,220,0.09)',
             }}
           >
-            <div className="flex items-center justify-between px-0.5">
-              <span className="flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-[0.2em] text-white/45">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: showSummary ? C.blue : C.green }}
-                />
-                {showSummary ? 'Denní souhrn' : 'Živý operační program'}
-              </span>
-              <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-white/28 tabular-nums">
-                {displayRooms.length} / {sortedRooms.length} sálů
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Search input */}
+            <div className="flex w-full items-center">
               <div
-                className="timeline-field-soft flex items-center gap-2 flex-1 min-w-0 h-8 rounded-xl px-2.5 transition-colors focus-within:bg-white/[0.05]"
-              >
-                <Search className="w-3.5 h-3.5 flex-shrink-0 text-white/35" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur(); } }}
-                  placeholder="Hledat sál…  ( / )"
-                  className="flex-1 min-w-0 bg-transparent outline-none text-xs text-white placeholder:text-white/30"
-                  aria-label="Hledat operační sál"
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} aria-label="Vymazat hledání" className="flex-shrink-0">
-                    <X className="w-3 h-3 text-white/40 hover:text-white/70 transition-colors" />
-                  </button>
-                )}
-              </div>
-              {/* Status filter — segmentovaný přepínač */}
-              <div
-                className="timeline-field-soft flex items-center h-8 rounded-xl p-0.5 flex-shrink-0"
+                className="timeline-field-soft flex h-9 w-full items-center rounded-lg p-0.5"
               >
                 {([
                   { key: 'all', label: 'Vše' },
@@ -2014,7 +1949,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                       onClick={() => setStatusFilter(key)}
                       aria-pressed={active}
                       title={key === 'attention' ? 'Sály vyžadující pozornost' : undefined}
-                      className="text-[10px] font-semibold px-2 h-7 rounded-md transition-all"
+                      className="h-8 min-w-0 flex-1 rounded-md px-1 text-[10px] font-semibold transition-colors"
                       style={active ? {
                         background: `${key === 'attention' ? C.orange : C.cyan}20`,
                         color: key === 'attention' ? C.orange : C.cyan,
@@ -2034,7 +1969,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               proto se podle šířky buňky zmenší písmo a vypisuje se jen
               každá druhá / třetí hodina. */}
           <div className="flex-1 overflow-hidden" ref={timelineRef}>
-            <div className="flex items-center h-[70px] relative" style={{ width: `${zoom * 100}%`, transition: 'width 0.25s ease' }}>
+            <div className="flex items-center h-[58px] relative" style={{ width: `${zoom * 100}%`, transition: 'width 0.25s ease' }}>
               {/* Pásy RÁNO/DEN/VEČER/NOC odstraněny — jednotný vzhled celé osy */}
               {TIME_MARKERS.map((hour, i) => {
                 const isLast = i === TIME_MARKERS.length - 1;
@@ -2050,7 +1985,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                    a velikost písma. Aktuální hodina se vypíše vždy. */
                 const cellPx = axisWidth > 0 ? (axisWidth * zoom) / TIMELINE_HOURS : 999;
                 const labelStep = cellPx >= 34 ? 1 : cellPx >= 22 ? 2 : 3;
-                const labelFont = cellPx >= 34 ? 15 : cellPx >= 26 ? 13 : 11;
+                const labelFont = cellPx >= 34 ? 13 : cellPx >= 26 ? 12 : 10;
                 const showLabel = isCurrentHour || displayHour % labelStep === 0;
 
                 return (
@@ -2145,7 +2080,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
         {/* Room Rows Container */}
         <div
-          className="flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-b-[24px] timeline-scroll"
+          className="flex-1 min-h-0 overflow-x-auto overflow-y-auto timeline-scroll"
           style={{
             // Podklad řádků nese shell (tmavý gradient) — zde jen průhledná plocha
             // bez vlastního rámečku, aby se hrany nezdvojovaly.
@@ -2158,7 +2093,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
           }}
         >
           <div
-            className="relative min-h-full"
+            className={`relative ${density === 'auto' ? 'h-full' : 'min-h-full'}`}
             ref={scrollContainerRef}
             style={{
               width: `${zoom * 100}%`,
@@ -2309,13 +2244,13 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
             )}
 
             {/* Room Rows */}
-            <div className="relative z-10 flex flex-col gap-1.5 py-2.5">
+            <div className={`relative z-10 flex flex-col gap-0 ${density === 'auto' ? 'h-full' : ''}`}>
             {displayRooms.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                 <Search className="w-6 h-6 text-white/25" />
                 <p className="text-sm text-white/50">Žádné sály neodpovídají filtru</p>
                 <button
-                  onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
+                  onClick={() => setStatusFilter('all')}
                   className="text-xs font-medium px-3 py-1 rounded-md transition-colors"
                   style={{ color: C.cyan, background: `${C.cyan}14`, border: `1px solid ${C.cyan}30` }}
                 >
@@ -2404,9 +2339,14 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
                 // Prostoj před aktuálním výkonem: od konce předchozí operace do
                 // začátku té současné (kolik minut sál stál).
+                const gapWindowStart = new Date(currentTime);
+                gapWindowStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+                if (currentTime.getHours() < TIMELINE_START_HOUR) gapWindowStart.setDate(gapWindowStart.getDate() - 1);
                 const prevEnd = (room.completedOperations || [])
                   .map((op) => new Date(op.endedAt).getTime())
-                  .filter((t) => Number.isFinite(t) && t <= startDate.getTime())
+                  // Prostoje zobrazujeme jen mezi výkony ve stejném provozním dni.
+                  // Předchozí den se nesmí natáhnout od začátku osy k prvnímu výkonu.
+                  .filter((t) => Number.isFinite(t) && t >= gapWindowStart.getTime() && t <= startDate.getTime())
                   .sort((a, b) => b - a)[0];
                 if (prevEnd) {
                   const mins = Math.round((startDate.getTime() - prevEnd) / 60000);
@@ -2453,8 +2393,10 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                     role="button"
                     tabIndex={0}
                     aria-label={`${room.name} — ${bannerLabel}`}
-                    className="timeline-room-row flex items-stretch cursor-pointer transition-all duration-200 group rounded-[14px] overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70"
-                    style={{ height: rowHeight }}
+                    className={`timeline-room-row ${roomIndex % 2 === 1 ? 'timeline-room-row-alt' : ''} flex items-stretch cursor-pointer transition-colors duration-200 group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/70`}
+                    style={density === 'auto'
+                      ? { flex: '1 1 0%', minHeight: MIN_ROW_HEIGHT }
+                      : { height: rowHeight, flex: '0 0 auto' }}
                     onClick={() => openLiveRoom(room.id)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
@@ -2467,8 +2409,8 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                       role="button"
                       tabIndex={0}
                       aria-label={`Celodenní souhrn sálu ${room.name}`}
-                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-all duration-200 group-hover:bg-white/[0.03] rounded-l-[14px]"
-                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, background: 'rgba(10,14,26,0.97)' }}
+                      className="timeline-room-label flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-colors duration-200 group-hover:bg-white/[0.04]"
+                      style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH }}
                       onClick={(event) => {
                         event.stopPropagation();
                         setStatsRoomId(room.id);
@@ -2529,18 +2471,12 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                   role="button"
                   tabIndex={0}
                   aria-label={`${room.name} — ${stepName}`}
-                    className={`timeline-room-row relative flex items-stretch group cursor-pointer rounded-[14px] overflow-hidden transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/65 ${room.isLocked ? 'locked-room-glow' : ''}`}
+                    className={`timeline-room-row ${roomIndex % 2 === 1 ? 'timeline-room-row-alt' : ''} relative flex items-stretch group cursor-pointer overflow-hidden transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/65 ${room.isLocked ? 'locked-room-glow' : ''}`}
                     style={{
-                      height: rowHeight,
-                      background: isActive
-                      ? `linear-gradient(100deg, ${stepColor}1E 0%, rgba(11,16,29,0.94) 32%, rgba(7,10,19,0.94) 100%)`
-                      : 'linear-gradient(100deg, rgba(11,16,29,0.72) 0%, rgba(7,10,19,0.62) 100%)',
-                    border: room.isLocked
-                      ? `1px solid ${C.borderActive}`
-                      : `1px solid ${isActive ? `${stepColor}42` : 'rgba(160,174,220,0.10)'}`,
-                    boxShadow: isActive
-                      ? `inset 0 1px 0 rgba(255,255,255,0.055), 0 10px 26px ${stepColor}0c`
-                      : 'inset 0 1px 0 rgba(255,255,255,0.025)',
+                      ...(density === 'auto'
+                        ? { flex: '1 1 0%', minHeight: MIN_ROW_HEIGHT }
+                        : { height: rowHeight, flex: '0 0 auto' }),
+                      ...(room.isLocked ? { borderColor: C.borderActive } : {}),
                   }}
                   onClick={() => (showSummary ? setStatsRoomId(room.id) : openLiveRoom(room.id))}
                   onKeyDown={(event) => {
@@ -2570,15 +2506,10 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                     role="button"
                     tabIndex={0}
                     aria-label={`Celodenní souhrn sálu ${room.name}`}
-                    className="flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-all duration-200 sticky left-0 z-20"
+                    className="timeline-room-label flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-all duration-200 sticky left-0 z-20"
                     style={{
                       width: ROOM_LABEL_WIDTH,
                       minWidth: ROOM_LABEL_WIDTH,
-                      background: isActive
-                        ? `linear-gradient(90deg, rgba(9,13,24,0.99), ${stepColor}0F)`
-                        : 'linear-gradient(90deg, rgba(9,13,24,0.99), rgba(11,15,28,0.94))',
-                      borderRight: `1px solid ${isActive ? `${stepColor}20` : 'rgba(160,174,220,0.08)'}`,
-                      boxShadow: '12px 0 28px -24px rgba(0,0,0,0.95)',
                     }}
                     onClick={(event) => {
                       event.stopPropagation();
@@ -2593,11 +2524,11 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                     }}
                   >
                     <div
-                      className="w-8 h-8 rounded-[11px] flex items-center justify-center flex-shrink-0 text-[10px] font-semibold tabular-nums"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-semibold tabular-nums"
                       style={{
-                        color: isActive ? stepColor : 'rgba(255,255,255,0.42)',
-                        background: isActive ? `${stepColor}16` : 'rgba(255,255,255,0.035)',
-                        border: `1px solid ${isActive ? `${stepColor}32` : 'rgba(148,180,196,0.12)'}`,
+                        color: 'rgba(255,255,255,0.42)',
+                        background: 'rgba(255,255,255,0.035)',
+                        border: '1px solid rgba(148,180,196,0.12)',
                       }}
                     >
                       {roomIndex + 1}
@@ -2679,19 +2610,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                     <div 
                       className="flex-1 min-w-0 flex items-center gap-3"
                     >
-                      {/* Live indicator dot for active operations */}
-                      {isActive && (
-                        <motion.div
-                          className="flex-shrink-0 w-2.5 h-2.5 rounded-full"
-                          style={{
-                            background: stepColor,
-                            boxShadow: `0 0 8px ${stepColor}8a`,
-                          }}
-                          animate={{ opacity: [0.55, 1, 0.55] }}
-                          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                      )}
-
                       {/* Room name and details */}
                       <div className="flex flex-col justify-center min-w-0 flex-1">
                         <p className="text-sm font-bold tracking-tight text-white truncate leading-tight">
@@ -3395,14 +3313,13 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
                     {!showSummary && isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
                       <motion.div
-                        className="timeline-operation-block absolute top-1.5 bottom-1.5 overflow-hidden rounded-[10px]"
+                        className="timeline-operation-block absolute top-1 bottom-1 overflow-hidden rounded-[5px]"
                         style={{
                           left: `${Math.max(0, boxLeftPct)}%`,
                           width: `${boxWidthPct}%`,
                           background: `linear-gradient(135deg, ${stepColor}48 0%, ${stepColor}20 100%)`,
-                          boxShadow: `0 7px 20px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.10), 0 0 16px ${stepColor}1f`,
-                          border: `1px solid ${stepColor}72`,
-                          backdropFilter: 'blur(3px)',
+                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.09), 0 2px 8px rgba(0,0,0,0.18)`,
+                          border: `1px solid ${stepColor}60`,
                         }}
                         initial={false}
                         onMouseEnter={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY })}
@@ -3819,27 +3736,26 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                         statusů (dokončené operace) na levé ��ásti časové osy. */}
                     {!showSummary && isFree && !room.isLocked && (
                       <div 
-                        className="absolute inset-y-1.5 right-3 flex items-center gap-2.5 pl-2.5 pr-3 rounded-[11px] overflow-hidden"
+                        className="absolute right-3 top-1/2 flex h-8 -translate-y-1/2 items-center gap-2 pl-2 pr-2.5 rounded-md overflow-hidden"
                         style={{
-                          background: `linear-gradient(135deg, ${C.green}17, ${C.green}08)`,
-                          border: `1px solid ${C.green}42`,
-                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)`,
+                          background: `${C.green}0e`,
+                          border: `1px solid ${C.green}2e`,
                         }}
                       >
                         <div className="relative flex-shrink-0">
                           <div 
-                            className="relative w-6 h-6 rounded-lg flex items-center justify-center"
+                            className="relative w-5 h-5 rounded-md flex items-center justify-center"
                             style={{ 
                               background: `linear-gradient(135deg, ${C.green}2e 0%, ${C.green}12 100%)`,
                               border: `1px solid ${C.green}45`,
                             }}
                           >
-                            <CheckCircle className="w-3.5 h-3.5" style={{ color: C.green }} />
+                            <CheckCircle className="w-3 h-3" style={{ color: C.green }} />
                           </div>
                         </div>
                         <p className="text-[11px] font-semibold text-white/90 leading-tight truncate">{stepName}</p>
                         <div 
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0 animate-pulse"
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                           style={{ background: C.green, boxShadow: `0 0 6px ${C.green}` }}
                         />
                       </div>
@@ -3888,16 +3804,18 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                               na ostatních se odhalí při najetí myší na čáru
                               (čára „konec provozní doby" zůstává na každém řádku). */}
                           {/* Čas konce směny viditelný na KAŽDÉM řádku (dle referenčního designu) */}
-                          <div
-                            className="absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[5px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none opacity-90"
-                            style={{
-                              background: 'rgba(54, 217, 236, 0.10)',
-                              border: '1px solid rgba(54, 217, 236, 0.30)',
-                              color: 'rgba(178, 235, 244, 0.95)',
-                            }}
-                          >
-                            {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
-                          </div>
+                          {roomIndex === 0 && (
+                            <div
+                              className="absolute top-0.5 left-0 -translate-x-1/2 px-1 py-px rounded-[4px] text-[8px] font-semibold font-mono tabular-nums whitespace-nowrap leading-none opacity-90"
+                              style={{
+                                background: 'rgba(54, 217, 236, 0.10)',
+                                border: '1px solid rgba(54, 217, 236, 0.30)',
+                                color: 'rgba(178, 235, 244, 0.95)',
+                              }}
+                            >
+                              {todaySchedule.endHour.toString().padStart(2, '0')}:{todaySchedule.endMinute.toString().padStart(2, '0')}
+                            </div>
+                          )}
                         </div>
                         </>
                       );

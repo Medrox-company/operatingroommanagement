@@ -18,6 +18,7 @@ import { useHospital } from '../contexts/HospitalContext';
 import { MobileThemeToggle } from './mobile/MobileShell';
 import { RapidSurgeryWarning } from './room/RapidSurgeryWarning';
 import { useNowMs } from '../hooks/useSharedClock';
+import ModulePageHeading from './ModulePageHeading';
 
 // Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
 const formatElapsed = (totalSeconds: number): string => {
@@ -1148,24 +1149,26 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           be centered in the true content area, not under the sidebar. */}
       <div className="content-safe">
 
-      {/* Header — left is wrapper-relative (so 160px total from viewport on desktop) */}
-      <header className="absolute left-[clamp(1rem,4vw,4rem)] right-[clamp(7rem,14vw,10rem)] top-[clamp(1rem,4vh,3rem)] z-50 flex items-start justify-between pointer-events-none">
-        <div className="flex flex-col">
+      {/* Stejná pozice a typografická hierarchie jako hlavičky ostatních modulů. */}
+      <header className="absolute left-8 right-[clamp(7rem,14vw,10rem)] top-10 z-50 flex items-start justify-between pointer-events-none">
+        <div className="flex min-w-0 flex-col">
           <AnimatePresence mode="wait">
             <motion.div 
               key={room.name + room.isEmergency + room.isLocked}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-                className="flex min-w-0 items-center gap-[clamp(0.75rem,2vw,1.5rem)]"
+              className="flex min-w-0 items-end gap-[clamp(0.75rem,2vw,1.5rem)]"
             >
-              <h1
-                className={`max-w-[58vw] truncate text-[clamp(1.75rem,min(4.5vw,7vh),3.75rem)] font-bold uppercase leading-none tracking-tight ${
-                  room.isEmergency ? 'text-red-500' : (room.isLocked ? 'text-amber-500' : 'text-white/95')
+              <ModulePageHeading
+                icon={Stethoscope}
+                kicker="CHIRURGICKÝ BLOK · OVLÁDÁNÍ SÁLU"
+                title={room.name}
+                className="min-w-0"
+                titleClassName={`max-w-[58vw] truncate ${
+                  room.isEmergency ? '!text-red-500' : (room.isLocked ? '!text-amber-500' : '')
                 }`}
-              >
-                {room.name}
-              </h1>
+              />
 
               {room.isEmergency ? (
                 <div className="bg-red-500 text-white px-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.25rem,1vw,0.5rem)] rounded-2xl flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] shadow-[0_0_30px_rgba(239,68,68,0.5)]">
@@ -1180,7 +1183,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               ) : null}
             </motion.div>
           </AnimatePresence>
-          <p className="text-[clamp(8px,0.8vw,11px)] font-medium text-white/32 tracking-[0.42em] uppercase mt-[clamp(0.75rem,1.5vw,1.25rem)]">CHIRURGICKÝ BLOK • OVLÁDÁNÍ SÁLU</p>
         </div>
       </header>
 

@@ -109,7 +109,7 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
         <motion.div
           key="ds-backdrop"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
+          className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={onClose} role="dialog" aria-modal="true" aria-label="Statistiky dne"
         >
           <motion.div
@@ -117,7 +117,7 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
             initial={{ scale: 0.94, opacity: 0, y: 24 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.94, opacity: 0, y: 24 }}
             transition={{ type: 'spring', stiffness: 300, damping: 26 }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl overflow-hidden w-[min(96vw,1240px)] relative"
+            className="timeline-popup-panel overflow-hidden w-[min(96vw,1240px)] relative"
             style={{
               background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
               border: `1px solid ${C.borderStrong}`,
@@ -129,7 +129,7 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
               style={{ background: `radial-gradient(circle, ${C.accent} 0%, transparent 70%)`, filter: 'blur(70px)' }} />
 
             {/* Header */}
-            <div className="px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
+            <div className="timeline-popup-header px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
               <div>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${C.accent}18`, border: `1px solid ${C.accent}40` }}>
@@ -142,7 +142,7 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
                 </div>
                 <p className="text-white/45 text-sm mt-1.5 uppercase tracking-[0.2em]">Vytížení, výkon a rozpad času po fázích</p>
               </div>
-              <button onClick={onClose} aria-label="Zavřít" className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+              <button onClick={onClose} aria-label="Zavřít" className="timeline-popup-close w-9 h-9 flex items-center justify-center transition-colors">
                 <X className="w-4 h-4 text-white/60" />
               </button>
             </div>
@@ -154,7 +154,7 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
                   <motion.div
                     key={k.label}
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                    className="rounded-2xl p-4 relative overflow-hidden"
+                    className="timeline-popup-metric rounded-2xl p-4 relative overflow-hidden"
                     style={{ background: `linear-gradient(135deg, ${k.color}12 0%, transparent 65%)`, border: `1px solid ${k.color}28` }}
                   >
                     <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${k.color}, transparent)`, opacity: 0.6 }} />
@@ -170,7 +170,7 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
               </div>
 
               {/* Žebříček vytížení sálů */}
-              <div className="rounded-2xl p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
+              <div className="timeline-popup-chart rounded-2xl p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
                 <div className="flex items-center gap-2 mb-4">
                   <Layers className="w-4 h-4 text-white/40" />
                   <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-white/45">Vytížení sálů</span>
@@ -218,7 +218,7 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
               {/* Rozpad času po fázích + souhrn */}
               <div className="grid md:grid-cols-3 gap-4">
                 {/* Stacked bar fází */}
-                <div className="md:col-span-2 rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
+                <div className="timeline-popup-chart md:col-span-2 rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
                   <div className="flex items-center gap-2 mb-4">
                     <Activity className="w-4 h-4 text-white/40" />
                     <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-white/45">Rozpad odpracovaného času po fázích</span>
@@ -258,7 +258,7 @@ const DayStatistics: React.FC<Props> = ({ isOpen, onClose, rows, totals, kpis, o
                 </div>
 
                 {/* Souhrnné dlaždice */}
-                <div className="rounded-2xl p-5 flex flex-col justify-center gap-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
+                <div className="timeline-popup-card rounded-2xl p-5 flex flex-col justify-center gap-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
                   {[
                     { label: 'Celkem operací', value: totalOps, suffix: '', color: C.accent },
                     { label: 'Operační čas', value: Math.round(totals.occupiedMinutes / 60), suffix: ' h', color: C.green },

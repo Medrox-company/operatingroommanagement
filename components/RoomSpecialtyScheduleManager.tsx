@@ -311,7 +311,6 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
             { label: 'Roční pokrytí', value: coverage, suffix: '%', icon: CalendarRange, color: '#FBBF24' },
           ].map(({ label, value, suffix, icon: Icon, color }) => (
             <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
-              <span className="absolute inset-x-3 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
               <div className="flex w-full items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>

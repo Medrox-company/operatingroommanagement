@@ -85,7 +85,7 @@ const PhaseOptimizer: React.FC<Props> = ({ isOpen, onClose, rows, onSelectRoom }
         <motion.div
           key="po-backdrop"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
+          className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={onClose} role="dialog" aria-modal="true" aria-label="Optimalizace fází"
         >
           <motion.div
@@ -93,7 +93,7 @@ const PhaseOptimizer: React.FC<Props> = ({ isOpen, onClose, rows, onSelectRoom }
             initial={{ scale: 0.94, opacity: 0, y: 24 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.94, opacity: 0, y: 24 }}
             transition={{ type: 'spring', stiffness: 300, damping: 26 }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl overflow-hidden w-[min(96vw,1180px)] relative"
+            className="timeline-popup-panel overflow-hidden w-[min(96vw,1180px)] relative"
             style={{
               background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
               border: `1px solid ${C.borderStrong}`,
@@ -105,7 +105,7 @@ const PhaseOptimizer: React.FC<Props> = ({ isOpen, onClose, rows, onSelectRoom }
               style={{ background: `radial-gradient(circle, ${C.accent} 0%, transparent 70%)`, filter: 'blur(70px)' }} />
 
             {/* Header */}
-            <div className="px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
+            <div className="timeline-popup-header px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
               <div>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${C.accent}18`, border: `1px solid ${C.accent}40` }}>
@@ -120,7 +120,7 @@ const PhaseOptimizer: React.FC<Props> = ({ isOpen, onClose, rows, onSelectRoom }
                 </div>
                 <p className="text-white/45 text-sm mt-1.5 uppercase tracking-[0.2em]">Rozpad fází a kde zrychlit (mimo chirurgický výkon)</p>
               </div>
-              <button onClick={onClose} aria-label="Zavřít" className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+              <button onClick={onClose} aria-label="Zavřít" className="timeline-popup-close w-9 h-9 flex items-center justify-center transition-colors">
                 <X className="w-4 h-4 text-white/60" />
               </button>
             </div>
@@ -150,7 +150,7 @@ const PhaseOptimizer: React.FC<Props> = ({ isOpen, onClose, rows, onSelectRoom }
                         <motion.div
                           key={card.id}
                           initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: ci * 0.04 }}
-                          className="flex items-center gap-3 rounded-xl px-3 h-12 flex-shrink-0"
+                          className="timeline-popup-row flex items-center gap-3 rounded-xl px-3 h-12 flex-shrink-0"
                           style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${card.saving > 0 ? `${C.yellow}2a` : C.border}` }}
                         >
                           {/* Sál */}

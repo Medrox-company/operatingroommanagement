@@ -58,7 +58,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   }, [rooms]);
 
   return (
-    <div className="w-full h-full overflow-y-auto hide-scrollbar px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
+    <div className="statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top">
       <div aria-hidden className="mobile-theme-surface fixed inset-0 -z-10 md:hidden" />
       <div className="max-w-[2400px] mx-auto w-full">
         <div className="md:hidden mb-4">
@@ -101,10 +101,10 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
           </MobileModuleHeader>
         </div>
 
-        {/* Hlavička: na tabletu (md–lg) skládaná na střed, třísloupcová mřížka
-            se zapíná až od xl — na užších displejích se do ní titulek, hodiny
-            a panel metrik nevešly a překrývaly se. */}
-        <header className="hidden md:flex md:flex-col md:items-start md:gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-end xl:gap-8 mb-6 md:mb-8 lg:mb-12 flex-shrink-0">
+        {/* Nadpis a čas zůstávají od tabletového breakpointu v jediném řádku.
+            Obě části používají fluidní typografii app-module-title, takže se
+            na užších monitorech zmenší, aniž by čas spadl pod nadpis. */}
+        <header className="mb-7 hidden min-w-0 flex-shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-[clamp(1rem,3vw,3rem)] md:grid md:pr-2">
           <ModulePageHeading
             icon={Shield}
             kicker="APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ"
@@ -113,10 +113,9 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
             titleClassName="truncate"
           />
           <LiveClock />
-          <div aria-hidden />
         </header>
 
-        <div className="pb-20 px-0 sm:px-2">
+        <div className="px-0 pb-20 sm:px-2">
           {!roomsLoaded ? (
             <div className="flex flex-col items-center justify-center py-32 gap-3">
               <div className="w-7 h-7 border-2 border-[#C7D4E8] border-t-[#2952C8] md:border-white/20 md:border-t-white/70 rounded-full animate-spin" />
@@ -125,7 +124,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
           ) : (
             /* Tablet na šířku zůstává ve čtyřech sloupcích. Pátý sloupec se
                zapíná až tam, kde karta bezpečně udrží všechny popisky v řádku. */
-            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 min-[2200px]:grid-cols-6 gap-3 sm:gap-x-5 md:gap-x-4 xl:gap-x-5 2xl:gap-x-6 sm:gap-y-6 md:gap-y-7 2xl:gap-y-8">
+            <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 min-[2200px]:grid-cols-6">
               {rooms.map((room) => (
                 <RoomCard
                   key={room.id}

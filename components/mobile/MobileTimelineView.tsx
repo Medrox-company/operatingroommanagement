@@ -472,7 +472,7 @@ const AxisView: React.FC<{
         Provoz · {fmt(viewStartMs)} – {fmt(viewEndMs)} · teď {fmt(nowMs)}
       </MobileSectionLabel>
       <div
-        className="timeline-mobile-axis rounded-[26px] p-3 overflow-hidden"
+        className="timeline-mobile-axis rounded-lg p-3 overflow-hidden"
         style={{
           background: 'var(--m-card)',
           boxShadow: '0 8px 20px rgba(23,43,99,0.06)',

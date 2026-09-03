@@ -2,9 +2,8 @@
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
 import type { CurrentRoomSpecialty } from '../lib/room-specialty';
-import { RoomSpecialtyBadges } from './RoomSpecialtyBadge';
 import { useOperationalDayWindow } from '../hooks/useOperationalDayWindow';
 
 interface RoomCardProps {
@@ -69,8 +68,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   }, [activeStatuses, room.currentStepIndex, room.isEmergency, room.isLocked, room.isPaused]);
   
   const radius = 38;
-  const strokeWidth = 4;
-
   const center = 56;
 
   const handleAction = (e: React.MouseEvent, action?: (e: React.MouseEvent) => void) => {
@@ -83,6 +80,31 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   const safeIdxMobile = Math.min(Math.max(0, room.currentStepIndex || 0), totalStepsAll - 1);
   const progressPct = ((safeIdxMobile + 1) / totalStepsAll) * 100;
   const mobileRoomNumber = room.name.match(/\d+/)?.[0] || room.name.slice(0, 2).toUpperCase();
+  const scheduledSpecialties = useMemo(() => {
+    const fullDay = specialties?.find(specialty => specialty.dayPart === 'FULL_DAY');
+    return {
+      morning: fullDay ?? specialties?.find(specialty => specialty.dayPart === 'AM'),
+      afternoon: fullDay ?? specialties?.find(specialty => specialty.dayPart === 'PM'),
+    };
+  }, [specialties]);
+
+  const specialtyDisplayName = (name: string | undefined) =>
+    name?.trim().toLocaleLowerCase('cs-CZ') === 'ortopedická chirurgie'
+      ? 'Ortopedie'
+      : name;
+
+  const specialtySlot = (specialty: CurrentRoomSpecialty | undefined, period: 'dopoledne' | 'odpoledne') => (
+    <span
+      className="flex min-w-0 flex-1 items-center justify-center overflow-hidden px-2 py-2 text-center text-[8px] font-bold uppercase tracking-[0.04em] text-white sm:text-[9px]"
+      style={{
+        background: 'rgba(255,255,255,0.035)',
+        color: 'rgba(255,255,255,0.34)',
+      }}
+      title={specialty ? `${specialtyDisplayName(specialty.name)} · ${period}` : `Bez přiřazeného oboru · ${period}`}
+    >
+      <span className="truncate">{specialtyDisplayName(specialty?.name) || 'Bez oboru'}</span>
+    </span>
+  );
 
   return (
     <>
@@ -112,7 +134,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           style={{
             color: themeColor,
             background: `${themeColor}1A`,
-            border: `1px solid ${themeColor}42`,
+            border: `1px solid ${themeColor}2E`,
             boxShadow: `inset 0 1px 0 var(--m-card-highlight)`,
           }}
         >
@@ -125,7 +147,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           <p className="text-[9px] font-bold uppercase tracking-[0.13em] truncate mt-1" style={{ color: 'var(--m-muted)' }}>
             {room.department || 'Bez oddělení'}
           </p>
-          {specialties && specialties.length > 0 && <RoomSpecialtyBadges specialties={specialties} compact className="mt-1.5 max-w-full" />}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {room.noticeMessage && (
@@ -142,31 +163,18 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         </div>
       </div>
 
-      {/* Stav + průběh */}
+      {/* Dnešní obor podle dopoledního a odpoledního rozpisu + průběh */}
       <div
         className="relative z-10 mt-3 rounded-[16px] px-3 py-2.5 overflow-hidden"
         style={{ background: `${themeColor}0D` }}
       >
-        <div className="flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="h-5 w-1 rounded-full shrink-0"
-            style={{
-              background: themeColor,
-              boxShadow: `0 0 0 3px ${themeColor}12`,
-            }}
-          />
-          <span className="inline-flex min-w-0 items-center text-[9.5px] font-extrabold uppercase tracking-[0.09em]" style={{ color: room.isEmergency || room.isLocked ? themeColor : 'var(--m-text-strong)' }}>
-            <span className="whitespace-normal break-words leading-snug">
-              {room.isEmergency
-                ? 'Stav nouze'
-                : room.isLocked
-                ? 'Sál uzamčen'
-                : room.isPaused
-                ? `${currentStep.title} · Pauza`
-                : currentStep.title}
-            </span>
-          </span>
+        <div
+          className="flex overflow-hidden rounded-lg border border-white/[0.045]"
+          aria-label={`Dnešní obory: ${specialtyDisplayName(scheduledSpecialties.morning?.name) || 'bez oboru'} dopoledne, ${specialtyDisplayName(scheduledSpecialties.afternoon?.name) || 'bez oboru'} odpoledne`}
+        >
+          {specialtySlot(scheduledSpecialties.morning, 'dopoledne')}
+          <span className="w-px shrink-0 bg-white/20" aria-hidden="true" />
+          {specialtySlot(scheduledSpecialties.afternoon, 'odpoledne')}
         </div>
 
         <div className="mt-2 flex gap-1" aria-label={`Průběh ${Math.round(progressPct)} %`}>
@@ -223,72 +231,70 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       </div>
     </div>
 
-    {/* ===== DESKTOP — původní karta ===== */}
+    {/* ===== DESKTOP — jemná provozní karta s centrálním počtem cyklů ===== */}
     <div
       onClick={onClick}
-      className={`room-card-shell hidden md:block relative group cursor-pointer w-full transition-transform duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] ${fill ? 'h-full min-h-[140px]' : 'h-[clamp(280px,30vw,340px)]'}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick?.();
+        }
+      }}
+      className={`room-card-shell dashboard-workspace-card group relative hidden w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/55 md:block ${fill ? 'h-full min-h-[140px]' : 'h-[clamp(268px,28vw,320px)]'}`}
     >
-      {/* Subtle State Pulse Aura (Emergency or Locked) */}
-      {(room.isEmergency || room.isLocked) && (
-        <div 
-          className={`absolute -inset-1 z-0 rounded-[1.85rem] sm:rounded-[2.6rem] blur-xl pointer-events-none ${room.isEmergency ? 'bg-red-500/20' : 'bg-amber-500/10'}`}
-        />
-      )}
-
       {/* Main Card Container */}
-      <div className={`absolute inset-0 z-0 rounded-[clamp(1.75rem,3vw,2.5rem)] border shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-[60px] transition-shadow duration-500 group-hover:shadow-[0_28px_55px_-12px_rgba(0,0,0,0.65)]
-        ${room.isEmergency 
-            ? 'bg-red-950/20 border-red-500/40' 
-            : (room.isLocked 
-                ? 'bg-amber-950/15 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]' 
-                : 'bg-white/[0.03] border-white/5 group-hover:bg-white/[0.06] group-hover:border-white/10')}
+      <div className={`dashboard-workspace-card-surface absolute inset-0 z-0 overflow-hidden
+        ${room.isEmergency
+            ? 'dashboard-workspace-card-surface--emergency'
+            : (room.isLocked
+                ? 'dashboard-workspace-card-surface--locked'
+                : '')}
       `}>
-        {room.isEmergency && (
-          <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 via-transparent to-red-600/5 pointer-events-none" />
-        )}
-        {room.isLocked && (
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/5 pointer-events-none" />
-        )}
-        
-        {/* Barevná záře karty. Radiální gradient místo filter: blur(100px) —
-            stejný vjem, ale bez offscreen textury na každé z 15 karet. */}
-        <div
-          className="glow-soft absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full pointer-events-none transition-opacity duration-1000"
-          style={{
-            ['--glow' as string]: themeColor,
-            opacity: (room.isEmergency || room.isLocked) ? 0.3 : 0.15
-          }}
-        />
       </div>
 
-      {/* Indikátor čekající zprávy od administrátora */}
-      {room.noticeMessage && (
-        <div className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-30" title="Čeká zpráva — otevři detail sálu">
-          <span className="relative flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center">
-            <span className="absolute inline-flex h-full w-full rounded-full animate-ping" style={{ background: 'rgba(34,211,238,0.35)' }} />
-            <span className="relative inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full" style={{ background: 'rgba(34,211,238,0.18)', border: '1px solid rgba(34,211,238,0.5)' }}>
-              <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: '#22D3EE' }} />
-            </span>
-          </span>
-        </div>
-      )}
+      <svg
+        className="dashboard-workspace-card-outline pointer-events-none absolute inset-0 z-[1] h-full w-full overflow-visible"
+        viewBox="0 0 980 750"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          className={`dashboard-workspace-card-outline-path ${room.isEmergency
+            ? 'dashboard-workspace-card-outline-path--emergency'
+            : (room.isLocked ? 'dashboard-workspace-card-outline-path--locked' : '')}`}
+          d="M 85 0 H 606 A 76 76 0 0 1 682 76 A 78 78 0 0 0 760 154 H 898 A 82 82 0 0 1 980 236 V 663 A 86 86 0 0 1 894 749 H 86 A 86 86 0 0 1 0 663 V 85 A 85 85 0 0 1 85 0 Z"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+
+      <span className="dashboard-workspace-card-corner-control dashboard-workspace-card-room-index absolute z-30 flex items-center justify-center text-[12px] font-semibold tabular-nums text-white/76" aria-hidden="true">
+        {mobileRoomNumber}
+      </span>
+
+      <span className="dashboard-workspace-card-corner-control dashboard-workspace-card-open absolute z-30 flex items-center justify-center" aria-hidden="true">
+        <ArrowUpRight className="dashboard-workspace-card-open-icon h-[18px] w-[18px] text-white/62" />
+        {room.noticeMessage && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-400" />}
+      </span>
 
       {/* Content Container */}
-      <div className="relative z-10 flex h-full w-full flex-col p-[clamp(0.875rem,1.6vw,1.5rem)]">
+      <div className="relative z-10 flex h-full w-full flex-col p-[clamp(0.875rem,1.4vw,1.25rem)]">
 
-        {/* Header — centered */}
-        <div className="w-full flex flex-col items-center text-center shrink-0">
-          <p className={`text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mb-1 sm:mb-2 truncate max-w-full transition-colors
-            ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
-          `}>
-            {room.department}
-          </p>
-          <h3 className={`w-full max-w-full truncate whitespace-nowrap text-[clamp(0.75rem,1.25vw,1.25rem)] font-bold uppercase leading-none tracking-tight transition-colors
-            ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/90 group-hover:text-white'}
-          `}>
-            {room.name}
-          </h3>
-          {specialties && specialties.length > 0 && <RoomSpecialtyBadges specialties={specialties} compact className="mt-2 max-w-[90%] justify-center" />}
+        {/* Identita podle reference: kruhové číslo, výrazný název, drobný obor. */}
+        <div className="dashboard-workspace-card-header flex max-w-[61.8%] min-w-0 items-center">
+          <div className="min-w-0 w-full">
+            <h3 className={`max-w-full whitespace-normal break-words text-[clamp(0.74rem,1.08vw,1.05rem)] font-semibold uppercase leading-[1.08] tracking-tight [overflow-wrap:anywhere]
+              ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/92 group-hover:text-white'}
+            `}>
+              {room.name}
+            </h3>
+            <p className={`mt-1.5 max-w-full truncate text-[8px] font-semibold uppercase leading-none tracking-[0.13em] sm:text-[9px]
+              ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : 'text-white/30')}
+            `}>
+              {room.department}
+            </p>
+          </div>
         </div>
 
         {/* Central Content Wrapper */}
@@ -296,31 +302,31 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             <div className="relative flex items-center justify-center">
                 {/* Static glow behind the circle - replaced motion for performance */}
                 <div
-                  className="glow-core absolute rounded-full transition-opacity duration-500"
-                  style={{ width: 80, height: 80, ['--glow' as string]: themeColor, opacity: 0.25 }}
+                  className="glow-core absolute rounded-full"
+                  style={{ width: 72, height: 72, ['--glow' as string]: themeColor, opacity: 0.13 }}
                 />
                 <svg
                   viewBox="0 0 112 112"
-                  className="h-[clamp(4.75rem,8vw,7rem)] w-[clamp(4.75rem,8vw,7rem)] flex-shrink-0 select-none overflow-visible"
+                  className="dashboard-workspace-cycle-indicator h-[clamp(5.5rem,24cqw,8rem)] w-[clamp(5.5rem,24cqw,8rem)] flex-shrink-0 select-none overflow-visible"
                   style={{ transform: 'rotate(-90deg)' }}
                 >
                     <circle 
                       cx={center} cy={center} r={radius} 
-                      fill="none" 
+                      fill="rgba(255,255,255,0.012)"
                       stroke="white" 
                       strokeWidth="1.5" 
-                      className="opacity-[0.03]" 
+                      className="opacity-[0.055]"
                     />
                     <circle 
                       cx={center} cy={center} r={radius} 
                       fill="none"
                       stroke={themeColor} 
-                      strokeWidth={strokeWidth} 
+                      strokeWidth={5}
                       strokeLinecap="round"
                       strokeDasharray={strokeDasharray}
                       strokeDashoffset={room.isPaused ? 0 : strokeDashoffset}
-                      className="transition-[stroke-dashoffset,stroke] duration-500"
-                      style={{ filter: `drop-shadow(0 0 6px ${themeColor}99)` }}
+                      className="transition-[stroke-dashoffset,stroke] duration-300"
+                      style={{ filter: `drop-shadow(0 0 2px ${themeColor}58)` }}
                     />
                     {room.isPaused ? (
                       <text
@@ -346,7 +352,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                         y={center}
                         textAnchor="middle"
                         dominantBaseline="central"
-                        className={`text-4xl font-bold transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
+                        className={`text-[42px] font-semibold transition-colors ${(room.isEmergency || room.isLocked) ? 'fill-white' : 'fill-white/90'}`}
                         style={{ 
                             transform: 'rotate(90deg)', 
                             transformOrigin: `${center}px ${center}px`,
@@ -358,6 +364,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                     )}
                 </svg>
             </div>
+            <span className="mt-2.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/28 sm:text-[9px]">Dokončené cykly</span>
             
             {room.estimatedEndTime && shouldShowTime && (
                 <div className="-mt-1 text-center">
@@ -373,34 +380,22 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
 
         {/* Bottom Info */}
         <div className="w-full space-y-2 sm:space-y-3 shrink-0">
-          <div className="w-full text-center">
-            <p
-              className={`text-[9px] sm:text-[10px] font-bold tracking-[0.15em] sm:tracking-[0.2em] truncate uppercase py-1.5 sm:py-2 px-2 sm:px-4 rounded-full border transition-colors inline-block w-full
-              ${room.isEmergency 
-                  ? 'bg-red-600 text-white border-red-500' 
-                  : (room.isLocked 
-                      ? 'bg-amber-500 text-white border-amber-600' 
-                      : '')}
-            `}
-              // Normální stav: jemný odstín barvy aktuálního statusu v pozadí,
-              // text bílý pro maximální čitelnost.
-              style={(!room.isEmergency && !room.isLocked) ? {
-                backgroundColor: `${themeColor}1a`,
-                borderColor: `${themeColor}40`,
-                color: '#FFFFFF',
-              } : undefined}
-            >
-              {room.isEmergency ? 'STAV NOUZE' : (room.isLocked ? 'SÁL UZAMČEN' : currentStep.title)}
-            </p>
+          <div
+            className="dashboard-workspace-specialties flex w-full overflow-hidden border border-white/[0.045]"
+            aria-label={`Dnešní obory: ${specialtyDisplayName(scheduledSpecialties.morning?.name) || 'bez oboru'} dopoledne, ${specialtyDisplayName(scheduledSpecialties.afternoon?.name) || 'bez oboru'} odpoledne`}
+          >
+            {specialtySlot(scheduledSpecialties.morning, 'dopoledne')}
+            <span className="w-px shrink-0 bg-white/20" aria-hidden="true" />
+            {specialtySlot(scheduledSpecialties.afternoon, 'odpoledne')}
           </div>
           
             <div className={`flex items-center justify-between pt-2 sm:pt-3 border-t gap-1.5 sm:gap-2 transition-colors
-            ${room.isEmergency ? 'border-red-500/20' : (room.isLocked ? 'border-amber-500/20' : (room.isPaused ? 'border-cyan-500/20' : 'border-white/5'))}
+            ${room.isEmergency ? 'border-red-500/14' : (room.isLocked ? 'border-amber-500/14' : (room.isPaused ? 'border-cyan-500/14' : 'border-white/[0.035]'))}
           `}>
             {/* Left: avatar + names */}
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-              <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl border shrink-0 flex items-center justify-center
-                ${room.isEmergency ? 'border-red-500/30 bg-red-500/10' : (room.isLocked ? 'border-amber-500/30 bg-amber-500/10' : (room.isPaused ? 'border-cyan-500/30 bg-cyan-500/10' : 'border-white/10 bg-white/5'))}
+              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border sm:h-9 sm:w-9
+                ${room.isEmergency ? 'border-red-500/20 bg-red-500/10' : (room.isLocked ? 'border-amber-500/20 bg-amber-500/10' : (room.isPaused ? 'border-cyan-500/20 bg-cyan-500/10' : 'border-white/[0.07] bg-white/5'))}
               `}>
                 <User className={`w-3 h-3 sm:w-4 sm:h-4 transition-opacity
                   ${room.isEmergency ? 'text-red-400' : (room.isLocked ? 'text-amber-400' : (room.isPaused ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/60'))}
@@ -425,21 +420,21 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             {/* Right: action buttons / status badges */}
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {room.isSeptic && (
-                <div className="p-1 sm:p-1.5 bg-red-500/10 rounded-lg sm:rounded-xl border border-red-500/20">
+                <div className="rounded-lg border border-red-500/14 bg-red-500/10 p-1 sm:p-1.5">
                   <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500/70" />
                 </div>
               )}
 
               {/* Patient called indicator */}
               {room.patientCalledAt && !room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-colors bg-blue-500/20 border-blue-400/40">
+                <div className="rounded-lg border border-blue-400/16 bg-blue-500/10 p-1 sm:p-2">
                   <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
                 </div>
               )}
 
               {/* Patient arrived indicator */}
               {room.patientArrivedAt && (
-                <div className="p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-colors bg-green-500/20 border-green-400/40">
+                <div className="rounded-lg border border-green-400/16 bg-green-500/10 p-1 sm:p-2">
                   <BedDouble className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
                 </div>
               )}
@@ -448,10 +443,10 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
               <button
                 onClick={(e) => handleAction(e, onEmergency)}
                 aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
-                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-colors
+                className={`rounded-lg border p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/60 sm:p-2
                   ${room.isEmergency
-                    ? 'bg-red-600 text-white border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]'
-                    : 'bg-white/5 hover:bg-red-500/20 border-white/10 text-white/40 hover:text-red-400'}
+                    ? 'border-red-500/26 bg-red-500/16 text-red-200'
+                    : 'border-white/[0.04] bg-white/[0.025] text-white/35 hover:text-red-300'}
                 `}
               >
                 <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -461,10 +456,10 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
               <button
                 onClick={(e) => handleAction(e, onLock)}
                 aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
-                className={`p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-colors
+                className={`rounded-lg border p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/60 sm:p-2
                   ${room.isLocked
-                    ? 'bg-amber-500 text-white border-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.4)]'
-                    : 'bg-white/5 hover:bg-amber-500/20 border-white/10 text-white/40 hover:text-amber-400'}
+                    ? 'border-amber-400/24 bg-amber-400/15 text-amber-100'
+                    : 'border-white/[0.04] bg-white/[0.025] text-white/35 hover:text-amber-200'}
                 `}
               >
                 <Lock className="w-3 h-3 sm:w-4 sm:h-4" />

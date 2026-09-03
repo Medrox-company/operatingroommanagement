@@ -106,7 +106,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   /**
    * Přesměruje na Google. Zbytek (dvoufázové ověření, vystavení session)
-   * dořeší návratová stránka /prihlaseni/google.
+   * dořeší návratová stránka /prihlaseni/spravce.
    */
   const handleGoogleLogin = async () => {
     setError(null);

@@ -67,7 +67,7 @@ const TimeInput: React.FC<{
         value={hour.toString().padStart(2, '0')}
         onChange={(e) => onHourChange(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
         disabled={disabled}
-        className="h-11 w-14 rounded-xl border border-cyan-300/15 bg-[#071a2d]/80 px-2 text-center text-[15px] font-bold tabular-nums text-white outline-none transition-colors focus:border-cyan-300/45 disabled:cursor-not-allowed"
+        className="h-11 w-14 rounded-lg border border-white/[0.07] bg-black/15 px-2 text-center text-[15px] font-bold tabular-nums text-white outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
       />
       <span className="text-sm font-bold text-cyan-200/55">:</span>
       <input
@@ -78,7 +78,7 @@ const TimeInput: React.FC<{
         value={minute.toString().padStart(2, '0')}
         onChange={(e) => onMinuteChange(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
         disabled={disabled}
-        className="h-11 w-14 rounded-xl border border-cyan-300/15 bg-[#071a2d]/80 px-2 text-center text-[15px] font-bold tabular-nums text-white outline-none transition-colors focus:border-cyan-300/45 disabled:cursor-not-allowed"
+        className="h-11 w-14 rounded-lg border border-white/[0.07] bg-black/15 px-2 text-center text-[15px] font-bold tabular-nums text-white outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
       />
     </div>
   </div>
@@ -96,16 +96,16 @@ const DayScheduleRow: React.FC<{
 
   return (
     <div
-      className={`flex min-h-[260px] flex-col rounded-[22px] p-5 transition-colors ${day.key === 'sunday' ? 'md:col-span-2' : ''} ${
+      className={`flex min-h-[260px] flex-col rounded-xl p-5 transition-colors ${day.key === 'sunday' ? 'md:col-span-2' : ''} ${
         schedule.enabled
-          ? 'border border-cyan-300/22 bg-gradient-to-br from-[#0e304e]/88 to-[#091f36]/88'
-          : 'border border-white/[0.06] bg-[#091a2c]/58'
+          ? 'border border-cyan-200/[0.14] bg-cyan-300/[0.045]'
+          : 'border border-white/[0.06] bg-white/[0.018]'
       }`}
     >
       {/* Den + zapnutí provozu */}
       <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] pb-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span className={`flex h-10 min-w-11 items-center justify-center rounded-xl px-2 text-[11px] font-bold uppercase ${schedule.enabled ? 'border border-cyan-300/20 bg-cyan-300/10 text-cyan-200' : 'border border-white/[0.05] bg-white/[0.02] text-white/25'}`}>
+          <span className={`flex h-10 min-w-11 items-center justify-center rounded-lg px-2 text-[11px] font-bold uppercase ${schedule.enabled ? 'border border-cyan-300/15 bg-cyan-300/[0.07] text-cyan-200' : 'border border-white/[0.05] bg-white/[0.018] text-white/25'}`}>
             {day.short}
           </span>
           <div className="min-w-0">
@@ -118,7 +118,7 @@ const DayScheduleRow: React.FC<{
         <button
           onClick={() => onChange({ ...schedule, enabled: !schedule.enabled })}
           aria-label={`${schedule.enabled ? 'Vypnout' : 'Zapnout'} provoz v den ${day.label}`}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] transition-colors ${
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors ${
             schedule.enabled
               ? 'border border-cyan-300/35 bg-cyan-300/14 text-cyan-200'
               : 'border border-white/[0.08] bg-white/[0.025] text-white/25'
@@ -168,10 +168,10 @@ const DayScheduleRow: React.FC<{
               const next = isNaN(raw) ? 0 : Math.max(0, Math.min(480, raw));
               onChange({ ...schedule, breakMinutes: next });
             }}
-            className={`h-11 w-[92px] rounded-xl border px-2 text-center text-[15px] font-bold tabular-nums transition-colors ${
+            className={`h-11 w-[92px] rounded-lg border px-2 text-center text-[15px] font-bold tabular-nums transition-colors ${
               schedule.enabled
-                ? 'border-cyan-300/15 bg-[#071a2d]/80 text-white outline-none focus:border-cyan-300/45'
-                : 'cursor-not-allowed border-white/[0.05] bg-white/[0.02] text-white/25'
+                ? 'border-white/[0.07] bg-black/15 text-white outline-none focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20'
+                : 'cursor-not-allowed border-white/[0.05] bg-white/[0.018] text-white/25'
             }`}
           />
         </div>
@@ -242,11 +242,11 @@ const RoomCard: React.FC<{
     return (
       <article
         data-testid={`operating-room-card-${room.id}`}
-        className="overflow-hidden rounded-[18px] border border-cyan-200/[0.15] bg-[#091f35]/65 p-2.5 shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
+        className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] p-2.5"
       >
         <div className="grid min-w-0 grid-cols-1 gap-2.5 xl:grid-cols-[minmax(230px,0.8fr)_minmax(165px,0.55fr)_minmax(0,2.65fr)] xl:items-stretch">
-          <section className="flex min-w-0 items-center gap-3 rounded-[12px] bg-white/[0.025] px-3.5 py-2.5 ring-1 ring-inset ring-white/[0.06]">
-            <span className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-[9px] bg-cyan-300/[0.09] text-[10px] font-bold tabular-nums text-cyan-100 ring-1 ring-inset ring-cyan-200/[0.13]">
+          <section className="flex min-w-0 items-center gap-3 rounded-lg border border-white/[0.05] bg-black/10 px-3.5 py-2.5">
+            <span className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200/[0.10] bg-cyan-300/[0.055] text-[9px] font-semibold tabular-nums text-cyan-100/75">
               {String(index + 1).padStart(2, '0')}
             </span>
             <div className="min-w-0">
@@ -257,7 +257,7 @@ const RoomCard: React.FC<{
             </div>
           </section>
 
-          <section className="flex min-w-0 flex-col justify-center rounded-[12px] bg-cyan-300/[0.055] px-3.5 py-2.5 ring-1 ring-inset ring-cyan-200/[0.10]">
+          <section className="flex min-w-0 flex-col justify-center rounded-lg border border-white/[0.05] bg-white/[0.018] px-3.5 py-2.5">
             <p className="text-[8px] font-bold uppercase tracking-[0.15em] text-cyan-200/55">Dnešní provoz</p>
             <p className="mt-1 whitespace-nowrap text-[15px] font-bold tabular-nums tracking-tight text-white">
               {todaySchedule.enabled
@@ -266,7 +266,7 @@ const RoomCard: React.FC<{
             </p>
           </section>
 
-          <section className="min-w-0 overflow-x-auto rounded-[12px] bg-black/[0.08] p-1 [scrollbar-width:thin] [scrollbar-color:rgba(103,232,249,0.22)_transparent]">
+          <section className="min-w-0 overflow-x-auto rounded-lg border border-white/[0.05] bg-black/10 p-1 [scrollbar-width:thin] [scrollbar-color:rgba(103,232,249,0.22)_transparent]">
             <div className="grid min-h-[74px] min-w-[650px] grid-cols-7 grid-rows-2 gap-1">
               {DAYS.map(day => {
                 const daySchedule = schedule[day.key as keyof WeeklySchedule];
@@ -277,9 +277,9 @@ const RoomCard: React.FC<{
                     className="flex items-center justify-center rounded-[8px] text-center"
                     style={{
                       background: daySchedule.enabled
-                        ? isToday ? 'rgba(34,211,238,0.24)' : 'rgba(30,110,153,0.28)'
-                        : 'rgba(255,255,255,0.025)',
-                      boxShadow: isToday ? 'inset 0 0 0 1px rgba(103,232,249,0.34)' : 'inset 0 0 0 1px rgba(255,255,255,0.045)',
+                        ? isToday ? 'rgba(34,211,238,0.10)' : 'rgba(255,255,255,0.035)'
+                        : 'rgba(255,255,255,0.015)',
+                      boxShadow: isToday ? 'inset 0 0 0 1px rgba(103,232,249,0.20)' : 'inset 0 0 0 1px rgba(255,255,255,0.045)',
                     }}
                   >
                     <span className={`text-[10px] font-bold uppercase tracking-[0.08em] ${daySchedule.enabled ? 'text-cyan-50' : 'text-white/30'}`}>
@@ -297,8 +297,8 @@ const RoomCard: React.FC<{
                     className="flex items-center justify-center rounded-[8px] px-1 text-center"
                     style={{
                       background: daySchedule.enabled
-                        ? isToday ? 'rgba(10,102,139,0.32)' : 'rgba(10,55,86,0.34)'
-                        : 'rgba(255,255,255,0.015)',
+                        ? isToday ? 'rgba(34,211,238,0.065)' : 'rgba(255,255,255,0.022)'
+                        : 'rgba(255,255,255,0.01)',
                       boxShadow: isToday ? 'inset 0 0 0 1px rgba(103,232,249,0.20)' : 'inset 0 0 0 1px rgba(255,255,255,0.035)',
                     }}
                   >
@@ -320,17 +320,12 @@ const RoomCard: React.FC<{
   return (
     <article
       data-testid={`operating-room-card-${room.id}`}
-      className="group relative flex min-h-[148px] flex-col overflow-hidden rounded-[22px] transition-[border-color,background-color] duration-150 hover:border-cyan-200/30"
-      style={{
-        background: 'linear-gradient(135deg, rgba(15,43,69,0.66) 0%, rgba(8,28,49,0.63) 52%, rgba(5,21,38,0.68) 100%)',
-        border: '1px solid rgba(104,183,230,0.20)',
-        boxShadow: '0 12px 30px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.055)',
-      }}
+      className="group relative flex min-h-[148px] flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] transition-colors hover:border-cyan-200/[0.16]"
     >
       <div className="relative flex flex-1 flex-col p-2.5 sm:p-3">
         <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(205px,0.78fr)_minmax(150px,0.54fr)_minmax(0,2.55fr)_minmax(160px,0.58fr)] xl:items-stretch">
           {/* Identita sálu */}
-          <section className="flex min-w-0 flex-col justify-center rounded-[14px] bg-[#0d2943]/48 px-3.5 py-3 ring-1 ring-inset ring-cyan-100/[0.08]">
+          <section className="flex min-w-0 flex-col justify-center rounded-lg border border-white/[0.05] bg-black/10 px-3.5 py-3">
             <div className="mb-1.5 flex items-center justify-between gap-2">
               <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-200/62">
                 Operační sál · {String(index + 1).padStart(2, '0')}
@@ -341,14 +336,14 @@ const RoomCard: React.FC<{
             <p className="mt-1 break-words text-[10px] font-semibold uppercase tracking-[0.10em] text-slate-400">
               {room.department || 'Bez oddělení'}
             </p>
-            <div className="mt-2 flex min-h-7 w-full max-w-full items-center gap-2 rounded-[9px] px-2.5" style={{ background: `${statusColor}12` }}>
+            <div className="mt-2 flex min-h-7 w-full max-w-full items-center gap-2 rounded-md px-2.5" style={{ background: `${statusColor}12` }}>
               <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: statusColor }} />
               <p className="truncate text-[9px] font-bold uppercase tracking-[0.08em] text-white/90">{statusLabel}</p>
             </div>
           </section>
 
           {/* Dnešní provoz */}
-          <section className="flex min-w-0 flex-col justify-center overflow-hidden rounded-[14px] bg-cyan-300/[0.055] px-3.5 py-3 ring-1 ring-inset ring-cyan-200/[0.12]">
+          <section className="flex min-w-0 flex-col justify-center overflow-hidden rounded-lg border border-white/[0.05] bg-white/[0.018] px-3.5 py-3">
             <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-cyan-200/58">Dnešní provoz</p>
             <p className="mt-1 whitespace-nowrap text-[17px] font-bold tabular-nums tracking-[-0.02em] text-white">
               {todaySchedule.enabled
@@ -372,11 +367,7 @@ const RoomCard: React.FC<{
 
           {/* Kompaktní dvouřádková provozní matice: dny nahoře, odpovídající časy dole */}
           <section
-            className="min-w-0 overflow-hidden rounded-[14px] p-1.5"
-            style={{
-              background: 'linear-gradient(145deg, rgba(17,53,82,0.30), rgba(7,27,47,0.22))',
-              boxShadow: 'inset 0 0 0 1px rgba(103,190,239,0.11)',
-            }}
+            className="min-w-0 overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 p-1.5"
           >
             <div className="h-full overflow-x-auto [scrollbar-width:thin] [scrollbar-color:rgba(103,232,249,0.25)_transparent]">
               <div className="grid h-full min-h-[102px] min-w-[650px] grid-cols-7 grid-rows-2 gap-1.5">
@@ -389,10 +380,10 @@ const RoomCard: React.FC<{
                       className="relative flex min-w-0 items-center justify-center rounded-[9px] px-2 text-center"
                       style={{
                         background: isToday
-                          ? 'linear-gradient(145deg, rgba(27,156,191,0.50), rgba(16,104,151,0.40))'
+                          ? 'rgba(34,211,238,0.10)'
                           : daySchedule.enabled
-                            ? 'linear-gradient(145deg, rgba(31,83,120,0.46), rgba(19,57,88,0.38))'
-                            : 'rgba(13,35,57,0.30)',
+                            ? 'rgba(255,255,255,0.035)'
+                            : 'rgba(255,255,255,0.015)',
                         boxShadow: isToday
                           ? 'inset 0 0 0 1px rgba(103,232,249,0.45)'
                           : 'inset 0 0 0 1px rgba(125,189,228,0.11)',
@@ -423,10 +414,10 @@ const RoomCard: React.FC<{
                       className="flex min-w-0 flex-col items-center justify-center rounded-[9px] px-1.5 text-center"
                       style={{
                         background: isToday
-                          ? 'linear-gradient(145deg, rgba(13,103,139,0.45), rgba(10,67,105,0.39))'
+                          ? 'rgba(34,211,238,0.065)'
                           : daySchedule.enabled
-                            ? 'linear-gradient(145deg, rgba(12,55,85,0.48), rgba(9,40,67,0.42))'
-                            : 'rgba(7,25,43,0.28)',
+                            ? 'rgba(255,255,255,0.022)'
+                            : 'rgba(255,255,255,0.01)',
                         boxShadow: isToday
                           ? 'inset 0 0 0 1px rgba(103,232,249,0.27)'
                           : 'inset 0 0 0 1px rgba(125,189,228,0.08)',
@@ -449,7 +440,7 @@ const RoomCard: React.FC<{
           </section>
 
           {/* Správa sálu v pravém boxu */}
-          <section className="flex min-w-0 flex-col justify-center rounded-[14px] bg-[#0a2239]/46 p-2.5 ring-1 ring-inset ring-white/[0.075]">
+          <section className="flex min-w-0 flex-col justify-center rounded-lg border border-white/[0.05] bg-black/10 p-2.5">
             <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
               <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-slate-400">Správa sálu</p>
               <span className="h-1.5 w-1.5 rounded-full bg-cyan-300/55" />
@@ -458,7 +449,7 @@ const RoomCard: React.FC<{
             <button
               type="button"
               onClick={onScheduleEdit}
-              className="flex h-8 w-full items-center justify-center gap-2 rounded-[9px] bg-cyan-300/[0.10] px-2.5 text-[9px] font-bold uppercase tracking-[0.07em] text-cyan-50 ring-1 ring-inset ring-cyan-200/[0.15] transition-colors hover:bg-cyan-300/[0.15]"
+              className="flex h-8 w-full items-center justify-center gap-2 rounded-md border border-cyan-200/[0.12] bg-cyan-300/[0.07] px-2.5 text-[9px] font-semibold uppercase tracking-[0.07em] text-cyan-100/80 hover:bg-cyan-300/[0.11]"
             >
               <Calendar className="h-3.5 w-3.5" /> Rozvrh
             </button>
@@ -466,7 +457,7 @@ const RoomCard: React.FC<{
               <button
                 type="button"
                 onClick={onEdit}
-                className="flex h-8 items-center justify-center gap-1.5 rounded-[9px] bg-white/[0.035] px-2 text-[9px] font-semibold text-white/65 transition-colors hover:bg-white/[0.07] hover:text-white"
+                className="flex h-8 items-center justify-center gap-1.5 rounded-md border border-white/[0.05] bg-white/[0.018] px-2 text-[9px] font-semibold text-white/55 hover:bg-white/[0.04] hover:text-white"
               >
                 <Edit2 className="h-3.5 w-3.5" /> Upravit
               </button>
@@ -474,7 +465,7 @@ const RoomCard: React.FC<{
                 type="button"
                 onClick={onDelete}
                 title="Smazat"
-                className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-white/[0.025] text-white/35 transition-colors hover:bg-red-300/[0.10] hover:text-red-200"
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-white/[0.05] bg-white/[0.018] text-white/35 hover:bg-red-300/[0.08] hover:text-red-200"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -524,14 +515,14 @@ const SortableRoomCard: React.FC<{
         room={room}
         index={index}
         reorderControls={(
-          <div className="flex items-center justify-between gap-0.5 rounded-[9px] bg-black/10 p-0.5 ring-1 ring-inset ring-white/[0.045]">
+          <div className="flex items-center justify-between gap-0.5 rounded-md border border-white/[0.045] bg-black/10 p-0.5">
             <button
               type="button"
               aria-label={`Přetáhnout ${room.name}`}
               {...(reorderEnabled ? attributes : {})}
               {...(reorderEnabled ? listeners : {})}
               disabled={!reorderEnabled}
-              className="flex h-7 min-w-0 flex-1 items-center gap-1.5 rounded-[7px] px-2 text-[9px] font-semibold text-slate-400 transition-colors hover:bg-white/[0.055] hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-7 min-w-0 flex-1 items-center gap-1.5 rounded px-2 text-[9px] font-semibold text-slate-400 hover:bg-white/[0.04] hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <GripVertical className="h-3.5 w-3.5" />
               Přesunout
@@ -541,7 +532,7 @@ const SortableRoomCard: React.FC<{
               onClick={onMoveUp}
               disabled={!canMoveUp}
               aria-label="Posunout nahoru"
-              className="flex h-7 w-7 items-center justify-center rounded-[7px] text-slate-400 transition-colors hover:bg-white/[0.055] hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+              className="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
             >
               <ChevronUp className="h-3 w-3" />
             </button>
@@ -550,7 +541,7 @@ const SortableRoomCard: React.FC<{
               onClick={onMoveDown}
               disabled={!canMoveDown}
               aria-label="Posunout dolů"
-              className="flex h-7 w-7 items-center justify-center rounded-[7px] text-slate-400 transition-colors hover:bg-white/[0.055] hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+              className="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
             >
               <ChevronDown className="h-3 w-3" />
             </button>
@@ -813,73 +804,41 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   return (
     <div
       data-testid="operating-rooms-manager"
-      className="min-h-full w-full pb-8 font-sans"
-      style={{
-        backgroundImage: 'radial-gradient(rgba(90,153,198,0.075) 0.7px, transparent 0.7px)',
-        backgroundSize: '20px 20px',
-      }}
+      className="statistics-module min-h-full w-full pb-8 font-sans"
     >
       <header className="mb-7">
         <ModulePageHeading icon={Building2} kicker="OR CONTROL" title="OPERAČNÍ" mutedTitle="SÁLY" />
-        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-          <p className="text-sm font-medium text-white/64">
-            Konfigurace sálů, provozních režimů a týdenních rozvrhů
-          </p>
-          <div className="inline-flex items-center gap-2 text-[9px] font-bold tracking-[0.16em] text-emerald-300/75">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            PROVOZNÍ KONFIGURACE AKTIVNÍ
-          </div>
-        </div>
       </header>
 
-      <section className="mb-5">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+        <div className="flex min-w-max items-center gap-2.5">
           {[
             { label: 'Celkem sálů', value: stats.total, suffix: 'sálů', color: COLORS.cyan, icon: Building2 },
             { label: 'Dnes v provozu', value: stats.todayOpen, suffix: 'sálů', color: COLORS.green, icon: CalendarDays },
             { label: 'Aktivní provoz', value: stats.activeOperations, suffix: 'sálů', color: COLORS.blue, icon: Activity },
             { label: 'Uzamčeno', value: stats.locked, suffix: 'sálů', color: COLORS.red, icon: LockKeyhole },
             { label: 'Týdenní pokrytí', value: stats.coverage, suffix: '%', color: COLORS.violet, icon: Calendar },
-          ].map(({ label, value, suffix, color, icon: Icon }, index) => (
+          ].map(({ label, value, suffix, color, icon: Icon }) => (
             <div
               key={label}
-              className={`relative flex min-h-[100px] items-center gap-4 rounded-[20px] px-4 py-3.5 ${index === 4 ? 'sm:col-span-2 xl:col-span-1' : ''}`}
-              style={{
-                background: 'linear-gradient(145deg, rgba(18,47,74,0.56), rgba(7,24,42,0.60))',
-                border: '1px solid rgba(77,154,211,0.22)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                boxShadow: '0 12px 28px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.035)',
-              }}
+              className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]"
             >
-              <span
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]"
-                style={{ color, background: `${color}15`, border: `1px solid ${color}2e` }}
-              >
-                <Icon className="h-[18px] w-[18px]" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[12px] font-semibold text-slate-400">{label}</p>
-                <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-[26px] font-bold tabular-nums tracking-tight text-white">{value}</span>
-                  <span className="text-[12px] font-medium text-slate-400">{suffix}</span>
+              <div className="flex w-full items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
+                    <span className="text-[8px] font-medium text-white/28">{suffix}</span>
+                  </div>
                 </div>
+                <Icon className="h-4 w-4 shrink-0" style={{ color }} strokeWidth={1.5} />
               </div>
             </div>
           ))}
-        </div>
-      </section>
 
-      <section
-        className="mb-5 flex flex-col gap-2 rounded-[22px] p-2 xl:flex-row xl:items-center"
-        style={{
-          background: 'rgba(10,31,51,0.58)',
-          border: '1px solid rgba(151,184,204,0.20)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-        }}
-      >
-        <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
+          <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
+
+          <div className="flex shrink-0 items-center gap-1 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
           {([
             ['all', 'Všechny sály', Building2, stats.total],
             ['today', 'Dnes v provozu', CalendarDays, stats.todayOpen],
@@ -891,60 +850,56 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 key={id}
                 type="button"
                 onClick={() => setFilter(id)}
-                className="flex h-9 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-semibold transition-colors"
-                style={active
-                  ? { background: 'rgba(54,217,236,0.12)', color: COLORS.cyan, border: '1px solid rgba(54,217,236,0.22)' }
-                  : { color: 'rgba(255,255,255,0.70)', border: '1px solid transparent' }}
+                className={`flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-[8px] font-semibold uppercase tracking-[0.06em] ${active ? 'bg-white/[0.09] text-cyan-200' : 'text-white/38 hover:text-white/70'}`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-3 w-3" />
                 {label}
-                <span className="text-[9px] tabular-nums opacity-60">{count}</span>
+                <span className="text-[7px] tabular-nums opacity-55">{count}</span>
               </button>
             );
           })}
-        </div>
+          </div>
 
-        <div className="hidden h-7 w-px bg-white/[0.07] xl:block" />
-
-        <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/55" />
+          <div className="relative w-[220px] shrink-0">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/32" />
           <input
             type="search"
             aria-label="Hledat v operačních sálech"
             placeholder="Hledat název sálu nebo oddělení…"
             value={searchQuery}
             onChange={event => setSearchQuery(event.target.value)}
-            className="h-9 w-full rounded-xl border border-white/[0.13] bg-black/20 pl-9 pr-3 text-xs font-medium text-white outline-none transition-colors placeholder:text-white/45 focus:border-cyan-300/40"
+            className="h-10 w-full rounded-lg border border-white/[0.055] bg-black/10 pl-9 pr-3 text-[9px] font-medium text-white/78 outline-none placeholder:text-white/30 focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
           />
-        </div>
+          </div>
 
-        <button
+          <button
           type="button"
           aria-pressed={compactView}
           aria-label="Přepnout kompaktní zobrazení operačních sálů"
           onClick={() => setCompactView(value => !value)}
-          className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl px-3.5 text-[10px] font-bold transition-colors ${
+          className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border px-3.5 text-[9px] font-semibold ${
             compactView
-              ? 'bg-cyan-300/[0.14] text-cyan-100 ring-1 ring-inset ring-cyan-200/[0.25]'
-              : 'bg-white/[0.035] text-white/60 ring-1 ring-inset ring-white/[0.08] hover:bg-white/[0.065] hover:text-white'
+              ? 'border-cyan-200/[0.20] bg-cyan-300/[0.10] text-cyan-100'
+              : 'border-white/[0.06] bg-white/[0.025] text-white/42 hover:text-white'
           }`}
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
           Kompaktní
-        </button>
+          </button>
 
-        <button
+          <button
           type="button"
           onClick={() => setIsAddingNew(true)}
-          className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-cyan-200 to-cyan-400 px-5 text-xs font-bold text-[#05131c] shadow-[0_8px_22px_rgba(34,211,238,0.18)] transition-colors hover:from-cyan-100 hover:to-cyan-300"
+          className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-5 text-[9px] font-semibold text-[#061724] hover:bg-cyan-200"
         >
           <Plus className="h-3.5 w-3.5" />
           Přidat sál
-        </button>
+          </button>
+        </div>
       </section>
 
       {error && (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-red-300/20 bg-red-300/[0.06] p-3 text-red-200">
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-300/15 bg-red-300/[0.045] p-3 text-red-200">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <p className="text-xs font-medium">{error}</p>
           <button type="button" onClick={() => setError(null)} className="ml-auto text-red-200/60 hover:text-red-100">
@@ -954,10 +909,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       )}
 
       {filteredRooms.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-[22px] py-16 text-center"
-          style={{ background: 'rgba(10,23,36,0.94)', border: '1px solid rgba(151,184,204,0.20)' }}
-        >
+        <div className="flex flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] py-16 text-center">
           <DoorOpen className="mb-3 h-9 w-9 text-white/32" />
           <p className="text-sm font-semibold text-white/72">
             {roomsList.length === 0 ? 'Zatím nejsou uložené žádné operační sály' : 'Filtru neodpovídá žádný sál'}
@@ -967,26 +919,35 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={filteredRooms.map(room => room.id)} strategy={rectSortingStrategy}>
-            <div className={`grid grid-cols-1 ${compactView ? 'gap-2.5' : 'gap-4'}`}>
-              {filteredRooms.map(room => {
-                const index = roomsList.findIndex(item => item.id === room.id);
-                return (
-              <SortableRoomCard
-                key={room.id}
-                room={room}
+            <section className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
+              <div className="flex flex-col justify-between gap-2 border-b border-white/[0.055] px-4 py-3 sm:flex-row sm:items-center">
+                <div>
+                  <h2 className="text-[15px] font-semibold tracking-tight text-white/95">Správa operačních sálů</h2>
+                  <p className="mt-0.5 text-[10px] text-white/50">Provozní režim, pracovní doba a pořadí zobrazení</p>
+                </div>
+                <span className="text-[8px] font-semibold uppercase tracking-[0.13em] text-white/28">{filteredRooms.length} {filteredRooms.length === 1 ? 'sál' : filteredRooms.length < 5 ? 'sály' : 'sálů'}</span>
+              </div>
+              <div className={`grid grid-cols-1 p-3 ${compactView ? 'gap-2.5' : 'gap-3'}`}>
+                {filteredRooms.map(room => {
+                  const index = roomsList.findIndex(item => item.id === room.id);
+                  return (
+                    <SortableRoomCard
+                      key={room.id}
+                      room={room}
                       index={index}
-                total={roomsList.length}
-                onEdit={() => setEditingRoom(room)}
-                onDelete={() => setDeleteConfirm(room.id)}
-                onScheduleEdit={() => setScheduleEditRoom(room)}
-                onMoveUp={() => moveRoom(room.id, 'up')}
-                onMoveDown={() => moveRoom(room.id, 'down')}
+                      total={roomsList.length}
+                      onEdit={() => setEditingRoom(room)}
+                      onDelete={() => setDeleteConfirm(room.id)}
+                      onScheduleEdit={() => setScheduleEditRoom(room)}
+                      onMoveUp={() => moveRoom(room.id, 'up')}
+                      onMoveDown={() => moveRoom(room.id, 'down')}
                       reorderEnabled={reorderEnabled}
                       compact={compactView}
-              />
-                );
-              })}
-            </div>
+                    />
+                  );
+                })}
+              </div>
+            </section>
           </SortableContext>
         </DndContext>
       )}
@@ -997,7 +958,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/72 p-3 backdrop-blur-sm sm:p-5"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/78 p-3 sm:p-5"
             onMouseDown={event => {
               if (event.target === event.currentTarget) setIsAddingNew(false);
             }}
@@ -1006,16 +967,16 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="relative my-auto w-full max-w-xl overflow-hidden rounded-[26px] border border-white/[0.1] bg-gradient-to-b from-[#101a24] to-[#080e14] p-5 shadow-2xl sm:p-6"
+              className="relative my-auto w-full max-w-xl overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0b1020] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.42)] sm:p-6"
             >
-              <div aria-hidden className="absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
+              <div aria-hidden className="absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent" />
               <div className="relative mb-6 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-300/20 bg-amber-300/[0.08] text-amber-300">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-cyan-200/[0.12] bg-cyan-300/[0.06] text-cyan-200">
                     <Plus className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-amber-300/70">Nová konfigurace</p>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-200/55">Nová konfigurace</p>
                     <h2 className="mt-1 text-lg font-bold text-white">Přidat operační sál</h2>
                   </div>
                 </div>
@@ -1029,11 +990,10 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.14em] text-white/38">Název sálu</label>
                   <input
                     type="text"
-                    autoFocus
                     placeholder="např. Sál č. 1"
                     value={newRoomData.name}
                     onChange={event => setNewRoomData({ ...newRoomData, name: event.target.value })}
-                    className="h-11 w-full rounded-xl border border-white/[0.08] bg-black/15 px-3 text-sm text-white outline-none placeholder:text-white/20 focus:border-cyan-300/30"
+                    className="h-11 w-full rounded-lg border border-white/[0.07] bg-black/15 px-3 text-sm text-white outline-none placeholder:text-white/20 focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
                   />
                 </div>
                 <div>
@@ -1043,7 +1003,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     placeholder="TRA, CHIR, ROBOT…"
                     value={newRoomData.department}
                     onChange={event => setNewRoomData({ ...newRoomData, department: event.target.value })}
-                    className="h-11 w-full rounded-xl border border-white/[0.08] bg-black/15 px-3 text-sm text-white outline-none placeholder:text-white/20 focus:border-cyan-300/30"
+                    className="h-11 w-full rounded-lg border border-white/[0.07] bg-black/15 px-3 text-sm text-white outline-none placeholder:text-white/20 focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
                   />
                 </div>
               </div>
@@ -1056,14 +1016,14 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     setNewRoomData({ name: '', department: '' });
                     setError(null);
                   }}
-                  className="h-10 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 text-xs font-semibold text-white/55 hover:text-white"
+                  className="h-10 rounded-lg border border-white/[0.07] bg-white/[0.018] px-4 text-xs font-semibold text-white/55 hover:text-white"
                 >
                   Zrušit
                 </button>
                 <button
                   type="button"
                   onClick={handleAddRoom}
-                  className="flex h-10 items-center gap-2 rounded-xl bg-amber-300 px-5 text-xs font-bold text-[#071019] hover:bg-amber-200"
+                  className="flex h-10 items-center gap-2 rounded-lg bg-cyan-300 px-5 text-xs font-semibold text-[#061724] hover:bg-cyan-200"
                 >
                   <Check className="h-3.5 w-3.5" />
                   Přidat sál
@@ -1081,7 +1041,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/72 p-3 backdrop-blur-sm sm:p-5"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/78 p-3 sm:p-5"
             onClick={() => setScheduleEditRoom(null)}
           >
             <motion.div
@@ -1089,23 +1049,15 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-cyan-300/20"
-              style={{
-                background: 'linear-gradient(160deg, rgba(16,43,69,0.82) 0%, rgba(10,30,52,0.80) 45%, rgba(7,21,38,0.84) 100%)',
-                backdropFilter: 'blur(22px) saturate(120%)',
-                WebkitBackdropFilter: 'blur(22px) saturate(120%)',
-                boxShadow: '0 28px 72px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.06)',
-              }}
+              className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/[0.09] bg-[#0b1020] shadow-[0_30px_80px_rgba(0,0,0,0.42)]"
             >
               {/* Modal Header */}
               <div
-                className="sticky top-0 z-10 overflow-hidden border-b border-cyan-300/15 p-5 sm:p-6"
-                style={{ background: 'rgba(8,25,43,0.72)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }}
+                className="sticky top-0 z-10 overflow-hidden border-b border-white/[0.06] bg-[#0b1020]/95 p-5 sm:p-6"
               >
                 <div className="relative flex items-center gap-4">
                   <div
-                    className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[15px]"
-                    style={{ background: 'linear-gradient(145deg, rgba(56,189,248,0.24), rgba(34,211,238,0.10))', border: '1px solid rgba(56,189,248,0.28)' }}
+                    className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-200/[0.12] bg-cyan-300/[0.06]"
                   >
                     <SlidersHorizontal className="relative h-5 w-5 text-cyan-200" />
                   </div>
@@ -1116,7 +1068,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   </div>
                   <button
                     onClick={() => setScheduleEditRoom(null)}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-white/55 transition-colors hover:bg-white/[0.08] hover:text-white"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.025] text-white/45 hover:text-white"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1150,12 +1102,11 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               
               {/* Modal Footer */}
               <div
-                className="sticky bottom-0 flex justify-end gap-2.5 border-t border-cyan-300/15 p-4 sm:p-6"
-                style={{ background: 'rgba(8,25,43,0.72)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }}
+                className="sticky bottom-0 flex justify-end gap-2.5 border-t border-white/[0.06] bg-[#0b1020]/95 p-4 sm:p-6"
               >
                 <button
                   onClick={() => setScheduleEditRoom(null)}
-                  className="h-11 rounded-xl border border-white/[0.10] bg-white/[0.035] px-5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/[0.08] hover:text-white"
+                  className="h-11 rounded-lg border border-white/[0.07] bg-white/[0.018] px-5 text-sm font-semibold text-white/55 hover:text-white"
                 >
                   Zrušit
                 </button>
@@ -1164,7 +1115,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     handleUpdateSchedule(scheduleEditRoom.id, scheduleEditRoom.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
                     setScheduleEditRoom(null);
                   }}
-                  className="flex h-11 items-center gap-2 rounded-xl bg-gradient-to-b from-cyan-200 to-cyan-400 px-6 text-sm font-bold text-[#061725] shadow-[0_10px_24px_rgba(34,211,238,0.16)] transition-colors hover:from-cyan-100 hover:to-cyan-300"
+                  className="flex h-11 items-center gap-2 rounded-lg bg-cyan-300 px-6 text-sm font-semibold text-[#061725] hover:bg-cyan-200"
                 >
                   <Check className="w-4 h-4" />
                   Uložit změny
@@ -1182,7 +1133,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#02060a]/88 p-3 backdrop-blur-md sm:p-5"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/78 p-3 sm:p-5"
             onClick={() => setEditingRoom(null)}
           >
             <motion.div
@@ -1190,20 +1141,16 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md overflow-hidden rounded-[26px] border border-white/[0.1] p-6"
-              style={{ background: 'linear-gradient(180deg, #101a24 0%, #080e14 100%)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0b1020] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.42)]"
             >
-              <div aria-hidden className="absolute inset-x-10 top-0 h-[2px] rounded-full" style={{ background: `linear-gradient(to right, transparent, ${'#22D3EE'}, transparent)` }} />
-              <div aria-hidden className="absolute -top-16 left-1/2 -translate-x-1/2 w-56 h-56 rounded-full blur-[90px] pointer-events-none" style={{ backgroundColor: '#22D3EE', opacity: 0.14 }} />
+              <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent" />
 
               <div className="relative flex items-start justify-between gap-3 mb-5">
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className="relative w-11 h-11 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
-                    style={{ background: `linear-gradient(135deg, ${'#22D3EE'}, ${'#22D3EE'}aa)`, boxShadow: `0 6px 16px -4px ${'#22D3EE'}99` }}
+                    className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-200/[0.12] bg-cyan-300/[0.06]"
                   >
-                    <div aria-hidden className="absolute inset-0 rounded-full bg-gradient-to-b from-white/40 to-transparent opacity-50" />
-                    <Edit2 className="relative w-4 h-4 text-white drop-shadow" />
+                    <Edit2 className="relative h-4 w-4 text-cyan-200" />
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-lg font-bold text-white truncate">Upravit sál</h2>
@@ -1222,7 +1169,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     type="text"
                     value={editingRoom.name}
                     onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                    className="w-full rounded-lg border border-white/[0.07] bg-black/15 px-3 py-2.5 text-white placeholder-white/30 focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
                   />
                 </div>
                 <div>
@@ -1231,7 +1178,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     type="text"
                     value={editingRoom.department}
                     onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors"
+                    className="w-full rounded-lg border border-white/[0.07] bg-black/15 px-3 py-2.5 text-white placeholder-white/30 focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
                   />
                 </div>
                 <p className="text-[11px] text-white/40 leading-relaxed">
@@ -1242,14 +1189,13 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               <div className="relative flex justify-end gap-2.5">
                 <button
                   onClick={() => setEditingRoom(null)}
-                  className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white/80 transition-colors"
+                  className="rounded-lg border border-white/[0.07] bg-white/[0.018] px-4 py-2.5 text-sm font-semibold text-white/55 hover:text-white"
                 >
                   Zrušit
                 </button>
                 <button
                   onClick={handleUpdateRoom}
-                  className="px-5 py-2.5 text-sm font-bold rounded-xl text-white transition-opacity hover:opacity-90 flex items-center gap-2"
-                  style={{ background: '#22D3EE', boxShadow: `0 8px 20px -6px ${'#22D3EE'}88` }}
+                  className="flex items-center gap-2 rounded-lg bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-[#061724] hover:bg-cyan-200"
                 >
                   <Check className="w-4 h-4" />
                   Uložit
@@ -1267,7 +1213,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#02060a]/88 p-3 backdrop-blur-md sm:p-5"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/78 p-3 sm:p-5"
             onClick={() => setDeleteConfirm(null)}
           >
             <motion.div
@@ -1275,11 +1221,9 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md overflow-hidden rounded-[26px] border border-white/[0.1] p-6"
-              style={{ background: 'linear-gradient(180deg, #101a24 0%, #080e14 100%)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0b1020] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.42)]"
             >
-              <div aria-hidden className="absolute inset-x-10 top-0 h-[2px] rounded-full" style={{ background: 'linear-gradient(to right, transparent, #EF4444, transparent)' }} />
-              <div aria-hidden className="absolute -top-16 left-1/2 -translate-x-1/2 w-56 h-56 rounded-full blur-[90px] pointer-events-none" style={{ backgroundColor: '#EF4444', opacity: 0.12 }} />
+              <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-red-300/55 to-transparent" />
 
               <div className="relative flex items-start gap-3.5 mb-5">
                 <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15">

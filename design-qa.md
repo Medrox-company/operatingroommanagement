@@ -1,71 +1,55 @@
-# Design QA — potvrzení změny fáze
+**Design QA — dashboard room cards**
 
-## Výsledek
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-03 v 20.20.13.png`
+- Source pixels: 688 × 680; desktop dashboard-card reference crop; density unknown.
+- Implementation: `http://localhost:3000/`, `components/RoomCard.tsx`.
+- Intended viewport: responsive desktop, `md` and wider.
+- State: dashboard room grid with live room data.
+- Implementation screenshot: unavailable — the in-app preview opens at the authenticated application login and the dashboard state cannot be reached without the user's role password.
 
-**PASSED**
+**Full-view comparison evidence**
 
-## Porovnání
+- The source reference is available and shows a continuous upper-right S-curve: the top edge descends beneath the overlapping controls, forms a short shoulder, and curves again into the right wall. It is not a circular subtraction.
+- A same-state browser capture of the implementation is not available, so a truthful visual comparison cannot be completed.
 
-- Reference: `design-qa-reference.png` (normalizována na 1920 × 1192 px)
-- Implementace: `design-qa-implementation.png` (1920 × 1192 px)
-- Stav: běžné potvrzení přechodu na „Úklid sálu“ bez upozornění na krátký interval
+**Focused region comparison evidence**
 
-## Ověřené body
+- Blocked for the same reason: the operating-room card grid is behind authentication.
 
-- Rozvržení odpovídá referenci: centrované záhlaví a dvojice velkých kruhových akcí.
-- Zachováno téměř černé pozadí se statickou červenou, oranžovou a zelenou světelnou atmosférou.
-- Obě akce mají výrazný barevný prstenec, jemný vnější obrys, ikonu a popisek uvnitř kruhu.
-- Dialog má správnou sémantiku (`role="dialog"`, `aria-modal`, označený nadpis).
-- Obě tlačítka mají čitelné přístupné názvy a jsou aktivní.
-- V dialogu neběží žádná CSS animace.
-- Vrstva pozadí nepoužívá `backdrop-filter` ani dynamické rozmazávání.
-- V konzoli prohlížeče nejsou chyby.
-- Produkční sestavení Next.js prošlo bez chyby.
+**Findings**
 
-## Záměrné rozdíly
+- [P2] Rendered fidelity cannot yet be verified.
+  Location: Dashboard → operating-room cards.
+  Evidence: source image is available; browser-rendered target state is not.
+  Impact: typography, spacing, clipping, and responsive density cannot be judged from source code alone.
+  Fix: open an authenticated dashboard state and capture desktop plus narrow-tablet views.
 
-- Náhledová trasa izoluje samotný dialog; levé menu z reference zůstává v reálném detailu sálu pod overlayem.
-- Barevné plochy jsou vytvořené statickými CSS přechody, aby byl zachován vzhled bez runtime animací.
+**Implementation checks completed**
 
----
+- The earlier freehand Bézier and coarse polygon were removed. The card now follows the supplied 980 × 750 construction: an r=76 convex arc joins an r=78 concave arc tangentially at (682, 76), the lower shoulder starts at (760, 154), and the detail control is centered at (760, 76).
+- The curve uses container-width units, so its circular arcs do not deform into ellipses when the responsive dashboard card is taller than the source aspect ratio. The browser reports support for both `cqw` and `clip-path: polygon(...cqw...)`.
+- Production Next.js build and TypeScript passed.
+- `21st review` reported 0 errors and 0 warnings.
+- Existing room selection, emergency, lock, personnel, schedule, and completed-cycle behavior remains connected.
+- Keyboard activation and visible focus were added to the desktop card shell.
 
-# Design QA — responzivní detail sálu
+**Comparison history**
 
-## Ověřené rozměry
+- Pass 1: blocked before visual comparison because the local browser state is unauthenticated. No visual mismatch claims were made.
+- Pass 2: mathematical geometry and browser feature support verified; same-state rendered comparison remains blocked by authentication.
+- Pass 3: the user-provided implementation capture exposed missing border segments along the clipped perimeter. The native rectangular border was replaced by a full-shape outline layer plus an identically clipped one-pixel inset fill; production build passed. A post-fix authenticated capture is still required for final visual sign-off.
+- Pass 4: the opaque inset-fill approach was rejected because it removed the dashboard's original transparency. The transparent surface is restored and its full alpha silhouette now receives the outline; the room number moved from the title row into a second upper-right circle and room names no longer truncate.
+- Pass 5: the reference requires a nearly transparent one-pixel perimeter, a slightly brighter hover surface, and a larger centered completed-cycle indicator. The idle stroke was reduced to 10% opacity, hover uses a 2.4% white surface tint, and the central ring, arc, number, and caption spacing were resized to match the supplied crop. Production build and TypeScript passed; authenticated post-fix capture remains blocked.
 
-- 2138 × 1042 px: mezera mezi ovládáním času a rezervovaným prostorem časové osy 95 px.
-- 1280 × 720 px: mezera 28 px.
-- 1024 × 768 px: mezera 78 px.
+**Implementation checklist**
 
-## Kontroly
+- Capture authenticated desktop dashboard at the same interaction state.
+- Check card title truncation at four-, five-, and six-column layouts.
+- Verify hover, keyboard focus, emergency, locked, paused, and notification states.
+- Capture a narrow desktop/tablet breakpoint and confirm no control overlap.
 
-- Kružnice `+` a `−` se na obrazovkách s menší výškou proporcionálně zmenšují.
-- Při výšce do 760 px se ovládání posune o 8 px výše.
-- Hlavní kruhová grafika, boční ovládání a spodní časová osa nemění svou strukturu.
-- Ve všech ověřených rozměrech je překrytí nulové.
-- Konzole náhledu neobsahuje chyby ani varování.
-- Produkční sestavení prošlo bez chyby.
+**Follow-up polish**
 
-final result: passed
-
----
-
-# Design QA — stránka nastavení systému
-
-## Zdroj
-
-- Reference: `design-qa-settings-reference.png`
-- Rozměr zachycení: 1440 × 1000 px
-- Referenční stav: první karta „Operační sály“ uprostřed karuselu
-
-## Implementace
-
-- Produkční komponenta: `components/SettingsPage.tsx`
-- Produkční sestavení Next.js prošlo včetně TypeScript kontroly.
-- Karusel zachovává všech 12 stávajících modulů a otevírá původní funkční obsah.
-
-## Blokace vizuálního porovnání
-
-Lokální aplikace se v ověřovacím prohlížeči otevřela na přihlašovací stránce. Bez přihlášené administrátorské relace nelze zachytit implementovanou stránku nastavení ve stejném stavu jako referenci. Zdrojový snímek je dostupný, výsledný produkční snímek zatím ne.
+- Tune the corner-circle scale and schedule capsule height only after same-state visual evidence is available.
 
 final result: blocked

@@ -202,7 +202,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
+      className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -441,7 +441,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         exit={{ scale: 0.94, opacity: 0, y: 24 }}
         transition={{ type: 'spring', stiffness: 300, damping: 26 }}
         onClick={(e) => e.stopPropagation()}
-        className="hidden md:block rounded-3xl overflow-y-auto hide-scrollbar max-h-[calc(100vh-32px)] max-w-4xl w-full relative"
+        className="timeline-popup-panel hidden md:block overflow-y-auto hide-scrollbar max-h-[calc(100vh-32px)] max-w-4xl w-full relative"
         style={{
           background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
           border: `1px solid ${C.borderStrong}`,
@@ -455,7 +455,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         />
 
         {/* ── Header ── */}
-        <div className="px-6 pt-5 pb-1 flex items-start justify-between relative z-10">
+        <div className="timeline-popup-header px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-white">{room.name}</h2>
@@ -479,8 +479,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <button
             onClick={onClose}
             aria-label="Zavřít"
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10"
-            style={{ background: C.glass, border: `1px solid ${C.border}` }}
+            className="timeline-popup-close w-9 h-9 flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4 text-white/60" />
           </button>
@@ -557,170 +556,98 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           </div>
 
           <div className="min-w-0 w-full">
-            <div className="flex items-end justify-between mb-4">
+            <div className="timeline-popup-journey-heading flex items-end justify-between mb-4">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.28em] text-white/35 font-semibold">Cesta výkonu</p>
-                <p className="text-sm font-bold text-white mt-1">Průběh jednotlivých fází</p>
+                <p className="timeline-popup-journey-kicker text-[10px] uppercase tracking-[0.28em] font-semibold">Cesta výkonu</p>
+                <p className="timeline-popup-journey-title mt-2">Průběh jednotlivých fází</p>
               </div>
-              <span className="text-[10px] text-white/35 tabular-nums">{stepIndex + 1} / {totalSteps}</span>
+              <span className="timeline-popup-journey-count tabular-nums">{String(stepIndex + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}</span>
             </div>
 
-            {/* Souhrnná linka přes celou šířku — zastoupení všech fází */}
-            <div className="mb-5 rounded-2xl p-3.5" style={{ background: 'rgba(255,255,255,.022)', border: '1px solid rgba(255,255,255,.075)' }}>
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-[9px] uppercase tracking-[.22em] font-semibold text-white/35">Procentuální zastoupení všech fází</span>
-                <span className="text-[9px] font-mono text-white/30">100 %</span>
+            {/* Jedna souvislá procesní plocha — bez radiálního diagramu a černých karet. */}
+            <section className="timeline-popup-journey" aria-label="Průběh operačního cyklu">
+              <div className="timeline-popup-journey-summary">
+                <div className="min-w-0">
+                  <span className="timeline-popup-section-title">Aktuální průběh</span>
+                  <div className="mt-2 flex items-baseline gap-3">
+                    <strong className="text-[44px] leading-none font-semibold tracking-[-0.05em] text-white tabular-nums">
+                      {progressPercent}<span className="ml-1 text-lg font-medium text-white/35">%</span>
+                    </strong>
+                    <span className="min-w-0 text-sm font-semibold" style={{ color: stepColor }}>
+                      {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[10px] text-white/38 tabular-nums">
+                    {elapsedInPhase ? `${elapsedInPhase} v aktuální fázi` : `${stepIndex + 1}. fáze z ${totalSteps}`}
+                  </p>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="timeline-popup-section-title">Podíl naměřených fází</span>
+                    <span className="text-[9px] font-mono text-white/30">100 %</span>
+                  </div>
+                  <div className="timeline-popup-data-bar flex h-3 w-full overflow-hidden gap-px p-px">
+                    {activeStatuses.map((status, index) => {
+                      const share = phaseShares[index] || 0;
+                      const color = status.accent_color || status.color || '#6B7280';
+                      return (
+                        <span
+                          key={`${status.id || index}-share`}
+                          title={`${status.name || `Fáze ${index + 1}`} · ${share.toFixed(1)} %`}
+                          className="h-full first:rounded-l last:rounded-r"
+                          style={{ width: `${share}%`, minWidth: share > 0 ? 3 : 0, background: color, opacity: index > stepIndex ? .42 : 1 }}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-              <div className="flex w-full h-11 rounded-xl overflow-hidden gap-[2px] bg-white/[0.035] p-[2px]">
+
+              <ol className="timeline-popup-phase-roadmap" aria-label="Fáze operačního cyklu">
                 {activeStatuses.map((status, index) => {
-                  const share = phaseShares[index] || 0;
                   const color = status.accent_color || status.color || '#6B7280';
                   const labelColor = getReadableTextColor(color);
+                  const done = index < stepIndex;
                   const current = index === stepIndex;
+                  const mins = phaseMinutes[index];
+                  const share = phaseShares[index] || 0;
+                  const timeLabel = mins !== undefined
+                    ? `${mins < 1 ? '< 1' : Math.round(mins)} min`
+                    : current
+                      ? (elapsedInPhase || 'probíhá')
+                      : done
+                        ? 'dokončeno'
+                        : (status.default_duration ? `odhad ${status.default_duration} min` : '—');
                   return (
-                    <motion.div
-                      key={`${status.id || index}-${stepIndex}`}
-                      title={`${status.name || `Fáze ${index + 1}`} · ${share.toFixed(1)} %`}
-                      className="relative h-full flex items-center justify-center overflow-hidden transition-[filter] duration-200 hover:brightness-125"
-                      style={{
-                        width: `${share}%`,
-                        minWidth: share > 0 ? 5 : 0,
-                        transformOrigin: 'left center',
-                        background: `linear-gradient(180deg, ${color}, ${color}b8)`,
-                        boxShadow: current ? `inset 0 0 0 2px rgba(255,255,255,.55), 0 0 14px ${color}55` : 'inset 0 1px 0 rgba(255,255,255,.18)',
-                      }}
-                      initial={{ scaleX: 0, opacity: 0 }}
-                      animate={{ scaleX: 1, opacity: 1 }}
-                      transition={{ delay: .08 + index * .08, duration: .55, ease: [0.22, 1, 0.36, 1] }}
+                    <li
+                      key={`${status.id || index}-roadmap`}
+                      className="timeline-popup-phase-roadmap-step"
+                      aria-current={current ? 'step' : undefined}
                     >
-                      {share >= 7 && (
-                        <span
-                          className="text-[11px] font-black tabular-nums whitespace-nowrap"
-                          style={{ color: labelColor, textShadow: labelColor === '#FFFFFF' ? '0 1px 2px rgba(0,0,0,.65)' : '0 1px 1px rgba(255,255,255,.2)' }}
-                        >
-                          {share.toFixed(1)} %
-                        </span>
-                      )}
-                    </motion.div>
+                      <span
+                        className="timeline-popup-phase-roadmap-marker"
+                        style={{
+                          background: done || current ? color : 'rgb(45 57 98)',
+                          borderColor: done || current ? color : 'rgba(190,204,245,.2)',
+                          color: done || current ? labelColor : 'rgba(255,255,255,.42)',
+                          boxShadow: current ? `0 0 0 5px ${color}18` : undefined,
+                        }}
+                      >
+                        {done ? <Check className="h-3.5 w-3.5" /> : index + 1}
+                      </span>
+                      <span className="timeline-popup-phase-roadmap-status" style={{ color: current ? color : undefined }}>
+                        {current ? 'Probíhá' : done ? 'Dokončeno' : 'Čeká'}
+                      </span>
+                      <strong className="timeline-popup-phase-roadmap-name">{status.name || `Fáze ${index + 1}`}</strong>
+                      <span className="timeline-popup-phase-roadmap-share" style={{ color }}>{share.toFixed(1)} %</span>
+                      <span className="timeline-popup-phase-roadmap-time">{timeLabel}</span>
+                      <span className="timeline-popup-phase-roadmap-accent" style={{ background: current ? color : 'transparent' }} />
+                    </li>
                   );
                 })}
-              </div>
-            </div>
-
-            <div className="relative h-[390px] w-full overflow-hidden rounded-[26px] border border-white/[0.055] bg-white/[0.012]">
-              <motion.div
-                key={`phase-flash-${stepIndex}`}
-                className="absolute inset-0 pointer-events-none z-20"
-                initial={{ opacity: .32 }}
-                animate={{ opacity: 0 }}
-                transition={{ duration: 1.15, ease: 'easeOut' }}
-                style={{ background: `radial-gradient(circle at 50% 50%, ${stepColor}38 0%, ${stepColor}0d 28%, transparent 66%)` }}
-              />
-              {/* Proudící spojnice dávají radiálnímu diagramu jasnou strukturu. */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 840 390" preserveAspectRatio="none" aria-hidden="true">
-                {[58, 195, 332].map((y, index) => (
-                  <React.Fragment key={y}>
-                    <motion.path
-                      d={`M 236 ${y} C 300 ${y}, 314 195, 345 195`}
-                      fill="none" stroke={stepColor} strokeOpacity=".38" strokeWidth="1.5" strokeDasharray="6 7"
-                      animate={{ strokeDashoffset: [0, -26], opacity: [.3, .9, .3] }}
-                      transition={{ duration: 2.6 + index * .28, repeat: Infinity, ease: 'linear' }}
-                    />
-                    <motion.path
-                      d={`M 495 195 C 526 195, 540 ${y}, 604 ${y}`}
-                      fill="none" stroke={stepColor} strokeOpacity=".38" strokeWidth="1.5" strokeDasharray="6 7"
-                      animate={{ strokeDashoffset: [0, 26], opacity: [.3, .9, .3] }}
-                      transition={{ duration: 2.7 + index * .28, repeat: Infinity, ease: 'linear' }}
-                    />
-                  </React.Fragment>
-                ))}
-              </svg>
-
-              {/* Centrální kruhový graf všech fází */}
-              <motion.div
-                key={`center-phase-${stepIndex}`}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[190px] h-[190px] rounded-full p-[14px]"
-                style={{ background: phaseGradient, boxShadow: `0 0 45px ${stepColor}18, inset 0 0 0 1px rgba(255,255,255,.15)` }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, boxShadow: [`0 0 28px ${stepColor}12`, `0 0 58px ${stepColor}30`, `0 0 28px ${stepColor}12`] }}
-                transition={{ opacity: { duration: .45 }, boxShadow: { duration: 3.2, repeat: Infinity, ease: 'easeInOut' } }}
-              >
-                <div className="w-full h-full rounded-full flex flex-col items-center justify-center text-center" style={{ background: 'radial-gradient(circle at 40% 30%, #172238, #080e1b 72%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.08)' }}>
-                  <span className="text-[9px] uppercase tracking-[.24em] text-white/30 font-semibold">Celkový průběh</span>
-                  <motion.span
-                    key={`progress-value-${stepIndex}`}
-                    className="text-[42px] font-black text-white tabular-nums leading-none mt-2"
-                    style={{ textShadow: `0 0 28px ${stepColor}45` }}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 20, delay: .08 }}
-                  >
-                    {progressPercent}<span className="text-[18px] text-white/40"> %</span>
-                  </motion.span>
-                  <span className="text-[10px] font-bold mt-2 max-w-[130px] truncate" style={{ color: stepColor }}>
-                    {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
-                  </span>
-                  <span className="text-[9px] text-white/30 mt-1">{stepIndex + 1}. fáze z {totalSteps}</span>
-                </div>
-              </motion.div>
-
-              {activeStatuses.map((s, i) => {
-                const col = s.accent_color || s.color || '#6B7280';
-                const colText = getReadableTextColor(col);
-                const done = i < stepIndex;
-                const current = i === stepIndex;
-                const mins = phaseMinutes[i];
-                const share = phaseShares[i] || 0;
-                const highlighted = hoverDot === i;
-                const leftCount = Math.ceil(activeStatuses.length / 2);
-                const onLeft = i < leftCount;
-                const localIndex = onLeft ? i : i - leftCount;
-                const groupCount = onLeft ? leftCount : Math.max(1, activeStatuses.length - leftCount);
-                const left = onLeft ? 15 : 85;
-                const top = groupCount <= 1 ? 50 : 15 + (localIndex / (groupCount - 1)) * 70;
-                return (
-                  <motion.button
-                    type="button"
-                    key={`${s.id || i}-${stepIndex}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: .15 + i * .09, duration: .45 }}
-                    onMouseEnter={() => setHoverDot(i)}
-                    onMouseLeave={() => setHoverDot(null)}
-                    className="absolute z-10 w-[238px] rounded-2xl p-4 min-h-[88px] text-left backdrop-blur-md transition-[filter,box-shadow,border-color] duration-200 hover:brightness-115"
-                    style={{
-                      left: `${left}%`,
-                      top: `${top}%`,
-                      transform: 'translate(-50%, -50%)',
-                      background: current || highlighted ? `${col}1f` : 'rgba(10,17,31,.88)',
-                      border: `1px solid ${current || highlighted ? `${col}55` : 'rgba(255,255,255,.075)'}`,
-                      boxShadow: current ? `0 12px 38px ${col}2c, inset 0 1px 0 rgba(255,255,255,.08)` : '0 10px 26px rgba(0,0,0,.2)',
-                      opacity: i > stepIndex && !highlighted ? .48 : 1,
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[11px] font-black"
-                        style={{ background: done || current ? col : 'rgba(255,255,255,.07)', color: done || current ? colText : 'rgba(255,255,255,.4)' }}
-                      >
-                        {done ? <Check className="w-4 h-4" /> : i + 1}
-                        {current && <span className="absolute -inset-1 rounded-full border animate-ping opacity-25" style={{ borderColor: col }} />}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[14px] font-bold leading-tight text-white/95 whitespace-normal line-clamp-2">{s.name || `Fáze ${i + 1}`}</span>
-                        <span className="block text-[10px] mt-1.5 tabular-nums" style={{ color: current ? col : 'rgba(255,255,255,.35)' }}>
-                          {mins !== undefined ? `${mins < 1 ? '< 1' : Math.round(mins)} min` : current ? (elapsedInPhase || 'probíhá') : done ? 'dokončeno' : (s.default_duration ? `odhad ${s.default_duration} min` : 'čeká')}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-right leading-none">
-                        <strong className="block text-[22px] font-black tabular-nums tracking-tight" style={{ color: col }}>{share.toFixed(1)} %</strong>
-                        <span className="block text-[8px] uppercase tracking-[.18em] text-white/25 mt-1.5">Zastoupení</span>
-                      </span>
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </div>
+              </ol>
+            </section>
 
             {/* Textová doporučení podle skutečného průběhu měřených fází. */}
             <motion.section
@@ -728,19 +655,18 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: .32, duration: .5, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-4 rounded-2xl p-4"
-              style={{ background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.08)' }}
+              className="timeline-popup-insights mt-4"
             >
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${stepColor}16`, border: `1px solid ${stepColor}35` }}>
-                  <TrendingUp className="w-4 h-4" style={{ color: stepColor }} />
+              <div className="flex items-center gap-3 px-4 pt-4">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ color: stepColor, background: `${stepColor}10` }}>
+                  <TrendingUp className="h-4 w-4" />
                 </span>
                 <div>
                   <h3 className="text-[12px] uppercase tracking-[.18em] font-bold text-white/85">Co zlepšit a urychlit</h3>
                   <p className="text-[9px] text-white/35 mt-0.5">Doporučení z reálných časů · chirurgický výkon se nezkracuje</p>
                 </div>
               </div>
-              <div className={`grid gap-2.5 ${recommendations.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <div className={`timeline-popup-insight-list mt-3 grid ${recommendations.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 {recommendations.map((recommendation, index) => {
                   const Icon = recommendation.tone === 'warn' ? AlertTriangle : recommendation.tone === 'good' ? CheckCircle2 : Lightbulb;
                   return (
@@ -749,13 +675,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                       initial={{ opacity: 0, x: index % 2 === 0 ? -10 : 10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: .44 + index * .1, duration: .4 }}
-                      className="rounded-xl p-3 flex items-start gap-2.5"
-                      style={{ background: `${recommendation.color}0e`, border: `1px solid ${recommendation.color}30` }}
+                      className="timeline-popup-insight flex items-start gap-3 px-4 py-3.5"
                     >
-                      <Icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: recommendation.color }} />
+                      <span className="mt-0.5 h-8 w-1 shrink-0 rounded-full" style={{ background: recommendation.color }} />
+                      <Icon className="mt-0.5 h-4 w-4 shrink-0" style={{ color: recommendation.color }} />
                       <div className="min-w-0">
-                        <p className="text-[11px] font-bold text-white leading-tight">{recommendation.title}</p>
-                        <p className="text-[10px] text-white/55 leading-relaxed mt-1">{recommendation.text}</p>
+                        <p className="text-[11px] font-semibold leading-tight text-white/90">{recommendation.title}</p>
+                        <p className="mt-1 text-[10px] leading-relaxed text-white/48">{recommendation.text}</p>
                       </div>
                     </motion.div>
                   );
@@ -930,68 +856,57 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           </div>
         </div>
 
-        {/* ── Spodní řádek: tým + časy ── */}
-        <motion.div
-          className="relative z-10 px-6 pb-6 pt-2 grid grid-cols-2 gap-3"
+        {/* ── Jedna souvislá informační lišta: tým + časy ── */}
+        <motion.dl
+          className="timeline-popup-facts relative z-10 mx-6 mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45, duration: 0.4 }}
         >
-          <div className="flex gap-3">
-            <div className="flex-1 rounded-xl p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${C.purple}20`, border: `1px solid ${C.purple}35` }}>
-                  <Stethoscope className="w-4 h-4" style={{ color: C.purple }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[8px] text-white/40 uppercase tracking-[0.25em] font-semibold">Lékař</p>
-                  <p className="text-xs font-semibold text-white truncate">{room.staff?.doctor?.name || '—'}</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 rounded-xl p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${C.green}20`, border: `1px solid ${C.green}35` }}>
-                  <Users className="w-4 h-4" style={{ color: C.green }} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[8px] text-white/40 uppercase tracking-[0.25em] font-semibold">Sestra</p>
-                  <p className="text-xs font-semibold text-white truncate">{room.staff?.nurse?.name || '—'}</p>
-                </div>
-              </div>
+          <div className="timeline-popup-fact">
+            <Stethoscope className="h-4 w-4 shrink-0" style={{ color: C.purple }} />
+            <div className="min-w-0">
+              <dt>Lékař</dt>
+              <dd className="truncate">{room.staff?.doctor?.name || '—'}</dd>
             </div>
           </div>
-          <div className="flex gap-3">
-            <div className="flex-1 rounded-xl p-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
-              <p className="text-[8px] text-white/40 uppercase tracking-[0.25em] font-semibold mb-1">Začátek</p>
-              <p className="text-base font-mono font-bold text-white/85">
-                {operationStart ? operationStart.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-              </p>
+          <div className="timeline-popup-fact">
+            <Users className="h-4 w-4 shrink-0" style={{ color: C.green }} />
+            <div className="min-w-0">
+              <dt>Sestra</dt>
+              <dd className="truncate">{room.staff?.nurse?.name || '—'}</dd>
             </div>
-            <div className="flex-1 rounded-xl p-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
-              <p className="text-[8px] text-white/40 uppercase tracking-[0.25em] font-semibold mb-1">Odhad konce</p>
-              <p className="text-base font-mono font-bold" style={{ color: C.accent }}>
+          </div>
+          <div className="timeline-popup-fact">
+            <Clock className="h-4 w-4 shrink-0 text-white/30" />
+            <div>
+              <dt>Začátek</dt>
+              <dd className="font-mono tabular-nums">
+                {operationStart ? operationStart.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+              </dd>
+            </div>
+          </div>
+          <div className="timeline-popup-fact">
+            <Flag className="h-4 w-4 shrink-0" style={{ color: C.accent }} />
+            <div>
+              <dt>Odhad konce</dt>
+              <dd className="font-mono tabular-nums" style={{ color: C.accent }}>
                 {room.estimatedEndTime
                   ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                   : '--:--'}
-              </p>
+              </dd>
             </div>
-            {remainingInfo && (
-              <div
-                className="flex-1 rounded-xl p-3 text-center transition-all duration-200 hover:-translate-y-0.5"
-                style={{
-                  background: `linear-gradient(135deg, ${remainingInfo.color}15 0%, ${remainingInfo.color}05 100%)`,
-                  border: `1px solid ${remainingInfo.color}35`,
-                }}
-              >
-                <p className="text-[8px] uppercase tracking-[0.25em] font-semibold mb-1" style={{ color: `${remainingInfo.color}b0` }}>
-                  {remainingInfo.label}
-                </p>
-                <p className="text-base font-mono font-bold" style={{ color: remainingInfo.color }}>{remainingInfo.text}</p>
-              </div>
-            )}
           </div>
-        </motion.div>
+          {remainingInfo && (
+            <div className="timeline-popup-fact">
+              <Timer className="h-4 w-4 shrink-0" style={{ color: remainingInfo.color }} />
+              <div>
+                <dt style={{ color: `${remainingInfo.color}b0` }}>{remainingInfo.label}</dt>
+                <dd className="font-mono tabular-nums" style={{ color: remainingInfo.color }}>{remainingInfo.text}</dd>
+              </div>
+            </div>
+          )}
+        </motion.dl>
       </motion.div>
     </motion.div>
   );

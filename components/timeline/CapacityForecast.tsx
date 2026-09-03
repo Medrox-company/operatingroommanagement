@@ -158,7 +158,7 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
+          className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={onClose}
           role="dialog"
           aria-modal="true"
@@ -171,7 +171,7 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
             exit={{ scale: 0.94, opacity: 0, y: 24 }}
             transition={{ type: 'spring', stiffness: 300, damping: 26 }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl overflow-hidden w-[min(96vw,1240px)] relative"
+            className="timeline-popup-panel overflow-hidden w-[min(96vw,1240px)] relative"
             style={{
               background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
               border: `1px solid ${C.borderStrong}`,
@@ -185,7 +185,7 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
             />
 
             {/* Header */}
-            <div className="px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
+            <div className="timeline-popup-header px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
               <div>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${C.accent}18`, border: `1px solid ${C.accent}40` }}>
@@ -200,14 +200,14 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
                   Predikce vytížení a uvolnění sálů
                 </p>
               </div>
-              <button onClick={onClose} aria-label="Zavřít" className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+              <button onClick={onClose} aria-label="Zavřít" className="timeline-popup-close w-9 h-9 flex items-center justify-center transition-colors">
                 <X className="w-4 h-4 text-white/60" />
               </button>
             </div>
 
             <div className="relative z-10 px-6 pb-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 96px)' }}>
               {/* ── Vlna vytížení ── */}
-              <div className="rounded-2xl p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
+              <div className="timeline-popup-chart rounded-2xl p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-white/45">Souběžně obsazené sály</span>
                   <span className="flex items-center gap-4 text-[10px] text-white/40">
@@ -277,7 +277,7 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
               {/* ── Dvě karty: nejbližší uvolnění + úzká hrdla ── */}
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 {/* Příští volný sál */}
-                <div className="rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${C.green}12 0%, transparent 60%)`, border: `1px solid ${C.green}30` }}>
+                <div className="timeline-popup-card rounded-2xl p-5" style={{ background: `linear-gradient(135deg, ${C.green}12 0%, transparent 60%)`, border: `1px solid ${C.green}30` }}>
                   <div className="flex items-center gap-2 mb-3">
                     <CheckCircle2 className="w-4 h-4" style={{ color: C.green }} />
                     <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-white/55">Příští volný sál</span>
@@ -296,7 +296,7 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
                 </div>
 
                 {/* Úzká hrdla */}
-                <div className="rounded-2xl p-5" style={{ background: model.bottlenecks.length ? `linear-gradient(135deg, ${C.red}12 0%, transparent 60%)` : 'rgba(255,255,255,0.02)', border: `1px solid ${model.bottlenecks.length ? `${C.red}30` : C.border}` }}>
+                <div className="timeline-popup-card rounded-2xl p-5" style={{ background: model.bottlenecks.length ? `linear-gradient(135deg, ${C.red}12 0%, transparent 60%)` : 'rgba(255,255,255,0.02)', border: `1px solid ${model.bottlenecks.length ? `${C.red}30` : C.border}` }}>
                   <div className="flex items-center gap-2 mb-3">
                     <AlertTriangle className="w-4 h-4" style={{ color: model.bottlenecks.length ? C.red : C.slate }} />
                     <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-white/55">Úzká hrdla úklidu / ARO</span>
@@ -318,7 +318,7 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
 
               {/* ── Seznam uvolnění ── */}
               {model.freeing.length > 0 && (
-                <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
+                <div className="timeline-popup-card rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
                   <div className="flex items-center gap-2 mb-3">
                     <Clock className="w-4 h-4 text-white/40" />
                     <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-white/45">Pořadí uvolnění sálů</span>

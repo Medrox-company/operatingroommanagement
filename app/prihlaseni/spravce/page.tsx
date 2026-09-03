@@ -189,7 +189,7 @@ export default function GoogleLoginCallbackPage() {
       }
 
       // Adresu s návratovým kódem není důvod nechávat v historii prohlížeče.
-      window.history.replaceState({}, '', '/prihlaseni/google');
+      window.history.replaceState({}, '', '/prihlaseni/spravce');
 
       await routeByAssuranceLevel();
     })();

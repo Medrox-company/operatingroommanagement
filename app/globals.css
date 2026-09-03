@@ -418,6 +418,551 @@ html.capacitor-native select {
   font-size: 16px;
 }
 
+/* Výběr personálu v detailu sálu — stejný tmavý klinický jazyk jako Timeline
+   a Rozpis sálů. Kontext zůstává čitelný, ale vizuálně ustoupí dialogu. */
+.staff-picker-backdrop {
+  background:
+    radial-gradient(78% 70% at 22% 5%, rgba(45, 51, 112, 0.34), transparent 68%),
+    radial-gradient(54% 58% at 96% 100%, rgba(89, 44, 85, 0.22), transparent 72%),
+    rgba(2, 6, 15, 0.76);
+  backdrop-filter: blur(18px) brightness(0.52) saturate(0.82);
+  -webkit-backdrop-filter: blur(18px) brightness(0.52) saturate(0.82);
+}
+
+.staff-picker-dialog {
+  background:
+    radial-gradient(80% 72% at 24% 2%, rgba(59, 67, 143, 0.58) 0%, rgba(31, 40, 87, 0.48) 34%, transparent 72%),
+    radial-gradient(55% 58% at 96% 100%, rgba(102, 52, 99, 0.28), transparent 72%),
+    #10172c;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 32px 90px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(88, 118, 190, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.staff-picker-header,
+.staff-picker-footer {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.staff-picker-current-bar {
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.035), transparent 62%),
+    rgba(255, 255, 255, 0.022);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.staff-picker-icon-button,
+.staff-picker-search,
+.staff-picker-current,
+.staff-picker-count {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.staff-picker-icon-button:hover {
+  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.staff-picker-search:focus-within {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(103, 232, 249, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 0 0 1px rgba(34, 211, 238, 0.08);
+}
+
+.staff-picker-person:hover:not(:disabled) {
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.055), transparent 74%),
+    rgba(30, 43, 72, 0.96) !important;
+}
+
+.staff-picker-grid {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.staff-picker-avatar-doctor,
+.staff-picker-avatar-nurse {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.staff-picker-avatar-doctor {
+  color: rgba(221, 214, 254, 0.94);
+  background: linear-gradient(145deg, rgba(139, 92, 246, 0.2), rgba(91, 73, 154, 0.08));
+}
+
+.staff-picker-avatar-nurse {
+  color: rgba(167, 243, 208, 0.94);
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.19), rgba(21, 128, 110, 0.07));
+}
+
+.staff-picker-selected {
+  color: rgba(165, 243, 252, 0.96);
+  border: 1px solid rgba(34, 211, 238, 0.24);
+  background: rgba(34, 211, 238, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.staff-picker-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.24) transparent;
+}
+
+/* Sdílený shell všech pracovních dialogů v modulu Timeline. */
+.timeline-popup-overlay {
+  background:
+    radial-gradient(78% 70% at 22% 5%, rgba(45, 51, 112, 0.34), transparent 68%),
+    radial-gradient(54% 58% at 96% 100%, rgba(89, 44, 85, 0.22), transparent 72%),
+    rgba(2, 6, 15, 0.78) !important;
+  backdrop-filter: blur(18px) brightness(0.52) saturate(0.82) !important;
+  -webkit-backdrop-filter: blur(18px) brightness(0.52) saturate(0.82) !important;
+}
+
+.timeline-popup-panel {
+  background:
+    radial-gradient(92% 76% at 16% -8%, rgba(88, 105, 199, 0.38) 0%, rgba(49, 62, 126, 0.22) 44%, transparent 75%),
+    radial-gradient(70% 64% at 106% 108%, rgba(122, 74, 150, 0.18), transparent 72%),
+    linear-gradient(145deg, rgba(27, 38, 72, 0.985), rgba(20, 29, 56, 0.985)) !important;
+  border: 1px solid rgba(193, 205, 255, 0.16) !important;
+  border-radius: 12px !important;
+  box-shadow:
+    0 32px 90px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(88, 118, 190, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.075) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.timeline-popup-panel > [class*="-top-24"] {
+  display: none;
+}
+
+.timeline-popup-panel [class*="rounded-3xl"],
+.timeline-popup-panel [class*="rounded-2xl"],
+.timeline-popup-panel [class*="rounded-xl"] {
+  border-radius: 8px !important;
+}
+
+.timeline-popup-header {
+  background: linear-gradient(90deg, rgba(179, 193, 255, 0.035), transparent 72%);
+  border-bottom: 1px solid rgba(201, 211, 255, 0.09);
+}
+
+.timeline-popup-header h2 {
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.timeline-popup-header p {
+  font-size: 0.625rem !important;
+  line-height: 1.45;
+  letter-spacing: 0.16em !important;
+  color: rgba(255, 255, 255, 0.44) !important;
+}
+
+.timeline-popup-close {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.timeline-popup-close:hover {
+  background: rgba(255, 255, 255, 0.075) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Jedno souvislé datové plátno: vnitřní části jsou světlejší než panel,
+   bez černých „boxů v boxu“. Hierarchii tvoří jemné linky a typografie. */
+.timeline-popup-card,
+.timeline-popup-chart,
+.timeline-popup-metric,
+.timeline-popup-row {
+  border-radius: 8px !important;
+  border-color: rgba(198, 209, 255, 0.1) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.timeline-popup-card {
+  background:
+    linear-gradient(135deg, rgba(153, 170, 244, 0.07), rgba(123, 99, 178, 0.025)) !important;
+  border: 1px solid rgba(198, 209, 255, 0.1) !important;
+}
+
+.timeline-popup-metric {
+  min-width: 0;
+  background:
+    linear-gradient(145deg, rgba(177, 191, 255, 0.09), rgba(137, 112, 194, 0.035)) !important;
+  border: 1px solid rgba(205, 215, 255, 0.12) !important;
+}
+
+.timeline-popup-chart {
+  background:
+    linear-gradient(180deg, rgba(145, 163, 239, 0.055), rgba(114, 91, 169, 0.018)) !important;
+  border: 1px solid rgba(198, 209, 255, 0.085) !important;
+}
+
+.timeline-popup-row {
+  background:
+    linear-gradient(90deg, rgba(164, 181, 249, 0.055), rgba(164, 181, 249, 0.018)) !important;
+  border: 1px solid rgba(198, 209, 255, 0.08) !important;
+}
+
+.timeline-popup-row:hover {
+  background:
+    linear-gradient(90deg, rgba(179, 195, 255, 0.09), rgba(164, 181, 249, 0.035)) !important;
+  border-color: rgba(213, 221, 255, 0.15) !important;
+}
+
+.timeline-popup-phase-card {
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.timeline-popup-data-bar {
+  border-radius: 6px !important;
+  background-color: rgba(184, 198, 255, 0.07) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.timeline-popup-journey-heading {
+  padding-inline: 0.15rem;
+}
+
+.timeline-popup-journey-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  padding: 0 0.65rem;
+  border: 1px solid rgba(195, 208, 250, 0.16);
+  border-radius: 999px;
+  color: rgba(226, 232, 255, 0.56);
+  letter-spacing: 0.18em !important;
+}
+
+.timeline-popup-journey-title {
+  color: rgba(255, 255, 255, 0.97);
+  font-size: clamp(1.35rem, 2.6vw, 2rem);
+  font-weight: 760;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.timeline-popup-journey-count {
+  color: rgba(225, 231, 255, 0.38);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+}
+
+.timeline-popup-journey {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid rgba(202, 214, 255, 0.14);
+  border-bottom: 1px solid rgba(202, 214, 255, 0.1);
+  background:
+    radial-gradient(circle at 18% 4%, rgba(119, 140, 255, 0.17), transparent 31%),
+    radial-gradient(circle at 86% 0%, rgba(212, 108, 180, 0.1), transparent 27%),
+    linear-gradient(110deg, rgba(151, 169, 242, 0.055), rgba(99, 112, 184, 0.012) 54%, rgba(145, 102, 173, 0.03));
+}
+
+.timeline-popup-journey::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(112deg, transparent 0 46%, rgba(255, 255, 255, 0.025) 46.2%, transparent 46.5%);
+}
+
+.timeline-popup-journey-summary {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.55fr) minmax(0, 1.45fr);
+  align-items: center;
+  gap: 2rem;
+  padding: 1.55rem 1.5rem 1.4rem;
+  border-bottom: 1px solid rgba(202, 214, 255, 0.09);
+}
+
+.timeline-popup-journey-summary > div:first-child {
+  position: relative;
+  padding-left: 0.9rem;
+}
+
+.timeline-popup-journey-summary > div:first-child::before {
+  content: "";
+  position: absolute;
+  top: 0.1rem;
+  bottom: 0.05rem;
+  left: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(133, 159, 255, 0.95), rgba(211, 112, 185, 0.35));
+}
+
+.timeline-popup-journey-summary strong {
+  font-size: clamp(3.25rem, 6vw, 5.2rem) !important;
+  font-weight: 780 !important;
+  letter-spacing: -0.075em !important;
+}
+
+.timeline-popup-journey-summary strong + span {
+  max-width: 14rem;
+  font-size: clamp(0.9rem, 1.5vw, 1.15rem) !important;
+  line-height: 1.05;
+  white-space: normal;
+}
+
+.timeline-popup-phase-roadmap {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline-popup-phase-roadmap::before {
+  content: "";
+  position: absolute;
+  top: 2.45rem;
+  right: 4%;
+  left: 4%;
+  height: 1px;
+  background: rgba(195, 208, 250, 0.16);
+}
+
+.timeline-popup-phase-roadmap-step {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 10.25rem;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.45rem 0.75rem 1.1rem;
+  text-align: center;
+  border-left: 1px solid rgba(202, 214, 255, 0.065);
+}
+
+.timeline-popup-phase-roadmap-step:first-child {
+  border-left: 0;
+}
+
+.timeline-popup-phase-roadmap-marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid;
+  border-radius: 7px;
+  font-size: 0.625rem;
+  font-weight: 750;
+}
+
+.timeline-popup-phase-roadmap-status {
+  margin-top: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.46rem;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.timeline-popup-phase-roadmap-name {
+  display: -webkit-box;
+  min-height: 2.35rem;
+  margin-top: 0.35rem;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.78rem;
+  font-weight: 690;
+  line-height: 1.28;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.timeline-popup-phase-roadmap-share {
+  margin-top: 0.6rem;
+  font-size: 1.18rem;
+  font-weight: 760;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-popup-phase-roadmap-time {
+  margin-top: 0.4rem;
+  color: rgba(255, 255, 255, 0.38);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-popup-phase-roadmap-accent {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 999px 999px 0 0;
+}
+
+.timeline-popup-insights {
+  overflow: hidden;
+  border-top: 1px solid rgba(202, 214, 255, 0.1);
+  border-bottom: 1px solid rgba(202, 214, 255, 0.1);
+  background: linear-gradient(90deg, rgba(148, 168, 240, 0.04), transparent 72%);
+}
+
+.timeline-popup-insight-list {
+  border-top: 1px solid rgba(202, 214, 255, 0.075);
+}
+
+.timeline-popup-insight + .timeline-popup-insight {
+  border-left: 1px solid rgba(202, 214, 255, 0.075);
+}
+
+.timeline-popup-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  overflow: hidden;
+  border-top: 1px solid rgba(202, 214, 255, 0.11);
+  border-bottom: 1px solid rgba(202, 214, 255, 0.11);
+  background: linear-gradient(90deg, rgba(151, 169, 242, 0.055), rgba(151, 169, 242, 0.016));
+}
+
+.timeline-popup-fact {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 1rem;
+  border-left: 1px solid rgba(202, 214, 255, 0.08);
+}
+
+.timeline-popup-fact:first-child {
+  border-left: 0;
+}
+
+.timeline-popup-fact dt {
+  margin-bottom: 0.2rem;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 0.5rem;
+  font-weight: 650;
+  letter-spacing: 0.19em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.timeline-popup-fact dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.timeline-popup-section-title {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 0.625rem !important;
+  line-height: 1.4;
+  font-weight: 650 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+}
+
+.timeline-popup-chart svg text {
+  font-family: var(--font-sans) !important;
+}
+
+.timeline-popup-chart svg [style*="drop-shadow"] {
+  filter: none !important;
+}
+
+.timeline-popup-chart [style*="text-shadow"] {
+  text-shadow: none !important;
+}
+
+.timeline-popup-panel input,
+.timeline-popup-panel select {
+  border-radius: 8px;
+}
+
+@media (max-width: 720px) {
+  .timeline-popup-overlay {
+    padding: 0.75rem !important;
+  }
+
+  .timeline-popup-panel {
+    max-height: calc(100dvh - 1.5rem) !important;
+  }
+
+  .timeline-popup-panel .grid-cols-3,
+  .timeline-popup-panel .grid-cols-2 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .timeline-popup-card,
+  .timeline-popup-chart {
+    padding: 0.875rem !important;
+  }
+
+  .timeline-popup-journey-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .timeline-popup-phase-roadmap {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: 0;
+  }
+
+  .timeline-popup-phase-roadmap::before {
+    display: none;
+  }
+
+  .timeline-popup-phase-roadmap-step {
+    min-height: 8.5rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(202, 214, 255, 0.065);
+  }
+
+  .timeline-popup-insight-list {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .timeline-popup-insight + .timeline-popup-insight {
+    border-top: 1px solid rgba(202, 214, 255, 0.075);
+    border-left: 0;
+  }
+
+  .timeline-popup-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .timeline-popup-fact {
+    border-top: 1px solid rgba(202, 214, 255, 0.075);
+  }
+}
+
+@media (max-height: 620px) {
+  .staff-picker-dialog {
+    max-height: calc(100dvh - 1.5rem);
+  }
+}
+
 /* Timeline Premium Styles */
 /* Horní lišta — sjednoceno se stylem modulu Tok pacienta: žádný společný
    podklad, jednotlivé clustery jsou samostatné „glass" pilulky s rámečkem. */
@@ -429,10 +974,14 @@ html.capacitor-native select {
 }
 
 .timeline-toolbar-float {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(125, 165, 185, 0.20);
-  box-shadow: none;
-  backdrop-filter: none;
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(14px);
+}
+
+.timeline-toolbar-float button {
+  border-radius: 8px;
 }
 
 .timeline-clock-clean::after {
@@ -451,14 +1000,15 @@ html.capacitor-native select {
 }
 
 .timeline-status-calm {
-  border: 1px solid rgba(125, 165, 185, 0.20);
-  box-shadow: none;
-  backdrop-filter: none;
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(14px);
 }
 
 .timeline-field-soft {
-  background: rgba(255, 255, 255, 0.025);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  background: rgba(255, 255, 255, 0.038);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .timeline-field-soft:focus-within {
@@ -468,29 +1018,54 @@ html.capacitor-native select {
 }
 
 .timeline-scheduler-shell {
-  /* Tmavý navy podklad časové osy. BEZ vlastního rámečku — jedinou
-     ohraničující linku kreslí vnější panel modulu; osa do něj plynule
-     zapadá jen rozdílem tmavosti plochy (vrstvení bez dvojitých hran). */
+  /* Souvislá tabulka jako v modulu Rozpis sálů. */
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+.timeline-axis-header {
   background:
-    radial-gradient(120% 90% at 50% -10%, rgba(28, 38, 76, 0.22) 0%, transparent 55%),
-    linear-gradient(180deg, #0a0e1c 0%, #060912 55%, #030509 100%);
-  border: none;
-  /* Měkký stín místo linky — osa se nad pozadím vznáší, žádné hrany */
-  box-shadow:
-    0 22px 55px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    radial-gradient(105% 125% at 88% -24%, rgba(34, 211, 238, 0.09), rgba(34, 211, 238, 0.025) 38%, transparent 72%),
+    rgba(255, 255, 255, 0.01);
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  box-shadow: none;
 }
 
 .timeline-room-row {
   transform: translateZ(0);
+  background:
+    radial-gradient(105% 135% at 88% -28%, rgba(34, 211, 238, 0.06), rgba(34, 211, 238, 0.018) 38%, transparent 72%),
+    transparent;
+  border: 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.055);
 }
 
 .timeline-room-row:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.06);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 12px 28px rgba(0, 0, 0, 0.24) !important;
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.19);
+  background:
+    radial-gradient(105% 135% at 88% -28%, rgba(34, 211, 238, 0.14), rgba(34, 211, 238, 0.05) 40%, transparent 74%),
+    rgba(255, 255, 255, 0.018);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.055) !important;
+}
+
+.timeline-room-row-alt {
+  background:
+    radial-gradient(105% 135% at 88% -28%, rgba(34, 211, 238, 0.055), rgba(34, 211, 238, 0.016) 38%, transparent 72%),
+    rgba(255, 255, 255, 0.016);
+}
+
+.timeline-room-label {
+  background: rgba(255, 255, 255, 0.024);
+  border-right: 1px solid rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(12px);
+}
+
+.timeline-room-row:hover .timeline-room-label {
+  background: rgba(255, 255, 255, 0.038);
 }
 
 .timeline-operation-block {
@@ -502,7 +1077,7 @@ html.capacitor-native select {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.07), transparent 36%, transparent 70%, rgba(255, 255, 255, 0.035));
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.045), transparent 34%, transparent 76%, rgba(255, 255, 255, 0.02));
 }
 
 /* ── Mobilní světlý medicínský styl (jednotný s detailem sálu) ── */
@@ -529,9 +1104,21 @@ html.capacitor-native select {
 }
 
 .timeline-mobile-room-card {
-  background: var(--m-card) !important;
-  border-color: var(--m-border) !important;
-  box-shadow: var(--m-card-shadow);
+  background:
+    radial-gradient(115% 100% at 90% -10%, rgba(34, 211, 238, 0.14), rgba(34, 211, 238, 0.05) 42%, transparent 74%),
+    rgba(255, 255, 255, 0.038) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.timeline-mobile-axis {
+  background:
+    radial-gradient(115% 100% at 90% -10%, rgba(34, 211, 238, 0.14), rgba(34, 211, 238, 0.05) 42%, transparent 74%),
+    rgba(255, 255, 255, 0.038) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
 }
 
 .timeline-mobile-axis-row {
@@ -702,6 +1289,174 @@ html.capacitor-native select {
    ─────────────────────────────────────────────────────────────────────────── */
 .room-card-shell {
   contain: layout style;
+}
+
+/* Dashboard — „workspace“ karta: asymetrická kompozice reference je převedena
+   do klinického dark UI bez dekorativních fotografií a bez náročné animace. */
+.dashboard-workspace-card {
+  container-type: inline-size;
+  border-radius: 30px 30px 30px 12px;
+  transition: transform 180ms ease;
+}
+
+.dashboard-workspace-card:hover {
+  transform: translateY(-2px);
+}
+
+.dashboard-workspace-card-surface {
+  border-radius: 0;
+  background: transparent;
+  /* Normalizovaný obrys reference (980 × 750). `cqw` zachovává kruhové
+     oblouky kruhové i u vyšší karty; procenta osy Y by je deformovala na
+     elipsy. Horní S-přechod tvoří tečně spojené r=76 a r=78. */
+  --dashboard-card-shape: polygon(
+    8.673% 0, 61.837% 0,
+    62.513% .030cqw, 63.183% .118cqw, 63.844% .264cqw, 64.489% .468cqw,
+    65.114% .727cqw, 65.714% 1.039cqw, 66.285% 1.402cqw, 66.822% 1.814cqw,
+    67.320% 2.271cqw, 67.777% 2.770cqw, 68.189% 3.307cqw, 68.553% 3.878cqw,
+    68.865% 4.478cqw, 69.124% 5.103cqw, 69.328% 5.748cqw, 69.474% 6.408cqw,
+    69.562% 7.079cqw, 69.592% 7.755cqw,
+    69.622% 8.449cqw, 69.713% 9.137cqw, 69.863% 9.815cqw, 70.072% 10.477cqw,
+    70.338% 11.119cqw, 70.658% 11.735cqw, 71.031% 12.320cqw, 71.454% 12.871cqw,
+    71.923% 13.383cqw, 72.435% 13.852cqw, 72.986% 14.275cqw, 73.571% 14.648cqw,
+    74.187% 14.969cqw, 74.829% 15.234cqw, 75.491% 15.443cqw, 76.169% 15.593cqw,
+    76.857% 15.684cqw, 77.551% 15.714cqw, 91.633% 15.714cqw,
+    92.362% 15.746cqw, 93.086% 15.841cqw, 93.798% 15.999cqw, 94.494% 16.219cqw,
+    95.169% 16.498cqw, 95.816% 16.835cqw, 96.432% 17.228cqw, 97.011% 17.672cqw,
+    97.549% 18.165cqw, 98.042% 18.703cqw, 98.487% 19.282cqw, 98.879% 19.898cqw,
+    99.216% 20.545cqw, 99.495% 21.220cqw, 99.715% 21.916cqw, 99.873% 22.629cqw,
+    99.968% 23.352cqw, 100% 24.082cqw,
+    100% calc(100% - 8.776cqw),
+    99.967% calc(100% - 8.011cqw), 99.867% calc(100% - 7.252cqw),
+    99.701% calc(100% - 6.504cqw), 99.471% calc(100% - 5.774cqw),
+    99.178% calc(100% - 5.067cqw), 98.824% calc(100% - 4.388cqw),
+    98.413% calc(100% - 3.742cqw), 97.947% calc(100% - 3.135cqw),
+    97.430% calc(100% - 2.570cqw), 96.865% calc(100% - 2.053cqw),
+    96.258% calc(100% - 1.587cqw), 95.612% calc(100% - 1.176cqw),
+    94.933% calc(100% - .822cqw), 94.226% calc(100% - .529cqw),
+    93.496% calc(100% - .299cqw), 92.748% calc(100% - .133cqw),
+    91.989% calc(100% - .033cqw), 91.224% 100%, 8.776% 100%,
+    8.011% calc(100% - .033cqw), 7.252% calc(100% - .133cqw),
+    6.504% calc(100% - .299cqw), 5.774% calc(100% - .529cqw),
+    5.067% calc(100% - .822cqw), 4.388% calc(100% - 1.176cqw),
+    3.742% calc(100% - 1.587cqw), 3.135% calc(100% - 2.053cqw),
+    2.570% calc(100% - 2.570cqw), 2.053% calc(100% - 3.135cqw),
+    1.587% calc(100% - 3.742cqw), 1.176% calc(100% - 4.388cqw),
+    .822% calc(100% - 5.067cqw), .529% calc(100% - 5.774cqw),
+    .299% calc(100% - 6.504cqw), .133% calc(100% - 7.252cqw),
+    .033% calc(100% - 8.011cqw), 0% calc(100% - 8.776cqw),
+    0% 8.673cqw,
+    .033% 7.918cqw, .132% 7.167cqw, .296% 6.429cqw, .523% 5.707cqw,
+    .813% 5.008cqw, 1.162% 4.337cqw, 1.569% 3.699cqw, 2.029% 3.098cqw,
+    2.540% 2.540cqw, 3.098% 2.029cqw, 3.699% 1.569cqw, 4.337% 1.162cqw,
+    5.008% .813cqw, 5.707% .523cqw, 6.429% .296cqw, 7.167% .132cqw,
+    7.918% .033cqw, 8.673% 0
+  );
+  clip-path: var(--dashboard-card-shape);
+}
+
+.dashboard-workspace-card:hover .dashboard-workspace-card-surface {
+  background: transparent;
+}
+
+.dashboard-workspace-card-surface--emergency {
+  background: transparent;
+}
+
+.dashboard-workspace-card-surface--locked {
+  background: transparent;
+}
+
+.dashboard-workspace-card-outline-path {
+  fill: rgba(255, 255, 255, 0.04);
+  stroke: rgba(203, 213, 247, 0.1);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: fill 180ms ease, stroke 180ms ease;
+}
+
+.dashboard-workspace-card:hover .dashboard-workspace-card-outline-path {
+  fill: rgba(255, 255, 255, 0.055);
+  stroke: rgba(220, 226, 255, 0.17);
+}
+
+.dashboard-workspace-card-outline-path--emergency {
+  stroke: rgba(248, 113, 113, 0.16);
+}
+
+.dashboard-workspace-card-outline-path--locked {
+  stroke: rgba(251, 191, 36, 0.15);
+}
+
+.dashboard-workspace-card:hover .dashboard-workspace-card-surface--emergency,
+.dashboard-workspace-card:hover .dashboard-workspace-card-surface--locked {
+  background: transparent;
+}
+
+.dashboard-workspace-card-corner-control {
+  top: .816cqw;
+  transform: translateX(-50%);
+  width: 13.878cqw;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.dashboard-workspace-card-room-index {
+  left: 77.551%;
+}
+
+.dashboard-workspace-card-open {
+  left: 92.653%;
+}
+
+.dashboard-workspace-card:hover .dashboard-workspace-card-open {
+  transform: translateX(-50%);
+  border-color: rgba(103, 232, 249, 0.22);
+  background: rgba(103, 232, 249, 0.08);
+}
+
+.dashboard-workspace-card-open-icon {
+  transition: transform 180ms ease, color 180ms ease;
+}
+
+.dashboard-workspace-card:hover .dashboard-workspace-card-open-icon {
+  transform: translate(2px, -2px);
+  color: rgba(165, 243, 252, 0.9);
+}
+
+.dashboard-workspace-card-header {
+  min-height: 2.75rem;
+}
+
+.dashboard-workspace-specialties {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+@media (max-width: 1100px) {
+  .dashboard-workspace-card {
+    border-radius: 24px 24px 24px 10px;
+  }
+
+  .dashboard-workspace-card-surface {
+    border-radius: 0;
+  }
+
+  .dashboard-workspace-card-corner-control {
+    top: .816cqw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-workspace-card,
+  .dashboard-workspace-card-corner-control {
+    transition: none !important;
+  }
 }
 
 /* Nekonečné dekorativní smyčky (ping / pulse) drží kompozitor v neustálé

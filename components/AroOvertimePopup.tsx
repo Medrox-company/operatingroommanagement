@@ -92,7 +92,7 @@ const AroOvertimePopup: React.FC<Props> = ({ isOpen, onClose, overtimeRooms, roo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
+          className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={onClose}
           role="dialog"
           aria-modal="true"
@@ -105,7 +105,7 @@ const AroOvertimePopup: React.FC<Props> = ({ isOpen, onClose, overtimeRooms, roo
             exit={{ scale: 0.94, opacity: 0, y: 24 }}
             transition={{ type: 'spring', stiffness: 300, damping: 26 }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl overflow-hidden w-[min(96vw,1280px)] relative"
+            className="timeline-popup-panel overflow-hidden w-[min(96vw,1280px)] relative"
             style={{
               background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
               border: `1px solid ${C.borderStrong}`,
@@ -120,7 +120,7 @@ const AroOvertimePopup: React.FC<Props> = ({ isOpen, onClose, overtimeRooms, roo
             />
 
             {/* ── Header ── */}
-            <div className="px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
+            <div className="timeline-popup-header px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
               <div>
                 <div className="flex items-center gap-3">
                   <div
@@ -144,7 +144,7 @@ const AroOvertimePopup: React.FC<Props> = ({ isOpen, onClose, overtimeRooms, roo
               <button
                 onClick={onClose}
                 aria-label="Zavřít"
-                className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10"
+                className="timeline-popup-close w-9 h-9 flex items-center justify-center transition-colors"
                 style={{ background: C.glass, border: `1px solid ${C.border}` }}
               >
                 <X className="w-4 h-4 text-white/60" />
@@ -161,7 +161,7 @@ const AroOvertimePopup: React.FC<Props> = ({ isOpen, onClose, overtimeRooms, roo
                 <>
                   {/* ── Animovaná časová osa přesahů ── */}
                   <div
-                    className="rounded-2xl p-5 mb-5"
+                    className="timeline-popup-chart rounded-2xl p-5 mb-5"
                     style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}
                   >
                     {/* Časové značky */}
@@ -310,7 +310,7 @@ const AroOvertimePopup: React.FC<Props> = ({ isOpen, onClose, overtimeRooms, roo
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.3 + i * 0.08 }}
-                          className="flex items-center gap-4 rounded-xl px-4 py-3.5"
+                          className="timeline-popup-row flex items-center gap-4 rounded-xl px-4 py-3.5"
                           style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}
                         >
                           <span

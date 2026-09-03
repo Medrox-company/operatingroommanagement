@@ -56,7 +56,19 @@ export async function clearGoogleAuthSession(): Promise<void> {
   }
 }
 
-/** Kam se má Google vrátit po přihlášení. */
+/**
+ * Kam se má Google vrátit po přihlášení.
+ *
+ * Cesta záměrně neobsahuje slovo „google". Blokovače reklam (uBlock Origin,
+ * AdGuard) mají v seznamech pravidla na adresy, kde se potkává jméno velké
+ * platformy s parametrem `?code=` — typický podpis přesměrování při sledování.
+ * Návrat z OAuth přesně takhle vypadá, takže rozšíření požadavek zabilo ještě
+ * před odesláním a přihlášení skončilo na ERR_BLOCKED_BY_CLIENT. Neutrální
+ * cesta pravidlo netriggeruje.
+ *
+ * POZOR: adresa musí být v Supabase → Authentication → URL Configuration
+ * mezi povolenými Redirect URLs.
+ */
 export function getGoogleRedirectUrl(): string {
-  return `${window.location.origin}/prihlaseni/google`;
+  return `${window.location.origin}/prihlaseni/spravce`;
 }

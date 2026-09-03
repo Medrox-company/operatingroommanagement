@@ -95,7 +95,7 @@ const PhaseFingerprint: React.FC<Props> = ({ isOpen, onClose, rows }) => {
         <motion.div
           key="fp-backdrop"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
+          className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={onClose} role="dialog" aria-modal="true" aria-label="Fázový otisk sálů"
         >
           <motion.div
@@ -103,7 +103,7 @@ const PhaseFingerprint: React.FC<Props> = ({ isOpen, onClose, rows }) => {
             initial={{ scale: 0.94, opacity: 0, y: 24 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.94, opacity: 0, y: 24 }}
             transition={{ type: 'spring', stiffness: 300, damping: 26 }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl overflow-hidden w-[min(96vw,1080px)] relative"
+            className="timeline-popup-panel overflow-hidden w-[min(96vw,1080px)] relative"
             style={{
               background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
               border: `1px solid ${C.borderStrong}`,
@@ -115,7 +115,7 @@ const PhaseFingerprint: React.FC<Props> = ({ isOpen, onClose, rows }) => {
               style={{ background: `radial-gradient(circle, ${C.accent} 0%, transparent 70%)`, filter: 'blur(70px)' }} />
 
             {/* Header */}
-            <div className="px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
+            <div className="timeline-popup-header px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
               <div>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${C.accent}18`, border: `1px solid ${C.accent}40` }}>
@@ -125,7 +125,7 @@ const PhaseFingerprint: React.FC<Props> = ({ isOpen, onClose, rows }) => {
                 </div>
                 <p className="text-white/45 text-sm mt-1.5 uppercase tracking-[0.2em]">Časový profil fází vs. medián traktu</p>
               </div>
-              <button onClick={onClose} aria-label="Zavřít" className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+              <button onClick={onClose} aria-label="Zavřít" className="timeline-popup-close w-9 h-9 flex items-center justify-center transition-colors">
                 <X className="w-4 h-4 text-white/60" />
               </button>
             </div>
@@ -139,7 +139,7 @@ const PhaseFingerprint: React.FC<Props> = ({ isOpen, onClose, rows }) => {
               ) : (
                 <div className="flex flex-col lg:flex-row gap-4 items-center">
                   {/* Radar */}
-                  <div className="flex-shrink-0">
+                  <div className="timeline-popup-chart flex-shrink-0 p-4">
                     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="w-full max-w-[460px]" style={{ aspectRatio: '1' }}>
                       {/* mřížkové prstence */}
                       {[0.25, 0.5, 0.75, 1].map((r, gi) => (
@@ -187,7 +187,7 @@ const PhaseFingerprint: React.FC<Props> = ({ isOpen, onClose, rows }) => {
                   </div>
 
                   {/* Postranní panel: výběr sálů + legenda */}
-                  <div className="flex-1 w-full min-w-0">
+                  <div className="timeline-popup-card flex-1 w-full min-w-0 p-4">
                     <p className="text-[11px] uppercase tracking-[0.2em] font-semibold text-white/45 mb-2">Sály (klikni pro zobrazení)</p>
                     <div className="flex flex-col gap-1.5 mb-4">
                       {model.rooms.map((r) => {
@@ -198,7 +198,7 @@ const PhaseFingerprint: React.FC<Props> = ({ isOpen, onClose, rows }) => {
                           <button
                             key={r.id}
                             onClick={() => setSelected((prev) => prev.includes(r.id) ? prev.filter((x) => x !== r.id) : [...prev, r.id])}
-                            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors"
+                            className="timeline-popup-row flex items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors"
                             style={{ background: on ? `${col}14` : 'rgba(255,255,255,0.02)', border: `1px solid ${on ? `${col}45` : C.border}` }}
                           >
                             <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: on ? col : 'transparent', border: `1.5px solid ${on ? col : 'rgba(255,255,255,0.3)'}`, boxShadow: on ? `0 0 6px ${col}80` : 'none' }} />

@@ -157,7 +157,7 @@ const TimelineHistory: React.FC<Props> = ({ isOpen, onClose, rooms, onSelectRoom
         <motion.div
           key="hist-backdrop"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl"
+          className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={onClose} role="dialog" aria-modal="true" aria-label="Historie operací"
         >
           <motion.div
@@ -165,7 +165,7 @@ const TimelineHistory: React.FC<Props> = ({ isOpen, onClose, rooms, onSelectRoom
             initial={{ scale: 0.94, opacity: 0, y: 24 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.94, opacity: 0, y: 24 }}
             transition={{ type: 'spring', stiffness: 300, damping: 26 }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl overflow-hidden w-[min(97vw,1280px)] relative"
+            className="timeline-popup-panel overflow-hidden w-[min(97vw,1280px)] relative"
             style={{
               background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
               border: `1px solid ${C.borderStrong}`,
@@ -177,7 +177,7 @@ const TimelineHistory: React.FC<Props> = ({ isOpen, onClose, rooms, onSelectRoom
               style={{ background: `radial-gradient(circle, ${C.accent} 0%, transparent 70%)`, filter: 'blur(70px)' }} />
 
             {/* Header */}
-            <div className="px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
+            <div className="timeline-popup-header px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
               <div>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${C.accent}18`, border: `1px solid ${C.accent}40` }}>
@@ -190,14 +190,14 @@ const TimelineHistory: React.FC<Props> = ({ isOpen, onClose, rooms, onSelectRoom
                 </div>
                 <p className="text-white/45 text-sm mt-1.5 uppercase tracking-[0.2em]">Listování po dnech · zpětná časová osa</p>
               </div>
-              <button onClick={onClose} aria-label="Zavřít" className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10" style={{ background: C.glass, border: `1px solid ${C.border}` }}>
+              <button onClick={onClose} aria-label="Zavřít" className="timeline-popup-close w-9 h-9 flex items-center justify-center transition-colors">
                 <X className="w-4 h-4 text-white/60" />
               </button>
             </div>
 
             {/* Den navigátor */}
             <div className="px-6 pb-4 relative z-10">
-              <div className="flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5"
+              <div className="timeline-popup-card flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5"
                 style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
                 <button
                   onClick={() => shiftDay(-1)}
@@ -244,7 +244,7 @@ const TimelineHistory: React.FC<Props> = ({ isOpen, onClose, rooms, onSelectRoom
                     { label: 'Aktivních sálů', value: String(totals.activeRooms), color: C.green },
                     { label: 'Obsazený čas', value: fmtH(totals.occupiedMin), color: C.blue },
                   ].map((k) => (
-                    <div key={k.label} className="rounded-2xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
+                    <div key={k.label} className="timeline-popup-metric rounded-2xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}` }}>
                       <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-white/40">{k.label}</p>
                       <p className="text-2xl font-black tabular-nums mt-1" style={{ color: k.color }}>{k.value}</p>
                     </div>
@@ -253,7 +253,7 @@ const TimelineHistory: React.FC<Props> = ({ isOpen, onClose, rooms, onSelectRoom
               )}
 
               {/* Časová osa */}
-              <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
+              <div className="timeline-popup-chart rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
                 {/* Hodinové značky */}
                 <div className="relative h-5 mb-2" style={{ marginLeft: 160 }}>
                   {HOUR_TICKS.map((i) => {
@@ -297,7 +297,7 @@ const TimelineHistory: React.FC<Props> = ({ isOpen, onClose, rooms, onSelectRoom
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: Math.min(li * 0.02, 0.4) }}
-                        className="group flex items-center gap-0 rounded-xl text-left transition-colors hover:bg-white/[0.025]"
+                        className="timeline-popup-row group flex items-center gap-0 rounded-xl text-left transition-colors hover:bg-white/[0.025]"
                         style={{ height: 34 }}
                       >
                         {/* Název sálu */}
