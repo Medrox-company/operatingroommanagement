@@ -65,9 +65,9 @@
    pozadí úvodní obrazovky Nastavení systému. */
 .app-module-background {
   background:
-    radial-gradient(80% 72% at 24% 2%, #3a4794 0%, #202b68 35%, rgba(9, 14, 34, 0) 72%),
-    radial-gradient(55% 58% at 96% 100%, #703264 0%, rgba(50, 25, 65, 0.82) 38%, rgba(9, 14, 34, 0) 72%),
-    linear-gradient(145deg, #111a3e 0%, #090f25 55%, #170e27 100%);
+    radial-gradient(80% 72% at 24% 2%, #2b3778 0%, #182254 35%, rgba(7, 11, 28, 0) 72%),
+    radial-gradient(55% 58% at 96% 100%, #52264d 0%, rgba(37, 18, 51, 0.86) 38%, rgba(7, 11, 28, 0) 72%),
+    linear-gradient(145deg, #0c1332 0%, #060b1d 55%, #11091d 100%);
 }
 
 @media (dynamic-range: standard) {
@@ -1538,12 +1538,12 @@ html.capacitor-native select {
 
   /* Statistiky mají na desktopu vlastní tmavý vizuální jazyk. Mobilní
      světlá varianta tyto tokeny přepisuje níže pouze uvnitř modulu. */
-  --stats-bg: #070c1b;
-  --stats-surface: rgba(24, 34, 66, 0.72);
-  --stats-surface-2: rgba(33, 45, 82, 0.78);
-  --stats-surface-3: rgba(41, 54, 94, 0.84);
-  --stats-surface-hover: rgba(50, 65, 108, 0.88);
-  --stats-surface-active: rgba(59, 75, 121, 0.92);
+  --stats-bg: #050918;
+  --stats-surface: rgba(15, 23, 50, 0.84);
+  --stats-surface-2: rgba(22, 32, 64, 0.88);
+  --stats-surface-3: rgba(29, 40, 76, 0.9);
+  --stats-surface-hover: rgba(38, 51, 90, 0.92);
+  --stats-surface-active: rgba(47, 61, 103, 0.94);
   --stats-border: rgba(177, 193, 238, 0.14);
   --stats-border-hover: rgba(191, 207, 250, 0.22);
   --stats-border-active: rgba(207, 220, 255, 0.3);
@@ -1856,9 +1856,9 @@ html.capacitor-native select {
 
   .mobile-theme-surface:not(.mobile-timeline-room-detail) {
     background:
-      radial-gradient(80% 72% at 24% 2%, #3a4794 0%, #202b68 35%, rgba(9, 14, 34, 0) 72%),
-      radial-gradient(55% 58% at 96% 100%, #703264 0%, rgba(50, 25, 65, 0.82) 38%, rgba(9, 14, 34, 0) 72%),
-      linear-gradient(145deg, #111a3e 0%, #090f25 55%, #170e27 100%) !important;
+      radial-gradient(80% 72% at 24% 2%, #2b3778 0%, #182254 35%, rgba(7, 11, 28, 0) 72%),
+      radial-gradient(55% 58% at 96% 100%, #52264d 0%, rgba(37, 18, 51, 0.86) 38%, rgba(7, 11, 28, 0) 72%),
+      linear-gradient(145deg, #0c1332 0%, #060b1d 55%, #11091d 100%) !important;
     transition: background 240ms ease;
   }
 
