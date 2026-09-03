@@ -65,9 +65,15 @@
    pozadí úvodní obrazovky Nastavení systému. */
 .app-module-background {
   background:
-    radial-gradient(80% 72% at 24% 2%, rgba(53, 62, 137, 0.96) 0%, rgba(27, 35, 84, 0.84) 35%, transparent 72%),
-    radial-gradient(55% 58% at 96% 100%, rgba(112, 48, 106, 0.58), transparent 72%),
-    #060b18;
+    radial-gradient(80% 72% at 24% 2%, #3a4794 0%, #202b68 35%, rgba(9, 14, 34, 0) 72%),
+    radial-gradient(55% 58% at 96% 100%, #703264 0%, rgba(50, 25, 65, 0.82) 38%, rgba(9, 14, 34, 0) 72%),
+    linear-gradient(145deg, #111a3e 0%, #090f25 55%, #170e27 100%);
+}
+
+@media (dynamic-range: standard) {
+  .app-module-background {
+    filter: saturate(1.14) contrast(1.035);
+  }
 }
 
 /* Systémová volba vyššího kontrastu přidá rezervu pro starší SDR panely.
@@ -82,8 +88,8 @@
   }
 
   .statistics-module {
-    --stats-surface: rgba(255, 255, 255, 0.055);
-    --stats-surface-2: rgba(255, 255, 255, 0.075);
+    --stats-surface: rgba(31, 44, 82, 0.9);
+    --stats-surface-2: rgba(42, 57, 99, 0.94);
     --stats-border: rgba(210, 221, 250, 0.14);
     --stats-muted: rgba(255, 255, 255, 0.68);
     --stats-faint: rgba(255, 255, 255, 0.46);
@@ -1532,20 +1538,20 @@ html.capacitor-native select {
 
   /* Statistiky mají na desktopu vlastní tmavý vizuální jazyk. Mobilní
      světlá varianta tyto tokeny přepisuje níže pouze uvnitř modulu. */
-  --stats-bg: #0A0A0A;
-  --stats-surface: rgba(255, 255, 255, 0.035);
-  --stats-surface-2: rgba(255, 255, 255, 0.055);
-  --stats-surface-3: rgba(255, 255, 255, 0.075);
-  --stats-surface-hover: rgba(255, 255, 255, 0.095);
-  --stats-surface-active: rgba(255, 255, 255, 0.12);
-  --stats-border: rgba(199, 211, 242, 0.08);
-  --stats-border-hover: rgba(205, 218, 250, 0.15);
-  --stats-border-active: rgba(211, 223, 255, 0.22);
+  --stats-bg: #070c1b;
+  --stats-surface: rgba(24, 34, 66, 0.72);
+  --stats-surface-2: rgba(33, 45, 82, 0.78);
+  --stats-surface-3: rgba(41, 54, 94, 0.84);
+  --stats-surface-hover: rgba(50, 65, 108, 0.88);
+  --stats-surface-active: rgba(59, 75, 121, 0.92);
+  --stats-border: rgba(177, 193, 238, 0.14);
+  --stats-border-hover: rgba(191, 207, 250, 0.22);
+  --stats-border-active: rgba(207, 220, 255, 0.3);
   --stats-text: rgba(255, 255, 255, 0.88);
   --stats-text-strong: rgba(255, 255, 255, 0.95);
   --stats-muted: rgba(255, 255, 255, 0.58);
   --stats-faint: rgba(255, 255, 255, 0.34);
-  --stats-ghost: rgba(255, 255, 255, 0.11);
+  --stats-ghost: rgba(113, 132, 188, 0.2);
 }
 
 /* Statistiky používají napříč tabulkami, kartami, grafy a dialogy jediný
@@ -1850,9 +1856,9 @@ html.capacitor-native select {
 
   .mobile-theme-surface:not(.mobile-timeline-room-detail) {
     background:
-      radial-gradient(80% 72% at 24% 2%, rgba(53, 62, 137, 0.96) 0%, rgba(27, 35, 84, 0.84) 35%, transparent 72%),
-      radial-gradient(55% 58% at 96% 100%, rgba(112, 48, 106, 0.58), transparent 72%),
-      #060b18 !important;
+      radial-gradient(80% 72% at 24% 2%, #3a4794 0%, #202b68 35%, rgba(9, 14, 34, 0) 72%),
+      radial-gradient(55% 58% at 96% 100%, #703264 0%, rgba(50, 25, 65, 0.82) 38%, rgba(9, 14, 34, 0) 72%),
+      linear-gradient(145deg, #111a3e 0%, #090f25 55%, #170e27 100%) !important;
     transition: background 240ms ease;
   }
 

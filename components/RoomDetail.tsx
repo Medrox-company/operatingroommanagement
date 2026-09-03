@@ -62,16 +62,19 @@ const PHASE_TITLE_LINES: Record<string, [string, string]> = {
 
 const renderPhaseTitle = (title?: string): React.ReactNode => {
   const safeTitle = title?.trim() || 'Waiting';
-  const lines = PHASE_TITLE_LINES[safeTitle.toLocaleLowerCase('cs-CZ')];
+  const normalizedTitle = safeTitle.toLocaleLowerCase('cs-CZ').replace(/\s+/g, ' ');
+  const lines = PHASE_TITLE_LINES[normalizedTitle]
+    ?? (normalizedTitle.includes('ukončení') && normalizedTitle.includes('výkonu')
+      ? PHASE_TITLE_LINES['ukončení výkonu']
+      : undefined);
 
   if (!lines) return safeTitle;
 
   return (
-    <>
+    <span className="inline-flex flex-col items-center justify-center leading-[1.08]">
       <span className="whitespace-nowrap">{lines[0]}</span>
-      <br />
       <span className="whitespace-nowrap">{lines[1]}</span>
-    </>
+    </span>
   );
 };
 
