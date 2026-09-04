@@ -2,7 +2,7 @@
 import React, { memo, useMemo } from 'react';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { ArrowUpRight, Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
 import type { CurrentRoomSpecialty } from '../lib/room-specialty';
 import { useOperationalDayWindow } from '../hooks/useOperationalDayWindow';
 
@@ -264,25 +264,40 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
           className={`dashboard-workspace-card-outline-path ${room.isEmergency
             ? 'dashboard-workspace-card-outline-path--emergency'
             : (room.isLocked ? 'dashboard-workspace-card-outline-path--locked' : '')}`}
-          d="M 85 0 H 600 A 76 76 0 0 1 676 76 A 84 84 0 0 0 760 160 H 898 A 82 82 0 0 1 980 242 V 663 A 86 86 0 0 1 894 749 H 86 A 86 86 0 0 1 0 663 V 85 A 85 85 0 0 1 85 0 Z"
+          d="M 85 0 H 894 A 86 86 0 0 1 980 86 V 508 A 82 82 0 0 1 898 590 H 760 A 84 84 0 0 0 676 674 A 76 76 0 0 1 600 750 H 85 A 85 85 0 0 1 0 665 V 85 A 85 85 0 0 1 85 0 Z"
           vectorEffect="non-scaling-stroke"
         />
       </svg>
 
-      <span className="dashboard-workspace-card-corner-control dashboard-workspace-card-room-index absolute z-30 flex items-center justify-center text-[12px] font-semibold tabular-nums text-white/76" aria-hidden="true">
-        {mobileRoomNumber}
-      </span>
+      <button
+        type="button"
+        onClick={(event) => handleAction(event, onEmergency)}
+        aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
+        title={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
+        className={`dashboard-workspace-card-corner-control dashboard-workspace-card-corner-action dashboard-workspace-card-emergency absolute z-30 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/60
+          ${room.isEmergency ? 'is-active' : ''}
+        `}
+      >
+        <AlertCircle className="dashboard-workspace-card-corner-icon" aria-hidden="true" />
+      </button>
 
-      <span className="dashboard-workspace-card-corner-control dashboard-workspace-card-open absolute z-30 flex items-center justify-center" aria-hidden="true">
-        <ArrowUpRight className="dashboard-workspace-card-open-icon h-[18px] w-[18px] text-white/62" />
-        {room.noticeMessage && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-400" />}
-      </span>
+      <button
+        type="button"
+        onClick={(event) => handleAction(event, onLock)}
+        aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
+        title={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
+        className={`dashboard-workspace-card-corner-control dashboard-workspace-card-corner-action dashboard-workspace-card-lock absolute z-30 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/60
+          ${room.isLocked ? 'is-active' : ''}
+        `}
+      >
+        <Lock className="dashboard-workspace-card-corner-icon" aria-hidden="true" />
+      </button>
 
       {/* Content Container */}
       <div className="relative z-10 flex h-full w-full flex-col p-[clamp(0.875rem,1.4vw,1.25rem)]">
 
-        {/* Identita podle reference: kruhové číslo, výrazný název, drobný obor. */}
-        <div className="dashboard-workspace-card-header flex max-w-[61.8%] min-w-0 items-center">
+        {/* Horní ovládací kruhy byly přesunuty do spodní vlny; název má celou šířku. */}
+        <div className="dashboard-workspace-card-header flex min-w-0 items-center pr-2">
           <div className="min-w-0 w-full">
             <h3 className={`max-w-full whitespace-normal break-words text-[clamp(0.74rem,1.08vw,1.05rem)] font-semibold uppercase leading-[1.08] tracking-tight [overflow-wrap:anywhere]
               ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/92 group-hover:text-white'}
@@ -328,7 +343,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                       className="transition-[stroke-dashoffset,stroke] duration-300"
                       style={{ filter: `drop-shadow(0 0 2px ${themeColor}58)` }}
                     />
-                    {room.isPaused ? (
+                    {(room.isEmergency || room.isLocked) ? null : room.isPaused ? (
                       <text
                         x={center}
                         y={center}
@@ -363,8 +378,23 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                       </text>
                     )}
                 </svg>
+                {(room.isEmergency || room.isLocked) && (
+                  <span
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                    style={{ color: themeColor }}
+                    aria-hidden="true"
+                  >
+                    {room.isEmergency ? (
+                      <AlertCircle className="h-[clamp(1.75rem,7cqw,2.4rem)] w-[clamp(1.75rem,7cqw,2.4rem)]" strokeWidth={1.8} />
+                    ) : (
+                      <Lock className="h-[clamp(1.75rem,7cqw,2.4rem)] w-[clamp(1.75rem,7cqw,2.4rem)]" strokeWidth={1.8} />
+                    )}
+                  </span>
+                )}
             </div>
-            <span className="mt-2.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/28 sm:text-[9px]">Dokončené cykly</span>
+            <span className="mt-2.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/28 sm:text-[9px]">
+              {room.isEmergency ? 'Nouzový stav' : (room.isLocked ? 'Sál uzamčen' : 'Dokončené cykly')}
+            </span>
             
             {room.estimatedEndTime && shouldShowTime && (
                 <div className="-mt-1 text-center">
@@ -389,7 +419,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
             {specialtySlot(scheduledSpecialties.afternoon, 'odpoledne')}
           </div>
           
-            <div className={`flex items-center justify-between pt-2 sm:pt-3 border-t gap-1.5 sm:gap-2 transition-colors
+            <div className={`dashboard-workspace-card-footer flex items-center justify-between pt-2 sm:pt-3 border-t gap-1.5 sm:gap-2 transition-colors
             ${room.isEmergency ? 'border-red-500/14' : (room.isLocked ? 'border-amber-500/14' : (room.isPaused ? 'border-cyan-500/14' : 'border-white/[0.035]'))}
           `}>
             {/* Left: avatar + names */}
@@ -439,31 +469,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                 </div>
               )}
 
-              {/* Emergency button */}
-              <button
-                onClick={(e) => handleAction(e, onEmergency)}
-                aria-label={room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}
-                className={`rounded-lg border p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/60 sm:p-2
-                  ${room.isEmergency
-                    ? 'border-red-500/26 bg-red-500/16 text-red-200'
-                    : 'border-white/[0.04] bg-white/[0.025] text-white/35 hover:text-red-300'}
-                `}
-              >
-                <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
-
-              {/* Lock button */}
-              <button
-                onClick={(e) => handleAction(e, onLock)}
-                aria-label={room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}
-                className={`rounded-lg border p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/60 sm:p-2
-                  ${room.isLocked
-                    ? 'border-amber-400/24 bg-amber-400/15 text-amber-100'
-                    : 'border-white/[0.04] bg-white/[0.025] text-white/35 hover:text-amber-200'}
-                `}
-              >
-                <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
             </div>
           </div>
         </div>

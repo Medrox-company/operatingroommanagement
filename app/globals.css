@@ -65,15 +65,10 @@
    pozadí úvodní obrazovky Nastavení systému. */
 .app-module-background {
   background:
-    radial-gradient(80% 72% at 24% 2%, #2b3778 0%, #182254 35%, rgba(7, 11, 28, 0) 72%),
-    radial-gradient(55% 58% at 96% 100%, #52264d 0%, rgba(37, 18, 51, 0.86) 38%, rgba(7, 11, 28, 0) 72%),
-    linear-gradient(145deg, #0c1332 0%, #060b1d 55%, #11091d 100%);
-}
-
-@media (dynamic-range: standard) {
-  .app-module-background {
-    filter: saturate(1.14) contrast(1.035);
-  }
+    radial-gradient(110% 92% at 15% -8%, rgba(50, 64, 143, 0.78) 0%, rgba(41, 53, 121, 0.66) 20%, rgba(28, 38, 91, 0.46) 42%, rgba(17, 25, 60, 0.24) 62%, rgba(8, 13, 32, 0) 84%),
+    radial-gradient(88% 82% at 106% 106%, rgba(91, 40, 86, 0.68) 0%, rgba(72, 31, 72, 0.52) 24%, rgba(49, 23, 57, 0.34) 46%, rgba(27, 16, 43, 0.16) 66%, rgba(8, 13, 32, 0) 86%),
+    radial-gradient(74% 68% at 58% 45%, rgba(30, 37, 84, 0.24) 0%, rgba(17, 23, 54, 0.12) 48%, transparent 82%),
+    linear-gradient(145deg, #0b1230 0%, #080e25 30%, #070c1f 58%, #0d0a20 78%, #130b21 100%);
 }
 
 /* Systémová volba vyššího kontrastu přidá rezervu pro starší SDR panely.
@@ -1421,7 +1416,7 @@ html.capacitor-native select {
 }
 
 .dashboard-workspace-card-corner-control {
-  top: .816cqw;
+  bottom: .816cqw;
   transform: translateX(-50%);
   width: 13.878cqw;
   aspect-ratio: 1;
@@ -1432,27 +1427,44 @@ html.capacitor-native select {
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
-.dashboard-workspace-card-room-index {
+.dashboard-workspace-card-emergency {
   left: 77.551%;
+  color: rgba(255, 255, 255, 0.42);
 }
 
-.dashboard-workspace-card-open {
+.dashboard-workspace-card-lock {
   left: 92.653%;
+  color: rgba(255, 255, 255, 0.42);
 }
 
-.dashboard-workspace-card:hover .dashboard-workspace-card-open {
-  transform: translateX(-50%);
-  border-color: rgba(103, 232, 249, 0.22);
-  background: rgba(103, 232, 249, 0.08);
+.dashboard-workspace-card-corner-action:hover {
+  transform: translateX(-50%) translateY(-2px);
 }
 
-.dashboard-workspace-card-open-icon {
-  transition: transform 180ms ease, color 180ms ease;
+.dashboard-workspace-card-emergency:hover,
+.dashboard-workspace-card-emergency.is-active {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(239, 68, 68, 0.11);
+  color: rgba(254, 202, 202, 0.92);
 }
 
-.dashboard-workspace-card:hover .dashboard-workspace-card-open-icon {
-  transform: translate(2px, -2px);
-  color: rgba(165, 243, 252, 0.9);
+.dashboard-workspace-card-lock:hover,
+.dashboard-workspace-card-lock.is-active {
+  border-color: rgba(251, 191, 36, 0.26);
+  background: rgba(245, 158, 11, 0.11);
+  color: rgba(254, 243, 199, 0.92);
+}
+
+.dashboard-workspace-card-corner-icon {
+  width: 22%;
+  height: 22%;
+  min-width: 15px;
+  min-height: 15px;
+  stroke-width: 1.8;
+}
+
+.dashboard-workspace-card-footer {
+  padding-right: 30.5%;
 }
 
 .dashboard-workspace-card-header {
@@ -1474,7 +1486,7 @@ html.capacitor-native select {
   }
 
   .dashboard-workspace-card-corner-control {
-    top: .816cqw;
+    bottom: .816cqw;
   }
 }
 
@@ -1856,9 +1868,10 @@ html.capacitor-native select {
 
   .mobile-theme-surface:not(.mobile-timeline-room-detail) {
     background:
-      radial-gradient(80% 72% at 24% 2%, #2b3778 0%, #182254 35%, rgba(7, 11, 28, 0) 72%),
-      radial-gradient(55% 58% at 96% 100%, #52264d 0%, rgba(37, 18, 51, 0.86) 38%, rgba(7, 11, 28, 0) 72%),
-      linear-gradient(145deg, #0c1332 0%, #060b1d 55%, #11091d 100%) !important;
+      radial-gradient(110% 92% at 15% -8%, rgba(50, 64, 143, 0.78) 0%, rgba(41, 53, 121, 0.66) 20%, rgba(28, 38, 91, 0.46) 42%, rgba(17, 25, 60, 0.24) 62%, rgba(8, 13, 32, 0) 84%),
+      radial-gradient(88% 82% at 106% 106%, rgba(91, 40, 86, 0.68) 0%, rgba(72, 31, 72, 0.52) 24%, rgba(49, 23, 57, 0.34) 46%, rgba(27, 16, 43, 0.16) 66%, rgba(8, 13, 32, 0) 86%),
+      radial-gradient(74% 68% at 58% 45%, rgba(30, 37, 84, 0.24) 0%, rgba(17, 23, 54, 0.12) 48%, transparent 82%),
+      linear-gradient(145deg, #0b1230 0%, #080e25 30%, #070c1f 58%, #0d0a20 78%, #130b21 100%) !important;
     transition: background 240ms ease;
   }
 
