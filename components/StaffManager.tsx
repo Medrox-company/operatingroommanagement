@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Stethoscope, Heart, Search, Plus, Trash2, X, Check,
-  Shield, Activity, UserPlus, Loader2, Star, MapPin, Percent,
-  UserRoundCheck, UserRoundX, SlidersHorizontal, CalendarDays
+  Shield, Activity, UserPlus, Loader2, Star, MapPin,
+  UserRoundCheck, UserRoundX, SlidersHorizontal
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel } from '../types';
@@ -59,7 +59,7 @@ const staffInitials = (name: string) =>
     .join('')
     .toUpperCase();
 
-const StaffCard: React.FC<{
+const StaffRow: React.FC<{
   member: StaffMember;
   onEdit: () => void;
   onToggleActive: () => void;
@@ -71,127 +71,70 @@ const StaffCard: React.FC<{
   const skillMeta = member.skill_level ? SKILL_LEVELS[member.skill_level] : null;
   const absenceDays = (member.sick_leave_days ?? 0) + (member.vacation_days ?? 0);
 
+  const availabilityColor = availability >= 70 ? COLORS.green : availability >= 40 ? COLORS.amber : COLORS.red;
+
   return (
-    <article
-      className="relative min-h-[202px] overflow-hidden rounded-[22px] p-3 font-sans"
-      style={{
-        background: member.is_active
-          ? `linear-gradient(125deg, ${accent}0a, rgba(255,255,255,0.018) 52%, rgba(251,191,36,0.018))`
-          : 'rgba(255,255,255,0.016)',
-        border: `1px solid ${member.is_active ? 'rgba(125,165,185,0.16)' : 'rgba(255,255,255,0.07)'}`,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
-      }}
-    >
-      <div
-        aria-hidden
-        className="absolute inset-x-10 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}90, transparent)` }}
-      />
-
-      <div className="grid h-full grid-cols-[118px_minmax(0,1fr)] gap-3 sm:grid-cols-[142px_minmax(0,1fr)]">
-        <div
-          className="flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl px-3 py-3"
-          style={{
-            background: member.is_active
-              ? `linear-gradient(145deg, ${accent}2e, ${accent}12)`
-              : 'linear-gradient(145deg, rgba(148,163,184,0.11), rgba(148,163,184,0.04))',
-            border: `1px solid ${member.is_active ? `${accent}52` : 'rgba(148,163,184,0.15)'}`,
-          }}
+    <article className={`grid min-h-[70px] grid-cols-[minmax(230px,1.5fr)_minmax(185px,1.15fr)_minmax(130px,.8fr)_minmax(170px,1fr)_minmax(140px,.85fr)_112px_112px] items-center border-b border-white/[0.055] px-4 transition-colors last:border-b-0 hover:bg-white/[0.028] ${member.is_active ? '' : 'opacity-55'}`}>
+      <div className="flex min-w-0 items-center gap-3 pr-4">
+        <span
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border text-[10px] font-bold tracking-[0.06em]"
+          style={{ color: accent, background: `${accent}0d`, borderColor: `${accent}26` }}
         >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-white/35">
-              {isDoctor ? 'Anesteziologie' : 'Sálová péče'}
-            </span>
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: member.is_active ? COLORS.green : 'rgba(255,255,255,0.22)' }}
-            />
-          </div>
-
-          <div className="my-2">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold"
-              style={{ color: accent, background: `${accent}16`, border: `1px solid ${accent}25` }}
-            >
-              {staffInitials(member.name)}
-            </div>
-            <p className="mt-2 line-clamp-2 text-sm font-bold leading-tight text-white">{member.name}</p>
-            <div className="mt-1.5 flex items-center gap-1.5 text-[9px] font-semibold" style={{ color: accent }}>
-              <RoleIcon className="h-3 w-3 shrink-0" />
-              <span className="truncate">{isDoctor ? 'Anesteziologický lékař' : 'Sálová sestra'}</span>
-            </div>
-          </div>
-
-          <span className={`text-[9px] font-semibold ${member.is_active ? 'text-emerald-300/75' : 'text-white/28'}`}>
-            {member.is_active ? 'Aktivní' : 'Neaktivní'}
-          </span>
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-2 py-0.5">
-          <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-cyan-300/10 bg-cyan-300/[0.035] px-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-300/[0.09] text-cyan-300">
-              <Percent className="h-3.5 w-3.5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[9px] font-medium text-white/32">Dostupnost</p>
-                <p className="text-xs font-semibold tabular-nums text-white/72">{availability}%</p>
-              </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.06]">
-                <div className="h-full rounded-full" style={{ width: `${availability}%`, background: availability >= 70 ? COLORS.green : availability >= 40 ? COLORS.amber : COLORS.red }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-amber-300/10 bg-amber-300/[0.03] px-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-300/[0.08] text-amber-300">
-              <CalendarDays className="h-3.5 w-3.5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-medium text-white/32">Absence</p>
-              <p className="truncate text-xs font-semibold text-white/72">
-                {absenceDays > 0
-                  ? `PN ${member.sick_leave_days ?? 0} · Dovolená ${member.vacation_days ?? 0}`
-                  : 'Bez evidované absence'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 px-1 pt-0.5">
-            <div className="flex min-w-0 items-center gap-1.5">
-              {skillMeta && (
-                <span className={`rounded-md border px-1.5 py-1 text-[8px] font-bold ${skillMeta.bgColor} ${skillMeta.color}`}>
-                  {skillMeta.label}
-                </span>
-              )}
-              {member.is_recommended && <Star className="h-3 w-3 text-amber-300/80" />}
-              {member.is_external && <MapPin className="h-3 w-3 text-orange-300/80" />}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={onToggleActive}
-                className={`flex h-7 items-center gap-1 rounded-lg border px-2 text-[8px] font-bold uppercase tracking-[0.08em] transition-colors ${
-                  member.is_active
-                    ? 'border-emerald-300/15 bg-emerald-300/[0.04] text-emerald-200/65 hover:text-emerald-100'
-                    : 'border-white/[0.08] bg-white/[0.025] text-white/38 hover:text-white'
-                }`}
-              >
-                {member.is_active ? <UserRoundCheck className="h-3 w-3" /> : <UserRoundX className="h-3 w-3" />}
-                {member.is_active ? 'Aktivní' : 'Zapnout'}
-              </button>
-              <button
-                type="button"
-                onClick={onEdit}
-                className="flex h-7 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.025] px-2.5 text-[9px] font-bold uppercase tracking-[0.1em] text-white/48 transition-colors hover:border-cyan-300/25 hover:text-cyan-200"
-              >
-                <SlidersHorizontal className="h-3 w-3" />
-                Upravit
-              </button>
-            </div>
-          </div>
+          {staffInitials(member.name)}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-[12px] font-semibold text-white/88">{member.name}</p>
+          <p className="mt-0.5 truncate text-[8px] font-semibold uppercase tracking-[0.15em] text-white/28">
+            {isDoctor ? 'Anesteziologie' : 'Sálová péče'}
+          </p>
         </div>
       </div>
+
+      <div className="flex min-w-0 items-center gap-2.5 pr-4">
+        <RoleIcon className="h-3.5 w-3.5 shrink-0" style={{ color: accent }} />
+        <span className="truncate text-[10px] font-medium text-white/60">
+          {isDoctor ? 'Anesteziologický lékař' : 'Sálová sestra'}
+        </span>
+      </div>
+
+      <div className="pr-5">
+        <div className="flex items-center justify-between gap-2 text-[10px] font-semibold tabular-nums text-white/70">
+          <span>{availability}%</span>
+          <span className="text-[8px] font-medium text-white/25">kapacita</span>
+        </div>
+        <div className="mt-1.5 h-px overflow-hidden bg-white/[0.08]">
+          <div className="h-full" style={{ width: `${availability}%`, background: availabilityColor }} />
+        </div>
+      </div>
+
+      <p className={`truncate pr-4 text-[10px] font-medium ${absenceDays > 0 ? 'text-amber-200/70' : 'text-white/34'}`}>
+        {absenceDays > 0 ? `PN ${member.sick_leave_days ?? 0} · Dovolená ${member.vacation_days ?? 0}` : 'Bez absence'}
+      </p>
+
+      <div className="flex min-w-0 items-center gap-1.5 pr-3">
+        {skillMeta && <span className={`rounded-md border px-2 py-1 text-[8px] font-bold ${skillMeta.bgColor} ${skillMeta.color}`}>{skillMeta.label}</span>}
+        {member.is_recommended && <span title="Doporučený"><Star className="h-3 w-3 text-amber-300/75" /></span>}
+        {member.is_external && <span title="Externí pracovník"><MapPin className="h-3 w-3 text-orange-300/75" /></span>}
+        {!skillMeta && !member.is_recommended && !member.is_external && <span className="text-[9px] text-white/24">Standardní</span>}
+      </div>
+
+      <button
+        type="button"
+        onClick={onToggleActive}
+        className={`inline-flex h-8 w-[92px] items-center justify-center gap-1.5 rounded-md border text-[8px] font-bold uppercase tracking-[0.08em] transition-colors ${member.is_active ? 'border-emerald-300/15 bg-emerald-300/[0.045] text-emerald-200/70 hover:bg-emerald-300/[0.08]' : 'border-white/[0.07] bg-white/[0.025] text-white/35 hover:bg-white/[0.05]'}`}
+      >
+        {member.is_active ? <UserRoundCheck className="h-3 w-3" /> : <UserRoundX className="h-3 w-3" />}
+        {member.is_active ? 'Aktivní' : 'Zapnout'}
+      </button>
+
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex h-8 w-[96px] items-center justify-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.025] text-[8px] font-bold uppercase tracking-[0.09em] text-white/48 transition-colors hover:border-cyan-300/22 hover:bg-white/[0.045] hover:text-cyan-100"
+      >
+        <SlidersHorizontal className="h-3 w-3" />
+        Upravit
+      </button>
     </article>
   );
 };
@@ -221,17 +164,12 @@ function DetailEditModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="staff-detail-title"
-      className="max-h-[92vh] w-full max-w-3xl space-y-5 overflow-y-auto rounded-[26px] p-4 font-sans sm:p-6"
-      style={{
-        background: 'linear-gradient(145deg, rgba(8,20,30,0.985), rgba(5,12,20,0.985))',
-        border: '1px solid rgba(125,165,185,0.22)',
-        boxShadow: '0 30px 90px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.04)',
-      }}
+      className="staff-picker-dialog max-h-[calc(100dvh-1rem)] w-full max-w-3xl space-y-4 overflow-y-auto rounded-xl p-4 font-sans sm:p-5"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
         <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${formData.role === 'DOCTOR' ? 'bg-violet-500/15' : 'bg-emerald-500/15'}`}>
+          <div className={`flex h-10 w-10 items-center justify-center rounded-lg border ${formData.role === 'DOCTOR' ? 'border-cyan-300/20 bg-cyan-300/[0.08]' : 'border-amber-300/20 bg-amber-300/[0.08]'}`}>
             {formData.role === 'DOCTOR' ? <Stethoscope className="w-5 h-5 text-violet-400" /> : <Heart className="w-5 h-5 text-emerald-400" />}
           </div>
           <div>
@@ -254,7 +192,7 @@ function DetailEditModal({
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all"
+          className="mt-2 h-10 w-full rounded-lg border border-white/[0.08] bg-black/10 px-3 text-sm text-white transition-colors focus:outline-none focus:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/25"
           placeholder="Zadejte jméno..."
         />
       </div>
@@ -267,7 +205,7 @@ function DetailEditModal({
             <button
               key={role}
               onClick={() => setFormData({ ...formData, role })}
-              className={`py-3 px-4 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+              className={`flex min-h-11 items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-all ${
                 formData.role === role
                   ? role === 'DOCTOR'
                     ? 'bg-violet-500/20 border-violet-500/40 text-violet-300'
@@ -341,7 +279,7 @@ function DetailEditModal({
           className={`p-4 rounded-xl border transition-all text-left ${
             formData.is_external
               ? 'bg-orange-500/15 border-orange-500/30'
-              : 'bg-white/[0.03] border-white/10'
+              : 'bg-black/10 border-white/[0.08]'
           }`}
         >
           <div className="flex items-center gap-2">
@@ -359,7 +297,7 @@ function DetailEditModal({
           className={`p-4 rounded-xl border transition-all text-left ${
             formData.is_recommended
               ? 'bg-yellow-500/15 border-yellow-500/30'
-              : 'bg-white/[0.03] border-white/10'
+              : 'bg-black/10 border-white/[0.08]'
           }`}
         >
           <div className="flex items-center gap-2">
@@ -382,7 +320,7 @@ function DetailEditModal({
             min="0"
             value={formData.sick_leave_days ?? 0}
             onChange={(e) => setFormData({ ...formData, sick_leave_days: parseInt(e.target.value) || 0 })}
-            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-red-500/50 transition-all text-center font-semibold"
+            className="mt-2 h-10 w-full rounded-lg border border-white/[0.08] bg-black/10 px-3 text-center font-semibold text-white transition-colors focus:outline-none focus:border-red-500/40 focus-visible:ring-2 focus-visible:ring-red-300/25"
             placeholder="0"
           />
           <p className="text-[10px] text-white/30 mt-1">Pracovní neschopnost</p>
@@ -396,7 +334,7 @@ function DetailEditModal({
             min="0"
             value={formData.vacation_days ?? 0}
             onChange={(e) => setFormData({ ...formData, vacation_days: parseInt(e.target.value) || 0 })}
-            className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-blue-500/50 transition-all text-center font-semibold"
+            className="mt-2 h-10 w-full rounded-lg border border-white/[0.08] bg-black/10 px-3 text-center font-semibold text-white transition-colors focus:outline-none focus:border-blue-500/40 focus-visible:ring-2 focus-visible:ring-blue-300/25"
             placeholder="0"
           />
           <p className="text-[10px] text-white/30 mt-1">Dovolená</p>
@@ -409,7 +347,7 @@ function DetailEditModal({
         <textarea
           value={formData.notes ?? ''}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#FBBF24]/50 transition-all resize-none"
+          className="mt-2 w-full resize-none rounded-lg border border-white/[0.08] bg-black/10 px-3 py-2.5 text-white transition-colors focus:outline-none focus:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/25"
           placeholder="Zadejte dodatečné poznámky..."
           rows={3}
         />
@@ -418,7 +356,7 @@ function DetailEditModal({
       {/* Active Status */}
       <button
         onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
-        className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between ${
+        className={`flex w-full items-center justify-between rounded-lg border p-3 transition-all ${
           formData.is_active
             ? 'bg-emerald-500/10 border-emerald-500/30'
             : 'bg-red-500/10 border-red-500/30'
@@ -437,7 +375,7 @@ function DetailEditModal({
       <div className="flex gap-3 pt-2">
         <button
           onClick={onDelete}
-          className="px-4 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 font-semibold transition-all flex items-center justify-center gap-2"
+          className="flex h-10 items-center justify-center gap-2 rounded-md border border-red-500/15 px-4 text-[9px] font-semibold uppercase tracking-[0.1em] text-red-300/65 transition-colors hover:bg-red-500/[0.07]"
         >
           <Trash2 className="w-4 h-4" />
           Smazat
@@ -445,7 +383,7 @@ function DetailEditModal({
         <button
           onClick={handleSave}
           disabled={saving || !formData.name.trim()}
-          className="flex-1 py-3 rounded-xl bg-amber-300 hover:bg-amber-200 text-[#071019] font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-10 flex-1 items-center justify-center gap-2 rounded-md bg-cyan-300 px-5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#061724] transition-colors hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
           Uložit změny
@@ -642,136 +580,111 @@ export default function StaffManager() {
   return (
     <>
       <div className="min-h-full w-full pb-8 font-sans">
-      <header className="mb-7">
-        <ModulePageHeading icon={Shield} kicker="STAFF DIRECTORY" title="PERSONÁL" mutedTitle="MANAGEMENT" />
-        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-          <p className="text-sm font-medium text-white/40">
-            Správa anesteziologických lékařů, sálových sester a jejich dostupnosti
-          </p>
-          <div className="inline-flex items-center gap-2 text-[9px] font-bold tracking-[0.16em] text-emerald-300/75">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            PERSONÁLNÍ ADRESÁŘ AKTIVNÍ
-          </div>
-        </div>
-      </header>
+        <header className="mb-7">
+          <ModulePageHeading icon={Shield} kicker="STAFF MANAGEMENT" title="PERSONÁLNÍ" mutedTitle="MANAGEMENT" />
+        </header>
 
-      <section
-        className="relative mb-4 overflow-hidden rounded-[26px] p-2.5"
-        style={{
-          background: 'rgba(255,255,255,0.024)',
-          border: '1px solid rgba(125,165,185,0.18)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
-        }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-x-24 top-0 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.45), transparent)' }}
-        />
-        <div className="grid grid-cols-2 gap-1.5 md:grid-cols-5">
-          {[
-            { label: 'Celkem personálu', value: stats.total, suffix: 'osob', color: COLORS.cyan, icon: Users },
-            { label: 'Aktivní', value: stats.active, suffix: 'osob', color: COLORS.green, icon: UserRoundCheck },
-            { label: 'Anesteziologové', value: stats.doctors, suffix: 'lékařů', color: COLORS.blue, icon: Stethoscope },
-            { label: 'Sálové sestry', value: stats.nurses, suffix: 'sester', color: COLORS.amber, icon: Heart },
-            { label: 'Dostupní', value: stats.available, suffix: 'osob', color: COLORS.violet, icon: Activity },
-          ].map(({ label, value, suffix, color, icon: Icon }, index) => (
-            <div
-              key={label}
-              className={`relative flex min-h-[78px] flex-col justify-between rounded-2xl px-3.5 py-3 ${index === 4 ? 'col-span-2 md:col-span-1' : ''}`}
-              style={{ background: `${color}08`, border: `1px solid ${color}17` }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</p>
-                <Icon className="h-3.5 w-3.5" style={{ color }} />
+        <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+          <div className="flex min-w-max items-center gap-2.5">
+            {[
+              { label: 'Celkem', value: stats.total, color: COLORS.cyan, icon: Users },
+              { label: 'Aktivní', value: stats.active, color: COLORS.green, icon: UserRoundCheck },
+              { label: 'Lékaři', value: stats.doctors, color: COLORS.blue, icon: Stethoscope },
+              { label: 'Sestry', value: stats.nurses, color: COLORS.amber, icon: Heart },
+              { label: 'Dostupní', value: stats.available, color: COLORS.violet, icon: Activity },
+            ].map(({ label, value, color, icon: Icon }) => (
+              <div key={label} className="flex h-[68px] w-[112px] items-center gap-2.5 rounded-lg border border-white/[0.05] bg-black/10 px-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border" style={{ color, background: `${color}0c`, borderColor: `${color}20` }}>
+                  <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
+                </span>
+                <div>
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.12em] text-white/30">{label}</p>
+                  <p className="mt-0.5 text-xl font-semibold tabular-nums tracking-tight text-white/88">{value}</p>
+                </div>
               </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold tabular-nums tracking-tight" style={{ color }}>{value}</span>
-                <span className="text-[9px] text-white/25">{suffix}</span>
+            ))}
+
+            <div className="mx-0.5 h-9 w-px bg-white/[0.07]" />
+
+            <div className="flex h-9 items-center rounded-lg border border-white/[0.06] bg-black/10 p-1">
+              {categories.map(cat => {
+                const isActive = activeCategory === cat.id;
+                const Icon = cat.icon;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => { setActiveCategory(cat.id); setSelectedStaffId(null); }}
+                    className={`flex h-7 items-center gap-1.5 rounded-md px-3 text-[9px] font-semibold transition-colors ${isActive ? 'bg-cyan-300/[0.13] text-cyan-100' : 'text-white/38 hover:bg-white/[0.04] hover:text-white/65'}`}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {cat.label}
+                    <span className="tabular-nums opacity-55">{cat.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative w-[220px]">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/25" />
+              <input
+                type="search"
+                aria-label="Hledat v personálu"
+                placeholder="Hledat pracovníka…"
+                value={searchQuery}
+                onChange={event => setSearchQuery(event.target.value)}
+                className="h-9 w-full rounded-lg border border-white/[0.06] bg-black/10 pl-9 pr-3 text-[10px] text-white outline-none transition-colors placeholder:text-white/24 focus:border-cyan-300/25 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
+              />
+            </div>
+
+            <button type="button" onClick={() => setIsAddingNew(true)} className="flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 text-[9px] font-bold uppercase tracking-[0.08em] text-[#061724] transition-colors hover:bg-cyan-200">
+              <Plus className="h-3.5 w-3.5" />
+              Přidat pracovníka
+            </button>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3.5">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-cyan-300/60">Personální adresář</p>
+              <h2 className="mt-1 text-base font-semibold tracking-tight text-white/90">
+                {activeCategory === 'doctors' ? 'Anesteziologičtí lékaři' : 'Sálové sestry'}
+              </h2>
+            </div>
+            <p className="text-[9px] font-medium text-white/30">{filteredStaff.length} zobrazených</p>
+          </div>
+
+          {loading ? (
+            <div className="flex min-h-[260px] flex-col items-center justify-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-cyan-300/70" />
+              <p className="text-[10px] text-white/32">Načítám personální adresář…</p>
+            </div>
+          ) : filteredStaff.length === 0 ? (
+            <div className="flex min-h-[260px] flex-col items-center justify-center px-5 text-center">
+              <Users className="mb-3 h-8 w-8 text-white/14" />
+              <p className="text-xs font-semibold text-white/45">{searchQuery ? `Hledání „${searchQuery}“ nemá žádný výsledek` : 'V této kategorii zatím není žádný personál'}</p>
+              <p className="mt-1 text-[10px] text-white/24">Upravte hledání nebo přidejte nového pracovníka.</p>
+            </div>
+          ) : (
+            <div className="hide-scrollbar overflow-x-auto">
+              <div className="min-w-[1080px]">
+                <div className="grid h-9 grid-cols-[minmax(230px,1.5fr)_minmax(185px,1.15fr)_minmax(130px,.8fr)_minmax(170px,1fr)_minmax(140px,.85fr)_112px_112px] items-center border-b border-white/[0.06] bg-black/10 px-4 text-[7px] font-semibold uppercase tracking-[0.16em] text-white/27">
+                  <span>Pracovník</span>
+                  <span>Role</span>
+                  <span>Dostupnost</span>
+                  <span>Absence</span>
+                  <span>Zařazení</span>
+                  <span>Stav</span>
+                  <span>Akce</span>
+                </div>
+                {filteredStaff.map(member => (
+                  <StaffRow key={member.id} member={member} onEdit={() => setSelectedStaffId(member.id)} onToggleActive={() => void handleToggleActive(member)} />
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section
-        className="mb-5 flex flex-col gap-2 rounded-[22px] p-2 xl:flex-row xl:items-center"
-        style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
-      >
-        <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
-          {categories.map(cat => {
-            const isActive = activeCategory === cat.id;
-            const Icon = cat.icon;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => { setActiveCategory(cat.id); setSelectedStaffId(null); }}
-                className="flex h-9 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-semibold transition-colors"
-                style={isActive
-                  ? { background: 'rgba(54,217,236,0.12)', color: COLORS.cyan, border: '1px solid rgba(54,217,236,0.22)' }
-                  : { color: 'rgba(255,255,255,0.42)', border: '1px solid transparent' }}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {cat.label}
-                <span className="text-[9px] tabular-nums opacity-60">{cat.count}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="hidden h-7 w-px bg-white/[0.07] xl:block" />
-
-        <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/28" />
-          <input
-            type="search"
-            aria-label="Hledat v personálu"
-            placeholder="Hledat jméno pracovníka…"
-            value={searchQuery}
-            onChange={event => setSearchQuery(event.target.value)}
-            className="h-9 w-full rounded-xl border border-white/[0.07] bg-black/10 pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/25 focus:border-cyan-300/30"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsAddingNew(true)}
-          className="flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 text-xs font-bold text-[#071019] transition-colors hover:bg-amber-200"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Přidat pracovníka
-        </button>
-      </section>
-
-      {loading ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-20">
-          <Loader2 className="h-7 w-7 animate-spin text-cyan-300/70" />
-          <p className="text-xs text-white/35">Načítám personální adresář…</p>
-        </div>
-      ) : filteredStaff.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-[22px] py-16 text-center"
-          style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.12)' }}
-        >
-          <Users className="mb-3 h-9 w-9 text-white/16" />
-          <p className="text-sm font-semibold text-white/45">
-            {searchQuery ? `Hledání „${searchQuery}“ nemá žádný výsledek` : 'V této kategorii zatím není žádný personál'}
-          </p>
-          <p className="mt-1 text-xs text-white/25">Upravte hledání nebo přidejte nového pracovníka.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          {filteredStaff.map(member => (
-            <StaffCard
-              key={member.id}
-              member={member}
-              onEdit={() => setSelectedStaffId(member.id)}
-              onToggleActive={() => void handleToggleActive(member)}
-            />
-          ))}
-        </div>
-      )}
+          )}
+        </section>
       </div>
       {/* ========== SHARED MODALS (desktop + mobile Upravit flow) ========== */}
 
@@ -784,13 +697,13 @@ export default function StaffManager() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedStaffId(null)}
-              className="fixed inset-0 z-50 bg-[#02060a]/88 backdrop-blur-md"
+              className="staff-picker-backdrop fixed inset-0 z-50"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
+              className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-2 sm:p-5"
             >
               <DetailEditModal
                 staff={selectedStaff}
@@ -813,32 +726,27 @@ export default function StaffManager() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => { setIsAddingNew(false); setNewStaffName(''); }}
-              className="fixed inset-0 z-50 bg-[#02060a]/88 backdrop-blur-md"
+              className="staff-picker-backdrop fixed inset-0 z-50"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
+              className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-2 sm:p-5"
             >
               <div 
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-staff-title"
-                className="w-full max-w-xl rounded-[26px] p-5 space-y-6 sm:p-6"
-                style={{
-                  background: 'linear-gradient(145deg, rgba(8,20,30,0.985), rgba(5,12,20,0.985))',
-                  border: '1px solid rgba(125,165,185,0.22)',
-                  boxShadow: '0 30px 90px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.04)',
-                }}
+                className="staff-picker-dialog w-full max-w-xl space-y-5 rounded-xl p-5 sm:p-6"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-300/20 bg-amber-300/[0.08] text-amber-300">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-200">
                       <UserPlus className="w-5 h-5" />
                     </span>
                     <div>
-                      <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-300/70">Nový pracovník</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-300/70">Nový pracovník</p>
                       <h3 id="add-staff-title" className="mt-1 text-lg font-bold text-white">
                         Přidat {activeCategory === 'doctors' ? 'anesteziologického lékaře' : 'sálovou sestru'}
                       </h3>
@@ -859,22 +767,21 @@ export default function StaffManager() {
                     value={newStaffName}
                     onChange={(e) => setNewStaffName(e.target.value)}
                     placeholder={activeCategory === 'doctors' ? 'MUDr. Jan Novák' : activeCategory === 'nurses' ? 'Bc. Marie Nováková' : 'MUDr. Pavel Marek'}
-                    className="w-full mt-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/20"
-                    autoFocus
+                    className="mt-2 h-10 w-full rounded-lg border border-white/[0.08] bg-black/10 px-3 text-white placeholder-white/20 focus:outline-none focus:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/25"
                   />
                 </div>
 
                 <div className="flex gap-3">
                   <button
                     onClick={() => { setIsAddingNew(false); setNewStaffName(''); }}
-                    className="flex-1 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-white/60 font-semibold transition-all"
+                    className="h-10 flex-1 rounded-md px-4 text-[9px] font-semibold uppercase tracking-[0.1em] text-white/45 transition-colors hover:bg-white/5 hover:text-white/75"
                   >
                     Zrušit
                   </button>
                   <button
                     onClick={handleAddStaff}
                     disabled={saving || !newStaffName.trim()}
-                    className="flex-1 py-3 rounded-xl bg-amber-300 hover:bg-amber-200 text-[#071019] font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-md bg-cyan-300 px-5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#061724] transition-colors hover:bg-cyan-200 disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     Přidat

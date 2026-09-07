@@ -18,7 +18,7 @@ const StaffOverviewModule = dynamic(() => import('./StaffOverviewModule'), { ssr
 const StatusesManager = dynamic(() => import('./StatusesManager'), { ssr: false });
 const ManagementManager = dynamic(() => import('./ManagementManager'), { ssr: false });
 const DevicesManager = dynamic(() => import('./DevicesManager'), { ssr: false });
-const CalendarManager = dynamic(() => import('./CalendarManager'), { ssr: false });
+const CalendarManager = dynamic(() => import('./ScheduleCalendarManager'), { ssr: false });
 const SystemSettingsModule = dynamic(() => import('./SystemSettingsModule'), { ssr: false });
 
 interface SettingsPageProps {
@@ -222,7 +222,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         </ModuleWrapper>
       ) : selectedModule === 'calendar' ? (
         <ModuleWrapper>
-          <CalendarManager />
+          <CalendarManager rooms={rooms} />
         </ModuleWrapper>
       ) : selectedModule === 'management' ? (
         <ModuleWrapper>
