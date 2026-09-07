@@ -25,6 +25,8 @@ interface SpecialtyResponse {
   departments?: Array<{
     id: string;
     name: string;
+    accent_color: string | null;
+    is_active: boolean;
   }>;
 }
 
@@ -85,13 +87,19 @@ export function useCurrentRoomSpecialties() {
     }, { revalidate: false });
   });
 
+  useHospitalRealtime('departments', () => {
+    void mutate();
+  });
+
   useEffect(() => {
     const interval = window.setInterval(() => setClock(new Date()), 60_000);
     const refresh = () => { void mutate(); };
     window.addEventListener('roomSpecialtyScheduleChanged', refresh);
+    window.addEventListener('operatingSpecialtiesChanged', refresh);
     return () => {
       window.clearInterval(interval);
       window.removeEventListener('roomSpecialtyScheduleChanged', refresh);
+      window.removeEventListener('operatingSpecialtiesChanged', refresh);
     };
   }, [mutate]);
 
@@ -99,7 +107,7 @@ export function useCurrentRoomSpecialties() {
     const departments = data?.departments ?? [];
     const departmentMap = new Map(departments.map((department, index) => [department.id, {
       ...department,
-      color: roomSpecialtyColor(index),
+      color: department.accent_color || roomSpecialtyColor(index),
     }]));
     const slotsByRoom = new Map<string, Partial<Record<RoomScheduleDayPart, CurrentRoomSpecialty>>>();
     for (const allocation of data?.allocations ?? []) {

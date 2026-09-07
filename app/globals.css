@@ -982,6 +982,19 @@ html.capacitor-native select {
   .staff-picker-dialog {
     max-height: calc(100dvh - 1.5rem);
   }
+
+  .room-schedule-dialog .staff-picker-header {
+    padding-block: 0.625rem;
+  }
+
+  .room-schedule-dialog .staff-picker-current-bar,
+  .room-schedule-dialog .staff-picker-footer {
+    padding-block: 0.5rem;
+  }
+
+  .room-schedule-dialog-body {
+    padding-block: 0.5rem !important;
+  }
 }
 
 /* Timeline Premium Styles */

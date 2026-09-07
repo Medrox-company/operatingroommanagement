@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'node:crypto';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 import { requireHospitalAccess } from '@/lib/hospital/access';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
@@ -9,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const HOSPITAL_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
+const MAX_BULK_TARGETS = 400;
 type AllocationKind = 'SPECIALTY' | 'CLOSED' | 'SERVICE';
 
 function parseDate(value: string): Date | null {
@@ -51,18 +51,6 @@ function databaseError(error: { code?: string; message?: string } | null, fallba
   return NextResponse.json({ error: fallback }, { status: 500 });
 }
 
-function normalizeDepartmentName(value: string) {
-  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('cs');
-}
-
-function hospitalDepartmentId(hospitalId: string, name: string) {
-  const digest = createHash('sha256')
-    .update(`${hospitalId}:${normalizeDepartmentName(name)}`)
-    .digest('hex')
-    .slice(0, 32);
-  return `department-${digest}`;
-}
-
 export async function GET(request: NextRequest) {
   const access = await requireHospitalAccess(request);
   if (access instanceof NextResponse) return access;
@@ -84,8 +72,7 @@ export async function GET(request: NextRequest) {
   const end = parsedRequestedDate ? start : `${resolvedYear}-12-31`;
   const [
     { data: allocations, error: allocationError },
-    { data: initialDepartments, error: departmentError },
-    { data: roomDepartments, error: roomDepartmentError },
+    { data: departments, error: departmentError },
   ] = await Promise.all([
     admin
       .from('room_specialty_allocations')
@@ -96,55 +83,17 @@ export async function GET(request: NextRequest) {
       .order('allocation_date', { ascending: true }),
     admin
       .from('departments')
-      .select('id, name, accent_color')
+      .select('id, name, short_code, description, accent_color, is_active, sort_order')
       .eq('hospital_id', hospitalId)
-      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
       .order('name', { ascending: true }),
-    admin
-      .from('operating_rooms')
-      .select('department')
-      .eq('hospital_id', hospitalId),
   ]);
 
   if (allocationError) return databaseError(allocationError, 'Rozpis se nepodařilo načíst.');
   if (departmentError) return databaseError(departmentError, 'Operační obory se nepodařilo načíst.');
-  if (roomDepartmentError) return databaseError(roomDepartmentError, 'Obory operačních sálů se nepodařilo načíst.');
-
-  // Nové nemocnice nemusí mít historicky založené řádky v departments.
-  // Bootstrapujeme pouze názvy oborů z JEJICH vlastních operačních sálů.
-  const knownNames = new Set((initialDepartments ?? []).map(item => normalizeDepartmentName(String(item.name || ''))));
-  const uniqueRoomDepartments = new Map<string, string>();
-  for (const row of roomDepartments ?? []) {
-    const name = typeof row.department === 'string' ? row.department.trim().replace(/\s+/g, ' ') : '';
-    if (!name) continue;
-    const normalized = normalizeDepartmentName(name);
-    if (!knownNames.has(normalized)) uniqueRoomDepartments.set(normalized, name);
-  }
-
-  let departments = initialDepartments ?? [];
-  if (uniqueRoomDepartments.size > 0) {
-    const rows = Array.from(uniqueRoomDepartments.values()).map((name, index) => ({
-      id: hospitalDepartmentId(hospitalId, name),
-      hospital_id: hospitalId,
-      name,
-      description: 'Automaticky vytvořeno z konfigurace operačních sálů',
-      is_active: true,
-      accent_color: ['#22D3EE', '#38BDF8', '#818CF8', '#A78BFA', '#F472B6', '#34D399', '#FBBF24'][index % 7],
-    }));
-    const { error: insertError } = await admin.from('departments').upsert(rows, { onConflict: 'id' });
-    if (insertError) return databaseError(insertError, 'Obory zařízení se nepodařilo inicializovat.');
-    const { data: refreshedDepartments, error: refreshError } = await admin
-      .from('departments')
-      .select('id, name, accent_color')
-      .eq('hospital_id', hospitalId)
-      .eq('is_active', true)
-      .order('name', { ascending: true });
-    if (refreshError) return databaseError(refreshError, 'Operační obory se nepodařilo znovu načíst.');
-    departments = refreshedDepartments ?? [];
-  }
 
   return NextResponse.json(
-    { allocations: allocations ?? [], departments },
+    { allocations: allocations ?? [], departments: departments ?? [] },
     { headers: { 'Cache-Control': 'no-store' } },
   );
 }
@@ -226,4 +175,81 @@ export async function PUT(request: NextRequest) {
   }
 
   return NextResponse.json({ success: true, dates, dayParts, allocationKind: clear ? null : allocationKind });
+}
+
+export async function PATCH(request: NextRequest) {
+  const access = await requireHospitalAccess(request);
+  if (access instanceof NextResponse) return access;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
+  const { hospitalId } = access;
+  if (!hospitalId || !HOSPITAL_PATTERN.test(hospitalId)) {
+    return NextResponse.json({ error: 'Zdravotnické zařízení není vybráno.' }, { status: 400 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const allocationKind: AllocationKind | null = body.allocationKind === 'SPECIALTY'
+    || body.allocationKind === 'CLOSED'
+    || body.allocationKind === 'SERVICE'
+    ? body.allocationKind
+    : null;
+  const departmentId = typeof body.departmentId === 'string' && body.departmentId ? body.departmentId : null;
+  const rawTargets = Array.isArray(body.targets) ? body.targets : [];
+  if (!allocationKind || rawTargets.length === 0 || rawTargets.length > MAX_BULK_TARGETS || (allocationKind === 'SPECIALTY' && !departmentId)) {
+    return NextResponse.json({ error: 'Neplatný rozsah hromadného přiřazení.' }, { status: 400 });
+  }
+
+  const targets = new Map<string, { roomId: string; date: string; dayPart: 'AM' | 'PM' }>();
+  for (const target of rawTargets) {
+    const roomId = typeof target?.roomId === 'string' ? target.roomId : '';
+    const parsedDate = typeof target?.date === 'string' ? parseDate(target.date) : null;
+    const dayPart = target?.dayPart === 'AM' || target?.dayPart === 'PM' ? target.dayPart : null;
+    if (!roomId || roomId.length > 150 || !parsedDate || !dayPart) {
+      return NextResponse.json({ error: 'Neplatná buňka hromadného přiřazení.' }, { status: 400 });
+    }
+    const date = formatDate(parsedDate);
+    targets.set(`${roomId}|${date}|${dayPart}`, { roomId, date, dayPart });
+  }
+
+  const uniqueTargets = Array.from(targets.values());
+  const roomIds = Array.from(new Set(uniqueTargets.map(target => target.roomId)));
+  const admin = getSupabaseAdmin();
+  const { data: rooms, error: roomsError } = await admin
+    .from('operating_rooms')
+    .select('id')
+    .eq('hospital_id', hospitalId)
+    .in('id', roomIds);
+  if (roomsError) return databaseError(roomsError, 'Operační sály se nepodařilo ověřit.');
+  if ((rooms ?? []).length !== roomIds.length) {
+    return NextResponse.json({ error: 'Některý operační sál nebyl nalezen.' }, { status: 404 });
+  }
+
+  if (allocationKind === 'SPECIALTY' && departmentId) {
+    const { data: department } = await admin
+      .from('departments')
+      .select('id')
+      .eq('id', departmentId)
+      .eq('hospital_id', hospitalId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!department) return NextResponse.json({ error: 'Operační obor nebyl nalezen.' }, { status: 404 });
+  }
+
+  const now = new Date().toISOString();
+  const rows = uniqueTargets.map(target => ({
+    hospital_id: hospitalId,
+    operating_room_id: target.roomId,
+    department_id: allocationKind === 'SPECIALTY' ? departmentId : null,
+    allocation_date: target.date,
+    day_part: target.dayPart,
+    allocation_kind: allocationKind,
+    updated_at: now,
+  }));
+  const { error } = await admin
+    .from('room_specialty_allocations')
+    .upsert(rows, { onConflict: 'hospital_id,operating_room_id,allocation_date,day_part' });
+  if (error) return databaseError(error, 'Hromadné přiřazení se nepodařilo uložit.');
+
+  return NextResponse.json({ success: true, count: rows.length });
 }

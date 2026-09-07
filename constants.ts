@@ -13,7 +13,6 @@ import {
   Star,
   Sparkles,
   BarChart3,
-  ClipboardList,
   Workflow,
 } from 'lucide-react';
 
@@ -154,7 +153,6 @@ export const SIDEBAR_ITEMS = [
   { icon: Workflow, label: 'Tok pacienta', id: 'flow' },
   { icon: CalendarDays, label: 'Timeline', id: 'timeline' },
   { icon: BarChart3, label: 'Statistiky', id: 'statistics' },
-  { icon: ClipboardList, label: 'Přehled personálu', id: 'staff' },
   { icon: AlertCircle, label: 'Upozornění', id: 'alerts' },
   { icon: Settings, label: 'Nastavení', id: 'settings' },
   ];

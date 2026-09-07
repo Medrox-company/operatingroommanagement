@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Building2, Calendar, Users, Settings as SettingsIcon, ArrowLeft, ArrowRight, Clock, Bell, Briefcase, BarChart3, Activity, Smartphone, ClipboardList } from 'lucide-react';
+import { Building2, Calendar, Users, Settings as SettingsIcon, ArrowLeft, ArrowRight, Clock, Bell, Briefcase, BarChart3, Activity, Smartphone, ClipboardList, Stethoscope } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom, WeeklySchedule } from '../types';
 import { useHospital } from '../contexts/HospitalContext';
 import ModulePageHeading from './ModulePageHeading';
 
 const OperatingRoomsManager = dynamic(() => import('./OperatingRoomsManager'), { ssr: false });
+const DepartmentsManager = dynamic(() => import('./DepartmentsManager'), { ssr: false });
 const RoomSpecialtyScheduleManager = dynamic(() => import('./RoomSpecialtyScheduleManager'), { ssr: false });
 const NotificationsManager = dynamic(() => import('./NotificationsManager'), { ssr: false });
 const StatisticsModule = dynamic(() => import('./StatisticsModule'), { ssr: false });
@@ -47,6 +48,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       description: 'Správa a konfigurace operačních sálů',
       icon: Building2,
       accentColor: '#0EA5E9',
+    },
+    {
+      id: 'specialties',
+      title: 'Operační obory',
+      description: 'Správa oborů používaných v rozpisu sálů',
+      icon: Stethoscope,
+      accentColor: '#FB7185',
     },
     {
       id: 'schedule',
@@ -180,6 +188,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             }}
             onScheduleUpdate={onScheduleUpdate}
           />
+        </ModuleWrapper>
+      ) : selectedModule === 'specialties' ? (
+        <ModuleWrapper>
+          <DepartmentsManager key={activeHospitalId || 'no-hospital'} />
         </ModuleWrapper>
       ) : selectedModule === 'schedule' ? (
         <ModuleWrapper>

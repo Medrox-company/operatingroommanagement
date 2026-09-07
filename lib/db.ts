@@ -1629,10 +1629,13 @@ export async function fetchShiftSchedules(
 
 export interface DepartmentRow {
   id: string;
+  hospital_id: string;
   name: string;
+  short_code: string;
   description: string | null;
   accent_color: string | null;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -1653,6 +1656,7 @@ export async function fetchDepartments(): Promise<DepartmentRow[] | null> {
       .from('departments')
       .select('*')
       .eq('hospital_id', activeHospitalId || 'default')
+      .order('sort_order', { ascending: true })
       .order('name', { ascending: true });
     if (error) throw error;
     return (data ?? []) as DepartmentRow[];

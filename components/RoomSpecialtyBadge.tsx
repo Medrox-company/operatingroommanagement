@@ -22,16 +22,30 @@ export function RoomSpecialtyBadge({
 }) {
   return (
     <span
-      className={`inline-flex min-w-0 items-center gap-1.5 rounded-md font-bold text-white ${compact ? 'max-w-[120px] px-1.5 py-0.5 text-[7px]' : 'max-w-full px-2 py-1 text-[8px]'} ${className}`}
+      className={`relative inline-flex min-w-0 items-stretch overflow-hidden rounded-[5px] border border-white/[0.08] bg-white/[0.035] text-white/80 transition-colors hover:border-white/[0.13] hover:bg-white/[0.055] motion-reduce:transition-none ${compact ? 'h-[19px] max-w-[148px] text-[7px]' : 'h-7 max-w-full text-[8px]'} ${className}`}
       style={{
-        background: `linear-gradient(135deg, ${specialty.color}d8, ${specialty.color}9f)`,
-        boxShadow: `inset 0 0 0 1px ${specialty.color}ee`,
+        backgroundColor: `color-mix(in srgb, ${specialty.color} 7%, var(--color-surface))`,
       }}
       title={`${specialty.name} · ${dayPartTitle(specialty.dayPart)}`}
+      aria-label={`${specialty.name}, ${dayPartTitle(specialty.dayPart)}`}
     >
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/85" />
-      <span className="truncate uppercase tracking-[0.06em]">{specialty.name}</span>
-      <span className="shrink-0 text-[0.85em] text-white/70">{dayPartLabel(specialty.dayPart)}</span>
+      <span
+        aria-hidden="true"
+        className="w-0.5 shrink-0 self-stretch"
+        style={{ backgroundColor: specialty.color }}
+      />
+      <span className={`min-w-0 flex-1 truncate self-center font-semibold uppercase ${compact ? 'px-1.5 tracking-[0.08em]' : 'px-2 tracking-[0.09em]'}`}>
+        {specialty.name}
+      </span>
+      <span
+        className={`shrink-0 self-stretch border-l border-white/[0.07] font-bold uppercase tracking-[0.08em] ${compact ? 'grid place-items-center px-1.5 text-[6px]' : 'grid place-items-center px-2 text-[7px]'}`}
+        style={{
+          color: `color-mix(in srgb, ${specialty.color} 62%, white)`,
+          backgroundColor: `color-mix(in srgb, ${specialty.color} 9%, transparent)`,
+        }}
+      >
+        {dayPartLabel(specialty.dayPart)}
+      </span>
     </span>
   );
 }

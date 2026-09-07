@@ -21,6 +21,7 @@ export const REALTIME_TABLES = [
   'notifications_log',
   'workflow_statuses',
   'app_settings',
+  'departments',
   'room_specialty_allocations',
 ] as const;
 
