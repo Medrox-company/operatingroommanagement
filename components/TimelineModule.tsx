@@ -3104,41 +3104,8 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                                 </div>
                               )}
                               
-                              {/* Label for operation — zarovnáno na PRAVOU stranu řádku.
-                                  Po dokončení / při připraveném sále se zobrazí elegantní
-                                  pill "Sál připraven". */}
-                              {/* Čas a délka výkonu. Předtím byl blok jen barevná plocha
-                                  a kdy výkon proběhl se dalo zjistit leda odměřením podle
-                                  osy nahoře. */}
-                              {(() => {
-                                if (position.width < 2.4) return null;
-                                const zac = new Date(operation.startedAt);
-                                const kon = new Date(operation.endedAt);
-                                const min = Math.max(0, Math.round((kon.getTime() - zac.getTime()) / 60000));
-                                const hh = (d: Date) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
-                                const delka = min >= 60
-                                  ? `${Math.floor(min / 60)} h ${min % 60 ? `${min % 60} m` : ''}`.trim()
-                                  : `${min} m`;
-                                return (
-                                  <div className="pointer-events-none absolute inset-0 z-20 flex items-center gap-2 pl-2.5 pr-2.5 pt-[3px]">
-                                    {/* Čas se nikdy nezkracuje — je to hlavní údaj bloku.
-                                        Ustoupit může leda název fáze vpravo. */}
-                                    <span className="flex shrink-0 flex-col gap-[3px]">
-                                      <span className="timeline-operation-label whitespace-nowrap text-[11px] font-semibold leading-none tabular-nums tracking-tight">
-                                        {hh(zac)}–{hh(kon)}
-                                      </span>
-                                      {position.width > 4 && (
-                                        <span className="whitespace-nowrap text-[9px] font-medium leading-none text-white/38">{delka}</span>
-                                      )}
-                                    </span>
-                                    {/* Název fáze tu není: u operačního sálu z něj skoro vždy
-                                        vyjde „Chirurgický výkon", opakoval by se na každém
-                                        bloku a nic nesděloval. Rozpad fází je v náhledu po
-                                        najetí a v detailu. */}
-                                  </div>
-                                );
-                              })()}
-
+                              {/* Dokončený blok zůstává bez textového času. Přesné údaje jsou
+                                  dostupné v detailu po najetí, samotná osa tak zůstává čistá. */}
                               <div className="absolute inset-0 z-10 flex items-center justify-end pr-2 pl-3 pointer-events-none">
                                 {isContinuingOp && position.width > 6 && (
                                   <span className="timeline-operation-label text-[10px] font-bold truncate uppercase tracking-wide">
