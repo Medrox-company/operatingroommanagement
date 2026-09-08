@@ -71,3 +71,59 @@ export function RoomSpecialtyBadges({
     </span>
   );
 }
+
+/** Kompaktní dvousloupcová tabulka rozpisu v pravé části názvu sálu. */
+export function TimelineRoomSpecialtyStrip({
+  specialties,
+  className = '',
+}: {
+  specialties?: CurrentRoomSpecialty[];
+  className?: string;
+}) {
+  const fullDay = specialties?.find(item => item.dayPart === 'FULL_DAY');
+  const morning = fullDay ?? specialties?.find(item => item.dayPart === 'AM');
+  const afternoon = fullDay ?? specialties?.find(item => item.dayPart === 'PM');
+  // Sál bez přiřazeného oboru nekreslí prázdnou dvojici polí s pomlčkami —
+  // zabírala 92 px jmenného sloupce a neříkala nic.
+  if (!morning && !afternoon) return null;
+
+  // Sál bez přiřazeného oboru nekreslí prázdnou dvojici polí s pomlčkami.
+  // Brala 92 px jmenného sloupce a neříkala nic — a právě o ně se název sálu
+  // nevešel na dva řádky. Že obor přiřazený není, je vidět z toho, že tam
+  // pruh není.
+  if (!morning && !afternoon) return null;
+
+  const slots = [
+    { part: 'DOPOL.', title: 'Dopoledne', specialty: morning },
+    { part: 'ODPOL.', title: 'Odpoledne', specialty: afternoon },
+  ];
+
+  return (
+    <span
+      className={`grid h-9 w-[92px] shrink-0 grid-cols-2 overflow-hidden rounded-[5px] border border-white/[0.09] bg-white/[0.014] ${className}`}
+      aria-label="Rozdělení operačních oborů během dne"
+    >
+      {slots.map(({ part, title, specialty }, index) => (
+        <span
+          key={part}
+          className={`relative flex min-w-0 flex-col overflow-hidden transition-colors duration-150 hover:bg-white/[0.025] motion-reduce:transition-none ${index ? 'border-l border-white/[0.08]' : ''}`}
+          title={specialty ? `${specialty.name}, ${title.toLocaleLowerCase('cs-CZ')}` : `${title} bez oboru`}
+          aria-label={specialty ? `${specialty.name}, ${title.toLocaleLowerCase('cs-CZ')}` : `${title} bez oboru`}
+        >
+          <span className="grid h-3 shrink-0 place-items-center border-b border-white/[0.07] text-[5px] font-semibold uppercase tracking-[0.12em] text-white/32">
+            {part}
+          </span>
+          <span
+            className={`relative grid min-h-0 flex-1 place-items-center px-1 text-[8px] font-extrabold uppercase tracking-[0.06em] ${specialty ? 'text-white/82' : 'text-white/22'}`}
+            style={specialty ? {
+              backgroundColor: `color-mix(in srgb, ${specialty.color} 6%, transparent)`,
+              boxShadow: `inset 0 -2px 0 color-mix(in srgb, ${specialty.color} 62%, transparent)`,
+            } : undefined}
+          >
+            <span className="max-w-full truncate">{specialty?.shortCode || '—'}</span>
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}

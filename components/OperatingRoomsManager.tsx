@@ -57,8 +57,8 @@ const TimeInput: React.FC<{
   onMinuteChange: (m: number) => void;
   disabled?: boolean;
 }> = ({ label, hour, minute, onHourChange, onMinuteChange, disabled }) => (
-  <div className={`flex flex-col gap-1.5 ${disabled ? 'opacity-35' : ''}`}>
-    <span className="text-[11px] font-semibold text-white/45">{label}</span>
+  <div className={`flex flex-col gap-1 ${disabled ? 'opacity-35' : ''}`}>
+    <span className="text-[8.5px] font-semibold uppercase tracking-[0.18em] text-white/40">{label}</span>
     <div className="flex items-center gap-1.5">
       <input
         type="number"
@@ -67,9 +67,9 @@ const TimeInput: React.FC<{
         value={hour.toString().padStart(2, '0')}
         onChange={(e) => onHourChange(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
         disabled={disabled}
-        className="h-11 w-14 rounded-lg border border-white/[0.07] bg-black/15 px-2 text-center text-[15px] font-bold tabular-nums text-white outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
+        className="h-9 w-[50px] rounded-[12px] border border-white/[0.07] bg-white/[0.03] px-1.5 text-center text-[13.5px] font-semibold tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
       />
-      <span className="text-sm font-bold text-cyan-200/55">:</span>
+      <span className="text-sm font-semibold text-cyan-200/45">:</span>
       <input
         type="number"
         min={0}
@@ -78,7 +78,7 @@ const TimeInput: React.FC<{
         value={minute.toString().padStart(2, '0')}
         onChange={(e) => onMinuteChange(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
         disabled={disabled}
-        className="h-11 w-14 rounded-lg border border-white/[0.07] bg-black/15 px-2 text-center text-[15px] font-bold tabular-nums text-white outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
+        className="h-9 w-[50px] rounded-[12px] border border-white/[0.07] bg-white/[0.03] px-1.5 text-center text-[13.5px] font-semibold tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
       />
     </div>
   </div>
@@ -94,104 +94,101 @@ const DayScheduleRow: React.FC<{
     ? schedule.breakMinutes
     : 30;
 
+  const cistyCas = (() => {
+    const zacatek = schedule.startHour * 60 + schedule.startMinute;
+    const konec = schedule.endHour * 60 + schedule.endMinute;
+    const hrube = Math.max(0, konec - zacatek);
+    const cisty = Math.max(0, hrube - Math.min(breakMinutes, hrube));
+    return `${Math.floor(cisty / 60)}h ${cisty % 60}m`;
+  })();
+
   return (
+    /* Jeden kompaktní řádek na den místo karty vysoké 260 px. Sedm karet
+       nad sebou dělalo z rozvrhu okno na tři obrazovky; v řádku se všechno
+       vejde na jednu linku a popisky drží stejné podání jako pás faktů
+       v popupu — malé verzálky nad hodnotou. */
     <div
-      className={`flex min-h-[260px] flex-col rounded-xl p-5 transition-colors ${day.key === 'sunday' ? 'md:col-span-2' : ''} ${
-        schedule.enabled
-          ? 'border border-cyan-200/[0.14] bg-cyan-300/[0.045]'
-          : 'border border-white/[0.06] bg-white/[0.018]'
+      className={`timeline-popup-card grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors ${
+        schedule.enabled ? '' : 'opacity-[0.55]'
       }`}
+      style={{
+        background: schedule.enabled
+          ? 'linear-gradient(135deg, rgba(103,232,249,0.05), rgba(103,232,249,0.01))'
+          : 'linear-gradient(135deg, rgba(153,170,244,0.028), rgba(123,99,178,0.008))',
+      }}
     >
-      {/* Den + zapnutí provozu */}
-      <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] pb-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className={`flex h-10 min-w-11 items-center justify-center rounded-lg px-2 text-[11px] font-bold uppercase ${schedule.enabled ? 'border border-cyan-300/15 bg-cyan-300/[0.07] text-cyan-200' : 'border border-white/[0.05] bg-white/[0.018] text-white/25'}`}>
-            {day.short}
-          </span>
-          <div className="min-w-0">
-            <p className={`truncate text-[17px] font-bold ${schedule.enabled ? 'text-white' : 'text-white/30'}`}>{day.label}</p>
-            <p className={`mt-0.5 text-[11px] font-semibold ${schedule.enabled ? 'text-cyan-300/65' : 'text-white/20'}`}>
-              {schedule.enabled ? 'V provozu' : 'Mimo provoz'}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => onChange({ ...schedule, enabled: !schedule.enabled })}
-          aria-label={`${schedule.enabled ? 'Vypnout' : 'Zapnout'} provoz v den ${day.label}`}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors ${
+      <span className={`flex h-9 min-w-10 items-center justify-center rounded-[12px] px-2 text-[10.5px] font-semibold uppercase ${schedule.enabled ? 'border border-cyan-300/25 bg-cyan-300/[0.10] text-cyan-200' : 'border border-white/[0.07] bg-white/[0.025] text-white/28'}`}>
+        {day.short}
+      </span>
+
+      <div className="min-w-0">
+        <p className={`text-[8.5px] font-semibold uppercase tracking-[0.18em] ${schedule.enabled ? 'text-cyan-300/70' : 'text-white/25'}`}>
+          {schedule.enabled ? 'V provozu' : 'Mimo provoz'}
+        </p>
+        <p className={`mt-0.5 truncate text-[14px] font-semibold tracking-[-0.015em] ${schedule.enabled ? 'text-white/95' : 'text-white/35'}`}>{day.label}</p>
+      </div>
+
+      <div className="flex items-end gap-2">
+        <TimeInput
+          label="Od"
+          hour={schedule.startHour}
+          minute={schedule.startMinute}
+          onHourChange={(h) => onChange({ ...schedule, startHour: h })}
+          onMinuteChange={(m) => onChange({ ...schedule, startMinute: m })}
+          disabled={!schedule.enabled}
+        />
+        <span className="pb-2.5 text-white/20">—</span>
+        <TimeInput
+          label="Do"
+          hour={schedule.endHour}
+          minute={schedule.endMinute}
+          onHourChange={(h) => onChange({ ...schedule, endHour: h })}
+          onMinuteChange={(m) => onChange({ ...schedule, endMinute: m })}
+          disabled={!schedule.enabled}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[8.5px] font-semibold uppercase tracking-[0.18em] text-white/40">Přestávka</label>
+        <input
+          type="number"
+          min={0}
+          max={480}
+          step={5}
+          value={breakMinutes}
+          disabled={!schedule.enabled}
+          onChange={(e) => {
+            const raw = parseInt(e.target.value, 10);
+            const next = isNaN(raw) ? 0 : Math.max(0, Math.min(480, raw));
+            onChange({ ...schedule, breakMinutes: next });
+          }}
+          className={`h-9 w-[68px] rounded-[12px] border px-2 text-center text-[13.5px] font-semibold tabular-nums transition-colors ${
             schedule.enabled
-              ? 'border border-cyan-300/35 bg-cyan-300/14 text-cyan-200'
-              : 'border border-white/[0.08] bg-white/[0.025] text-white/25'
+              ? 'border-white/[0.07] bg-white/[0.03] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20'
+              : 'cursor-not-allowed border-white/[0.05] bg-white/[0.018] text-white/25'
           }`}
-        >
-          <Power className="h-4 w-4" />
-        </button>
+        />
       </div>
 
-      {/* Provozní doba pod názvem dne */}
-      <div className="py-4">
-        <p className="mb-2.5 text-[11px] font-semibold text-white/45">Provozní doba</p>
-        <div className="flex min-w-0 items-center gap-3">
-          <TimeInput
-            label="Od"
-            hour={schedule.startHour}
-            minute={schedule.startMinute}
-            onHourChange={(h) => onChange({ ...schedule, startHour: h })}
-            onMinuteChange={(m) => onChange({ ...schedule, startMinute: m })}
-            disabled={!schedule.enabled}
-          />
-          <div className="pt-5 text-lg text-white/20">—</div>
-          <TimeInput
-            label="Do"
-            hour={schedule.endHour}
-            minute={schedule.endMinute}
-            onHourChange={(h) => onChange({ ...schedule, endHour: h })}
-            onMinuteChange={(m) => onChange({ ...schedule, endMinute: m })}
-            disabled={!schedule.enabled}
-          />
-        </div>
+      <div className="min-w-[74px] text-right">
+        <p className="text-[8.5px] font-semibold uppercase tracking-[0.18em] text-white/40">Čistý čas</p>
+        <p className={`mt-1 text-[17px] font-light tabular-nums tracking-[-0.03em] ${schedule.enabled ? 'text-cyan-300' : 'text-white/25'}`}>
+          {schedule.enabled ? cistyCas : '—'}
+        </p>
       </div>
 
-      {/* Přestávka a čistý čas */}
-      <div className="mt-auto flex items-end justify-between gap-4 border-t border-white/[0.07] pt-4">
-        <div className="flex shrink-0 flex-col gap-1.5">
-          <label className="text-[11px] font-semibold text-white/45">Přestávka v minutách</label>
-          <input
-            type="number"
-            min={0}
-            max={480}
-            step={5}
-            value={breakMinutes}
-            disabled={!schedule.enabled}
-            onChange={(e) => {
-              const raw = parseInt(e.target.value, 10);
-              const next = isNaN(raw) ? 0 : Math.max(0, Math.min(480, raw));
-              onChange({ ...schedule, breakMinutes: next });
-            }}
-            className={`h-11 w-[92px] rounded-lg border px-2 text-center text-[15px] font-bold tabular-nums transition-colors ${
-              schedule.enabled
-                ? 'border-white/[0.07] bg-black/15 text-white outline-none focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20'
-                : 'cursor-not-allowed border-white/[0.05] bg-white/[0.018] text-white/25'
-            }`}
-          />
-        </div>
-        {schedule.enabled && (
-          <div className="min-w-[88px] shrink-0 pb-1 text-right">
-            <p className="text-[11px] font-semibold text-white/40">Čistý čas</p>
-            <p className="mt-1 text-[16px] font-bold tabular-nums text-cyan-300">
-              {(() => {
-                const startMins = schedule.startHour * 60 + schedule.startMinute;
-                const endMins = schedule.endHour * 60 + schedule.endMinute;
-                const gross = Math.max(0, endMins - startMins);
-                const net = Math.max(0, gross - Math.min(breakMinutes, gross));
-                const hours = Math.floor(net / 60);
-                const mins = net % 60;
-                return `${hours}h ${mins}m`;
-              })()}
-            </p>
-          </div>
-        )}
-      </div>
+      <button
+        onClick={() => onChange({ ...schedule, enabled: !schedule.enabled })}
+        aria-label={`${schedule.enabled ? 'Vypnout' : 'Zapnout'} provoz v den ${day.label}`}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition-colors ${
+          schedule.enabled
+            ? 'border border-cyan-300/28 bg-cyan-300/[0.11] text-cyan-200'
+            : 'border border-white/[0.08] bg-white/[0.03] text-white/28'
+        }`}
+        style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
+      >
+        <Power className="h-[15px] w-[15px]" strokeWidth={1.9} />
+      </button>
     </div>
   );
 };
@@ -238,241 +235,79 @@ const RoomCard: React.FC<{
   else if (room.isLocked) { statusLabel = 'Uzamčeno'; statusColor = '#FBBF24'; }
   else if (room.isPaused) { statusLabel = 'Pauza'; statusColor = '#22D3EE'; }
 
-  if (compact) {
-    return (
-      <article
-        data-testid={`operating-room-card-${room.id}`}
-        className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] p-2.5"
-      >
-        <div className="grid min-w-0 grid-cols-1 gap-2.5 xl:grid-cols-[minmax(230px,0.8fr)_minmax(165px,0.55fr)_minmax(0,2.65fr)] xl:items-stretch">
-          <section className="flex min-w-0 items-center gap-3 rounded-lg border border-white/[0.05] bg-black/10 px-3.5 py-2.5">
-            <span className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200/[0.10] bg-cyan-300/[0.055] text-[9px] font-semibold tabular-nums text-cyan-100/75">
-              {String(index + 1).padStart(2, '0')}
-            </span>
-            <div className="min-w-0">
-              <h3 className="break-words text-[15px] font-bold leading-tight text-white">{room.name}</h3>
-              <p className="mt-1 break-words text-[9px] font-semibold uppercase tracking-[0.10em] text-slate-400">
-                {room.department || 'Bez oddělení'}
-              </p>
-            </div>
-          </section>
-
-          <section className="flex min-w-0 flex-col justify-center rounded-lg border border-white/[0.05] bg-white/[0.018] px-3.5 py-2.5">
-            <p className="text-[8px] font-bold uppercase tracking-[0.15em] text-cyan-200/55">Dnešní provoz</p>
-            <p className="mt-1 whitespace-nowrap text-[15px] font-bold tabular-nums tracking-tight text-white">
-              {todaySchedule.enabled
-                ? `${pad(todaySchedule.startHour)}:${pad(todaySchedule.startMinute)}–${pad(todaySchedule.endHour)}:${pad(todaySchedule.endMinute)}`
-                : 'Mimo provoz'}
-            </p>
-          </section>
-
-          <section className="min-w-0 overflow-x-auto rounded-lg border border-white/[0.05] bg-black/10 p-1 [scrollbar-width:thin] [scrollbar-color:rgba(103,232,249,0.22)_transparent]">
-            <div className="grid min-h-[74px] min-w-[650px] grid-cols-7 grid-rows-2 gap-1">
-              {DAYS.map(day => {
-                const daySchedule = schedule[day.key as keyof WeeklySchedule];
-                const isToday = day.key === currentDayKey;
-                return (
-                  <div
-                    key={`${day.key}-compact-name`}
-                    className="flex items-center justify-center rounded-[8px] text-center"
-                    style={{
-                      background: daySchedule.enabled
-                        ? isToday ? 'rgba(34,211,238,0.10)' : 'rgba(255,255,255,0.035)'
-                        : 'rgba(255,255,255,0.015)',
-                      boxShadow: isToday ? 'inset 0 0 0 1px rgba(103,232,249,0.20)' : 'inset 0 0 0 1px rgba(255,255,255,0.045)',
-                    }}
-                  >
-                    <span className={`text-[10px] font-bold uppercase tracking-[0.08em] ${daySchedule.enabled ? 'text-cyan-50' : 'text-white/30'}`}>
-                      {day.short}
-                    </span>
-                  </div>
-                );
-              })}
-              {DAYS.map(day => {
-                const daySchedule = schedule[day.key as keyof WeeklySchedule];
-                const isToday = day.key === currentDayKey;
-                return (
-                  <div
-                    key={`${day.key}-compact-time`}
-                    className="flex items-center justify-center rounded-[8px] px-1 text-center"
-                    style={{
-                      background: daySchedule.enabled
-                        ? isToday ? 'rgba(34,211,238,0.065)' : 'rgba(255,255,255,0.022)'
-                        : 'rgba(255,255,255,0.01)',
-                      boxShadow: isToday ? 'inset 0 0 0 1px rgba(103,232,249,0.20)' : 'inset 0 0 0 1px rgba(255,255,255,0.035)',
-                    }}
-                  >
-                    <span className={`whitespace-nowrap text-[10px] font-bold tabular-nums ${daySchedule.enabled ? 'text-white/90' : 'text-white/24'}`}>
-                      {daySchedule.enabled
-                        ? `${pad(daySchedule.startHour)}:${pad(daySchedule.startMinute)}–${pad(daySchedule.endHour)}:${pad(daySchedule.endMinute)}`
-                        : 'Mimo provoz'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-      </article>
-    );
-  }
-
   return (
     <article
       data-testid={`operating-room-card-${room.id}`}
-      className="group relative flex min-h-[148px] flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] transition-colors hover:border-cyan-200/[0.16]"
+      className={`group grid min-w-[1040px] grid-cols-[245px_160px_minmax(445px,1fr)_190px] border-b border-white/[0.055] bg-transparent transition-colors hover:bg-white/[0.018] ${compact ? 'min-h-[76px]' : 'min-h-[104px]'}`}
     >
-      <div className="relative flex flex-1 flex-col p-2.5 sm:p-3">
-        <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(205px,0.78fr)_minmax(150px,0.54fr)_minmax(0,2.55fr)_minmax(160px,0.58fr)] xl:items-stretch">
-          {/* Identita sálu */}
-          <section className="flex min-w-0 flex-col justify-center rounded-lg border border-white/[0.05] bg-black/10 px-3.5 py-3">
-            <div className="mb-1.5 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-200/62">
-                Operační sál · {String(index + 1).padStart(2, '0')}
-              </span>
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: statusColor }} />
-            </div>
-            <h3 className="break-words text-[18px] font-bold leading-tight tracking-[-0.02em] text-white">{room.name}</h3>
-            <p className="mt-1 break-words text-[10px] font-semibold uppercase tracking-[0.10em] text-slate-400">
-              {room.department || 'Bez oddělení'}
-            </p>
-            <div className="mt-2 flex min-h-7 w-full max-w-full items-center gap-2 rounded-md px-2.5" style={{ background: `${statusColor}12` }}>
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: statusColor }} />
-              <p className="truncate text-[9px] font-bold uppercase tracking-[0.08em] text-white/90">{statusLabel}</p>
-            </div>
-          </section>
+      <section className="flex min-w-0 items-center gap-3 border-r border-white/[0.055] bg-white/[0.028] px-4 py-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200/[0.10] bg-cyan-300/[0.055] text-[9px] font-semibold tabular-nums text-cyan-100/75">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className={`${compact ? 'text-[12px]' : 'text-[14px]'} min-w-0 break-words font-semibold leading-tight text-white/94`}>{room.name}</h3>
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: statusColor }} />
+          </div>
+          <p className="mt-1 truncate text-[8px] font-medium uppercase tracking-[0.10em] text-white/32">{room.department || 'Bez oddělení'}</p>
+          {!compact && <p className="mt-1.5 truncate text-[8px] font-semibold uppercase tracking-[0.08em]" style={{ color: statusColor }}>{statusLabel}</p>}
+        </div>
+      </section>
 
-          {/* Dnešní provoz */}
-          <section className="flex min-w-0 flex-col justify-center overflow-hidden rounded-lg border border-white/[0.05] bg-white/[0.018] px-3.5 py-3">
-            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-cyan-200/58">Dnešní provoz</p>
-            <p className="mt-1 whitespace-nowrap text-[17px] font-bold tabular-nums tracking-[-0.02em] text-white">
-              {todaySchedule.enabled
-                ? `${pad(todaySchedule.startHour)}:${pad(todaySchedule.startMinute)}–${pad(todaySchedule.endHour)}:${pad(todaySchedule.endMinute)}`
-                : 'Mimo provoz'}
-            </p>
-            <div className="mt-2.5 flex gap-1.5" aria-label={`Aktivní ${activeDays} ze 7 dnů`}>
-              {DAYS.map(day => (
-                <span
-                  key={day.key}
-                  className="h-[3px] flex-1 rounded-full"
-                  style={{ background: schedule[day.key as keyof WeeklySchedule].enabled ? '#67E8F9' : 'rgba(255,255,255,0.10)' }}
-                />
-              ))}
-            </div>
-            <div className="mt-1.5 flex items-center justify-between text-[9px] font-medium text-slate-500">
-              <span>Týdenní režim</span>
-              <span className="font-bold tabular-nums text-cyan-100/70">{activeDays}/7 dní</span>
-            </div>
-          </section>
+      <section className="flex min-w-0 flex-col justify-center border-r border-white/[0.055] px-4 py-3">
+        <p className="text-[7px] font-semibold uppercase tracking-[0.14em] text-white/32">Dnešní provoz</p>
+        <p className={`${compact ? 'text-[13px]' : 'text-[15px]'} mt-1 whitespace-nowrap font-semibold tabular-nums tracking-tight text-white/90`}>
+          {todaySchedule.enabled
+            ? `${pad(todaySchedule.startHour)}:${pad(todaySchedule.startMinute)}–${pad(todaySchedule.endHour)}:${pad(todaySchedule.endMinute)}`
+            : 'Mimo provoz'}
+        </p>
+        <p className="mt-1 text-[7px] font-medium text-white/28">{activeDays}/7 aktivních dnů</p>
+      </section>
 
-          {/* Kompaktní dvouřádková provozní matice: dny nahoře, odpovídající časy dole */}
-          <section
-            className="min-w-0 overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 p-1.5"
-          >
-            <div className="h-full overflow-x-auto [scrollbar-width:thin] [scrollbar-color:rgba(103,232,249,0.25)_transparent]">
-              <div className="grid h-full min-h-[102px] min-w-[650px] grid-cols-7 grid-rows-2 gap-1.5">
-                {DAYS.map(day => {
-                  const daySchedule = schedule[day.key as keyof WeeklySchedule];
-                  const isToday = day.key === currentDayKey;
-                  return (
-                    <div
-                      key={`${day.key}-name`}
-                      className="relative flex min-w-0 items-center justify-center rounded-[9px] px-2 text-center"
-                      style={{
-                        background: isToday
-                          ? 'rgba(34,211,238,0.10)'
-                          : daySchedule.enabled
-                            ? 'rgba(255,255,255,0.035)'
-                            : 'rgba(255,255,255,0.015)',
-                        boxShadow: isToday
-                          ? 'inset 0 0 0 1px rgba(103,232,249,0.45)'
-                          : 'inset 0 0 0 1px rgba(125,189,228,0.11)',
-                      }}
-                    >
-                      <span
-                        className="absolute left-2 top-2 h-1.5 w-1.5 rounded-full"
-                        style={{ background: daySchedule.enabled ? '#67E8F9' : 'rgba(255,255,255,0.14)' }}
-                      />
-                      {isToday && (
-                        <span className="absolute right-1.5 top-1.5 rounded-md bg-cyan-100/15 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.08em] text-cyan-50">
-                          Dnes
-                        </span>
-                      )}
-                      <p className={`truncate text-[11px] font-bold ${daySchedule.enabled ? 'text-white' : 'text-white/40'}`}>
-                        {day.label}
-                      </p>
-                    </div>
-                  );
-                })}
-
-                {DAYS.map(day => {
-                  const daySchedule = schedule[day.key as keyof WeeklySchedule];
-                  const isToday = day.key === currentDayKey;
-                  return (
-                    <div
-                      key={`${day.key}-hours`}
-                      className="flex min-w-0 flex-col items-center justify-center rounded-[9px] px-1.5 text-center"
-                      style={{
-                        background: isToday
-                          ? 'rgba(34,211,238,0.065)'
-                          : daySchedule.enabled
-                            ? 'rgba(255,255,255,0.022)'
-                            : 'rgba(255,255,255,0.01)',
-                        boxShadow: isToday
-                          ? 'inset 0 0 0 1px rgba(103,232,249,0.27)'
-                          : 'inset 0 0 0 1px rgba(125,189,228,0.08)',
-                      }}
-                      title={daySchedule.enabled
-                        ? `${day.label}: ${pad(daySchedule.startHour)}:${pad(daySchedule.startMinute)}–${pad(daySchedule.endHour)}:${pad(daySchedule.endMinute)}`
-                        : `${day.label}: mimo provoz`}
-                    >
-                      <p className="mb-0.5 text-[7px] font-semibold uppercase tracking-[0.08em] text-white/38">Provozní doba</p>
-                      <p className={`whitespace-nowrap text-[11px] font-bold tabular-nums tracking-tight ${daySchedule.enabled ? 'text-cyan-50' : 'text-white/34'}`}>
-                        {daySchedule.enabled
-                          ? `${pad(daySchedule.startHour)}:${pad(daySchedule.startMinute)}–${pad(daySchedule.endHour)}:${pad(daySchedule.endMinute)}`
-                          : 'Mimo provoz'}
-                      </p>
-                    </div>
-                  );
-                })}
+      <section className="grid min-w-0 grid-cols-7">
+        {DAYS.map(day => {
+          const daySchedule = schedule[day.key as keyof WeeklySchedule];
+          const isToday = day.key === currentDayKey;
+          return (
+            <div
+              key={day.key}
+              className={`flex min-w-0 flex-col border-r border-white/[0.055] text-center ${isToday ? 'bg-cyan-300/[0.055]' : 'bg-transparent'}`}
+              title={daySchedule.enabled
+                ? `${day.label}: ${pad(daySchedule.startHour)}:${pad(daySchedule.startMinute)}–${pad(daySchedule.endHour)}:${pad(daySchedule.endMinute)}`
+                : `${day.label}: mimo provoz`}
+            >
+              <div className="grid h-7 shrink-0 place-items-center border-b border-white/[0.055] bg-white/[0.022] px-1">
+                <span className={`text-[8px] font-semibold uppercase tracking-[0.10em] ${isToday ? 'text-cyan-200' : daySchedule.enabled ? 'text-white/58' : 'text-white/25'}`}>
+                  {compact ? day.short : day.label}
+                </span>
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-1.5 py-2">
+                <span className={`whitespace-nowrap text-[9px] font-semibold tabular-nums ${daySchedule.enabled ? 'text-white/82' : 'text-white/24'}`}>
+                  {daySchedule.enabled
+                    ? `${pad(daySchedule.startHour)}:${pad(daySchedule.startMinute)}–${pad(daySchedule.endHour)}:${pad(daySchedule.endMinute)}`
+                    : 'Mimo provoz'}
+                </span>
+                {!compact && <span className="mt-1 h-0.5 w-5 rounded-full" style={{ background: daySchedule.enabled ? '#67E8F9' : 'rgba(255,255,255,0.10)' }} />}
               </div>
             </div>
-          </section>
+          );
+        })}
+      </section>
 
-          {/* Správa sálu v pravém boxu */}
-          <section className="flex min-w-0 flex-col justify-center rounded-lg border border-white/[0.05] bg-black/10 p-2.5">
-            <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
-              <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-slate-400">Správa sálu</p>
-              <span className="h-1.5 w-1.5 rounded-full bg-cyan-300/55" />
-            </div>
-            <div className="mb-1.5">{reorderControls}</div>
-            <button
-              type="button"
-              onClick={onScheduleEdit}
-              className="flex h-8 w-full items-center justify-center gap-2 rounded-md border border-cyan-200/[0.12] bg-cyan-300/[0.07] px-2.5 text-[9px] font-semibold uppercase tracking-[0.07em] text-cyan-100/80 hover:bg-cyan-300/[0.11]"
-            >
-              <Calendar className="h-3.5 w-3.5" /> Rozvrh
-            </button>
-            <div className="mt-1.5 grid grid-cols-[1fr_auto] gap-1.5">
-              <button
-                type="button"
-                onClick={onEdit}
-                className="flex h-8 items-center justify-center gap-1.5 rounded-md border border-white/[0.05] bg-white/[0.018] px-2 text-[9px] font-semibold text-white/55 hover:bg-white/[0.04] hover:text-white"
-              >
-                <Edit2 className="h-3.5 w-3.5" /> Upravit
-              </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                title="Smazat"
-                className="flex h-8 w-8 items-center justify-center rounded-md border border-white/[0.05] bg-white/[0.018] text-white/35 hover:bg-red-300/[0.08] hover:text-red-200"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </section>
+      <section className="flex min-w-0 flex-col justify-center gap-1.5 px-3 py-2">
+        {reorderControls}
+        <div className="grid grid-cols-[1fr_1fr_auto] gap-1.5">
+          <button type="button" onClick={onScheduleEdit} className="flex h-8 items-center justify-center gap-1 rounded-md border border-cyan-200/[0.12] bg-cyan-300/[0.065] px-2 text-[8px] font-semibold uppercase tracking-[0.05em] text-cyan-100/80 hover:bg-cyan-300/[0.10]">
+            <Calendar className="h-3 w-3" /> Rozvrh
+          </button>
+          <button type="button" onClick={onEdit} className="flex h-8 items-center justify-center gap-1 rounded-md border border-white/[0.055] bg-white/[0.018] px-2 text-[8px] font-semibold text-white/52 hover:bg-white/[0.04] hover:text-white">
+            <Edit2 className="h-3 w-3" /> Upravit
+          </button>
+          <button type="button" onClick={onDelete} title="Smazat" aria-label={`Smazat ${room.name}`} className="flex h-8 w-8 items-center justify-center rounded-md border border-white/[0.055] bg-white/[0.018] text-white/32 hover:bg-red-300/[0.08] hover:text-red-200">
+            <Trash2 className="h-3 w-3" />
+          </button>
         </div>
-      </div>
+      </section>
     </article>
   );
 };
@@ -927,25 +762,33 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 </div>
                 <span className="text-[8px] font-semibold uppercase tracking-[0.13em] text-white/28">{filteredRooms.length} {filteredRooms.length === 1 ? 'sál' : filteredRooms.length < 5 ? 'sály' : 'sálů'}</span>
               </div>
-              <div className={`grid grid-cols-1 p-3 ${compactView ? 'gap-2.5' : 'gap-3'}`}>
-                {filteredRooms.map(room => {
-                  const index = roomsList.findIndex(item => item.id === room.id);
-                  return (
-                    <SortableRoomCard
-                      key={room.id}
-                      room={room}
-                      index={index}
-                      total={roomsList.length}
-                      onEdit={() => setEditingRoom(room)}
-                      onDelete={() => setDeleteConfirm(room.id)}
-                      onScheduleEdit={() => setScheduleEditRoom(room)}
-                      onMoveUp={() => moveRoom(room.id, 'up')}
-                      onMoveDown={() => moveRoom(room.id, 'down')}
-                      reorderEnabled={reorderEnabled}
-                      compact={compactView}
-                    />
-                  );
-                })}
+              <div className="overflow-x-auto">
+                <div className="min-w-[1040px]">
+                  <div className="grid h-9 grid-cols-[245px_160px_minmax(445px,1fr)_190px] border-b border-white/[0.055] bg-white/[0.018] text-[7px] font-semibold uppercase tracking-[0.14em] text-white/34">
+                    <div className="flex items-center border-r border-white/[0.055] bg-white/[0.022] px-4">Operační sál</div>
+                    <div className="flex items-center border-r border-white/[0.055] px-4">Dnešní provoz</div>
+                    <div className="flex items-center justify-center border-r border-white/[0.055] px-4">Týdenní provoz</div>
+                    <div className="flex items-center px-3">Správa</div>
+                  </div>
+                  {filteredRooms.map(room => {
+                    const index = roomsList.findIndex(item => item.id === room.id);
+                    return (
+                      <SortableRoomCard
+                        key={room.id}
+                        room={room}
+                        index={index}
+                        total={roomsList.length}
+                        onEdit={() => setEditingRoom(room)}
+                        onDelete={() => setDeleteConfirm(room.id)}
+                        onScheduleEdit={() => setScheduleEditRoom(room)}
+                        onMoveUp={() => moveRoom(room.id, 'up')}
+                        onMoveDown={() => moveRoom(room.id, 'down')}
+                        reorderEnabled={reorderEnabled}
+                        compact={compactView}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </section>
           </SortableContext>
@@ -958,7 +801,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/78 p-3 sm:p-5"
+            className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
             onMouseDown={event => {
               if (event.target === event.currentTarget) setIsAddingNew(false);
             }}
@@ -967,10 +810,9 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="relative my-auto w-full max-w-xl overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0b1020] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.42)] sm:p-6"
+              className="timeline-popup-panel relative my-auto w-full max-w-xl overflow-hidden p-5 sm:p-6"
             >
-              <div aria-hidden className="absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent" />
-              <div className="relative mb-6 flex items-start justify-between gap-4">
+                            <div className="relative mb-6 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-cyan-200/[0.12] bg-cyan-300/[0.06] text-cyan-200">
                     <Plus className="h-4 w-4" />
@@ -1041,7 +883,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/78 p-3 sm:p-5"
+            className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
             onClick={() => setScheduleEditRoom(null)}
           >
             <motion.div
@@ -1049,34 +891,34 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/[0.09] bg-[#0b1020] shadow-[0_30px_80px_rgba(0,0,0,0.42)]"
+              className="timeline-popup-panel relative max-h-[92vh] w-full max-w-4xl overflow-y-auto"
             >
               {/* Modal Header */}
-              <div
-                className="sticky top-0 z-10 overflow-hidden border-b border-white/[0.06] bg-[#0b1020]/95 p-5 sm:p-6"
-              >
-                <div className="relative flex items-center gap-4">
-                  <div
-                    className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-200/[0.12] bg-cyan-300/[0.06]"
-                  >
-                    <SlidersHorizontal className="relative h-5 w-5 text-cyan-200" />
+              {/* Hlavička ve stejné skladbě jako popup v časové ose: název,
+                  pod ním jeden řádek kontextu. Vlastní velikosti písma tu
+                  nejsou — drží je .timeline-popup-header, takže obě okna
+                  zůstanou svázaná i po dalších úpravách. */}
+              <div className="timeline-popup-header sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-cyan-200/[0.14] bg-cyan-300/[0.07]">
+                    <SlidersHorizontal className="h-[18px] w-[18px] text-cyan-200" strokeWidth={1.8} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-300/65">Týdenní rozvrh</p>
-                    <h2 className="truncate text-xl font-bold uppercase tracking-tight text-white">{scheduleEditRoom.name}</h2>
-                    <p className="mt-1 text-xs text-white/45">Nastavení provozních hodin a přestávek</p>
+                  <div className="min-w-0">
+                    <h2 className="truncate">{scheduleEditRoom.name}</h2>
+                    <p className="mt-1 uppercase">Týdenní rozvrh · provozní hodiny a přestávky</p>
                   </div>
-                  <button
-                    onClick={() => setScheduleEditRoom(null)}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.025] text-white/45 hover:text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
+                <button
+                  onClick={() => setScheduleEditRoom(null)}
+                  aria-label="Zavřít"
+                  className="timeline-popup-close flex h-9 w-9 shrink-0 items-center justify-center transition-colors"
+                >
+                  <X className="h-4 w-4 text-white/60" />
+                </button>
               </div>
               
               {/* Modal Content */}
-              <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 sm:p-6">
+              <div className="flex flex-col gap-2 px-6 py-4">
                 {DAYS.map(day => {
                   const schedule = scheduleEditRoom.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
                   const daySchedule = schedule[day.key as keyof WeeklySchedule];
@@ -1101,12 +943,11 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               </div>
               
               {/* Modal Footer */}
-              <div
-                className="sticky bottom-0 flex justify-end gap-2.5 border-t border-white/[0.06] bg-[#0b1020]/95 p-4 sm:p-6"
-              >
+              <div className="sticky bottom-0 flex justify-end gap-2.5 border-t border-white/[0.055] px-6 py-4 backdrop-blur-md">
                 <button
                   onClick={() => setScheduleEditRoom(null)}
-                  className="h-11 rounded-lg border border-white/[0.07] bg-white/[0.018] px-5 text-sm font-semibold text-white/55 hover:text-white"
+                  className="h-11 rounded-[14px] border border-white/[0.09] bg-white/[0.05] px-5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
+                  style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
                 >
                   Zrušit
                 </button>
@@ -1115,9 +956,10 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     handleUpdateSchedule(scheduleEditRoom.id, scheduleEditRoom.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
                     setScheduleEditRoom(null);
                   }}
-                  className="flex h-11 items-center gap-2 rounded-lg bg-cyan-300 px-6 text-sm font-semibold text-[#061725] hover:bg-cyan-200"
+                  className="flex h-11 items-center gap-2 rounded-[14px] px-6 text-[13px] font-semibold text-[#061725] transition-colors"
+                  style={{ background: '#67E8F9' }}
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="h-4 w-4" />
                   Uložit změny
                 </button>
               </div>
@@ -1133,7 +975,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/78 p-3 sm:p-5"
+            className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
             onClick={() => setEditingRoom(null)}
           >
             <motion.div
@@ -1141,44 +983,46 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0b1020] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.42)]"
+              className="timeline-popup-panel relative w-full max-w-md overflow-hidden p-6"
             >
-              <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent" />
-
-              <div className="relative flex items-start justify-between gap-3 mb-5">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-200/[0.12] bg-cyan-300/[0.06]"
-                  >
-                    <Edit2 className="relative h-4 w-4 text-cyan-200" />
+              {/* Tvar drží nasvícená horní hrana panelu, ne barevná linka —
+                  stejně jako u popupu v ose. */}
+              <div className="timeline-popup-header -mx-6 -mt-6 mb-5 flex items-start justify-between gap-3 px-6 pt-5 pb-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-cyan-200/[0.14] bg-cyan-300/[0.07]">
+                    <Edit2 className="h-[17px] w-[17px] text-cyan-200" strokeWidth={1.8} />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-lg font-bold text-white truncate">Upravit sál</h2>
-                    <p className="text-xs text-white/40 mt-0.5">Název a oddělení</p>
+                    <h2 className="truncate">{editingRoom.name || 'Upravit sál'}</h2>
+                    <p className="mt-1 uppercase">Úprava sálu · název a oddělení</p>
                   </div>
                 </div>
-                <button onClick={() => setEditingRoom(null)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0">
-                  <X className="w-4 h-4" />
+                <button
+                  onClick={() => setEditingRoom(null)}
+                  aria-label="Zavřít"
+                  className="timeline-popup-close flex h-9 w-9 shrink-0 items-center justify-center transition-colors"
+                >
+                  <X className="h-4 w-4 text-white/60" />
                 </button>
               </div>
 
               <div className="relative space-y-4 mb-6">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Název</label>
+                  <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Název</label>
                   <input
                     type="text"
                     value={editingRoom.name}
                     onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
-                    className="w-full rounded-lg border border-white/[0.07] bg-black/15 px-3 py-2.5 text-white placeholder-white/30 focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
+                    className="w-full rounded-[14px] border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white placeholder-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Oddělení</label>
+                  <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Oddělení</label>
                   <input
                     type="text"
                     value={editingRoom.department}
                     onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
-                    className="w-full rounded-lg border border-white/[0.07] bg-black/15 px-3 py-2.5 text-white placeholder-white/30 focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
+                    className="w-full rounded-[14px] border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white placeholder-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
                   />
                 </div>
                 <p className="text-[11px] text-white/40 leading-relaxed">
@@ -1189,15 +1033,17 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               <div className="relative flex justify-end gap-2.5">
                 <button
                   onClick={() => setEditingRoom(null)}
-                  className="rounded-lg border border-white/[0.07] bg-white/[0.018] px-4 py-2.5 text-sm font-semibold text-white/55 hover:text-white"
+                  className="rounded-[14px] border border-white/[0.09] bg-white/[0.05] px-5 py-2.5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
+                  style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
                 >
                   Zrušit
                 </button>
                 <button
                   onClick={handleUpdateRoom}
-                  className="flex items-center gap-2 rounded-lg bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-[#061724] hover:bg-cyan-200"
+                  className="flex items-center gap-2 rounded-[14px] px-5 py-2.5 text-[13px] font-semibold text-[#061724] transition-colors"
+                  style={{ background: '#67E8F9' }}
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="h-4 w-4" />
                   Uložit
                 </button>
               </div>
@@ -1213,7 +1059,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#020914]/78 p-3 sm:p-5"
+            className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
             onClick={() => setDeleteConfirm(null)}
           >
             <motion.div
@@ -1221,30 +1067,28 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.09] bg-[#0b1020] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.42)]"
+              className="timeline-popup-panel relative w-full max-w-md overflow-hidden p-6"
             >
-              <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-red-300/55 to-transparent" />
-
-              <div className="relative flex items-start gap-3.5 mb-5">
+                            <div className="relative flex items-start gap-3.5 mb-5">
                 <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15">
                   <AlertCircle className="h-5 w-5 text-red-400" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-base font-bold text-white">Smazat operační sál?</h2>
-                  <p className="mt-1.5 text-sm text-white/60 leading-relaxed">Opravdu chcete smazat tento operační sál? Tato akce je nevratná.</p>
+                  <h2 className="text-[17px] font-semibold tracking-[-0.015em] text-white">Smazat operační sál?</h2>
+                  <p className="mt-2 text-[13px] leading-relaxed text-white/50">Opravdu chcete smazat tento operační sál? Tato akce je nevratná.</p>
                 </div>
               </div>
 
               <div className="relative flex justify-end gap-2.5">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white/80 transition-colors"
+                  className="rounded-[14px] border border-white/[0.09] bg-white/[0.05] px-5 py-2.5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
                 >
                   Zrušit
                 </button>
                 <button
                   onClick={() => handleDeleteRoom(deleteConfirm)}
-                  className="px-5 py-2.5 text-sm font-bold rounded-xl text-white bg-red-500/90 hover:bg-red-500 transition-colors"
+                  className="rounded-[14px] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors" style={{ background: 'rgba(229,72,77,0.88)' }}
                 >
                   Smazat
                 </button>

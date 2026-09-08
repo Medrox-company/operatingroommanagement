@@ -25,6 +25,7 @@ interface SpecialtyResponse {
   departments?: Array<{
     id: string;
     name: string;
+    short_code: string;
     accent_color: string | null;
     is_active: boolean;
   }>;
@@ -119,6 +120,9 @@ export function useCurrentRoomSpecialties() {
       roomSlots[allocation.day_part] = {
         departmentId: display.id,
         name: display.name,
+        shortCode: 'short_code' in display
+          ? display.short_code
+          : allocation.allocation_kind === 'CLOSED' ? 'UZAVŘENO' : 'SERVIS',
         color: display.color,
         dayPart: allocation.day_part,
       };

@@ -167,71 +167,92 @@ const RapidSurgeryWarningComponent = ({
     if (!isMobilePopupOpen) return null;
 
     return (
+      /* Stejný jazyk jako popup detailu sálu: skoro černý podklad se světelným
+         pruhem zleva shora, panel jako sklo s velkým zaoblením a hranou
+         nasvícenou shora, uvnitř karty s rádiusem 16. Jantarová zůstává, ale
+         nese ji ikona, popisek a číslo — ne barevný pruh přes celou hlavu. */
       <div
-        className="fixed inset-0 z-[120] flex items-center justify-center bg-[#030712]/75 p-5"
+        className="fixed inset-0 z-[120] flex items-center justify-center p-5"
         role="dialog"
         aria-modal="true"
         aria-labelledby="rapid-surgery-warning-title"
         aria-describedby="rapid-surgery-warning-description"
+        style={{
+          background: [
+            'linear-gradient(118deg, rgba(72,132,255,0.34) 0%, rgba(84,66,226,0.18) 24%, transparent 54%)',
+            'radial-gradient(58% 50% at 6% 0%, rgba(120,168,255,0.26), transparent 68%)',
+            'rgba(3,5,11,0.90)',
+          ].join(', '),
+          backdropFilter: 'blur(16px) brightness(0.5) saturate(0.9)',
+          WebkitBackdropFilter: 'blur(16px) brightness(0.5) saturate(0.9)',
+        }}
       >
         <section
-          className="relative w-full max-w-[360px] overflow-hidden rounded-[28px] p-5"
+          className="relative w-full max-w-[380px] overflow-hidden rounded-[30px] p-6"
           style={{
-            background: 'var(--m-card-solid)',
-            border: '1px solid rgba(245,158,11,0.30)',
-            boxShadow: '0 24px 70px rgba(3,7,18,0.42)',
+            background: 'linear-gradient(160deg, rgba(108,132,236,0.20) 0%, rgba(58,66,138,0.11) 34%, rgba(14,18,34,0.62) 72%, rgba(9,11,21,0.72) 100%)',
+            border: '1px solid rgba(190,206,255,0.10)',
+            boxShadow: '0 40px 110px rgba(0,0,0,0.68), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(255,255,255,0.03)',
           }}
         >
-          <div
-            aria-hidden
-            className="absolute inset-x-0 top-0 h-1"
-            style={{ background: 'linear-gradient(90deg, #F59E0B, #FB7185)' }}
-          />
-
           <button
             type="button"
             onClick={() => setDismissedEventKey(transition.eventKey)}
-            className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full active:scale-95"
-            style={{ background: 'var(--m-card-2)', color: 'var(--m-muted)' }}
+            className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-[13px] transition-colors active:scale-95"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.5)',
+            }}
             aria-label="Zavřít upozornění"
           >
-            <X className="h-4 w-4" strokeWidth={2.2} />
+            <X className="h-4 w-4" strokeWidth={2.1} />
           </button>
 
           <div
             className="grid h-12 w-12 place-items-center rounded-[16px]"
-            style={{ background: 'rgba(245,158,11,0.14)', color: '#F59E0B' }}
+            style={{
+              background: 'rgba(245,158,11,0.13)',
+              border: '1px solid rgba(245,158,11,0.22)',
+              color: '#F59E0B',
+            }}
           >
-            <AlertTriangle className="h-6 w-6" strokeWidth={2.1} />
+            <AlertTriangle className="h-6 w-6" strokeWidth={1.9} />
           </div>
 
-          <p className="mt-5 text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: '#F59E0B' }}>
+          <p
+            className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em]"
+            style={{ color: 'rgba(245,158,11,0.80)' }}
+          >
             Upozornění na časový interval
           </p>
           <h2
             id="rapid-surgery-warning-title"
-            className="mt-2 pr-8 text-[21px] font-extrabold leading-tight"
-            style={{ color: 'var(--m-text-strong)' }}
+            className="mt-2.5 pr-10 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-white"
           >
             Interval kratší než 5 minut
           </h2>
           <p
             id="rapid-surgery-warning-description"
-            className="mt-3 text-[13px] leading-relaxed"
-            style={{ color: 'var(--m-muted)' }}
+            className="mt-3 text-[13px] leading-relaxed text-white/50"
           >
             Od příjezdu pacienta na sál do zahájení chirurgického výkonu uplynulo pouze
           </p>
 
           <div
-            className="mt-4 flex items-baseline justify-center rounded-[18px] py-4"
-            style={{ background: 'rgba(245,158,11,0.10)' }}
+            className="mt-5 flex items-baseline justify-center rounded-[16px] py-5"
+            style={{
+              background: 'rgba(245,158,11,0.07)',
+              border: '1px solid rgba(245,158,11,0.16)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+            }}
             aria-label={`Naměřený interval ${transition.formattedDuration}`}
           >
-            <strong className="text-[34px] font-black tabular-nums leading-none" style={{ color: '#F59E0B' }}>
+            <strong className="text-[38px] font-light tabular-nums leading-none tracking-[-0.04em]" style={{ color: '#FBBF24' }}>
               {transition.formattedDuration}
             </strong>
-            <span className="ml-2 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--m-muted)' }}>
+            <span className="ml-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
               min
             </span>
           </div>
@@ -240,8 +261,13 @@ const RapidSurgeryWarningComponent = ({
             type="button"
             autoFocus
             onClick={() => setDismissedEventKey(transition.eventKey)}
-            className="mt-5 h-12 w-full rounded-[16px] text-[13px] font-extrabold active:scale-[0.98]"
-            style={{ background: '#F59E0B', color: '#111827' }}
+            className="mt-5 h-12 w-full rounded-[16px] text-[13px] font-semibold tracking-[0.01em] transition-colors active:scale-[0.98]"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.09)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
+              color: 'rgba(255,255,255,0.88)',
+            }}
           >
             Rozumím, zavřít
           </button>
@@ -254,38 +280,47 @@ const RapidSurgeryWarningComponent = ({
     <section
       role="status"
       aria-live="polite"
-      className={`flex items-center gap-3 rounded-[18px] px-4 py-3.5 ${className}`}
+      /* Stejná karta jako uvnitř popupu — rádius 16, tichý rámeček, odlesk po
+         horní hraně. Dřív to byl jantarový pruh s rámečkem 0.42, který v
+         klidném rozhraní působil jako poplach. */
+      className={`flex items-center gap-3.5 rounded-[16px] px-4 py-3.5 ${className}`}
       style={{
-        background: isMobile
-          ? 'linear-gradient(135deg, rgba(245,158,11,0.16), rgba(239,68,68,0.10)), var(--m-card-solid)'
-          : 'linear-gradient(135deg, rgba(245,158,11,0.14), rgba(239,68,68,0.08)), rgba(12,18,31,0.96)',
-        border: '1px solid rgba(245,158,11,0.42)',
-        boxShadow: '0 12px 30px rgba(120,53,15,0.16)',
+        background: 'linear-gradient(135deg, rgba(245,158,11,0.075), rgba(245,158,11,0.02))',
+        border: '1px solid rgba(245,158,11,0.18)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
       }}
     >
       <span
         className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px]"
-        style={{ background: 'rgba(245,158,11,0.16)', color: '#F59E0B' }}
+        style={{
+          background: 'rgba(245,158,11,0.12)',
+          border: '1px solid rgba(245,158,11,0.2)',
+          color: '#F59E0B',
+        }}
       >
-        <AlertTriangle className="h-5 w-5" strokeWidth={2.2} />
+        <AlertTriangle className="h-5 w-5" strokeWidth={1.9} />
       </span>
       <span className="min-w-0 flex-1">
         <strong
-          className="block text-[12px] font-extrabold leading-tight"
+          className="block text-[12.5px] font-semibold leading-tight tracking-[-0.01em]"
           style={{ color: isMobile ? 'var(--m-text-strong)' : '#FFFFFF' }}
         >
           Interval kratší než 5 minut
         </strong>
         <span
-          className="mt-1 block text-[10px] leading-relaxed"
-          style={{ color: isMobile ? 'var(--m-muted)' : 'rgba(255,255,255,0.55)' }}
+          className="mt-1 block text-[10.5px] leading-relaxed"
+          style={{ color: isMobile ? 'var(--m-muted)' : 'rgba(255,255,255,0.48)' }}
         >
           Od příjezdu pacienta na sál do zahájení chirurgického výkonu uplynulo pouze {transition.formattedDuration}.
         </span>
       </span>
       <span
-        className="shrink-0 rounded-xl px-2.5 py-2 text-[13px] font-black tabular-nums"
-        style={{ background: 'rgba(245,158,11,0.14)', color: '#FBBF24' }}
+        className="shrink-0 rounded-[13px] px-3 py-2 text-[15px] font-light tabular-nums tracking-[-0.02em]"
+        style={{
+          background: 'rgba(245,158,11,0.09)',
+          border: '1px solid rgba(245,158,11,0.16)',
+          color: '#FBBF24',
+        }}
         aria-label={`Naměřený interval ${transition.formattedDuration}`}
       >
         {transition.formattedDuration}

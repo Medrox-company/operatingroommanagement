@@ -9,6 +9,7 @@ export const ROOM_SCHEDULE_SYSTEM_OPTIONS = {
 export interface CurrentRoomSpecialty {
   departmentId: string;
   name: string;
+  shortCode: string;
   color: string;
   dayPart: RoomScheduleDayPart | 'FULL_DAY';
 }

@@ -65,10 +65,10 @@
    pozadí úvodní obrazovky Nastavení systému. */
 .app-module-background {
   background:
-    radial-gradient(110% 92% at 15% -8%, rgba(50, 64, 143, 0.78) 0%, rgba(41, 53, 121, 0.66) 20%, rgba(28, 38, 91, 0.46) 42%, rgba(17, 25, 60, 0.24) 62%, rgba(8, 13, 32, 0) 84%),
-    radial-gradient(88% 82% at 106% 106%, rgba(91, 40, 86, 0.68) 0%, rgba(72, 31, 72, 0.52) 24%, rgba(49, 23, 57, 0.34) 46%, rgba(27, 16, 43, 0.16) 66%, rgba(8, 13, 32, 0) 86%),
-    radial-gradient(74% 68% at 58% 45%, rgba(30, 37, 84, 0.24) 0%, rgba(17, 23, 54, 0.12) 48%, transparent 82%),
-    linear-gradient(145deg, #0b1230 0%, #080e25 30%, #070c1f 58%, #0d0a20 78%, #130b21 100%);
+    radial-gradient(110% 92% at 15% -8%, rgba(38, 49, 111, 0.70) 0%, rgba(30, 39, 90, 0.58) 20%, rgba(20, 27, 68, 0.39) 42%, rgba(12, 17, 45, 0.19) 62%, rgba(5, 8, 21, 0) 84%),
+    radial-gradient(88% 82% at 106% 106%, rgba(68, 29, 64, 0.60) 0%, rgba(53, 23, 53, 0.44) 24%, rgba(36, 16, 42, 0.27) 46%, rgba(19, 11, 31, 0.12) 66%, rgba(5, 8, 21, 0) 86%),
+    radial-gradient(74% 68% at 58% 45%, rgba(22, 26, 62, 0.18) 0%, rgba(12, 15, 39, 0.08) 48%, transparent 82%),
+    linear-gradient(145deg, #070c22 0%, #05091a 30%, #040716 58%, #080617 78%, #0d0717 100%);
 }
 
 /* Systémová volba vyššího kontrastu přidá rezervu pro starší SDR panely.
@@ -536,25 +536,31 @@ html.capacitor-native select {
 
 /* Sdílený shell všech pracovních dialogů v modulu Timeline. */
 .timeline-popup-overlay {
+  /* Téměř černý podklad se světelným pruhem zleva shora. Světlo přichází
+     z jednoho místa a panel z něj bere nasvícení horní hrany. */
   background:
-    radial-gradient(78% 70% at 22% 5%, rgba(45, 51, 112, 0.34), transparent 68%),
-    radial-gradient(54% 58% at 96% 100%, rgba(89, 44, 85, 0.22), transparent 72%),
-    rgba(2, 6, 15, 0.78) !important;
-  backdrop-filter: blur(18px) brightness(0.52) saturate(0.82) !important;
-  -webkit-backdrop-filter: blur(18px) brightness(0.52) saturate(0.82) !important;
+    linear-gradient(118deg, rgba(72, 132, 255, 0.46) 0%, rgba(84, 66, 226, 0.24) 24%, transparent 54%),
+    radial-gradient(58% 50% at 6% 0%, rgba(120, 168, 255, 0.34), transparent 68%),
+    radial-gradient(58% 60% at 88% 96%, rgba(104, 62, 168, 0.13), transparent 74%),
+    rgba(3, 5, 11, 0.90) !important;
+  backdrop-filter: blur(16px) brightness(0.5) saturate(0.9) !important;
+  -webkit-backdrop-filter: blur(16px) brightness(0.5) saturate(0.9) !important;
 }
 
 .timeline-popup-panel {
+  /* Sklo, ne deska. Horní polovina je světlejší, protože odtud přichází
+     světlo; dole panel splývá s pozadím. Obrys je jen naznačený — tvar drží
+     nasvícená horní hrana. */
   background:
-    radial-gradient(92% 76% at 16% -8%, rgba(88, 105, 199, 0.38) 0%, rgba(49, 62, 126, 0.22) 44%, transparent 75%),
-    radial-gradient(70% 64% at 106% 108%, rgba(122, 74, 150, 0.18), transparent 72%),
-    linear-gradient(145deg, rgba(27, 38, 72, 0.985), rgba(20, 29, 56, 0.985)) !important;
-  border: 1px solid rgba(193, 205, 255, 0.16) !important;
-  border-radius: 12px !important;
+    linear-gradient(160deg, rgba(108, 132, 236, 0.20) 0%, rgba(58, 66, 138, 0.11) 34%, rgba(14, 18, 34, 0.62) 72%, rgba(9, 11, 21, 0.72) 100%) !important;
+  border: 1px solid rgba(190, 206, 255, 0.10) !important;
+  border-radius: 30px !important;
+  /* Bez ořezu by hranaté vnitřní bloky vyčnívaly z oblých rohů panelu. */
+  overflow: hidden !important;
   box-shadow:
-    0 32px 90px rgba(0, 0, 0, 0.62),
-    0 0 0 1px rgba(88, 118, 190, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.075) !important;
+    0 40px 110px rgba(0, 0, 0, 0.68),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03) !important;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
 }
@@ -566,12 +572,12 @@ html.capacitor-native select {
 .timeline-popup-panel [class*="rounded-3xl"],
 .timeline-popup-panel [class*="rounded-2xl"],
 .timeline-popup-panel [class*="rounded-xl"] {
-  border-radius: 8px !important;
+  border-radius: 14px !important;
 }
 
 .timeline-popup-header {
-  background: linear-gradient(90deg, rgba(179, 193, 255, 0.035), transparent 72%);
-  border-bottom: 1px solid rgba(201, 211, 255, 0.09);
+  background: none;
+  border-bottom: 1px solid rgba(201, 211, 255, 0.055);
 }
 
 .timeline-popup-header h2 {
@@ -589,10 +595,10 @@ html.capacitor-native select {
 }
 
 .timeline-popup-close {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.09) !important;
-  border-radius: 8px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 13px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .timeline-popup-close:hover {
@@ -606,9 +612,9 @@ html.capacitor-native select {
 .timeline-popup-chart,
 .timeline-popup-metric,
 .timeline-popup-row {
-  border-radius: 8px !important;
-  border-color: rgba(198, 209, 255, 0.1) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  border-radius: 14px !important;
+  border-color: rgba(198, 209, 255, 0.07) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .timeline-popup-card {
@@ -672,10 +678,10 @@ html.capacitor-native select {
 
 .timeline-popup-journey-title {
   color: rgba(255, 255, 255, 0.97);
-  font-size: clamp(1.35rem, 2.6vw, 2rem);
-  font-weight: 760;
-  letter-spacing: -0.045em;
-  line-height: 1;
+  font-size: clamp(1.2rem, 2.1vw, 1.62rem);
+  font-weight: 740;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
 }
 
 .timeline-popup-journey-count {
@@ -688,28 +694,25 @@ html.capacitor-native select {
 .timeline-popup-journey {
   position: relative;
   overflow: hidden;
-  border-top: 1px solid rgba(202, 214, 255, 0.14);
-  border-bottom: 1px solid rgba(202, 214, 255, 0.1);
+  /* Zaoblená karta místo pásu přes celou šířku — v jedné řadě s ostatními
+     bloky popupu. */
+  border: 1px solid rgba(202, 214, 255, 0.08);
+  border-radius: 16px;
   background:
     radial-gradient(circle at 18% 4%, rgba(119, 140, 255, 0.17), transparent 31%),
     radial-gradient(circle at 86% 0%, rgba(212, 108, 180, 0.1), transparent 27%),
     linear-gradient(110deg, rgba(151, 169, 242, 0.055), rgba(99, 112, 184, 0.012) 54%, rgba(145, 102, 173, 0.03));
 }
 
-.timeline-popup-journey::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(112deg, transparent 0 46%, rgba(255, 255, 255, 0.025) 46.2%, transparent 46.5%);
-}
+/* Diagonální světelná linka přes plátno je pryč. Vypadala jako artefakt
+   vykreslení, ne jako záměr, a lámala se přes čísla fází. */
 
 .timeline-popup-journey-summary {
   display: grid;
-  grid-template-columns: minmax(180px, 0.55fr) minmax(0, 1.45fr);
+  grid-template-columns: minmax(190px, 0.62fr) minmax(0, 1fr);
   align-items: center;
-  gap: 2rem;
-  padding: 1.55rem 1.5rem 1.4rem;
+  gap: 2.2rem;
+  padding: 1.1rem 1.4rem 1.05rem;
   border-bottom: 1px solid rgba(202, 214, 255, 0.09);
 }
 
@@ -729,9 +732,9 @@ html.capacitor-native select {
 }
 
 .timeline-popup-journey-summary strong {
-  font-size: clamp(3.25rem, 6vw, 5.2rem) !important;
-  font-weight: 780 !important;
-  letter-spacing: -0.075em !important;
+  font-size: clamp(2.3rem, 3.4vw, 3rem) !important;
+  font-weight: 740 !important;
+  letter-spacing: -0.055em !important;
 }
 
 .timeline-popup-journey-summary strong + span {
@@ -743,8 +746,10 @@ html.capacitor-native select {
 
 .timeline-popup-phase-roadmap {
   position: relative;
+  /* Fáze vedle sebe, pod každou její podíl. Sloupce drží stejnou šířku,
+     takže procenta tvoří jednu vodorovnou linku a dají se porovnat pohledem. */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -753,78 +758,84 @@ html.capacitor-native select {
 .timeline-popup-phase-roadmap::before {
   content: "";
   position: absolute;
-  top: 2.45rem;
+  top: 1.85rem;
   right: 4%;
   left: 4%;
   height: 1px;
-  background: rgba(195, 208, 250, 0.16);
+  background: rgba(195, 208, 250, 0.14);
 }
 
 .timeline-popup-phase-roadmap-step {
   position: relative;
   display: flex;
   min-width: 0;
-  min-height: 10.25rem;
+  min-height: 7.5rem;
   flex-direction: column;
   align-items: center;
-  padding: 1.45rem 0.75rem 1.1rem;
+  padding: 0.85rem 0.55rem 0.8rem;
   text-align: center;
-  border-left: 1px solid rgba(202, 214, 255, 0.065);
+  transition: background-color 140ms ease;
 }
 
-.timeline-popup-phase-roadmap-step:first-child {
-  border-left: 0;
+.timeline-popup-phase-roadmap-step + .timeline-popup-phase-roadmap-step {
+  box-shadow: inset 1px 0 0 rgba(202, 214, 255, 0.06);
+}
+
+.timeline-popup-phase-roadmap-step:hover {
+  background-color: rgba(184, 198, 255, 0.04);
 }
 
 .timeline-popup-phase-roadmap-marker {
   position: relative;
   z-index: 1;
   display: inline-flex;
-  width: 2rem;
-  height: 2rem;
+  width: 1.8rem;
+  height: 1.8rem;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   border: 1px solid;
-  border-radius: 7px;
+  border-radius: 9px;
   font-size: 0.625rem;
   font-weight: 750;
 }
 
 .timeline-popup-phase-roadmap-status {
-  margin-top: 0.7rem;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 0.46rem;
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 0.32);
+  font-size: 0.47rem;
   font-weight: 650;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .timeline-popup-phase-roadmap-name {
+  /* Dva řádky se stejnou minimální výškou — jednořádkové i dvouřádkové
+     názvy tak drží procenta pod sebou na jedné lince. */
   display: -webkit-box;
-  min-height: 2.35rem;
-  margin-top: 0.35rem;
+  min-height: 2.1rem;
+  margin-top: 0.22rem;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.78rem;
-  font-weight: 690;
-  line-height: 1.28;
+  color: rgba(255, 255, 255, 0.93);
+  font-size: 0.8rem;
+  font-weight: 660;
+  line-height: 1.25;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
 .timeline-popup-phase-roadmap-share {
-  margin-top: 0.6rem;
-  font-size: 1.18rem;
-  font-weight: 760;
+  margin-top: 0.42rem;
+  font-size: 1.34rem;
+  font-weight: 750;
   letter-spacing: -0.035em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .timeline-popup-phase-roadmap-time {
-  margin-top: 0.4rem;
-  color: rgba(255, 255, 255, 0.38);
+  margin-top: 0.3rem;
+  color: rgba(255, 255, 255, 0.4);
   font-family: var(--font-mono);
   font-size: 0.55rem;
   line-height: 1.3;
@@ -841,9 +852,11 @@ html.capacitor-native select {
 }
 
 .timeline-popup-insights {
+  /* Stejná karta jako plátno fází výš. Předtím to byl pás mezi dvěma
+     linkami a v jednom okně se míchaly dva různé jazyky bloků. */
   overflow: hidden;
-  border-top: 1px solid rgba(202, 214, 255, 0.1);
-  border-bottom: 1px solid rgba(202, 214, 255, 0.1);
+  border: 1px solid rgba(202, 214, 255, 0.075);
+  border-radius: 16px;
   background: linear-gradient(90deg, rgba(148, 168, 240, 0.04), transparent 72%);
 }
 
@@ -859,9 +872,9 @@ html.capacitor-native select {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   overflow: hidden;
-  border-top: 1px solid rgba(202, 214, 255, 0.11);
-  border-bottom: 1px solid rgba(202, 214, 255, 0.11);
-  background: linear-gradient(90deg, rgba(151, 169, 242, 0.055), rgba(151, 169, 242, 0.016));
+  border: 1px solid rgba(202, 214, 255, 0.075);
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(151, 169, 242, 0.05), rgba(151, 169, 242, 0.014));
 }
 
 .timeline-popup-fact {
@@ -869,8 +882,8 @@ html.capacitor-native select {
   min-width: 0;
   align-items: center;
   gap: 0.7rem;
-  padding: 0.8rem 1rem;
-  border-left: 1px solid rgba(202, 214, 255, 0.08);
+  padding: 0.72rem 1rem;
+  border-left: 1px solid rgba(202, 214, 255, 0.07);
 }
 
 .timeline-popup-fact:first-child {
@@ -1008,14 +1021,18 @@ html.capacitor-native select {
 }
 
 .timeline-toolbar-float {
-  background: rgba(255, 255, 255, 0.028);
-  border: 1px solid rgba(255, 255, 255, 0.095);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(125, 165, 185, 0.13);
+  box-shadow: none;
   backdrop-filter: blur(14px);
 }
 
 .timeline-toolbar-float button {
   border-radius: 8px;
+}
+
+.timeline-toolbar-float button:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .timeline-clock-clean::after {
@@ -1034,15 +1051,15 @@ html.capacitor-native select {
 }
 
 .timeline-status-calm {
-  border: 1px solid rgba(255, 255, 255, 0.095);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(125, 165, 185, 0.13);
+  box-shadow: none;
   backdrop-filter: blur(14px);
 }
 
 .timeline-field-soft {
-  background: rgba(255, 255, 255, 0.038);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(125, 165, 185, 0.13);
+  box-shadow: none;
 }
 
 .timeline-field-soft:focus-within {
@@ -1052,58 +1069,94 @@ html.capacitor-native select {
 }
 
 .timeline-scheduler-shell {
-  /* Souvislá tabulka jako v modulu Rozpis sálů. */
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  /* Stejně jako Tok pacienta leží obsah přímo na společném pozadí aplikace. */
+  background: transparent;
+  border: 1px solid rgba(125, 165, 185, 0.13);
   box-shadow: none;
+  backdrop-filter: none;
 }
 
 .timeline-axis-header {
-  background:
-    radial-gradient(105% 125% at 88% -24%, rgba(34, 211, 238, 0.09), rgba(34, 211, 238, 0.025) 38%, transparent 72%),
-    rgba(255, 255, 255, 0.01);
+  background: transparent;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  border-bottom: 1px solid rgba(125, 165, 185, 0.13);
   box-shadow: none;
 }
 
 .timeline-room-row {
   transform: translateZ(0);
-  background:
-    radial-gradient(105% 135% at 88% -28%, rgba(34, 211, 238, 0.06), rgba(34, 211, 238, 0.018) 38%, transparent 72%),
-    transparent;
+  background: transparent;
   border: 0;
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 -1px 0 rgba(125, 165, 185, 0.09);
 }
 
 .timeline-room-row:hover {
   transform: none;
-  border-color: rgba(255, 255, 255, 0.19);
-  background:
-    radial-gradient(105% 135% at 88% -28%, rgba(34, 211, 238, 0.14), rgba(34, 211, 238, 0.05) 40%, transparent 74%),
-    rgba(255, 255, 255, 0.018);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.055) !important;
+  border-color: rgba(125, 165, 185, 0.20);
+  background: rgba(255, 255, 255, 0.018);
+  box-shadow: inset 0 -1px 0 rgba(125, 165, 185, 0.12) !important;
 }
 
 .timeline-room-row-alt {
-  background:
-    radial-gradient(105% 135% at 88% -28%, rgba(34, 211, 238, 0.055), rgba(34, 211, 238, 0.016) 38%, transparent 72%),
-    rgba(255, 255, 255, 0.016);
+  background: transparent;
 }
 
 .timeline-room-label {
-  background: rgba(255, 255, 255, 0.024);
-  border-right: 1px solid rgba(255, 255, 255, 0.055);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.055);
-  backdrop-filter: blur(12px);
+  background: transparent;
+  border-right: 1px solid rgba(125, 165, 185, 0.16);
+  box-shadow:
+    inset -1px 0 0 rgba(92, 151, 181, 0.06),
+    inset 0 -1px 0 rgba(125, 165, 185, 0.09);
+  backdrop-filter: none;
+}
+
+.timeline-room-rail-header {
+  background: transparent;
+  border-right: 1px solid rgba(125, 165, 185, 0.14);
+  box-shadow: inset 0 -1px 0 rgba(125, 165, 185, 0.09);
+  backdrop-filter: none;
 }
 
 .timeline-room-row:hover .timeline-room-label {
-  background: rgba(255, 255, 255, 0.038);
+  background: rgba(255, 255, 255, 0.016);
+}
+
+/* Bloky operací záměrně nepoužívají filter().
+   saturate()/contrast()/brightness() vytlačí každý blok do vlastní offscreen
+   textury. Na timeline s patnácti sály jsou to desítky takových vrstev, které
+   se přepočítají při každém vodorovném posunu i při každé realtime změně —
+   a rozdíl v sytosti stejně nikdo nepozná. Zesvětlení při najetí obstará
+   plošný inset stín, který překreslí jen ten jeden blok. */
+.timeline-operation-completed {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: box-shadow 180ms ease;
+}
+
+.timeline-operation-completed:hover {
+  box-shadow:
+    inset 0 0 0 999px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+.timeline-operation-completed::after {
+  background: none;
 }
 
 .timeline-operation-block {
   isolation: isolate;
+  /* Plochý povrch bez stínu a bez lesku. Design systém projektu má u karet
+     zapsáno „no visible outline" a zakazuje záře; vrstvený stín a diagonální
+     odlesk dělaly z bloku plastický objekt, který do klinického rozhraní
+     nepatří. */
+  box-shadow: none;
+  transition: box-shadow 180ms ease;
+}
+
+.timeline-operation-block:hover {
+  box-shadow:
+    0 16px 38px -16px rgba(0, 0, 0, 0.84),
+    inset 0 0 0 999px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .timeline-operation-block::after {
@@ -1111,7 +1164,20 @@ html.capacitor-native select {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(110deg, rgba(255, 255, 255, 0.045), transparent 34%, transparent 76%, rgba(255, 255, 255, 0.02));
+  z-index: 2;
+  border-radius: inherit;
+  background: none;
+}
+
+.timeline-operation-label {
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.82);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-operation-block {
+    transition: none;
+  }
 }
 
 /* ── Mobilní světlý medicínský styl (jednotný s detailem sálu) ── */
@@ -1201,15 +1267,11 @@ html.capacitor-native select {
   box-shadow: 0 0 12px var(--color-danger), 0 0 24px rgba(239, 68, 68, 0.3);
 }
 
-/* Locked room diagonal stripes pattern - Yellow */
+/* Uzamčený sál — plocha místo šrafování.
+   Diagonální pruhy přes celou šířku osy byly nejhlasitější prvek obrazovky,
+   ačkoli uzamčený sál je klidový stav. Sdělení nese štítek uprostřed řádku. */
 .locked-room-stripes {
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    rgba(245, 158, 11, 0.12) 10px,
-    rgba(245, 158, 11, 0.12) 20px
-  );
+  background: rgba(245, 158, 11, 0.05);
   pointer-events: none;
 }
 
@@ -1881,10 +1943,10 @@ html.capacitor-native select {
 
   .mobile-theme-surface:not(.mobile-timeline-room-detail) {
     background:
-      radial-gradient(110% 92% at 15% -8%, rgba(50, 64, 143, 0.78) 0%, rgba(41, 53, 121, 0.66) 20%, rgba(28, 38, 91, 0.46) 42%, rgba(17, 25, 60, 0.24) 62%, rgba(8, 13, 32, 0) 84%),
-      radial-gradient(88% 82% at 106% 106%, rgba(91, 40, 86, 0.68) 0%, rgba(72, 31, 72, 0.52) 24%, rgba(49, 23, 57, 0.34) 46%, rgba(27, 16, 43, 0.16) 66%, rgba(8, 13, 32, 0) 86%),
-      radial-gradient(74% 68% at 58% 45%, rgba(30, 37, 84, 0.24) 0%, rgba(17, 23, 54, 0.12) 48%, transparent 82%),
-      linear-gradient(145deg, #0b1230 0%, #080e25 30%, #070c1f 58%, #0d0a20 78%, #130b21 100%) !important;
+      radial-gradient(110% 92% at 15% -8%, rgba(38, 49, 111, 0.70) 0%, rgba(30, 39, 90, 0.58) 20%, rgba(20, 27, 68, 0.39) 42%, rgba(12, 17, 45, 0.19) 62%, rgba(5, 8, 21, 0) 84%),
+      radial-gradient(88% 82% at 106% 106%, rgba(68, 29, 64, 0.60) 0%, rgba(53, 23, 53, 0.44) 24%, rgba(36, 16, 42, 0.27) 46%, rgba(19, 11, 31, 0.12) 66%, rgba(5, 8, 21, 0) 86%),
+      radial-gradient(74% 68% at 58% 45%, rgba(22, 26, 62, 0.18) 0%, rgba(12, 15, 39, 0.08) 48%, transparent 82%),
+      linear-gradient(145deg, #070c22 0%, #05091a 30%, #040716 58%, #080617 78%, #0d0717 100%) !important;
     transition: background 240ms ease;
   }
 
