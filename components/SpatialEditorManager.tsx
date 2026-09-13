@@ -7,12 +7,15 @@ import {
   FilePlus2,
   RefreshCw,
   Save,
+  Trash2,
   WandSparkles,
 } from 'lucide-react';
 import type { OperatingRoom } from '../types';
 import ModulePageHeading from './ModulePageHeading';
 import { useHospital } from '../contexts/HospitalContext';
 import { useSpatialProject } from '../hooks/useSpatialProject';
+import { useConfirm } from './ui/ConfirmDialog';
+import { toast } from './ui/toast';
 import {
   autoLinkSpatialRooms,
   createDefaultSpatialProject,
@@ -61,10 +64,12 @@ function EditorCanvas({
 
 export default function SpatialEditorManager({ rooms }: { rooms: OperatingRoom[] }) {
   const { activeHospitalId, activeHospital } = useHospital();
-  const { project, revision, updatedAt, isLoading, error, save, reload } = useSpatialProject(rooms);
+  const { project, storedProject, revision, updatedAt, isLoading, error, save, remove, reload } = useSpatialProject(rooms);
+  const confirm = useConfirm();
   const [draft, setDraft] = useState<BuildingProject | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const editorRef = useRef<EditorHandle | null>(null);
   const externalRooms = useMemo(() => rooms.map(({ id, name }) => ({ id, name })), [rooms]);
@@ -78,6 +83,7 @@ export default function SpatialEditorManager({ rooms }: { rooms: OperatingRoom[]
   }, [activeHospitalId, project, revision]);
 
   const current = draft ?? project;
+  const hasProject = Boolean(storedProject) || dirty;
 
   const replaceProject = (next: BuildingProject, notice: string) => {
     setDraft(next);
@@ -117,6 +123,34 @@ export default function SpatialEditorManager({ rooms }: { rooms: OperatingRoom[]
     setMessage('Načtena poslední uložená verze.');
   };
 
+  const handleDelete = async () => {
+    if (saving || deleting || !hasProject) return;
+    const accepted = await confirm({
+      title: 'Odstranit operační blok?',
+      description: 'Odstraní se celá 3D dispozice včetně pater, místností, stěn a vybavení. Provozní data sálů ani výkony se nezmění.',
+      confirmLabel: 'Odstranit blok',
+      cancelLabel: 'Ponechat',
+      danger: true,
+    });
+    if (!accepted) return;
+
+    setDeleting(true);
+    setMessage(null);
+    try {
+      if (storedProject) await remove(revision);
+      setDraft(project);
+      setDirty(false);
+      setMessage('Operační blok byl odstraněn. Provozní data sálů zůstala zachována.');
+      toast.success('Operační blok byl odstraněn');
+    } catch (deleteError) {
+      const failure = deleteError instanceof Error ? deleteError.message : 'Operační blok se nepodařilo odstranit.';
+      setMessage(failure);
+      toast.error(failure);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="spatial-settings-module min-h-full w-full pb-8 font-sans">
       <header className="mb-5 flex min-w-0 items-end justify-between gap-4">
@@ -128,39 +162,49 @@ export default function SpatialEditorManager({ rooms }: { rooms: OperatingRoom[]
           titleClassName="truncate"
         />
         <div className="spatial-editor-icon-bar" aria-label="Akce 3D dispozice">
-          <button type="button" onClick={handleAutoLink} disabled={rooms.length === 0 || isLoading || saving} className="spatial-editor-icon-action" aria-label="Doplnit vazby" title="Doplnit vazby">
+          <button type="button" onClick={handleAutoLink} disabled={!hasProject || rooms.length === 0 || isLoading || saving || deleting} className="spatial-editor-icon-action" aria-label="Doplnit vazby" title="Doplnit vazby">
             <WandSparkles />
           </button>
-          <button type="button" onClick={handleReset} disabled={isLoading || saving} className="spatial-editor-icon-action" aria-label="Nová dispozice" title="Nová dispozice">
+          <button type="button" onClick={handleReset} disabled={isLoading || saving || deleting} className="spatial-editor-icon-action" aria-label="Nová dispozice" title="Nová dispozice">
             <FilePlus2 />
           </button>
-          <button type="button" onClick={handleReload} disabled={isLoading || saving} className="spatial-editor-icon-action" aria-label="Načíst uloženou dispozici" title="Načíst uloženou dispozici">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={!hasProject || isLoading || saving || deleting}
+            className="spatial-editor-icon-action is-danger"
+            aria-label={deleting ? 'Odstraňuji operační blok' : 'Odstranit operační blok'}
+            title="Odstranit operační blok"
+          >
+            {deleting ? <RefreshCw className="animate-spin" /> : <Trash2 />}
+          </button>
+          <button type="button" onClick={handleReload} disabled={isLoading || saving || deleting} className="spatial-editor-icon-action" aria-label="Načíst uloženou dispozici" title="Načíst uloženou dispozici">
             <RefreshCw className={isLoading ? 'animate-spin' : ''} />
           </button>
           <button
             type="button"
             onClick={handleSave}
-            disabled={!dirty || saving || isLoading}
-            className={`spatial-editor-icon-action ${dirty ? 'is-active' : 'is-saved'}`}
-            aria-label={saving ? 'Ukládám dispozici' : dirty ? 'Uložit dispozici' : 'Dispozice je uložena'}
-            title={saving ? 'Ukládám dispozici' : dirty ? 'Uložit dispozici' : updatedAt ? `Uloženo ${new Date(updatedAt).toLocaleString('cs-CZ')}` : 'Dispozice je uložena'}
+            disabled={!dirty || saving || deleting || isLoading}
+            className={`spatial-editor-icon-action ${dirty ? 'is-active' : hasProject ? 'is-saved' : ''}`}
+            aria-label={saving ? 'Ukládám dispozici' : dirty ? 'Uložit dispozici' : hasProject ? 'Dispozice je uložena' : 'Operační blok není vytvořen'}
+            title={saving ? 'Ukládám dispozici' : dirty ? 'Uložit dispozici' : hasProject && updatedAt ? `Uloženo ${new Date(updatedAt).toLocaleString('cs-CZ')}` : hasProject ? 'Dispozice je uložena' : 'Operační blok není vytvořen'}
           >
-            {saving ? <RefreshCw className="animate-spin" /> : dirty ? <Save /> : <Check />}
+            {saving ? <RefreshCw className="animate-spin" /> : dirty || !hasProject ? <Save /> : <Check />}
           </button>
         </div>
       </header>
 
       <p className="sr-only" role="status" aria-live="polite">
-        {message || error?.message || (dirty ? 'Dispozice obsahuje neuložené změny.' : 'Dispozice je uložena.')}
+        {message || error?.message || (dirty ? 'Dispozice obsahuje neuložené změny.' : hasProject ? 'Dispozice je uložena.' : 'Operační blok není vytvořen.')}
       </p>
 
       <section className="spatial-editor-frame h-[max(680px,calc(100dvh-185px))] min-h-[680px] overflow-hidden rounded-xl border border-white/[0.07]">
         {isLoading ? (
           <div className="grid h-full place-items-center text-sm text-white/42">Načítám prostorový editor…</div>
-        ) : (
+        ) : hasProject ? (
           <EditorCanvas
             key={editorKey}
-            initialProject={project}
+            initialProject={current}
             externalRooms={externalRooms}
             onChange={(next) => {
               setDraft(next);
@@ -169,6 +213,16 @@ export default function SpatialEditorManager({ rooms }: { rooms: OperatingRoom[]
             }}
             onHandle={(handle) => { editorRef.current = handle; }}
           />
+        ) : (
+          <div className="spatial-editor-empty-state">
+            <span><Cuboid /></span>
+            <h2>Operační blok není vytvořen</h2>
+            <p>Založte novou 3D dispozici. Sály se připraví z aktuálního zařízení a následně je můžete prostorově upravit.</p>
+            <button type="button" onClick={handleReset}>
+              <FilePlus2 />
+              Vytvořit operační blok
+            </button>
+          </div>
         )}
       </section>
     </div>

@@ -190,7 +190,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
         {/* Nadpis a čas zůstávají od tabletového breakpointu v jediném řádku.
             Obě části používají fluidní typografii app-module-title, takže se
             na užších monitorech zmenší, aniž by čas spadl pod nadpis. */}
-        <header className="mb-7 hidden min-w-0 flex-shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-[clamp(1rem,3vw,3rem)] md:grid md:pr-2">
+        <header className="dashboard-page-header mb-7 hidden min-w-0 flex-shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-[clamp(1rem,3vw,3rem)] md:grid md:pr-2">
           <ModulePageHeading
             icon={Shield}
             kicker="APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ"

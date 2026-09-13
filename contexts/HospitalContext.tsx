@@ -75,7 +75,7 @@ const requestHospitalAccessToken = async (id: string, signal: AbortSignal): Prom
 };
 
 export function HospitalProvider({ children }: { children: React.ReactNode }) {
-  const { user, isSuperAdmin } = useAuth();
+  const { user, isLoading: authLoading, isSuperAdmin } = useAuth();
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [activeHospitalId, setActiveHospitalId] = useState<string | null>(null);
   const [tokenRevision, setTokenRevision] = useState(0);
@@ -187,7 +187,25 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clearHospitalAccess, isSuperAdmin, renewHospitalAccess, user?.hospitalId]);
 
-  useEffect(() => { void refreshHospitals(); }, [refreshHospitals]);
+  useEffect(() => {
+    // Nemocnici ani tenantový JWT nesmíme inicializovat z přechodného stavu
+    // `user = null` během obnovy session. Právě tento závod mohl po refreshi
+    // krátce sestavit aplikaci jako pro jinou/nepřihlášenou roli.
+    if (authLoading) return;
+
+    if (!user) {
+      desiredHospitalIdRef.current = null;
+      void clearHospitalAccess();
+      setDatabaseHospitalId(null);
+      setActiveHospitalId(null);
+      setHospitals([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    void refreshHospitals();
+  }, [authLoading, clearHospitalAccess, refreshHospitals, user]);
 
   useEffect(() => {
     const refresh = () => { void refreshHospitals(); };

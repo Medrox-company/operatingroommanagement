@@ -60,6 +60,8 @@ export interface AppSubmodule {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  /** Oprávnění aktivního zařízení se právě načítají. */
+  permissionsLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
   /** Superadministrátor — nejvyšší úroveň, nad administrátorem. */
@@ -81,13 +83,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface AuthProviderProps {
+  children: ReactNode;
+  /**
+   * Webová vstupní stránka předává session ověřenou na serveru. `undefined`
+   * znamená prostředí bez serverového renderu (nativní aplikace / preview),
+   * kde je stále nutné provést klientský bootstrap přes `/api/auth/me`.
+   */
+  initialUser?: User | null;
+}
+
+export function AuthProvider({ children, initialUser }: AuthProviderProps) {
+  const hasServerAuthSnapshot = initialUser !== undefined;
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
+  const [isLoading, setIsLoading] = useState(!hasServerAuthSnapshot);
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
   const [modules, setModules] = useState<AppModule[]>([]);
   const [submodules, setSubmodules] = useState<AppSubmodule[]>([]);
 
   const refreshModules = useCallback(async () => {
+    setPermissionsLoading(true);
     if (!isSupabaseConfigured || !supabase) {
       setSubmodules([
         {
@@ -175,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         { id: 'alerts',     name: 'Alerts',     description: 'Alert system',                 is_enabled: true, icon: 'Bell',       accent_color: '#EC4899', sort_order: 5, allowed_roles: ['aro','cos','management','primar'] },
         { id: 'settings',   name: 'Settings',   description: 'System configuration',         is_enabled: true, icon: 'Settings',   accent_color: '#64748B', sort_order: 6, allowed_roles: ['admin'] },
       ]);
+      setPermissionsLoading(false);
       return;
     }
 
@@ -206,6 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('[Auth] Failed to fetch modules:', error);
+    } finally {
+      setPermissionsLoading(false);
     }
   }, []);
 
@@ -217,26 +235,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Bootstrap: obnov session z HttpOnly cookie přes /api/auth/me
   useEffect(() => {
+    // Web dostal autoritativní výsledek z `app/page.tsx` ještě před prvním
+    // renderem. Druhý klientský dotaz by znovu vytvořil závod mezi session,
+    // oprávněními a inicializací nemocnice.
+    if (hasServerAuthSnapshot) return;
+
     let cancelled = false;
-    (async () => {
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let failedAttempts = 0;
+
+    const restoreSession = async () => {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          if (!cancelled && json.user) {
-            setUser(json.user as User);
-          }
+        if (!res.ok) throw new Error(`Session endpoint returned ${res.status}`);
+
+        const json = await res.json();
+        if (!cancelled) {
+          setUser(json.user ? json.user as User : null);
+          setIsLoading(false);
         }
-      } catch {
-        // Ignore — žádná session
-      } finally {
-        if (!cancelled) setIsLoading(false);
+      } catch (error) {
+        if (cancelled) return;
+
+        // Síťová nebo serverová chyba není důkaz odhlášení. Zachováme
+        // uzamčený ověřovací stav a obnovu opakujeme; přihlašovací obrazovku
+        // zobrazíme jen po autoritativní odpovědi `{ user: null }`.
+        failedAttempts += 1;
+        const retryDelay = Math.min(10_000, 500 * (2 ** Math.min(failedAttempts, 4)));
+        console.warn('[Auth] Session restore delayed, retrying.', error);
+        retryTimer = setTimeout(() => { void restoreSession(); }, retryDelay);
       }
-    })();
+    };
+
+    void restoreSession();
     return () => {
       cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
     };
-  }, []);
+  }, [hasServerAuthSnapshot]);
 
   const login = useCallback(
     async (email: string, password: string, hospitalId: string): Promise<{ success: boolean; error?: string }> => {
@@ -274,6 +310,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUser(null);
     setModules([]);
+    setSubmodules([]);
+    setPermissionsLoading(true);
     window.dispatchEvent(new Event('authenticationChanged'));
   }, []);
 
@@ -465,6 +503,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       isLoading,
+      permissionsLoading,
       isAuthenticated: !!user,
       // Superadmin je nadmnožinou administrátora — všude, kde se dosud
       // kontrolovalo `isAdmin`, projde i on.
@@ -483,7 +522,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasModuleAccess,
       hasSubmoduleAccess,
     }),
-    [user, isLoading, modules, submodules, login, logout, refreshModules, toggleModule, toggleModuleRole, toggleSubmodule, toggleSubmoduleRole, hasModuleAccess, hasSubmoduleAccess],
+    [user, isLoading, permissionsLoading, modules, submodules, login, logout, refreshModules, toggleModule, toggleModuleRole, toggleSubmodule, toggleSubmoduleRole, hasModuleAccess, hasSubmoduleAccess],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

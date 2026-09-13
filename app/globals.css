@@ -59,8 +59,8 @@
   /* Jediný tmavý prostorový podklad celé aplikace. Je převzatý přímo
      z ověřené 3D dispozice, aby při přechodu mezi moduly neměnil odstín. */
   --app-spatial-background:
-    radial-gradient(ellipse 86% 56% at 45% 52%, rgba(25, 48, 119, 0.22) 0%, rgba(12, 29, 78, 0.12) 52%, rgba(5, 13, 48, 0) 76%),
-    linear-gradient(180deg, #071238 0%, #040b29 52%, #01051a 100%);
+    radial-gradient(ellipse 86% 70% at 47% 48%, rgba(49, 80, 166, 0.5) 0%, rgba(22, 47, 116, 0.28) 50%, rgba(4, 12, 43, 0) 81%),
+    linear-gradient(180deg, #030a28 0%, #050d2d 54%, #030922 100%);
   
   /* Glow Effects */
   --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3);
@@ -3252,8 +3252,8 @@ html.capacitor-native select {
   box-sizing: border-box;
   display: grid;
   height: 100%;
-  min-height: 740px;
-  grid-template-rows: auto minmax(360px, 1fr) auto auto;
+  min-height: 0;
+  grid-template-rows: 58px minmax(320px, 1fr) clamp(138px, 15vh, 154px) 22px;
   overflow: hidden;
   border: 0;
   border-radius: 0;
@@ -3267,11 +3267,11 @@ html.capacitor-native select {
   position: relative;
   z-index: 30;
   display: grid;
-  min-height: 72px;
-  grid-template-columns: minmax(205px, 0.8fr) minmax(420px, 1.5fr) auto;
+  min-height: 0;
+  grid-template-columns: minmax(205px, 1fr) auto;
   align-items: end;
   gap: 18px;
-  padding-bottom: 12px;
+  padding-bottom: 10px;
 }
 
 .spatial-control-title {
@@ -3297,20 +3297,13 @@ html.capacitor-native select {
 .spatial-control-title h1 { margin: 0; font-size: clamp(16px, 1.25vw, 21px); font-weight: 680; letter-spacing: 0.035em; }
 .spatial-control-title p { margin: 4px 0 0; overflow: hidden; color: rgba(202, 214, 241, 0.48); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 
-.spatial-context-controls {
+.spatial-floor-control {
   display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-}
-
-.spatial-context-controls > div,
-.spatial-context-controls > label {
-  display: flex;
-  height: 40px;
   min-width: 0;
   align-items: center;
   gap: 9px;
+  height: 40px;
+  min-width: 170px;
   border: 1px solid rgba(117, 148, 211, 0.09);
   border-radius: 9px;
   padding: 0 13px;
@@ -3320,13 +3313,11 @@ html.capacitor-native select {
   font-weight: 580;
 }
 
-.spatial-context-controls > div:first-child { min-width: 152px; }
-.spatial-context-controls > label { min-width: 170px; }
-.spatial-context-controls svg { width: 15px; height: 15px; flex: 0 0 auto; color: rgba(218, 227, 248, 0.7); stroke-width: 1.7; }
-.spatial-context-controls select { min-width: 0; flex: 1; appearance: none; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; }
-.spatial-context-controls option { background: #0a1330; color: #f5f7ff; }
+.spatial-floor-control svg { width: 15px; height: 15px; flex: 0 0 auto; color: rgba(218, 227, 248, 0.7); stroke-width: 1.7; }
+.spatial-floor-control select { min-width: 0; flex: 1; appearance: none; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; }
+.spatial-floor-control option { background: #0a1330; color: #f5f7ff; }
 
-.spatial-view-controls { display: flex; justify-content: flex-end; gap: 7px; }
+.spatial-view-controls { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
 .spatial-icon-control {
   display: grid;
   width: 40px;
@@ -3484,17 +3475,14 @@ html.capacitor-native select {
   display: flex;
   min-height: 0;
   flex-direction: column;
-  height: calc(100% - 40px);
-  align-self: start;
-  overflow-x: hidden;
-  overflow-y: auto;
+  height: 100%;
+  align-self: stretch;
+  overflow: hidden;
   border: 1px solid rgba(118, 151, 219, 0.17);
   border-radius: 10px;
   padding: clamp(14px, 1.15vw, 19px);
   background: linear-gradient(145deg, rgba(18, 32, 76, 0.92), rgba(9, 18, 49, 0.95));
   box-shadow: 0 20px 54px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.025);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(126, 154, 216, 0.22) transparent;
 }
 
 .spatial-room-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -3509,8 +3497,8 @@ html.capacitor-native select {
 .spatial-room-progress > div span { display: block; height: 100%; border-radius: inherit; background: #ffdb1f; box-shadow: 0 0 16px rgba(255, 215, 27, 0.2); }
 .spatial-room-progress > p { display: flex; justify-content: space-between; margin: 7px 0 0; color: rgba(213, 222, 243, 0.66); font-size: clamp(11px, 0.7vw, 13px); font-variant-numeric: tabular-nums; }
 
-.spatial-room-info-grid { display: grid; flex: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 15px; }
-.spatial-room-info-grid > div { min-height: 98px; border: 1px solid rgba(126, 154, 216, 0.08); border-radius: 8px; padding: clamp(12px, 0.7vw, 14px); background: rgba(41, 59, 113, 0.38); }
+.spatial-room-info-grid { display: grid; min-height: 0; flex: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 15px; }
+.spatial-room-info-grid > div { min-height: 0; overflow: hidden; border: 1px solid rgba(126, 154, 216, 0.08); border-radius: 8px; padding: clamp(10px, 0.7vw, 14px); background: rgba(41, 59, 113, 0.38); }
 .spatial-room-info-grid p { display: flex; align-items: center; gap: 7px; margin: 0; color: rgba(211, 220, 241, 0.72); font-size: clamp(12px, 0.72vw, 14px); line-height: 1.3; white-space: nowrap; }
 .spatial-room-info-grid p svg { width: clamp(16px, 0.9vw, 18px); height: clamp(16px, 0.9vw, 18px); flex: 0 0 auto; stroke-width: 1.8; }
 .spatial-room-info-grid strong { display: block; margin-top: clamp(13px, 1vw, 17px); color: rgba(248, 250, 255, 0.96); font-size: clamp(22px, 1.55vw, 27px); font-weight: 520; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -3540,18 +3528,18 @@ html.capacitor-native select {
 .spatial-room-panel-empty h2 { margin: 15px 0 0; font-size: 17px; font-weight: 570; }
 .spatial-room-panel-empty p { max-width: 230px; margin: 8px 0 0; color: rgba(201, 212, 236, 0.48); font-size: 10px; line-height: 1.55; }
 
-.spatial-summary-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.spatial-summary-grid { display: grid; min-height: 0; height: calc(100% - 10px); grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
 .spatial-summary-card,
-.spatial-alert-card { min-height: 198px; border: 1px solid rgba(117, 148, 211, 0.1); border-radius: 9px; background: rgba(20, 34, 78, 0.74); }
-.spatial-metric-card { grid-column: span 2; padding: 17px; }
+.spatial-alert-card { min-height: 0; height: 100%; border: 1px solid rgba(117, 148, 211, 0.1); border-radius: 9px; background: rgba(20, 34, 78, 0.74); }
+.spatial-metric-card { grid-column: span 2; padding: clamp(13px, 1vw, 17px); }
 .spatial-metric-card > p { margin: 0; color: rgba(230, 236, 250, 0.84); font-size: clamp(11px, 0.7vw, 13px); font-weight: 560; line-height: 1.35; }
-.spatial-metric-value { display: flex; align-items: center; gap: 9px; margin-top: 24px; }
+.spatial-metric-value { display: flex; align-items: center; gap: 9px; margin-top: clamp(15px, 2vh, 22px); }
 .spatial-metric-icon { display: grid; width: 25px; height: 25px; place-items: center; color: rgba(239, 244, 255, 0.9); }
 .spatial-metric-icon svg { width: clamp(19px, 1.2vw, 22px); height: clamp(19px, 1.2vw, 22px); stroke-width: 1.7; }
 .spatial-metric-value strong { font-size: clamp(28px, 2.15vw, 36px); font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
 .spatial-metric-value > span:last-child { color: rgba(202, 213, 238, 0.5); font-size: clamp(18px, 1.35vw, 23px); font-weight: 420; }
 
-.spatial-program-card { grid-column: span 4; padding: 15px 17px; }
+.spatial-program-card { grid-column: span 4; overflow: hidden; padding: 12px 17px; }
 .spatial-program-heading { display: flex; align-items: flex-start; justify-content: space-between; }
 .spatial-program-heading p { margin: 0; color: rgba(233, 238, 250, 0.86); font-size: clamp(11px, 0.7vw, 13px); font-weight: 570; }
 .spatial-program-heading span { display: block; margin-top: 3px; color: rgba(202, 213, 237, 0.48); font-size: clamp(8px, 0.52vw, 10px); }
@@ -3574,7 +3562,7 @@ html.capacitor-native select {
 .spatial-alert-card i svg { width: 14px; height: 14px; }
 .spatial-alert-card:hover { filter: brightness(1.06); }
 
-.spatial-control-footer { display: flex; min-height: 30px; align-items: flex-end; gap: 12px; color: rgba(181, 196, 228, 0.32); font-size: 7px; }
+.spatial-control-footer { display: flex; min-height: 0; align-items: flex-end; gap: 12px; color: rgba(181, 196, 228, 0.32); font-size: 7px; }
 .spatial-control-footer > span + span::before { margin-right: 12px; content: '|'; color: rgba(181, 196, 228, 0.18); }
 .spatial-control-footer strong { display: flex; align-items: center; gap: 5px; margin-left: auto; color: rgba(213, 222, 241, 0.45); font-weight: 500; }
 .spatial-control-footer strong svg { width: 10px; height: 10px; color: rgba(255, 219, 31, 0.72); }
@@ -3595,8 +3583,48 @@ html.capacitor-native select {
 .spatial-editor-icon-action:not(:disabled):hover { border-color: rgba(147, 174, 231, 0.25); background: rgba(29, 46, 93, 0.78); color: white; transform: translateY(-1px); }
 .spatial-editor-icon-action.is-active { border-color: rgba(255, 222, 47, 0.76); background: #ffdb1f; color: #090e22; box-shadow: 0 8px 24px rgba(255, 208, 0, 0.15); }
 .spatial-editor-icon-action.is-saved { border-color: rgba(94, 234, 212, 0.16); color: rgba(153, 246, 228, 0.76); }
+.spatial-editor-icon-action.is-danger { color: rgba(248, 113, 113, 0.72); }
+.spatial-editor-icon-action.is-danger:not(:disabled):hover { border-color: rgba(248, 113, 113, 0.34); background: rgba(127, 29, 29, 0.22); color: #fca5a5; }
 .spatial-editor-icon-action:disabled { cursor: default; opacity: 0.46; }
 .spatial-editor-icon-action.is-saved:disabled { opacity: 0.72; }
+
+.spatial-editor-empty-state {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 32px;
+  background: radial-gradient(circle at 50% 42%, rgba(47, 73, 138, 0.18), transparent 34%), rgba(7, 14, 35, 0.38);
+  text-align: center;
+}
+.spatial-editor-empty-state > span { display: grid; width: 62px; height: 62px; place-items: center; border: 1px solid rgba(112, 145, 216, 0.16); border-radius: 16px; background: rgba(25, 43, 88, 0.56); color: rgba(192, 211, 249, 0.66); }
+.spatial-editor-empty-state > span svg { width: 25px; height: 25px; stroke-width: 1.45; }
+.spatial-editor-empty-state h2 { margin: 20px 0 0; color: rgba(244, 247, 255, 0.94); font-size: 19px; font-weight: 650; }
+.spatial-editor-empty-state p { max-width: 430px; margin: 9px 0 0; color: rgba(196, 208, 234, 0.54); font-size: 12px; line-height: 1.6; }
+.spatial-editor-empty-state button { display: inline-flex; min-height: 44px; align-items: center; gap: 9px; margin-top: 22px; border: 1px solid rgba(255, 222, 47, 0.72); border-radius: 11px; padding: 0 17px; background: #ffdb1f; color: #090e22; font-size: 12px; font-weight: 720; transition: background-color 160ms ease, transform 160ms ease; }
+.spatial-editor-empty-state button:hover { background: #ffe249; transform: translateY(-1px); }
+.spatial-editor-empty-state button svg { width: 17px; height: 17px; stroke-width: 1.8; }
+
+.spatial-control-shell.is-empty { grid-template-rows: 58px minmax(360px, 1fr); }
+.spatial-dashboard-empty-state {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border: 1px solid rgba(117, 148, 211, 0.08);
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 43%, rgba(47, 73, 138, 0.16), transparent 36%), rgba(7, 14, 35, 0.28);
+  text-align: center;
+}
+.spatial-dashboard-empty-state > span { display: grid; width: 58px; height: 58px; place-items: center; border: 1px solid rgba(112, 145, 216, 0.14); border-radius: 15px; background: rgba(25, 43, 88, 0.48); color: rgba(192, 211, 249, 0.62); }
+.spatial-dashboard-empty-state > span svg { width: 24px; height: 24px; stroke-width: 1.45; }
+.spatial-dashboard-empty-state h2 { margin: 18px 0 0; color: rgba(244, 247, 255, 0.92); font-size: 18px; font-weight: 630; }
+.spatial-dashboard-empty-state p { max-width: 390px; margin: 8px 0 0; color: rgba(196, 208, 234, 0.5); font-size: 11px; line-height: 1.6; }
+.spatial-dashboard-empty-state button { display: inline-flex; min-height: 40px; align-items: center; gap: 8px; margin-top: 20px; border: 1px solid rgba(120, 150, 215, 0.16); border-radius: 10px; padding: 0 14px; background: rgba(24, 42, 86, 0.64); color: rgba(234, 240, 253, 0.82); font-size: 11px; font-weight: 650; }
+.spatial-dashboard-empty-state button:hover { border-color: rgba(147, 174, 231, 0.25); background: rgba(32, 51, 99, 0.8); color: white; }
+.spatial-dashboard-empty-state button svg { width: 15px; height: 15px; stroke-width: 1.7; }
 
 /* Obvod patra patří k dispozici jako jeden celek a používá stejný klidný
    tmavomodrý vizuální systém jako ostatní nástroje editoru. */
@@ -3631,6 +3659,12 @@ html.capacitor-native select {
 .orms-editor .oe-knl-boundary .oe-envelope-copy b { color: #c8d5f4; }
 .orms-editor .oe-knl-boundary .oe-envelope-toggle { border-color: rgba(108, 135, 197, 0.28); background: rgba(34, 51, 91, 0.76); color: #d7e2ff; }
 .orms-editor .oe-knl-boundary .oe-envelope-toggle.active { background: rgba(51, 75, 126, 0.66); color: #edf3ff; }
+.orms-editor .oe-knl-boundary.is-solid {
+  border-color: rgba(151, 171, 215, 0.34);
+  background: linear-gradient(145deg, rgba(48, 65, 108, 0.78), rgba(16, 28, 59, 0.64));
+  box-shadow: inset 0 1px 0 rgba(208, 222, 250, 0.05);
+}
+.orms-editor .oe-knl-boundary.is-solid .oe-envelope-copy b { color: #dde7fb; }
 
 .orms-editor .oe-selection-summary {
   display: inline-flex;
@@ -3819,10 +3853,8 @@ html.capacitor-native select {
 @media (max-width: 700px) {
   .spatial-control-shell { height: auto; min-height: 0; grid-template-rows: auto auto auto auto; overflow: visible; padding: 12px; }
   .spatial-control-header { min-height: 0; grid-template-columns: 1fr auto; gap: 10px; padding-bottom: 10px; }
-  .spatial-context-controls { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; }
-  .spatial-context-controls > div,
-  .spatial-context-controls > label { flex: 0 0 auto; }
   .spatial-view-controls { grid-column: 2; grid-row: 1; }
+  .spatial-floor-control { min-width: 132px; }
   .spatial-icon-control:first-child { display: none; }
   .spatial-control-main { grid-template-columns: 1fr; }
   .spatial-stage { min-height: 390px; }
@@ -3842,17 +3874,59 @@ html.capacitor-native select {
 }
 
 @media (min-width: 768px) {
-  .spatial-dashboard-module { padding-bottom: 2.5rem !important; }
+  .spatial-dashboard-module {
+    overflow: hidden !important;
+    padding-top: clamp(1.25rem, 3.2vh, 2.5rem) !important;
+    padding-bottom: clamp(1rem, 2.2vh, 2.5rem) !important;
+  }
+
+  .spatial-dashboard-module .dashboard-page-header {
+    margin-bottom: clamp(0.75rem, 2vh, 1.75rem) !important;
+  }
 }
 
 @media (min-width: 701px) and (max-width: 1180px) {
-  .spatial-control-shell { height: auto; min-height: calc(100dvh - 24px); overflow: visible; }
-  .spatial-control-header { min-height: 122px; grid-template-columns: minmax(190px, 1fr) auto; padding-bottom: 12px; }
-  .spatial-context-controls { grid-column: 1 / -1; grid-row: 2; }
+  .spatial-control-shell { height: 100%; min-height: 0; overflow: hidden; }
+  .spatial-control-header { min-height: 0; grid-template-columns: minmax(190px, 1fr) auto; padding-bottom: 10px; }
   .spatial-view-controls { grid-column: 2; grid-row: 1; }
-  .spatial-control-main { grid-template-columns: minmax(0, 1fr) 285px; min-height: 430px; }
-  .spatial-summary-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .spatial-floor-control { min-width: 148px; }
+  .spatial-control-main { grid-template-columns: minmax(0, 1fr) 285px; min-height: 0; }
+  .spatial-summary-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
   .spatial-metric-card { grid-column: span 2; }
   .spatial-program-card { grid-column: span 4; }
-  .spatial-alert-card { grid-column: span 10; min-height: 98px; }
+  .spatial-alert-card { grid-column: span 2; min-height: 0; }
+}
+
+/* Výškově omezené desktopové displeje: všechny části zůstávají v jednom
+   viewportu. Komprimují se mezery a informační dlaždice, nikoli celé plátno. */
+@media (min-width: 701px) and (max-height: 900px) {
+  .spatial-control-shell {
+    grid-template-rows: 52px minmax(285px, 1fr) 126px 18px;
+  }
+
+  .spatial-control-header { padding-bottom: 6px; }
+  .spatial-control-mark { width: 34px; height: 34px; }
+  .spatial-control-title p { margin-top: 2px; }
+  .spatial-floor-control,
+  .spatial-icon-control { height: 36px; }
+  .spatial-icon-control { width: 36px; }
+  .spatial-room-panel { padding: 11px 12px; }
+  .spatial-room-panel-heading h2 { font-size: 18px; }
+  .spatial-room-panel-heading p { margin-top: 4px; font-size: 12px; }
+  .spatial-room-progress { margin-top: 9px; }
+  .spatial-room-progress > p { margin-top: 4px; }
+  .spatial-room-info-grid { gap: 6px; margin-top: 8px; }
+  .spatial-room-info-grid > div { padding: 8px 9px; }
+  .spatial-room-info-grid p { gap: 5px; font-size: 11px; }
+  .spatial-room-info-grid p svg { width: 14px; height: 14px; }
+  .spatial-room-info-grid strong { margin-top: 7px; font-size: 20px; }
+  .spatial-room-info-grid > div > span { margin-top: 5px; font-size: 10px; }
+  .spatial-open-room { min-height: 42px; margin-top: 8px; font-size: 13px; }
+  .spatial-summary-grid { height: calc(100% - 7px); margin-top: 7px; }
+  .spatial-metric-card { padding: 11px 13px; }
+  .spatial-metric-value { margin-top: 12px; }
+  .spatial-program-card,
+  .spatial-alert-card { padding-top: 10px; padding-bottom: 10px; }
+  .spatial-alert-card strong { margin-top: 8px; }
+  .spatial-alert-card i { padding-block: 6px; }
 }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createBoundaries,generateBoundary } from './boundaries.mjs';
 import { CATALOG,boundaryOffsetForFloor,roomCorners } from './model.js';
-const palette={body:0x586a89,edge:0x4f6183,wallEdge:0x61718f,dark:0x18243c,shadow:0x0d1629,steel:0x788aa8,screen:0x051421,blue:0x5278d8,light:0xd3e7fc,yellow:0xffda28,door:0x374663,doorInset:0x293752,doorFrame:0x71819f,tabletFrame:0x15223a,tabletScreen:0x1264b1,amber:0xffc52e,wall:0x43516d,facade:0x384761,floor:0x45587b,wallJoint:0x34425d,floorJoint:0x314361,selectedWall:0x81785f,selectedFacade:0x776e59,selectedEdge:0xe0bd45,selectedFloor:0xaaa28b};
+const palette={body:0x2d426f,edge:0x455e8e,wallEdge:0x6179aa,dark:0x18243c,shadow:0x0d1629,steel:0x788aa8,screen:0x051421,blue:0x5278d8,light:0xd3e7fc,yellow:0xffda28,door:0x26385e,doorInset:0x1d2d4d,doorFrame:0x6078a7,tabletFrame:0x15223a,tabletScreen:0x1264b1,amber:0xffc52e,wall:0x344877,facade:0x2a3e68,floor:0x45587b,wallJoint:0x293b64,floorJoint:0x314361,selectedWall:0x81785f,selectedFacade:0x776e59,selectedEdge:0xe0bd45,selectedFloor:0xaaa28b};
 const surface={
  body:{metalness:0.04,roughness:0.62,envMapIntensity:0.26},edge:{metalness:0.08,roughness:0.56,envMapIntensity:0.28},wallEdge:{metalness:0.05,roughness:0.55,envMapIntensity:0.3,emissive:0x27334e,emissiveIntensity:0.045},dark:{metalness:0.05,roughness:0.74,envMapIntensity:0.18},shadow:{metalness:0,roughness:1,envMapIntensity:0.02},
  steel:{metalness:0.58,roughness:0.34,envMapIntensity:0.58,clearcoat:0.12,clearcoatRoughness:0.42},door:{metalness:0.1,roughness:0.63,envMapIntensity:0.24,emissive:0x26344f,emissiveIntensity:0.07},doorInset:{metalness:0.05,roughness:0.78,envMapIntensity:0.16,emissive:0x1e2b44,emissiveIntensity:0.05},doorFrame:{metalness:0.28,roughness:0.43,envMapIntensity:0.44,clearcoat:0.12,clearcoatRoughness:0.5},tabletFrame:{metalness:0.22,roughness:0.48,envMapIntensity:0.34},tabletScreen:{metalness:0.05,roughness:0.24,envMapIntensity:0.38,clearcoat:0.7,clearcoatRoughness:0.18,emissive:0x0d5598,emissiveIntensity:0.72},screen:{metalness:0.04,roughness:0.22,envMapIntensity:0.4,clearcoat:0.75,clearcoatRoughness:0.16,emissive:0x082f52,emissiveIntensity:0.44},light:{metalness:0,roughness:0.28,envMapIntensity:0.38,emissive:0xbcdfff,emissiveIntensity:0.62},amber:{metalness:0.02,roughness:0.32,emissive:0xffa000,emissiveIntensity:1.25},wall:{metalness:0,roughness:0.78,envMapIntensity:0.2,emissive:0x202a42,emissiveIntensity:0.018},facade:{metalness:0,roughness:0.8,envMapIntensity:0.18,emissive:0x1b263d,emissiveIntensity:0.022},floor:{metalness:0.03,roughness:0.67,envMapIntensity:0.24,clearcoat:0.06,clearcoatRoughness:0.76},wallJoint:{metalness:0,roughness:0.9,envMapIntensity:0.08},floorJoint:{metalness:0.02,roughness:0.84,envMapIntensity:0.1},
@@ -17,14 +17,14 @@ function material(color){const token=typeof color==='string'?color:'body',finish
  * before the plane boundary, which prevents a rectangular edge from showing.
  */
 function createBuildingHalo(width,depth,centerX,centerZ){
- const radius=2.8,planeWidth=width+radius*2+1.2,planeDepth=depth+radius*2+1.2;
+ const radius=3.2,planeWidth=width+radius*2+1.2,planeDepth=depth+radius*2+1.2;
  const material=new THREE.ShaderMaterial({
   uniforms:{
    uPlaneSize:{value:new THREE.Vector2(planeWidth,planeDepth)},
    uHalfSize:{value:new THREE.Vector2(width/2+0.18,depth/2+0.18)},
    uRadius:{value:radius},
-   uColor:{value:new THREE.Color(0x526bc7)},
-   uOpacity:{value:0.13}
+   uColor:{value:new THREE.Color(0x415eae)},
+   uOpacity:{value:0.105}
   },
   vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
   fragmentShader:'varying vec2 vUv; uniform vec2 uPlaneSize; uniform vec2 uHalfSize; uniform float uRadius; uniform vec3 uColor; uniform float uOpacity; void main(){vec2 p=(vUv-0.5)*uPlaneSize;vec2 q=abs(p)-uHalfSize;float signedDistance=length(max(q,0.0))+min(max(q.x,q.y),0.0);float outsideFade=1.0-smoothstep(0.0,uRadius,max(signedDistance,0.0));float insideFade=smoothstep(-1.25,0.12,signedDistance);float halo=outsideFade*insideFade;gl_FragColor=vec4(uColor,halo*uOpacity);}',
@@ -53,7 +53,13 @@ const KNL_BOUNDARY_MATERIALS={
  glass:{colorLinearRGB:[0.1499597898006365,0.24228112245478564,0.5583403896257968],opacity:0.25,roughness:0.72,metalness:0},
  chrome:{colorLinearRGB:[0.3515325994898463,0.4178850708380236,0.6172065624120635],opacity:1,roughness:0.55,metalness:0.22},
  floor:{colorLinearRGB:[0.13013647668074665,0.16826940017946088,0.3231432091022285],opacity:1,roughness:0.72,metalness:0},
- steel:{colorLinearRGB:[0.46960500000000005,0.5059501,0.660895],opacity:1,roughness:0.55,metalness:0.22}
+ steel:{colorLinearRGB:[0.46960500000000005,0.5059501,0.660895],opacity:1,roughness:0.55,metalness:0.22},
+ solidCore:{colorLinearRGB:[0.025,0.045,0.09],opacity:1,roughness:0.84,metalness:0.01},
+ solidPanel:{colorLinearRGB:[0.06,0.095,0.175],opacity:1,roughness:0.76,metalness:0.015},
+ solidCoping:{colorLinearRGB:[0.055,0.09,0.16],opacity:1,roughness:0.58,metalness:0.08},
+ solidColumn:{colorLinearRGB:[0.045,0.07,0.13],opacity:1,roughness:0.72,metalness:0.025},
+ solidBase:{colorLinearRGB:[0.012,0.022,0.05],opacity:1,roughness:0.9,metalness:0},
+ solidJoint:{colorLinearRGB:[0.031,0.048,0.096],opacity:1,roughness:0.96,metalness:0}
 };
 const KNL_BOUNDARY_PRESETS={
  bridge:{glassHeight:2.65,glassBottom:0.125,glassThickness:0.04,postHeight:3,postWidth:0.07,postDepth:0.07,postSpacingMax:1.411111111,glassMaterial:'glass',postMaterial:'chrome'},
@@ -66,10 +72,47 @@ export function knlBoundaryLayout(rooms,floor){
  return {minX,maxX,minZ,maxZ,offset,outerMinX:minX-offset,outerMaxX:maxX+offset,outerMinZ:minZ-offset,outerMaxZ:maxZ+offset,centerX:(minX+maxX)/2,centerZ:(minZ+maxZ)/2};
 }
 
-function createKnlBoundary(rooms,floor){
+/**
+ * Parametrický pevný nemocniční plášť. Jednotlivé konstrukční vrstvy zůstávají
+ * samostatnými editovatelnými prvky: nosné jádro, sokl, kazetové obklady,
+ * spáry, krycí hlavice a zesílené pilíře. Odsazení stále vychází z chodby.
+ */
+function generateSolidBoundary(layout,floor,idPrefix,{cutaway=true}={}){
+ const {outerMinX,outerMaxX,outerMinZ,outerMaxZ}=layout,fullHeight=Math.max(2.2,Math.min(4.2,floor.perimeterWallHeight??3)),thickness=Math.max(0.28,Math.min(0.8,floor.perimeterWallThickness??0.42));
+ const points=[[outerMinX,outerMinZ],[outerMaxX,outerMinZ],[outerMaxX,outerMaxZ],[outerMinX,outerMaxZ],[outerMinX,outerMinZ]],elements=[];let count=0;
+ const emit=(kind,label,position,size,rotation,material)=>elements.push({id:`${idPrefix}-${kind}-${count++}`,label,kind,primitive:'box',floorId:floor.id,position,size,rotation,material,visible:true,source:{status:'parametric-solid-hospital-wall'}});
+ for(let index=0;index<points.length-1;index++){
+ const [x,z]=points[index],[nextX,nextZ]=points[index+1],dx=nextX-x,dz=nextZ-z,length=Math.hypot(dx,dz);if(length<1e-6)continue;
+  const height=cutaway&&index===2?Math.min(1.28,fullHeight):fullHeight,tx=dx/length,tz=dz/length,yaw=-Math.atan2(dz,dx),cx=(x+nextX)/2,cz=(z+nextZ)/2;
+  // Kladná hodnota normalOffset míří ven z obdélníkového operačního bloku.
+  const place=(along=0,y=0,normalOffset=0)=>[cx+tx*along+tz*normalOffset,y,cz+tz*along-tx*normalOffset];
+  emit('solid_wall_core','Nosná pevná stěna',place(0,height/2),[length,height,thickness],[0,yaw,0],'solidCore');
+  emit('solid_wall_base','Zesílený sokl',place(0,0.15),[length+0.18,0.3,thickness+0.16],[0,yaw,0],'solidBase');
+  emit('solid_wall_coping','Horní krycí hlavice',place(0,height+0.035),[length+0.2,0.11,thickness+0.18],[0,yaw,0],'solidCoping');
+  emit('solid_wall_inner_skirting','Vnitřní ochranný sokl',place(0,0.16,-thickness/2-0.025),[Math.max(0.16,length-0.18),0.21,0.045],[0,yaw,0],'solidBase');
+  emit('solid_wall_inner_rail','Vnitřní ochranný pás',place(0,1.02,-thickness/2-0.018),[Math.max(0.16,length-0.2),0.035,0.035],[0,yaw,0],'solidCoping');
+
+  // Jedna souvislá pohledová vrstva a fyzické spáry vykreslí stejné kazetové
+  // členění s podstatně menším počtem draw callů než samostatná síť pro každou
+  // kazetu. Pevná stěna proto nezpomaluje načítání detailního GLB sálu.
+  const bayCount=Math.max(1,Math.ceil(length/1.18)),bayWidth=length/bayCount,panelHeight=height-0.42,tierCount=Math.max(1,Math.ceil(panelHeight/0.88)),tierHeight=panelHeight/tierCount;
+  emit('solid_wall_panel','Kazetový obklad pevné stěny',place(0,0.3+panelHeight/2,thickness/2+0.018),[Math.max(0.16,length-0.12),panelHeight,0.035],[0,yaw,0],'solidPanel');
+  for(let bay=1;bay<bayCount;bay++)emit('solid_wall_vertical_joint','Svislá spára obkladu',place(-length/2+bayWidth*bay,height/2,thickness/2+0.042),[0.014,Math.max(0.18,height-0.38),0.018],[0,yaw,0],'solidJoint');
+  for(let tier=1;tier<tierCount;tier++)emit('solid_wall_horizontal_joint','Vodorovná spára obkladu',place(0,0.3+tierHeight*tier,thickness/2+0.042),[Math.max(0.16,length-0.16),0.014,0.018],[0,yaw,0],'solidJoint');
+
+  // Zesílení po čtyřech kazetách a v rozích vytváří hmotné sloupky, které
+  // sjednotí dlouhou stěnu a odpovídají vystouplým pilířům na referenci.
+  const pierStep=bayWidth*4;
+  for(let along=-length/2;along<=length/2+0.001;along+=pierStep)emit('solid_wall_pier','Zesílený fasádní pilíř',place(Math.min(along,length/2),height/2,0),[Math.min(0.42,Math.max(0.3,bayWidth*0.32)),height+0.06,thickness+0.2],[0,yaw,0],'solidColumn');
+  if((length%pierStep)>0.2)emit('solid_wall_pier','Zesílený fasádní pilíř',place(length/2,height/2,0),[Math.min(0.42,Math.max(0.3,bayWidth*0.32)),height+0.06,thickness+0.2],[0,yaw,0],'solidColumn');
+ }
+ return elements;
+}
+
+function createKnlBoundary(rooms,floor,options={}){
  const layout=knlBoundaryLayout(rooms,floor);if(!layout)return new THREE.Group();
- const {minX,maxX,minZ,maxZ,outerMinX,outerMaxX,outerMinZ,outerMaxZ,centerX,centerZ,offset}=layout,preset=KNL_BOUNDARY_PRESETS[floor.knlBoundaryPreset]||KNL_BOUNDARY_PRESETS.facade,idPrefix=`${floor.id}-knl-boundary`;
- const elements=generateBoundary(preset,[[outerMinX,outerMinZ],[outerMaxX,outerMinZ],[outerMaxX,outerMaxZ],[outerMinX,outerMaxZ]],{idPrefix,floorId:floor.id,closed:true});
+ const {minX,maxX,minZ,maxZ,outerMinX,outerMaxX,outerMinZ,outerMaxZ,centerX,centerZ,offset}=layout,presetName=['bridge','solid'].includes(floor.knlBoundaryPreset)?floor.knlBoundaryPreset:'facade',preset=KNL_BOUNDARY_PRESETS[presetName]||KNL_BOUNDARY_PRESETS.facade,idPrefix=`${floor.id}-knl-boundary`;
+ const elements=presetName==='solid'?generateSolidBoundary(layout,floor,idPrefix,options):generateBoundary(preset,[[outerMinX,outerMinZ],[outerMaxX,outerMinZ],[outerMaxX,outerMaxZ],[outerMinX,outerMaxZ]],{idPrefix,floorId:floor.id,closed:true});
  const finish=(id,position,size)=>elements.push({id:`${idPrefix}-floor-${id}`,label:'Podlaha obvodové chodby',kind:'floor_finish',primitive:'box',floorId:floor.id,position,size,rotation:[0,0,0],material:'floor',visible:true,source:{status:'parametric-corridor-offset'}});
  // Čtyři samostatné pásy tvoří skutečný pochozí prstenec a nepřekrývají
  // podlahy sálů. Jeho šířka je shodná s vypočteným odstupem ohraničení.
@@ -77,8 +120,8 @@ function createKnlBoundary(rooms,floor){
  finish('south',[centerX,-0.09,maxZ+offset/2],[outerMaxX-outerMinX,0.16,offset]);
  finish('west',[minX-offset/2,-0.09,centerZ],[offset,0.16,maxZ-minZ]);
  finish('east',[maxX+offset/2,-0.09,centerZ],[offset,0.16,maxZ-minZ]);
- const group=createBoundaries({format:'medrox.boundaries',schemaVersion:1,name:'KNL · ohraničení operačního bloku',units:'m',coordinates:{up:'Y'},materials:KNL_BOUNDARY_MATERIALS,elements,placement:{position:[0,0,0],rotation:[0,0,0],scale:[1,1,1]}});
- group.userData.entity='knl-boundary';group.userData.offset=offset;group.userData.offsetMode=floor.knlBoundaryOffsetMode==='manual'?'manual':'corridor';return group;
+ const group=createBoundaries({format:'medrox.boundaries',schemaVersion:1,name:presetName==='solid'?'KNL · pevné nemocniční stěny':'KNL · ohraničení operačního bloku',units:'m',coordinates:{up:'Y'},materials:KNL_BOUNDARY_MATERIALS,elements,placement:{position:[0,0,0],rotation:[0,0,0],scale:[1,1,1]}});
+ group.userData.entity='knl-boundary';group.userData.offset=offset;group.userData.offsetMode=floor.knlBoundaryOffsetMode==='manual'?'manual':'corridor';group.userData.preset=presetName;return group;
 }
 
 function part(root,name,geometry,color,pos=[0,0,0],rotation=[0,0,0]){
@@ -263,13 +306,26 @@ function applyRoomStatus(group){
    mesh.material.emissive.copy(accentColor);mesh.material.emissiveIntensity=isFrontWall?0.05:0.1;
   }
  }
+ group.traverse(mesh=>{
+  if(!mesh.isMesh||!mesh.userData.referenceRoomSurface)return;
+  const materials=Array.isArray(mesh.material)?mesh.material:[mesh.material],bases=mesh.userData.referenceBaseMaterials||[];
+  for(const [index,current] of materials.entries()){
+   const base=bases[index];if(!current||!base)continue;
+   current.color?.setHex(base.color);current.emissive?.setHex(base.emissive);current.emissiveIntensity=base.emissiveIntensity;
+   if(accentHex!==null&&accentHex!==undefined&&isStatusWallMaterial(current)){
+    const accentColor=new THREE.Color(accentHex);current.color.lerp(accentColor,current.name==='wall_lower'?0.09:0.13);current.emissive.copy(accentColor);current.emissiveIntensity=0.08;
+   }
+  }
+ });
 }
 
+function isStatusWallMaterial(value){return value?.name==='wall'||value?.name==='wall_lower'}
+
 /** Jemný živý odstín fáze pouze na stěnách sálu; null obnoví neutrální materiál. */
-export function setRoomStatus(group,accent=null){
+export function setRoomStatus(group,accent=null,force=false){
  if(!group)return;
  const accentHex=accent===null||accent===undefined?null:new THREE.Color(accent).getHex();
- if(group.userData.statusColor===accentHex)return;
+ if(!force&&group.userData.statusColor===accentHex)return;
  group.userData.statusColor=accentHex;applyRoomStatus(group);
 }
 
@@ -363,12 +419,28 @@ function createPerimeterEnvelope(rooms,floor,{cutaway=true}={}){
   const shell=new THREE.Group(),cx=(segment.a[0]+segment.b[0])/2+segment.nx*thickness/2,cz=(segment.a[1]+segment.b[1])/2+segment.nz*thickness/2;
   shell.name=`Obvodová stěna · ${segment.room.name}`;shell.position.set(cx,0,cz);shell.rotation.y=Math.atan2(-segment.tz,segment.tx);root.add(shell);
   box(shell,'external wall shell',[segment.length+0.06,height,thickness],[0,height/2,0],'facade');
-  box(shell,'external wall base',[segment.length+0.14,0.24,thickness+0.1],[0,0.12,0],'dark');
-  box(shell,'external wall coping',[segment.length+0.12,0.075,thickness+0.1],[0,height+0.015,0],'wallEdge');
-  // Jemné modulové spáry a krajní pilíře sjednotí sousední prostory do fasády.
-  for(let x=-segment.length/2+1.2;x<segment.length/2-0.25;x+=1.2)box(shell,'external panel joint',[0.018,Math.max(0.18,height-0.14),0.024],[x,height/2,-thickness/2-0.013],'dark');
-  for(let y=1.02;y<height-0.16;y+=1.02)box(shell,'external horizontal panel joint',[segment.length-0.2,0.014,0.024],[0,y,-thickness/2-0.013],'wallJoint');
-  for(const x of [-segment.length/2,segment.length/2])box(shell,'external corner pier',[thickness+0.11,height+0.045,thickness+0.11],[x,height/2,0],'facade');
+  box(shell,'external wall base',[segment.length+0.18,0.28,thickness+0.14],[0,0.14,0],'dark');
+  box(shell,'external wall base shadow',[segment.length+0.08,0.045,thickness+0.17],[0,0.305,0],'shadow');
+  box(shell,'external wall coping',[segment.length+0.16,0.085,thickness+0.14],[0,height+0.018,0],'wallEdge');
+  box(shell,'external wall cap lip',[segment.length+0.08,0.035,thickness+0.2],[0,height+0.074,0],'steel');
+
+  // Vystouplá pohledová vrstva a skutečné zapuštěné spáry drží detail i při
+  // šikmém 3D pohledu, bez stovek překrývajících se panelových objektů.
+  const bayCount=Math.max(1,Math.ceil(segment.length/1.18)),bayWidth=segment.length/bayCount,panelHeight=Math.max(0.32,height-0.39),tierCount=Math.max(1,Math.ceil(panelHeight/0.9)),tierHeight=panelHeight/tierCount;
+  box(shell,'external facade panel',[Math.max(0.16,segment.length-0.12),panelHeight,0.032],[0,0.28+panelHeight/2,-thickness/2-0.017],'wall');
+  for(let bay=1;bay<bayCount;bay++)box(shell,'external panel joint',[0.014,Math.max(0.18,height-0.38),0.022],[-segment.length/2+bayWidth*bay,height/2,-thickness/2-0.04],'dark');
+  for(let tier=1;tier<tierCount;tier++)box(shell,'external horizontal panel joint',[Math.max(0.16,segment.length-0.18),0.014,0.022],[0,0.28+tierHeight*tier,-thickness/2-0.04],'wallJoint');
+
+  // Vnitřní strana dostává ochranný nemocniční sokl a servisní pás. Tyto
+  // detaily jsou viditelné v obvodové chodbě stejně jako na referenci.
+  box(shell,'external wall inner lining',[Math.max(0.16,segment.length-0.12),Math.max(0.22,height-0.32),0.028],[0,0.24+(height-0.32)/2,thickness/2+0.015],'wall');
+  box(shell,'external wall inner skirting',[Math.max(0.16,segment.length-0.16),0.2,0.05],[0,0.1,thickness/2+0.034],'dark');
+  if(height>1.08)box(shell,'external wall protection rail',[Math.max(0.16,segment.length-0.2),0.036,0.045],[0,1.02,thickness/2+0.036],'wallEdge');
+
+  // Krajní a průběžné pilíře dávají dlouhému plášti rytmus a hmotu.
+  const pierEvery=bayWidth*4,pierXs=new Set([-segment.length/2,segment.length/2]);
+  for(let x=-segment.length/2+pierEvery;x<segment.length/2-0.12;x+=pierEvery)pierXs.add(+x.toFixed(5));
+  for(const x of pierXs)box(shell,'external structural pier',[Math.min(0.44,Math.max(0.31,bayWidth*0.34)),height+0.055,thickness+0.19],[x,height/2,0],'wallEdge');
  }
  return root;
 }
@@ -406,7 +478,7 @@ export function buildFloor(project,floorId,options={}){
  const boundaryLayout=floor.knlBoundaryEnabled===false?null:knlBoundaryLayout(rooms,floor),haloWidth=boundaryLayout?boundaryLayout.outerMaxX-boundaryLayout.outerMinX:bw,haloDepth=boundaryLayout?boundaryLayout.outerMaxZ-boundaryLayout.outerMinZ:bd;
  g.add(createBuildingHalo(haloWidth,haloDepth,cx,cz));
  if(floor.perimeterWalls!==false)g.add(createPerimeterEnvelope(rooms,floor,{cutaway:options.cutaway??true}));
- if(boundaryLayout)g.add(createKnlBoundary(rooms,floor));}
+ if(boundaryLayout)g.add(createKnlBoundary(rooms,floor,{cutaway:options.cutaway??true}));}
 
  const operatingRooms=rooms.filter(r=>r.type!=='corridor'),nearEdge=operatingRooms.length?Math.max(...operatingRooms.map(r=>{const angle=r.rotation*Math.PI/180,halfZ=Math.abs(Math.sin(angle))*r.width/2+Math.abs(Math.cos(angle))*r.depth/2;return r.z+halfZ})):-Infinity;
  const roomPrototypes=options.reuseGeometry?new Map():null,equipmentPrototypes=options.reuseGeometry?new Map():null;
@@ -422,4 +494,4 @@ export function buildFloor(project,floorId,options={}){
  }
  return {group:g,entities:map};
 }
-export function disposeTree(g){g.traverse(o=>{if(!o.userData?.sharedSpatialGeometry)o.geometry?.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose()})}
+export function disposeTree(g){g.traverse(o=>{if(!o.userData?.sharedSpatialGeometry)o.geometry?.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])if(!m.userData?.sharedSpatialMaterial)m.dispose()})}

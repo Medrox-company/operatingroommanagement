@@ -172,3 +172,55 @@ export async function PUT(request: NextRequest) {
     return databaseError(error);
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const access = await requireHospitalAccess(request, { adminOnly: true });
+  if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'dashboard.spatial');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
+  try {
+    const body = await request.json() as { expectedRevision?: unknown };
+    if (!Number.isInteger(body.expectedRevision) || Number(body.expectedRevision) < 0) {
+      return NextResponse.json({ error: 'Neplatná revize 3D dispozice.' }, { status: 400 });
+    }
+
+    const admin = getSupabaseAdmin();
+    const { data: existing, error: existingError } = await admin
+      .from('spatial_projects')
+      .select('revision')
+      .eq('hospital_id', access.hospitalId)
+      .maybeSingle();
+    if (existingError) throw existingError;
+
+    const expectedRevision = Number(body.expectedRevision);
+    const currentRevision = Number(existing?.revision ?? 0);
+    if (expectedRevision !== currentRevision) {
+      return NextResponse.json(
+        { error: '3D dispozice byla mezitím změněna.', revision: currentRevision },
+        { status: 409 },
+      );
+    }
+
+    if (existing) {
+      const { data: deleted, error } = await admin
+        .from('spatial_projects')
+        .delete()
+        .eq('hospital_id', access.hospitalId)
+        .eq('revision', currentRevision)
+        .select('revision')
+        .maybeSingle();
+      if (error) throw error;
+      if (!deleted) {
+        return NextResponse.json({ error: '3D dispozice byla mezitím změněna.' }, { status: 409 });
+      }
+    }
+
+    return response(null, 0, null);
+  } catch (error) {
+    logger.error('Error deleting spatial project:', error);
+    return databaseError(error);
+  }
+}

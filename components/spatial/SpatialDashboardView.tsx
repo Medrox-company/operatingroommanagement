@@ -390,14 +390,13 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
   onSelectRoom: (roomId: string) => void;
   onSwitchToCards: () => void;
 }) {
-  const { project, isLoading, error } = useSpatialProject(rooms);
+  const { project, storedProject, isLoading, error } = useSpatialProject(rooms);
   const { activeHospital } = useHospital();
   const { workflowStatuses } = useWorkflowStatusesContext();
   const operationalWindow = useOperationalDayWindow();
   // V této obrazovce se všechny časové hodnoty zobrazují po minutách. Díky
   // minutovému odběru se celý 3D dashboard nepřekresluje každou sekundu.
   const nowMs = useNowMinuteMs();
-  const nowDate = useMemo(() => new Date(nowMs), [nowMs]);
   const [floorId, setFloorId] = useState(project.floors[0]?.id || '');
   const [cameraMode, setCameraMode] = useState<CameraMode>('spatial');
   const [fitSignal, setFitSignal] = useState(0);
@@ -483,6 +482,31 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
     return <SpatialLoadingBar label="Načítám dispozici a živá data" initial={36} ceiling={68} />;
   }
 
+  if (!storedProject && !error) {
+    return (
+      <section className="spatial-control-shell is-empty">
+        <header className="spatial-control-header">
+          <div className="spatial-control-title">
+            <span className="spatial-control-mark"><BedDouble /></span>
+            <div>
+              <h1>OPERAČNÍ BLOK</h1>
+              <p>{activeHospital?.hospital_name || '3D dispozice'}</p>
+            </div>
+          </div>
+          <div className="spatial-view-controls">
+            <IconControl label="Karty sálů" onClick={onSwitchToCards}><LayoutGrid /></IconControl>
+          </div>
+        </header>
+        <div className="spatial-dashboard-empty-state">
+          <span><Cuboid /></span>
+          <h2>3D dispozice není vytvořena</h2>
+          <p>Operační blok můžete znovu založit v nastavení modulu 3D dispozice.</p>
+          <button type="button" onClick={onSwitchToCards}><LayoutGrid />Zobrazit karty sálů</button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="spatial-control-shell">
       <header className="spatial-control-header">
@@ -494,10 +518,8 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
           </div>
         </div>
 
-        <div className="spatial-context-controls">
-          <div><CalendarDays /><span>{nowDate.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
-          <div><Clock3 /><span>{formatClock(nowDate)}</span></div>
-          <label>
+        <div className="spatial-view-controls">
+          <label className="spatial-floor-control">
             <Building2 />
             <select value={floorId} onChange={(event) => {
               setFloorId(event.target.value);
@@ -507,9 +529,6 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
               {project.floors.map((floor) => <option key={floor.id} value={floor.id}>{floor.name}</option>)}
             </select>
           </label>
-        </div>
-
-        <div className="spatial-view-controls">
           <IconControl label="Karty sálů" onClick={onSwitchToCards}><LayoutGrid /></IconControl>
           <IconControl active={cameraMode === 'spatial'} label="3D pohled" onClick={() => setCameraMode('spatial')}><Cuboid /></IconControl>
           <IconControl active={cameraMode === 'plan'} label="Půdorys" onClick={() => setCameraMode('plan')}><MapIcon /></IconControl>

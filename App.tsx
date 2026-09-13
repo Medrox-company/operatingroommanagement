@@ -29,7 +29,7 @@ import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { AlertTriangle } from 'lucide-react';
 import { updateOperatingRoom, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
 import { HospitalProvider, useHospital } from './contexts/HospitalContext';
 import { RealtimeProvider } from './contexts/RealtimeContext';
 import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts/WorkflowStatusesContext';
@@ -53,7 +53,15 @@ const SWR_OPTIONS = {
 };
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, isAdmin, hasModuleAccess, user } = useAuth();
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    permissionsLoading,
+    isAdmin,
+    isSuperAdmin,
+    hasModuleAccess,
+    user,
+  } = useAuth();
   const { activeHospitalId, loading: hospitalLoading } = useHospital();
   const { workflowStatuses } = useWorkflowStatusesContext();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -503,6 +511,31 @@ const AppContent: React.FC = () => {
     await updateOperatingRoom(roomId, { notice_message: null, notice_at: null, notice_sender: null });
   }, []);
 
+  // Během obnovy session se nesmí ani na jediný render ukázat přihlášení nebo
+  // navigace jiné role. To je důležité zejména pro superadministrátora, jehož
+  // oprávnění se po refreshi potvrzují asynchronně v nativním klientovi.
+  const appAccessLoading = authLoading
+    || (isAuthenticated && !isSuperAdmin && permissionsLoading);
+
+  if (appAccessLoading) {
+    return (
+      <div
+        className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#050a21] text-white"
+        role="status"
+        aria-live="polite"
+        aria-label="Ověřuji přihlášení"
+      >
+        <div className="app-module-background absolute inset-0" />
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-white/75" />
+          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/45">
+            Ověřuji přihlášení
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Show login if not authenticated - must be after all hooks
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -662,11 +695,15 @@ const AppContent: React.FC = () => {
 };
 
 // Wrap with AuthProvider and WorkflowStatusesProvider
-const App: React.FC = () => {
+interface AppProps {
+  initialUser?: User | null;
+}
+
+const App: React.FC<AppProps> = ({ initialUser }) => {
   return (
   <ErrorBoundary>
   <SWRConfig value={SWR_OPTIONS}>
-  <AuthProvider>
+  <AuthProvider initialUser={initialUser}>
   <HospitalProvider>
   <RealtimeProvider>
   <WorkflowStatusesProvider>

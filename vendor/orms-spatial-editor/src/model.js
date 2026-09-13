@@ -69,8 +69,8 @@ export function furnish(room){
 }
 export function demoProject(){
  const floors=[
-  {id:'floor-1',name:'1. patro · operační blok',elevation:0,perimeterWalls:true,perimeterWallHeight:3,perimeterWallThickness:0.42,knlBoundaryEnabled:true,knlBoundaryOffsetMode:'corridor',knlBoundaryOffset:3,knlBoundaryPreset:'facade'},
-  {id:'floor-2',name:'2. patro · zázemí',elevation:4,perimeterWalls:true,perimeterWallHeight:3,perimeterWallThickness:0.42,knlBoundaryEnabled:true,knlBoundaryOffsetMode:'corridor',knlBoundaryOffset:3,knlBoundaryPreset:'facade'}
+  {id:'floor-1',name:'1. patro · operační blok',elevation:0,perimeterWalls:true,perimeterWallHeight:3,perimeterWallThickness:0.42,knlBoundaryEnabled:true,knlBoundaryOffsetMode:'corridor',knlBoundaryOffset:3,knlBoundaryPreset:'solid'},
+  {id:'floor-2',name:'2. patro · zázemí',elevation:4,perimeterWalls:true,perimeterWallHeight:3,perimeterWallThickness:0.42,knlBoundaryEnabled:true,knlBoundaryOffsetMode:'corridor',knlBoundaryOffset:3,knlBoundaryPreset:'solid'}
  ];
  const rooms=[],items=[];
  const c=createRoom(floors[0].id,'corridor',0,0);c.id='corridor-1';c.name='Centrální chodba';rooms.push(c);
@@ -101,7 +101,7 @@ export function validateProject(p){
   if(f.knlBoundaryEnabled!==undefined&&typeof f.knlBoundaryEnabled!=='boolean')fail('KNL ohraničení');
   if(f.knlBoundaryOffsetMode!==undefined&&!['corridor','manual'].includes(f.knlBoundaryOffsetMode))fail('režim odsazení KNL ohraničení');
   if(f.knlBoundaryOffset!==undefined)num(f.knlBoundaryOffset,'odsazení KNL ohraničení',0.5,20);
-  if(f.knlBoundaryPreset!==undefined&&!['facade','bridge'].includes(f.knlBoundaryPreset))fail('typ KNL ohraničení');
+  if(f.knlBoundaryPreset!==undefined&&!['facade','bridge','solid'].includes(f.knlBoundaryPreset))fail('typ KNL ohraničení');
  }
  const floors=new Set(p.floors.map(f=>f.id));
  for(const r of p.rooms){

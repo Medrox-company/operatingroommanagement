@@ -61,6 +61,22 @@ export function useSpatialProject(rooms: OperatingRoom[]) {
     return payload as SpatialProjectPayload;
   }, [mutate]);
 
+  const remove = useCallback(async (expectedRevision: number) => {
+    const response = await fetch('/api/spatial-project', {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expectedRevision }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const conflict = response.status === 409 ? ' Dispozici mezitím změnil jiný uživatel; načtěte ji znovu.' : '';
+      throw new Error((payload.error || 'Operační blok se nepodařilo odstranit.') + conflict);
+    }
+    await mutate(payload as SpatialProjectPayload, { revalidate: false });
+    return payload as SpatialProjectPayload;
+  }, [mutate]);
+
   return {
     project,
     storedProject: data?.project ?? null,
@@ -69,6 +85,7 @@ export function useSpatialProject(rooms: OperatingRoom[]) {
     isLoading,
     error: error instanceof Error ? error : null,
     save,
+    remove,
     reload: () => mutate(),
   };
 }

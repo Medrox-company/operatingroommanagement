@@ -39,7 +39,7 @@ export function createDefaultSpatialProject(
     knlBoundaryEnabled: true,
     knlBoundaryOffsetMode: 'corridor' as const,
     knlBoundaryOffset: 3,
-    knlBoundaryPreset: 'facade' as const,
+    knlBoundaryPreset: 'solid' as const,
   };
   const count = Math.max(rooms.length, 1);
   const columns = Math.min(count, Math.max(3, Math.ceil(Math.sqrt(count * 1.4))));

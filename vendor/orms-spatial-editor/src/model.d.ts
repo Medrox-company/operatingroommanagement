@@ -1,6 +1,6 @@
 export type RoomType='operating'|'preparation'|'storage'|'recovery'|'corridor'|'staff';
 export type AssetKind='table'|'light'|'anesthesia'|'monitor'|'cabinet'|'trolley'|'wallScreen'|'tablet'|'sink'|'bed'|'stool'|'pendant';
-export interface Floor { id:string; name:string; elevation:number; perimeterWalls?:boolean; perimeterWallHeight?:number; perimeterWallThickness?:number; knlBoundaryEnabled?:boolean; knlBoundaryOffsetMode?:'corridor'|'manual'; knlBoundaryOffset?:number; knlBoundaryPreset?:'facade'|'bridge' }
+export interface Floor { id:string; name:string; elevation:number; perimeterWalls?:boolean; perimeterWallHeight?:number; perimeterWallThickness?:number; knlBoundaryEnabled?:boolean; knlBoundaryOffsetMode?:'corridor'|'manual'; knlBoundaryOffset?:number; knlBoundaryPreset?:'facade'|'bridge'|'solid' }
 export interface Room { id:string; floorId:string; name:string; type:RoomType; x:number; z:number; rotation:number; width:number; depth:number; height:number; doorWidth:number; externalId?:string }
 export interface Equipment { id:string; floorId:string; roomId:string|null; kind:AssetKind; name:string; x:number; y:number; z:number; rotation:number; scale:number }
 export interface BuildingProject { schemaVersion:1; id:string; name:string; units:'m'; floors:Floor[]; rooms:Room[]; items:Equipment[] }
