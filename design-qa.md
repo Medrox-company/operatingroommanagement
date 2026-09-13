@@ -1,3 +1,5 @@
+> Úklid 2026-09-14: obrazové výstupy kontrol nejsou součástí verzovaného projektu ani nasazení. Starší snímky byly odstraněny z pracovní kopie; posledních sedm snímků zarovnání a fidelity zůstává pouze lokálně jako ignorované soubory. Všechny historické obrazové podklady z tohoto protokolu lze obnovit z Git commitu `a37d0c662dab7147b6fbc6d0fa9662824bffd461`.
+
 ## 2026-09-14 — zarovnání pravého sloupce 3D dispozice
 
 - Source visual truth: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-14 v 0.32.06.png` (794 × 2106 px). Jde o výřez chybného stavu; cílem je srovnat hrany a mezery, nikoli zkopírovat nesouosé rozložení.

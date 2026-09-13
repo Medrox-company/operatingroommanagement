@@ -9,3 +9,11 @@ node_modules/
 .expo/
 dist/
 build/
+
+# Local visual QA evidence is not part of the deployed application.
+/design-qa*.png
+/design-qa*.jpg
+/design-ref-*.png
+/design-current-*.png
+/design-qa.md
+/.qa-spatial-editor/

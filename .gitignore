@@ -76,6 +76,13 @@ operatingroom-mobile/Thumbs.db
 
 # Build cache
 tsconfig.tsbuildinfo
+
+# Local visual QA captures; keep deliberate reference assets in public/ or docs/.
+/design-qa-*.png
+/design-qa-*.jpg
+/design-ref-*.png
+/design-current-*.png
+/.qa-spatial-editor/
 .vercel
 .env*
 .fuse_hidden*
