@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth/server';
+import { requireHospitalIdAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -21,6 +23,8 @@ export const runtime = 'nodejs';
 const EXPORT_TABLES = [
   'app_settings',
   'app_modules',
+  'app_submodules',
+  'spatial_projects',
   'workflow_statuses',
   'departments',
   'sub_departments',
@@ -42,6 +46,20 @@ const EXPORT_TABLES = [
 // Sloupce, které se z vybraných tabulek při exportu vynechávají (citlivá data).
 const STRIPPED_COLUMNS: Record<string, string[]> = {
   app_users: ['password_hash', 'password'],
+  // Historické kopie údajů o zařízení patří výhradně do tabulky hospitals.
+  // Starší databáze je mohou mít v app_settings až do spuštění migrace.
+  app_settings: [
+    'hospital_name',
+    'hospital_short_name',
+    'hospital_address',
+    'hospital_city',
+    'hospital_zip',
+    'hospital_country',
+    'hospital_ico',
+    'hospital_contact_phone',
+    'hospital_contact_email',
+    'hospital_notes',
+  ],
 };
 
 export async function GET(request: Request) {
@@ -61,6 +79,10 @@ export async function GET(request: Request) {
   if (!/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) {
     return NextResponse.json({ error: 'Neplatné zařízení' }, { status: 400 });
   }
+  const hospitalAccess = await requireHospitalIdAccess(sessionUser, hospitalId);
+  if (hospitalAccess instanceof NextResponse) return hospitalAccess;
+  const submoduleAccess = await requireSubmoduleAccess(hospitalAccess, 'settings.database');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
 
   const tables: Record<string, unknown[]> = {};
   const errors: Record<string, string> = {};

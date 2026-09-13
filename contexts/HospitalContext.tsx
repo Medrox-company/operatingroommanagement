@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { setDatabaseHospitalId } from '../lib/db';
 import { setSupabaseHospitalToken } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 export interface Hospital {
   id: string;
@@ -74,6 +75,7 @@ const requestHospitalAccessToken = async (id: string, signal: AbortSignal): Prom
 };
 
 export function HospitalProvider({ children }: { children: React.ReactNode }) {
+  const { user, isSuperAdmin } = useAuth();
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [activeHospitalId, setActiveHospitalId] = useState<string | null>(null);
   const [tokenRevision, setTokenRevision] = useState(0);
@@ -161,7 +163,9 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
       const next: Hospital[] = Array.isArray(json.hospitals) ? json.hospitals : [];
       setHospitals(next);
       const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-      const resolved = next.some(item => item.id === stored) ? stored : (next[0]?.id ?? null);
+      const resolved = isSuperAdmin
+        ? (next.some(item => item.id === stored) ? stored : (next[0]?.id ?? null))
+        : (next.find(item => item.id === user?.hospitalId)?.id ?? next[0]?.id ?? null);
       desiredHospitalIdRef.current = resolved;
       setDatabaseHospitalId(resolved);
       if (resolved) {
@@ -181,7 +185,7 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [clearHospitalAccess, renewHospitalAccess]);
+  }, [clearHospitalAccess, isSuperAdmin, renewHospitalAccess, user?.hospitalId]);
 
   useEffect(() => { void refreshHospitals(); }, [refreshHospitals]);
 
@@ -192,6 +196,7 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
   }, [refreshHospitals]);
 
   const selectHospital = useCallback((id: string) => {
+    if (!isSuperAdmin && id !== user?.hospitalId) return;
     if (!hospitals.some(item => item.id === id)) return;
     desiredHospitalIdRef.current = id;
     persistHospital(id);
@@ -203,7 +208,7 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
         window.dispatchEvent(new CustomEvent('activeHospitalChanged', { detail: id }));
       }
     }).finally(() => setLoading(false));
-  }, [hospitals, renewHospitalAccess]);
+  }, [hospitals, isSuperAdmin, renewHospitalAccess, user?.hospitalId]);
 
   useEffect(() => {
     if (activeHospitalId) persistHospital(activeHospitalId);

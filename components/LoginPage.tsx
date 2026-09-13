@@ -478,19 +478,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     {/* Rozměry uvnitř počítají i s výškou okna, takže se obsah vejde bez
         rolování. `overflow-y: auto` je jen pojistka pro extrémně nízké okno —
         tam je lepší nechat odrolovat než tlačítko oříznout a znepřístupnit. */}
-    <div className="relative hidden h-[100dvh] w-full overflow-x-hidden overflow-y-auto bg-[#06101D] text-white md:flex md:flex-col">
+    <div className="app-module-background relative hidden h-[100dvh] w-full overflow-x-hidden overflow-y-auto text-white md:flex md:flex-col">
       {/* Dekorace v ořezávající vrstvě.
           Aurora má záporný inset, aby při pohybu nikde neodhalila okraj —
           tím ale přesahovala pod spodní hranu okna o stovky pixelů a dělala
           ze stránky rolovatelnou plochu. Rolovalo se tedy kvůli pozadí,
           ne kvůli obsahu. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(145deg, #07162B 0%, #0A1029 48%, #08091A 100%)',
-          }}
-        />
+        <div className="app-module-background absolute inset-0" />
         <div className="login-aurora-flow absolute" />
         <div className="login-aurora-vignette absolute inset-0" />
         <div

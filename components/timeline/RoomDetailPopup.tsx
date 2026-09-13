@@ -98,19 +98,6 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
     return weights.map(value => (value / total) * 100);
   }, [activeStatuses, phaseMinutes]);
 
-  const phaseGradient = useMemo(() => {
-    let cursor = 0;
-    const stops = activeStatuses.map((status, index) => {
-      const color = status.accent_color || status.color || '#6B7280';
-      const start = cursor;
-      cursor += phaseShares[index] || 0;
-      return `${color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
-    });
-    return stops.length > 0
-      ? `conic-gradient(from -90deg, ${stops.join(', ')})`
-      : 'conic-gradient(rgba(255,255,255,.08) 0% 100%)';
-  }, [activeStatuses, phaseShares]);
-
   const recommendations = useMemo(() => {
     const normalize = (value: string) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const isSurgical = (name: string) => {
@@ -394,7 +381,11 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                   transition={{ delay: 0.25 + i * 0.05 }}
                   className="mobile-timeline-phase-card rounded-[20px] px-4 py-3 flex items-center gap-3"
                   style={{
-                    background: isCurrent ? `linear-gradient(120deg, ${col}18, var(--m-card-solid))` : 'var(--m-card)',
+                    // Stejný typ přechodu jako v popupu rozpisu sálů: jeden
+                    // vodorovný nádech zleva přes neutrální podklad.
+                    background: isCurrent
+                      ? `linear-gradient(90deg, ${col}1f, transparent 62%), var(--m-card)`
+                      : 'var(--m-card)',
                     border: `1px solid ${isCurrent ? `${col}50` : 'var(--m-border)'}`,
                   }}
                 >
@@ -434,7 +425,10 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         </div>
       </motion.div>
 
-      {/* ════════ DESKTOPOVÁ VARIANTA — operační puls + cesta fází ════════ */}
+      {/* ════════ DESKTOPOVÁ VARIANTA — operační puls + cesta fází ════════
+          Pozadí, linka i stín přebírá sdílené pravidlo
+          `.staff-picker-dialog, .timeline-popup-panel` — stejné jako popup
+          v rozpisu sálů. Vlastní inline pozadí to dřív přepisovalo. */}
       <motion.div
         initial={{ scale: 0.94, opacity: 0, y: 24 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -442,18 +436,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         transition={{ type: 'spring', stiffness: 300, damping: 26 }}
         onClick={(e) => e.stopPropagation()}
         className="timeline-popup-panel hidden md:block overflow-y-auto hide-scrollbar max-h-[calc(100vh-32px)] max-w-4xl w-full relative"
-        style={{
-          background: `linear-gradient(180deg, ${C.bgElevated} 0%, ${C.bgSurface} 100%)`,
-          border: `1px solid ${C.borderStrong}`,
-          boxShadow: `0 30px 80px -15px rgba(0, 0, 0, 0.7), 0 0 60px ${stepColor}12, inset 0 1px 0 rgba(255,255,255,0.06)`,
-        }}
       >
-        {/* Ambient glow */}
-        <div
-          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[460px] h-[220px] rounded-full pointer-events-none opacity-25"
-          style={{ background: `radial-gradient(circle, ${stepColor} 0%, transparent 70%)`, filter: 'blur(70px)' }}
-        />
-
         {/* ── Header ── */}
         <div className="timeline-popup-header px-6 pt-5 pb-4 flex items-start justify-between relative z-10">
           <div>

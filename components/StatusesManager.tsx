@@ -7,13 +7,13 @@ import {
   Activity,
   BarChart3,
   CheckCircle2,
-  Clock,
   Edit3,
-  Info,
   Loader2,
   Radio,
   Save,
   Search,
+  LayoutGrid,
+  List,
   ToggleLeft,
   ToggleRight,
   UserRoundCheck,
@@ -64,158 +64,89 @@ const specialTypeLabel = (status: WorkflowStatus) => {
   }
 };
 
-const ToggleSwitch: React.FC<{
-  enabled: boolean;
-  label: string;
-  onToggle: () => void;
-  disabled?: boolean;
-}> = ({ enabled, label, onToggle, disabled }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={enabled}
-    aria-label={label}
-    onClick={onToggle}
-    disabled={disabled}
-    className="relative h-6 w-11 rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-    style={{
-      background: enabled ? `${COLORS.green}32` : 'rgba(255,255,255,0.045)',
-      borderColor: enabled ? `${COLORS.green}55` : 'rgba(255,255,255,0.12)',
-    }}
-  >
-    <span
-      className="absolute top-[3px] h-4 w-4 rounded-full bg-white shadow-sm transition-[left]"
-      style={{ left: enabled ? 23 : 3 }}
-    />
-  </button>
-);
-
+/** Karta statusu ve stejném jazyce jako karty modulů v Nastavení. */
 const StatusCard: React.FC<{
   status: WorkflowStatus;
   saving: boolean;
+  compact?: boolean;
   onEdit: () => void;
   onToggleActive: () => void;
   onToggleStatistics: () => void;
-}> = ({ status, saving, onEdit, onToggleActive, onToggleStatistics }) => {
+}> = ({ status, saving, compact = false, onEdit, onToggleActive, onToggleStatistics }) => {
   const accent = status.accent_color || COLORS.cyan;
   const order = status.is_special ? 'S' : String((status.sort_order ?? 0) + 1).padStart(2, '0');
 
   return (
     <article
-      className="relative min-h-[198px] overflow-hidden rounded-[22px] p-3 font-sans"
-      style={{
-        background: status.is_active
-          ? `linear-gradient(125deg, ${accent}0A, rgba(255,255,255,0.018) 52%, rgba(167,139,250,0.012))`
-          : 'rgba(255,255,255,0.016)',
-        border: `1px solid ${status.is_active ? 'rgba(125,165,185,0.16)' : 'rgba(255,255,255,0.07)'}`,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
-      }}
+      className={`relative flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4 transition-colors ${status.is_active ? 'hover:bg-white/[0.04]' : 'opacity-55 hover:opacity-80'}`}
+      style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
     >
-      <div
-        aria-hidden
-        className="absolute inset-x-10 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
-      />
+      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}88` }} />
 
-      <div className="grid h-full grid-cols-[118px_minmax(0,1fr)] gap-3 sm:grid-cols-[142px_minmax(0,1fr)]">
-        <div
-          className="flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl px-3 py-3"
-          style={{
-            background: status.is_active
-              ? `linear-gradient(145deg, ${accent}2E, ${accent}12)`
-              : 'linear-gradient(145deg, rgba(148,163,184,0.11), rgba(148,163,184,0.04))',
-            border: `1px solid ${status.is_active ? `${accent}52` : 'rgba(148,163,184,0.15)'}`,
-          }}
+      <div className="flex items-center gap-3.5">
+        {/* Pevná velikost dlaždice — pořadí i „S“ zabírají stejné místo. */}
+        <span
+          className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border px-1 text-[12px] font-black leading-none tracking-[0.02em]"
+          style={{ borderColor: `${accent}58`, backgroundColor: `${accent}1f`, color: accent }}
         >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-white/35">
-              {status.is_special ? 'Speciální' : 'Workflow'}
-            </span>
+          <span className="truncate">{order}</span>
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[15px] font-bold leading-tight text-white/90">{status.name}</h3>
+          <p className="mt-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
             <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: status.is_active ? COLORS.green : 'rgba(255,255,255,0.22)' }}
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: status.is_active ? COLORS.green : 'rgba(255,255,255,0.22)' }}
             />
-          </div>
-
-          <div className="my-2">
-            <div
-              className="flex h-10 min-w-10 items-center justify-center rounded-xl px-2 text-xs font-bold"
-              style={{ color: accent, background: `${accent}16`, border: `1px solid ${accent}25` }}
-            >
-              {order}
-            </div>
-            <h3 className="mt-2 line-clamp-2 text-sm font-bold leading-tight text-white">{status.name}</h3>
-            <p className="mt-1.5 text-[9px] font-semibold" style={{ color: accent }}>
-              {status.is_special ? specialTypeLabel(status) : `${status.default_duration_minutes || 0} minut`}
-            </p>
-          </div>
-
-          <span className={`text-[9px] font-semibold ${status.is_active ? 'text-emerald-300/75' : 'text-white/28'}`}>
             {status.is_active ? 'Aktivní' : 'Neaktivní'}
-          </span>
+            <span className="text-white/16">·</span>
+            {status.is_special ? 'Speciální' : 'Workflow'}
+            <span className="text-white/16">·</span>
+            {status.is_special
+              ? <span className="text-white/44">tlačítkem</span>
+              : <><span className="tabular-nums text-white/44">{status.default_duration_minutes || 0}</span> min</>}
+          </p>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-2 py-0.5">
-          <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-cyan-300/10 bg-cyan-300/[0.035] px-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-300/[0.09] text-cyan-300">
-              {status.is_special ? <Radio className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-            </span>
-            <div className="min-w-0">
-              <p className="text-[9px] font-medium text-white/32">
-                {status.is_special ? 'Způsob spuštění' : 'Výchozí trvání'}
-              </p>
-              <p className="truncate text-xs font-semibold text-white/72">
-                {status.is_special ? 'Tlačítkem v detailu sálu' : `${status.default_duration_minutes || 0} minut`}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-violet-300/10 bg-violet-300/[0.03] px-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-300/[0.08] text-violet-300">
-              <Info className="h-3.5 w-3.5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[9px] font-medium text-white/32">Popis statusu</p>
-              <p className="line-clamp-2 text-xs font-semibold leading-snug text-white/72">
-                {status.description || (status.is_special ? specialTypeLabel(status) : 'Bez doplňujícího popisu')}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 px-1 pt-0.5">
-            <button
-              type="button"
-              onClick={onToggleStatistics}
-              disabled={saving}
-              className={`flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[8px] font-bold uppercase tracking-[0.08em] transition-colors disabled:opacity-40 ${
-                status.include_in_statistics
-                  ? 'border-amber-300/20 bg-amber-300/[0.06] text-amber-200/75 hover:text-amber-100'
-                  : 'border-white/[0.08] bg-white/[0.025] text-white/32 hover:text-white'
-              }`}
-            >
-              <BarChart3 className="h-3 w-3" />
-              {status.include_in_statistics ? 'Ve statistikách' : 'Mimo statistiky'}
-            </button>
-
-            <div className="flex items-center gap-2">
-              <ToggleSwitch
-                enabled={status.is_active}
-                label={`${status.is_active ? 'Deaktivovat' : 'Aktivovat'} status ${status.name}`}
-                onToggle={onToggleActive}
-                disabled={saving}
-              />
-              <button
-                type="button"
-                onClick={onEdit}
-                className="flex h-7 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.025] px-2.5 text-[9px] font-bold uppercase tracking-[0.1em] text-white/48 transition-colors hover:border-cyan-300/25 hover:text-cyan-200"
-              >
-                <Edit3 className="h-3 w-3" />
-                Upravit
-              </button>
-            </div>
-          </div>
+        <div className="flex shrink-0 gap-1.5">
+          <button
+            type="button"
+            onClick={onToggleStatistics}
+            disabled={saving}
+            aria-label={status.include_in_statistics ? `Vyřadit ${status.name} ze statistik` : `Zahrnout ${status.name} do statistik`}
+            title={status.include_in_statistics ? 'Ve statistikách — kliknutím vyřadit' : 'Mimo statistiky — kliknutím zahrnout'}
+            className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors disabled:cursor-default ${status.include_in_statistics ? 'border-amber-200/[0.16] text-amber-200/70 hover:bg-amber-300/[0.08] hover:text-amber-100' : 'border-white/[0.065] text-white/28 hover:bg-white/[0.06] hover:text-white/70'}`}
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onToggleActive}
+            disabled={saving}
+            aria-label={status.is_active ? `Deaktivovat ${status.name}` : `Aktivovat ${status.name}`}
+            title={status.is_active ? 'Deaktivovat status' : 'Aktivovat status'}
+            className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors disabled:cursor-default ${status.is_active ? 'border-emerald-200/[0.14] text-emerald-200/70 hover:bg-emerald-300/[0.08] hover:text-emerald-200' : 'border-white/[0.065] text-white/34 hover:bg-white/[0.06] hover:text-white/75'}`}
+          >
+            {status.is_active ? <UserRoundCheck className="h-3.5 w-3.5" /> : <UserRoundX className="h-3.5 w-3.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Upravit ${status.name}`}
+            title="Upravit status"
+            className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.065] text-white/42 transition-colors hover:bg-white/[0.06] hover:text-white/80"
+          >
+            <Edit3 className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
+
+      {!compact && (
+        <p className="mt-auto min-h-[30px] pt-3 text-[11.5px] leading-[15px] text-white/42 line-clamp-2">
+          {status.description || (status.is_special ? specialTypeLabel(status) : 'Bez doplňujícího popisu')}
+        </p>
+      )}
     </article>
   );
 };
@@ -227,6 +158,32 @@ const StatusesManager: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusView, setStatusView] = useState<'cards' | 'list'>('cards');
+
+  /** Přepínač zobrazení — stejná velikost ikon jako v levém postranním menu. */
+  const statusViewToggle = (
+    <div className="flex items-center gap-1">
+      {([
+        ['cards', 'Karty', LayoutGrid],
+        ['list', 'Seznam', List],
+      ] as const).map(([value, label, Icon]) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setStatusView(value)}
+          aria-pressed={statusView === value}
+          title={`Zobrazit jako ${label.toLocaleLowerCase('cs')}`}
+          aria-label={`Zobrazit jako ${label.toLocaleLowerCase('cs')}`}
+          className={`grid h-[clamp(2.5rem,7vh,4rem)] w-[clamp(2.5rem,7vh,4rem)] place-items-center rounded-[clamp(0.75rem,1.8vh,1rem)] transition-colors duration-200 ${statusView === value ? 'bg-white/[0.15] text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+        >
+          <Icon
+            className="h-[clamp(1.1rem,2.7vh,1.5rem)] w-[clamp(1.1rem,2.7vh,1.5rem)] transition-colors duration-200"
+            strokeWidth={statusView === value ? 2.5 : 2}
+          />
+        </button>
+      ))}
+    </div>
+  );
 
   const sortedStatuses = useMemo(
     () => [...statuses].sort((a, b) => {
@@ -329,101 +286,78 @@ const StatusesManager: React.FC = () => {
     : null;
 
   return (
-    <div className="min-h-full w-full pb-8 font-sans">
+    <div className="statistics-module min-h-full w-full pb-10 font-sans">
       <header className="mb-7">
-        <ModulePageHeading icon={Activity} kicker="WORKFLOW CONTROL" title="SPRÁVA" mutedTitle="STATUSŮ" />
-        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-          <p className="text-sm font-medium text-white/40">
-            Fáze operačního workflow, barevné značení a pravidla statistik
-          </p>
-          <div className="inline-flex items-center gap-2 text-[9px] font-bold tracking-[0.16em] text-emerald-300/75">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            WORKFLOW KONFIGURACE AKTIVNÍ
-          </div>
-        </div>
+        <ModulePageHeading
+          icon={Activity}
+          kicker="WORKFLOW CONTROL"
+          title="SPRÁVA"
+          mutedTitle="STATUSŮ"
+          actions={statusViewToggle}
+        />
       </header>
 
-      <section
-        className="relative mb-4 overflow-hidden rounded-[26px] p-2.5"
-        style={{
-          background: 'rgba(255,255,255,0.024)',
-          border: '1px solid rgba(125,165,185,0.18)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
-        }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-x-24 top-0 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.45), transparent)' }}
-        />
-        <div className="grid grid-cols-2 gap-1.5 md:grid-cols-5">
-          {[
-            { label: 'Celkem statusů', value: stats.total, suffix: 'statusů', color: COLORS.cyan, icon: Activity },
-            { label: 'Aktivní', value: stats.active, suffix: 'statusů', color: COLORS.green, icon: UserRoundCheck },
-            { label: 'Neaktivní', value: stats.inactive, suffix: 'statusů', color: stats.inactive ? COLORS.amber : COLORS.green, icon: UserRoundX },
-            { label: 'Ve statistikách', value: stats.statistics, suffix: 'statusů', color: COLORS.blue, icon: BarChart3 },
-            { label: 'Speciální', value: stats.special, suffix: 'tlačítek', color: COLORS.violet, icon: Radio },
-          ].map(({ label, value, suffix, color, icon: Icon }, index) => (
-            <div
-              key={label}
-              className={`relative flex min-h-[78px] flex-col justify-between rounded-2xl px-3.5 py-3 ${index === 4 ? 'col-span-2 md:col-span-1' : ''}`}
-              style={{ background: `${color}08`, border: `1px solid ${color}17` }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</p>
-                <Icon className="h-3.5 w-3.5" style={{ color }} />
-              </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold tabular-nums tracking-tight" style={{ color }}>{value}</span>
-                <span className="text-[9px] text-white/25">{suffix}</span>
+      {/* Stejná lišta jako v Rozpisu sálů a Operačních oborech. */}
+      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+        <div className="flex min-w-max items-center gap-2.5">
+          {([
+            { label: 'Celkem statusů', value: stats.total, suffix: 'statusů', icon: Activity, color: COLORS.cyan },
+            { label: 'Aktivní', value: stats.active, suffix: 'statusů', icon: UserRoundCheck, color: COLORS.green },
+            { label: 'Neaktivní', value: stats.inactive, suffix: 'statusů', icon: UserRoundX, color: stats.inactive ? COLORS.amber : COLORS.green },
+            { label: 'Ve statistikách', value: stats.statistics, suffix: 'statusů', icon: BarChart3, color: COLORS.blue },
+            { label: 'Speciální', value: stats.special, suffix: 'tlačítek', icon: Radio, color: COLORS.violet },
+          ] as const).map(({ label, value, suffix, icon: Icon, color }) => (
+            <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
+              <div className="flex w-full items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
+                    <span className="text-[8px] font-medium text-white/28">{suffix}</span>
+                  </div>
+                </div>
+                <Icon className="h-4 w-4 shrink-0" style={{ color }} strokeWidth={1.5} />
               </div>
             </div>
           ))}
-        </div>
-      </section>
 
-      <section
-        className="mb-5 flex flex-col gap-2 rounded-[22px] p-2 xl:flex-row xl:items-center"
-        style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
-      >
-        <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
-          {([
-            ['all', 'Všechny statusy', Activity, stats.total],
-            ['active', 'Aktivní', UserRoundCheck, stats.active],
-            ['inactive', 'Neaktivní', UserRoundX, stats.inactive],
-            ['special', 'Speciální', Radio, stats.special],
-          ] as const).map(([id, label, Icon, count]) => {
-            const active = filter === id;
-            return (
+          <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
+
+          <div className="w-[104px] shrink-0">
+            <h2 className="text-[11px] font-semibold leading-tight text-white/92">Workflow statusů</h2>
+            <p className="mt-1 text-[8px] leading-tight text-white/38">Fáze operací</p>
+          </div>
+
+          <div className="grid shrink-0 grid-cols-4 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
+            {([
+              ['all', 'Všechny'],
+              ['active', 'Aktivní'],
+              ['inactive', 'Neaktivní'],
+              ['special', 'Speciální'],
+            ] as const).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setFilter(id)}
-                className="flex h-9 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-semibold transition-colors"
-                style={active
-                  ? { background: 'rgba(54,217,236,0.12)', color: COLORS.cyan, border: '1px solid rgba(54,217,236,0.22)' }
-                  : { color: 'rgba(255,255,255,0.42)', border: '1px solid transparent' }}
+                aria-pressed={filter === id}
+                className={`h-8 rounded-md px-3 text-[8px] font-semibold uppercase tracking-[0.08em] ${filter === id ? 'bg-white/[0.09] text-cyan-200' : 'text-white/38 hover:text-white/70'}`}
               >
-                <Icon className="h-3.5 w-3.5" />
                 {label}
-                <span className="text-[9px] tabular-nums opacity-60">{count}</span>
               </button>
-            );
-          })}
-        </div>
+            ))}
+          </div>
 
-        <div className="hidden h-7 w-px bg-white/[0.07] xl:block" />
-
-        <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/28" />
-          <input
-            type="search"
-            aria-label="Hledat ve statusech"
-            placeholder="Hledat název, popis nebo typ statusu…"
-            value={searchQuery}
-            onChange={event => setSearchQuery(event.target.value)}
-            className="h-9 w-full rounded-xl border border-white/[0.07] bg-black/10 pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/25 focus:border-cyan-300/30"
-          />
+          <label className="flex h-10 w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/[0.055] bg-black/10 px-3">
+            <Search className="h-4 w-4 shrink-0 text-white/30" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              placeholder="Hledat status"
+              aria-label="Hledat ve statusech"
+              className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white/88 outline-none placeholder:font-normal placeholder:text-white/28"
+            />
+          </label>
         </div>
       </section>
 
@@ -438,34 +372,32 @@ const StatusesManager: React.FC = () => {
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-20">
+        <section className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025]">
           <Loader2 className="h-7 w-7 animate-spin text-cyan-300/70" />
           <p className="text-xs text-white/35">Načítám workflow statusy…</p>
-        </div>
+        </section>
       ) : filteredStatuses.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-[22px] py-16 text-center"
-          style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.12)' }}
-        >
+        <section className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
           <Activity className="mb-3 h-9 w-9 text-white/16" />
           <p className="text-sm font-semibold text-white/45">
             {statuses.length === 0 ? 'Zatím nejsou dostupné žádné workflow statusy' : 'Filtru neodpovídá žádný status'}
           </p>
           <p className="mt-1 text-xs text-white/25">Upravte filtr nebo hledaný výraz.</p>
-        </div>
+        </section>
       ) : (
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+        <section className={`grid gap-2.5 ${statusView === 'cards' ? 'xl:grid-cols-2' : ''}`}>
           {filteredStatuses.map(status => (
             <StatusCard
               key={status.id}
               status={status}
               saving={saving}
+              compact={statusView === 'list'}
               onEdit={() => handleEdit(status)}
               onToggleActive={() => void handleToggleActive(status)}
               onToggleStatistics={() => void handleToggleStatistics(status)}
             />
           ))}
-        </div>
+        </section>
       )}
 
       <RadixDialog.Root open={!!editingData} onOpenChange={open => { if (!open) handleCancel(); }}>

@@ -23,13 +23,12 @@ const MOBILE_LABELS: Record<string, string> = {
 };
 
 const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) => {
-  const { isAdmin, hasModuleAccess, logout } = useAuth();
+  const { isSuperAdmin, hasModuleAccess, logout } = useAuth();
 
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
-    if (item.id === 'dashboard') return true;
-    if (isAdmin) return true;
+    if (isSuperAdmin) return true;
     return hasModuleAccess(item.id);
-  }).slice(0, 5), [isAdmin, hasModuleAccess]);
+  }), [isSuperAdmin, hasModuleAccess]);
 
   const handleLogout = useCallback(async () => {
     try {

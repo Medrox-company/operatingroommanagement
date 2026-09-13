@@ -73,6 +73,7 @@ interface AuthContextType {
   refreshModules: () => Promise<void>;
   toggleModule: (moduleId: string, enabled: boolean) => Promise<boolean>;
   toggleModuleRole: (moduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
+  toggleSubmodule: (submoduleId: string, enabled: boolean) => Promise<boolean>;
   toggleSubmoduleRole: (submoduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
   hasModuleAccess: (moduleId: string) => boolean;
   hasSubmoduleAccess: (submoduleId: string) => boolean;
@@ -88,14 +89,91 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshModules = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
-      setSubmodules([]);
+      setSubmodules([
+        {
+          id: 'settings.hospital',
+          module_id: 'settings',
+          name: 'Zdravotnické zařízení',
+          description: 'Údaje o nemocnici a její nastavení',
+          is_enabled: true,
+          sort_order: 1,
+          allowed_roles: [],
+        },
+        {
+          id: 'settings.modules',
+          module_id: 'settings',
+          name: 'Správa modulů',
+          description: 'Přístup rolí k modulům a podmodulům',
+          is_enabled: true,
+          sort_order: 2,
+          allowed_roles: ['admin'],
+        },
+        {
+          id: 'settings.diagnostics',
+          module_id: 'settings',
+          name: 'Rychlost a připojení',
+          description: 'Diagnostika výkonu a stavu spojení',
+          is_enabled: true,
+          sort_order: 3,
+          allowed_roles: ['admin'],
+        },
+        {
+          id: 'settings.database',
+          module_id: 'settings',
+          name: 'Administrace databáze',
+          description: 'Zálohy, export a obnova dat',
+          is_enabled: true,
+          sort_order: 4,
+          allowed_roles: ['admin'],
+        },
+        {
+          id: 'settings.access',
+          module_id: 'settings',
+          name: 'Přihlášení a přístup',
+          description: 'Účet, odhlášení a přehled oprávnění',
+          is_enabled: true,
+          sort_order: 5,
+          allowed_roles: ['admin'],
+        },
+        ...[
+          ['settings.rooms', 'Operační sály'],
+          ['settings.specialties', 'Operační obory'],
+          ['settings.schedule', 'Rozpis sálů'],
+          ['settings.staff', 'Personál'],
+          ['settings.staff-overview', 'Přehled personálu'],
+          ['settings.statuses', 'Statusy'],
+          ['settings.calendar', 'Kalendář'],
+          ['settings.notifications', 'Notifikace'],
+          ['settings.statistics', 'Statistiky'],
+          ['settings.management', 'Management'],
+          ['settings.devices', 'Správa zařízení'],
+        ].map(([id, name], index) => ({
+          id,
+          module_id: 'settings',
+          name,
+          description: `Přístup k části ${name}`,
+          is_enabled: true,
+          sort_order: 10 + index,
+          allowed_roles: ['admin'],
+        })),
+        {
+          id: 'dashboard.spatial',
+          module_id: 'dashboard',
+          name: '3D dispozice',
+          description: 'Zobrazení prostorového modelu sálů a přístup k jeho editoru',
+          is_enabled: true,
+          sort_order: 1,
+          allowed_roles: ['admin', 'aro', 'cos', 'management', 'primar'],
+        },
+      ]);
       setModules([
         { id: 'dashboard',  name: 'Dashboard',  description: 'Operating rooms overview',     is_enabled: true, icon: 'LayoutGrid', accent_color: '#FBBF24', sort_order: 1, allowed_roles: ['aro','cos','management','primar'] },
+        { id: 'flow',       name: 'Tok pacienta', description: 'Live patient flow monitoring', is_enabled: true, icon: 'Workflow',   accent_color: '#22D3EE', sort_order: 2, allowed_roles: ['admin','aro','cos','management','primar'] },
         { id: 'timeline',   name: 'Timeline',   description: 'Operations timeline',          is_enabled: true, icon: 'Calendar',   accent_color: '#A855F7', sort_order: 2, allowed_roles: ['aro','cos','management','primar'] },
         { id: 'statistics', name: 'Statistics', description: 'Statistics and analytics',     is_enabled: true, icon: 'BarChart3',  accent_color: '#06B6D4', sort_order: 3, allowed_roles: ['management','primar','cos'] },
         { id: 'staff',      name: 'Staff',      description: 'Staff management',             is_enabled: true, icon: 'Users',      accent_color: '#10B981', sort_order: 4, allowed_roles: ['cos','management'] },
         { id: 'alerts',     name: 'Alerts',     description: 'Alert system',                 is_enabled: true, icon: 'Bell',       accent_color: '#EC4899', sort_order: 5, allowed_roles: ['aro','cos','management','primar'] },
-        { id: 'settings',   name: 'Settings',   description: 'System configuration',         is_enabled: true, icon: 'Settings',   accent_color: '#64748B', sort_order: 6, allowed_roles: null },
+        { id: 'settings',   name: 'Settings',   description: 'System configuration',         is_enabled: true, icon: 'Settings',   accent_color: '#64748B', sort_order: 6, allowed_roles: ['admin'] },
       ]);
       return;
     }
@@ -201,18 +279,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const toggleModule = useCallback(
     async (moduleId: string, enabled: boolean): Promise<boolean> => {
+      if (user?.role !== 'superadmin') return false;
       if (!isSupabaseConfigured || !supabase) {
         setModules(prev => prev.map(m => (m.id === moduleId ? { ...m, is_enabled: enabled } : m)));
         return true;
       }
       try {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('app_modules')
           .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
           .eq('id', moduleId)
-          .eq('hospital_id', getDatabaseHospitalId());
+          .eq('hospital_id', getDatabaseHospitalId())
+          .select('id')
+          .maybeSingle();
 
         if (error) throw error;
+        if (!data) throw new Error('Změna modulu nebyla autorizována.');
         await refreshModules();
         return true;
       } catch (error) {
@@ -220,11 +302,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [refreshModules],
+    [refreshModules, user?.role],
   );
 
   const toggleModuleRole = useCallback(
     async (moduleId: string, role: UserRole, enabled: boolean): Promise<boolean> => {
+      if (user?.role !== 'superadmin') return false;
       const compute = (current: string[] | null | undefined): string[] => {
         const set = new Set(current ?? []);
         if (enabled) set.add(role); else set.delete(role);
@@ -241,13 +324,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const current = modules.find(m => m.id === moduleId)?.allowed_roles ?? [];
         const next = compute(current);
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('app_modules')
           .update({ allowed_roles: next, updated_at: new Date().toISOString() })
           .eq('id', moduleId)
-          .eq('hospital_id', getDatabaseHospitalId());
+          .eq('hospital_id', getDatabaseHospitalId())
+          .select('id')
+          .maybeSingle();
 
         if (error) throw error;
+        if (!data) throw new Error('Změna oprávnění modulu nebyla autorizována.');
         setModules(prev => prev.map(m => (m.id === moduleId ? { ...m, allowed_roles: next } : m)));
         return true;
       } catch (error) {
@@ -255,11 +341,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [modules],
+    [modules, user?.role],
+  );
+
+  const toggleSubmodule = useCallback(
+    async (submoduleId: string, enabled: boolean): Promise<boolean> => {
+      if (user?.role !== 'superadmin') return false;
+      if (!isSupabaseConfigured || !supabase) {
+        setSubmodules(prev =>
+          prev.map(s => (s.id === submoduleId ? { ...s, is_enabled: enabled } : s)),
+        );
+        return true;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('app_submodules')
+          .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
+          .eq('id', submoduleId)
+          .eq('hospital_id', getDatabaseHospitalId())
+          .select('id')
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!data) throw new Error('Změna podmodulu nebyla autorizována.');
+        setSubmodules(prev =>
+          prev.map(s => (s.id === submoduleId ? { ...s, is_enabled: enabled } : s)),
+        );
+        return true;
+      } catch (error) {
+        console.error('[Auth] Failed to toggle submodule:', error);
+        return false;
+      }
+    },
+    [user?.role],
   );
 
   const toggleSubmoduleRole = useCallback(
     async (submoduleId: string, role: UserRole, enabled: boolean): Promise<boolean> => {
+      if (user?.role !== 'superadmin') return false;
       const compute = (current: string[] | null | undefined): string[] => {
         const set = new Set(current ?? []);
         if (enabled) set.add(role); else set.delete(role);
@@ -276,13 +396,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const current = submodules.find(s => s.id === submoduleId)?.allowed_roles ?? [];
         const next = compute(current);
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('app_submodules')
           .update({ allowed_roles: next, updated_at: new Date().toISOString() })
           .eq('id', submoduleId)
-          .eq('hospital_id', getDatabaseHospitalId());
+          .eq('hospital_id', getDatabaseHospitalId())
+          .select('id')
+          .maybeSingle();
 
         if (error) throw error;
+        if (!data) throw new Error('Změna oprávnění podmodulu nebyla autorizována.');
         setSubmodules(prev => prev.map(s => (s.id === submoduleId ? { ...s, allowed_roles: next } : s)));
         return true;
       } catch (error) {
@@ -290,7 +413,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [submodules],
+    [submodules, user?.role],
   );
 
   const hasModuleAccess = useCallback(
@@ -312,12 +435,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasSubmoduleAccess = useCallback(
     (submoduleId: string): boolean => {
       if (!user) return false;
+
+      // Konfigurace zdravotnických zařízení je globální systémová agenda.
+      // Nesmí se stát dostupnou administrátorovi ani chybným/legacy záznamem
+      // allowed_roles, ani při chybějící migraci (neznámé podmoduly jsou níže
+      // z důvodu zpětné kompatibility jinak záměrně fail-open).
+      if (submoduleId === 'settings.hospital') {
+        const hospitalSubmodule = submodules.find(s => s.id === submoduleId);
+        return user.role === 'superadmin' && hospitalSubmodule?.is_enabled !== false;
+      }
       if (user.role === 'superadmin') return true;
 
       const sub = submodules.find(s => s.id === submoduleId);
-      // Neznámý podmodul = žádné omezení. Díky tomu funguje aplikace i tehdy,
-      // když migrace 12 ještě neproběhla.
-      if (!sub) return true;
+      // Známé chráněné části jsou fail-closed. Novým nemocnicím je zakládá
+      // server a migrace, takže chybějící řádek nesmí omylem znamenat přístup.
+      if (!sub) {
+        return !submoduleId.startsWith('settings.') && submoduleId !== 'dashboard.spatial';
+      }
       if (sub.is_enabled === false) return false;
       // Nadřazený modul musí být přístupný, jinak nemá smysl řešit část v něm.
       if (!hasModuleAccess(sub.module_id)) return false;
@@ -344,11 +478,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshModules,
       toggleModule,
       toggleModuleRole,
+      toggleSubmodule,
       toggleSubmoduleRole,
       hasModuleAccess,
       hasSubmoduleAccess,
     }),
-    [user, isLoading, modules, submodules, login, logout, refreshModules, toggleModule, toggleModuleRole, toggleSubmoduleRole, hasModuleAccess, hasSubmoduleAccess],
+    [user, isLoading, modules, submodules, login, logout, refreshModules, toggleModule, toggleModuleRole, toggleSubmodule, toggleSubmoduleRole, hasModuleAccess, hasSubmoduleAccess],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

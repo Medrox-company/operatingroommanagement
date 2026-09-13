@@ -47,7 +47,7 @@ import { clearRoomAroOvertimeStart, markRoomAroOvertimeStart } from '../lib/db';
 import { TimelineRoomSpecialtyStrip } from './RoomSpecialtyBadge';
 import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
 import { mergeCompletedOperations } from '../lib/completed-operations';
-import { useNowDate } from '../hooks/useSharedClock';
+import { useNowDate, useNowMsAtGranularity } from '../hooks/useSharedClock';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
@@ -57,7 +57,7 @@ interface TimelineModuleProps {
 
 const TIMELINE_OPERATIONAL_TICK_MS = 10_000;
 
-const TimelineClockDisplay: React.FC<{ initialTime: Date }> = React.memo(() => {
+const TimelineClockDisplay: React.FC = React.memo(() => {
   // Sdílený tik aplikace. Komponenta je memoizovaná, takže se sekundovým
   // překreslením mění jen text hodin, nikoli celá časová osa.
   const clockTime = useNowDate();
@@ -230,7 +230,8 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
     return map;
   }, [activeStatuses]);
   
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const operationalTimeMs = useNowMsAtGranularity(TIMELINE_OPERATIONAL_TICK_MS);
+  const currentTime = useMemo(() => new Date(operationalTimeMs), [operationalTimeMs]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
   const [selectedDetailTime, setSelectedDetailTime] = useState<Date | null>(null);
@@ -429,12 +430,8 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
 
 
-  // Těžká timeline se nepočítá každou sekundu. Sekundy v horních hodinách řeší
-  // izolovaná malá komponenta, takže řádky sálů zbytečně nepřekreslujeme.
-  useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(new Date()), TIMELINE_OPERATIONAL_TICK_MS);
-    return () => clearInterval(interval);
-  }, []);
+  // Těžká timeline se nepřepočítává každou sekundu. Sdílený aplikační časovač
+  // ji probudí po 10 s a při skryté záložce se automaticky uspí.
 
   /* --- Sály v původním pořadí; nouzové/uzamčené zůstávají na své pozici --- */
   const sortedRooms = useMemo(() => {
@@ -1850,7 +1847,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
             </div>
 
             {/* Čas je přesně uprostřed lišty a bez samostatného rámečku. */}
-            <TimelineClockDisplay initialTime={currentTime} />
+            <TimelineClockDisplay />
 
             {/* Right: ARO Overtime indicator (zoom ovládání odstraněno — osa
                 vždy zobrazuje celý den na šířku) */}

@@ -174,70 +174,55 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="w-full">
-      {/* Header */}
-      <motion.header 
-        className="flex items-center justify-between gap-6 mb-12 flex-shrink-0"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="flex items-center gap-4">
-          <div>
-            <ModulePageHeading icon={Smartphone} kicker="SPRÁVA ZAŘÍZENÍ" title="REGISTROVANÁ" mutedTitle="ZAŘÍZENÍ" />
-          </div>
-        </div>
-        <button
-          onClick={fetchDevices}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 transition-colors text-sm font-medium"
-        >
-          <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Obnovit
-        </button>
-      </motion.header>
+    <div className="statistics-module min-h-full w-full pb-10 font-sans">
+      <header className="mb-7">
+        <ModulePageHeading icon={Smartphone} kicker="SPRÁVA ZAŘÍZENÍ" title="REGISTROVANÁ" mutedTitle="ZAŘÍZENÍ" />
+      </header>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-white">{stats.total}</p>
-              <p className="text-xs text-white/50 uppercase tracking-wider font-medium mt-1">Celkem</p>
+      {/* Stejná lišta jako v Rozpisu sálů a Operačních oborech. */}
+      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+        <div className="flex min-w-max items-center gap-2.5">
+          {([
+            { label: 'Celkem', value: stats.total, suffix: 'zařízení', icon: Smartphone, color: '#38BDF8' },
+            { label: 'Aktivní', value: stats.active, suffix: 'zařízení', icon: Shield, color: '#34D399' },
+            { label: 'Online', value: stats.online, suffix: 'zařízení', icon: Activity, color: '#22D3EE' },
+            { label: 'PWA', value: stats.pwa, suffix: 'instalací', icon: Download, color: '#A78BFA' },
+          ] as const).map(({ label, value, suffix, icon: Icon, color }) => (
+            <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
+              <div className="flex w-full items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
+                    <span className="text-[8px] font-medium text-white/28">{suffix}</span>
+                  </div>
+                </div>
+                <Icon className="h-4 w-4 shrink-0" style={{ color }} strokeWidth={1.5} />
+              </div>
             </div>
-            <Smartphone className="w-6 h-6 text-white/20" />
+          ))}
+
+          <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
+
+          <div className="w-[104px] shrink-0">
+            <h2 className="text-[11px] font-semibold leading-tight text-white/92">Registrovaná zařízení</h2>
+            <p className="mt-1 text-[8px] leading-tight text-white/38">Přístupy do aplikace</p>
           </div>
+
+          <button
+            type="button"
+            onClick={fetchDevices}
+            disabled={loading}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.025] text-white/42 hover:text-white disabled:opacity-40"
+            aria-label="Obnovit seznam zařízení"
+          >
+            <RotateCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-emerald-400">{stats.active}</p>
-              <p className="text-xs text-emerald-400/60 uppercase tracking-wider font-medium mt-1">Aktivní</p>
-            </div>
-            <Shield className="w-6 h-6 text-emerald-500/30" />
-          </div>
-        </div>
-        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-cyan-400">{stats.online}</p>
-              <p className="text-xs text-cyan-400/60 uppercase tracking-wider font-medium mt-1">Online</p>
-            </div>
-            <Activity className="w-6 h-6 text-cyan-500/30" />
-          </div>
-        </div>
-        <div className="rounded-xl border border-purple-500/20 bg-purple-500/[0.04] p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-purple-400">{stats.pwa}</p>
-              <p className="text-xs text-purple-400/60 uppercase tracking-wider font-medium mt-1">PWA</p>
-            </div>
-            <Download className="w-6 h-6 text-purple-500/30" />
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* Info banner */}
-      <div className="rounded-2xl border border-blue-500/20 bg-blue-500/[0.04] p-4 flex gap-3 mb-6">
+      <div className="mb-4 flex gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-3.5">
         <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
         <div className="text-sm text-white/70 leading-relaxed">
           <strong className="text-white">Jak to funguje:</strong> Každé zařízení se automaticky zaregistruje při prvním přístupu do aplikace. 
@@ -248,7 +233,7 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm mb-6">
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.045] p-3.5 text-xs text-amber-100/85">
           <AlertTriangle className="w-5 h-5" />
           <span>{error}</span>
         </div>

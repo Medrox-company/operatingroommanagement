@@ -162,30 +162,9 @@ const ModalShell: React.FC<{
   </div>
 );
 
-const ToggleSwitch: React.FC<{
-  enabled: boolean;
-  label: string;
-  onToggle: () => void;
-}> = ({ enabled, label, onToggle }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={enabled}
-    aria-label={label}
-    onClick={onToggle}
-    className="relative h-6 w-11 rounded-full border transition-colors"
-    style={{
-      background: enabled ? `${COLORS.green}32` : 'rgba(255,255,255,0.045)',
-      borderColor: enabled ? `${COLORS.green}55` : 'rgba(255,255,255,0.12)',
-    }}
-  >
-    <span
-      className="absolute top-[3px] h-4 w-4 rounded-full bg-white shadow-sm transition-[left]"
-      style={{ left: enabled ? 23 : 3 }}
-    />
-  </button>
-);
-
+/** Karta kanálu ve stejném jazyce jako karty v modulu Operační obory:
+    barevný pruh na levé hraně, pevná dlaždice, název, řádek metadat,
+    ikonové akce vpravo a popis dole. */
 const NotificationCard: React.FC<{
   notification: Notification;
   isDeleting: boolean;
@@ -203,125 +182,104 @@ const NotificationCard: React.FC<{
 }) => {
   const meta = TYPE_META[notification.type];
   const TypeIcon = meta.icon;
-  const accent = notification.enabled ? meta.color : 'rgba(148,163,184,0.7)';
+  const color = meta.color;
+
+  if (isDeleting) {
+    return (
+      <article
+        className="relative flex h-full flex-col items-center justify-center overflow-hidden rounded-xl border border-rose-300/20 bg-rose-300/[0.05] px-4 py-6 text-center font-sans"
+        style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
+      >
+        <span className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-rose-300/[0.1] text-rose-300">
+          <AlertCircle className="h-4 w-4" />
+        </span>
+        <p className="text-sm font-bold text-white">Odstranit „{notification.title}“?</p>
+        <p className="mt-1 text-[11px] text-white/35">Tuto notifikační cestu nebude možné obnovit.</p>
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={onCancelDelete}
+            className="h-9 rounded-lg border border-white/[0.08] bg-white/[0.025] px-4 text-xs font-semibold text-white/55 hover:text-white/80"
+          >
+            Zrušit
+          </button>
+          <button
+            type="button"
+            onClick={onConfirmDelete}
+            className="h-9 rounded-lg border border-rose-300/20 bg-rose-300/[0.1] px-4 text-xs font-bold text-rose-200 hover:bg-rose-300/[0.16]"
+          >
+            Odstranit
+          </button>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article
-      className="relative min-h-[188px] overflow-hidden rounded-[22px] p-3 font-sans"
-      style={{
-        background: notification.enabled
-          ? `linear-gradient(125deg, ${meta.color}0A, rgba(255,255,255,0.018) 52%, rgba(251,191,36,0.012))`
-          : 'rgba(255,255,255,0.016)',
-        border: `1px solid ${notification.enabled ? 'rgba(125,165,185,0.16)' : 'rgba(255,255,255,0.07)'}`,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
-      }}
+      className={`relative flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4 transition-colors ${notification.enabled ? 'hover:bg-white/[0.04]' : 'opacity-55 hover:opacity-80'}`}
+      style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
     >
-      <div
-        aria-hidden
-        className="absolute inset-x-10 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
-      />
+      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${color}88` }} />
 
-      {isDeleting ? (
-        <div className="flex h-full min-h-[162px] flex-col items-center justify-center rounded-2xl border border-rose-300/15 bg-rose-300/[0.045] p-4 text-center">
-          <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-rose-300/[0.1] text-rose-300">
-            <AlertCircle className="h-4 w-4" />
-          </span>
-          <p className="text-sm font-bold text-white">Odstranit „{notification.title}“?</p>
-          <p className="mt-1 text-[11px] text-white/35">Tuto notifikační cestu nebude možné obnovit.</p>
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={onCancelDelete}
-              className="h-9 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 text-xs font-semibold text-white/55"
-            >
-              Zrušit
-            </button>
-            <button
-              type="button"
-              onClick={onConfirmDelete}
-              className="h-9 rounded-xl border border-rose-300/20 bg-rose-300/[0.1] px-4 text-xs font-bold text-rose-200"
-            >
-              Odstranit
-            </button>
-          </div>
+      <div className="flex items-center gap-3.5">
+        {/* Pevná velikost dlaždice — všechny typy kanálů zabírají stejné místo. */}
+        <span
+          className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border"
+          style={{ borderColor: `${color}58`, backgroundColor: `${color}1f`, color }}
+        >
+          <TypeIcon className="h-5 w-5" strokeWidth={1.6} />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[15px] font-bold leading-tight text-white/90">{notification.title}</h3>
+          <p className="mt-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: notification.enabled ? COLORS.green : 'rgba(255,255,255,0.22)' }}
+            />
+            {notification.enabled ? 'Aktivní' : 'Neaktivní'}
+            <span className="text-white/16">·</span>
+            <span className="truncate" style={{ color: `${color}B0` }}>{meta.label}</span>
+          </p>
         </div>
-      ) : (
-        <div className="grid h-full grid-cols-[112px_minmax(0,1fr)] gap-3 sm:grid-cols-[132px_minmax(0,1fr)]">
-          <div
-            className="flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl px-3 py-3"
-            style={{
-              background: notification.enabled
-                ? `linear-gradient(145deg, ${meta.color}2E, ${meta.color}12)`
-                : 'linear-gradient(145deg, rgba(148,163,184,0.11), rgba(148,163,184,0.04))',
-              border: `1px solid ${notification.enabled ? `${meta.color}55` : 'rgba(148,163,184,0.15)'}`,
-            }}
+
+        <div className="flex shrink-0 gap-1.5">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={`${notification.enabled ? 'Vypnout' : 'Zapnout'} ${notification.title}`}
+            title={notification.enabled ? 'Vypnout kanál' : 'Zapnout kanál'}
+            className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors ${notification.enabled ? 'border-emerald-200/[0.14] text-emerald-200/70 hover:bg-emerald-300/[0.08] hover:text-emerald-200' : 'border-white/[0.065] text-white/34 hover:bg-white/[0.06] hover:text-white/75'}`}
           >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Kanál</span>
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ background: notification.enabled ? COLORS.green : 'rgba(255,255,255,0.22)' }}
-              />
-            </div>
-            <div className="my-2">
-              <span
-                className="flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{ color: accent, background: `${meta.color}16`, border: `1px solid ${meta.color}25` }}
-              >
-                <TypeIcon className="h-4 w-4" />
-              </span>
-              <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: accent }}>
-                {meta.shortLabel}
-              </p>
-              <p className="mt-1 text-xs font-semibold leading-tight text-white/58">{meta.label}</p>
-            </div>
-            <span className={`text-[9px] font-semibold ${notification.enabled ? 'text-emerald-300/75' : 'text-white/28'}`}>
-              {notification.enabled ? 'Aktivní' : 'Neaktivní'}
-            </span>
-          </div>
-
-          <div className="flex min-w-0 flex-col py-0.5">
-            <div className="flex-1 rounded-2xl border border-white/[0.065] bg-white/[0.018] p-3">
-              <p className="text-[9px] font-medium text-white/30">Notifikační pravidlo</p>
-              <h3 className="mt-1 line-clamp-2 text-sm font-bold leading-tight text-white">
-                {notification.title}
-              </h3>
-              <p className="mt-2 line-clamp-2 text-[11px] leading-relaxed text-white/42">
-                {notification.description}
-              </p>
-            </div>
-
-            <div className="mt-2 flex min-h-10 items-center justify-between gap-2 rounded-xl border border-white/[0.055] bg-black/10 px-3">
-              <div className="min-w-0">
-                <p className="text-[8px] font-medium uppercase tracking-[0.12em] text-white/25">
-                  {notification.type === 'email' ? 'Příjemce' : 'Doručení'}
-                </p>
-                <p className="truncate text-[10px] font-semibold text-white/48">
-                  {notification.type === 'email'
-                    ? notification.recipientEmail || 'Výchozí distribuční seznam'
-                    : notification.enabled ? 'Povoleno v systému' : 'Doručování vypnuto'}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <ToggleSwitch
-                  enabled={notification.enabled}
-                  label={`${notification.enabled ? 'Vypnout' : 'Zapnout'} ${notification.title}`}
-                  onToggle={onToggle}
-                />
-                <button
-                  type="button"
-                  onClick={onRequestDelete}
-                  aria-label={`Odstranit ${notification.title}`}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.025] text-white/30 transition-colors hover:border-rose-300/20 hover:text-rose-300"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
+            {notification.enabled ? <UserRoundCheck className="h-3.5 w-3.5" /> : <UserRoundX className="h-3.5 w-3.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={onRequestDelete}
+            aria-label={`Odstranit ${notification.title}`}
+            title="Odstranit kanál"
+            className="grid h-8 w-8 place-items-center rounded-lg border border-red-200/[0.08] text-red-200/40 transition-colors hover:bg-red-300/[0.06] hover:text-red-200/75"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         </div>
-      )}
+      </div>
+
+      <p className="mt-3 min-h-[30px] text-[11.5px] leading-[15px] text-white/42 line-clamp-2">
+        {notification.description}
+      </p>
+
+      <div className="mt-auto flex items-center gap-2 border-t border-white/[0.055] pt-2.5">
+        <span className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/26">
+          {notification.type === 'email' ? 'Příjemce' : 'Doručení'}
+        </span>
+        <span className="ml-auto min-w-0 truncate text-[10px] text-white/45">
+          {notification.type === 'email'
+            ? notification.recipientEmail || 'Výchozí distribuční seznam'
+            : notification.enabled ? 'Povoleno v systému' : 'Doručování vypnuto'}
+        </span>
+      </div>
     </article>
   );
 };
@@ -453,137 +411,98 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({ onNotificat
   };
 
   return (
-    <div className="w-full min-h-full pb-8 font-sans">
+    <div className="statistics-module min-h-full w-full pb-10 font-sans">
       <header className="mb-7">
         <ModulePageHeading icon={BellRing} kicker="NOTIFICATION CONTROL" title="NOTIFIKAČNÍ" mutedTitle="CENTRUM" />
-        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-          <p className="text-sm font-medium text-white/40">
-            Komunikační kanály, systémová upozornění a kontrola doručování
-          </p>
-          <div className="inline-flex items-center gap-2 text-[9px] font-bold tracking-[0.16em] text-emerald-300/75">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            NOTIFIKAČNÍ SLUŽBY AKTIVNÍ
-          </div>
-        </div>
       </header>
 
-      <section
-        className="relative mb-4 overflow-hidden rounded-[26px] p-2.5"
-        style={{
-          background: 'rgba(255,255,255,0.024)',
-          border: '1px solid rgba(125,165,185,0.18)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
-        }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-x-24 top-0 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.45), transparent)' }}
-        />
-        <div className="grid grid-cols-2 gap-1.5 md:grid-cols-5">
-          {[
-            { label: 'Celkem kanálů', value: stats.total, suffix: 'pravidel', color: COLORS.cyan, icon: Bell },
-            { label: 'Aktivní', value: stats.active, suffix: 'kanálů', color: COLORS.green, icon: UserRoundCheck },
-            { label: 'Neaktivní', value: stats.inactive, suffix: 'kanálů', color: stats.inactive ? COLORS.amber : COLORS.green, icon: UserRoundX },
-            { label: 'E-mail a SMS', value: stats.digital, suffix: 'aktivní', color: COLORS.blue, icon: Mail },
-            { label: 'Okamžitá odezva', value: stats.realtime, suffix: 'aktivní', color: '#EC4899', icon: Radio },
-          ].map(({ label, value, suffix, color, icon: Icon }, index) => (
-            <div
-              key={label}
-              className={`relative flex min-h-[78px] flex-col justify-between rounded-2xl px-3.5 py-3 ${index === 4 ? 'col-span-2 md:col-span-1' : ''}`}
-              style={{ background: `${color}08`, border: `1px solid ${color}17` }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</p>
-                <Icon className="h-3.5 w-3.5" style={{ color }} />
-              </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold tabular-nums tracking-tight" style={{ color }}>{value}</span>
-                <span className="text-[9px] text-white/25">{suffix}</span>
+      {/* Stejná lišta jako v Rozpisu sálů a Operačních oborech. */}
+      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+        <div className="flex min-w-max items-center gap-2.5">
+          {([
+            { label: 'Celkem kanálů', value: stats.total, suffix: 'pravidel', icon: Bell, color: COLORS.cyan },
+            { label: 'Aktivní', value: stats.active, suffix: 'kanálů', icon: UserRoundCheck, color: COLORS.green },
+            { label: 'Neaktivní', value: stats.inactive, suffix: 'kanálů', icon: UserRoundX, color: stats.inactive ? COLORS.amber : COLORS.green },
+            { label: 'E-mail a SMS', value: stats.digital, suffix: 'aktivní', icon: Mail, color: COLORS.blue },
+            { label: 'Okamžitá odezva', value: stats.realtime, suffix: 'aktivní', icon: Radio, color: '#EC4899' },
+          ] as const).map(({ label, value, suffix, icon: Icon, color }) => (
+            <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
+              <div className="flex w-full items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
+                    <span className="text-[8px] font-medium text-white/28">{suffix}</span>
+                  </div>
+                </div>
+                <Icon className="h-4 w-4 shrink-0" style={{ color }} strokeWidth={1.5} />
               </div>
             </div>
           ))}
-        </div>
-      </section>
 
-      <section
-        className="mb-5 flex flex-col gap-2 rounded-[22px] p-2 xl:flex-row xl:items-center"
-        style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
-      >
-        <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
-          {([
-            ['all', 'Všechny kanály', Bell],
-            ['active', 'Aktivní', UserRoundCheck],
-            ['inactive', 'Neaktivní', UserRoundX],
-          ] as const).map(([id, label, Icon]) => {
-            const active = filter === id;
-            return (
+          <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
+
+          <div className="w-[104px] shrink-0">
+            <h2 className="text-[11px] font-semibold leading-tight text-white/92">Notifikační kanály</h2>
+            <p className="mt-1 text-[8px] leading-tight text-white/38">Doručování zpráv</p>
+          </div>
+
+          <div className="grid shrink-0 grid-cols-3 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
+            {([['all', 'Všechny'], ['active', 'Aktivní'], ['inactive', 'Neaktivní']] as const).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setFilter(id)}
-                className="flex h-9 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-semibold transition-colors"
-                style={active
-                  ? { background: 'rgba(54,217,236,0.12)', color: COLORS.cyan, border: '1px solid rgba(54,217,236,0.22)' }
-                  : { color: 'rgba(255,255,255,0.42)', border: '1px solid transparent' }}
+                aria-pressed={filter === id}
+                className={`h-8 rounded-md px-3 text-[8px] font-semibold uppercase tracking-[0.08em] ${filter === id ? 'bg-white/[0.09] text-cyan-200' : 'text-white/38 hover:text-white/70'}`}
               >
-                <Icon className="h-3.5 w-3.5" />
                 {label}
-                <span className="text-[9px] tabular-nums opacity-60">
-                  {id === 'all' ? stats.total : id === 'active' ? stats.active : stats.inactive}
-                </span>
               </button>
-            );
-          })}
-        </div>
+            ))}
+          </div>
 
-        <div className="hidden h-7 w-px bg-white/[0.07] xl:block" />
+          <label className="flex h-10 w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/[0.055] bg-black/10 px-3">
+            <Search className="h-4 w-4 shrink-0 text-white/30" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              placeholder="Hledat kanál"
+              aria-label="Hledat v notifikacích"
+              className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white/88 outline-none placeholder:font-normal placeholder:text-white/28"
+            />
+          </label>
 
-        <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/28" />
-          <input
-            type="search"
-            aria-label="Hledat v notifikacích"
-            placeholder="Hledat název, popis, kanál nebo příjemce…"
-            value={searchQuery}
-            onChange={event => setSearchQuery(event.target.value)}
-            className="h-9 w-full rounded-xl border border-white/[0.07] bg-black/10 pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/25 focus:border-cyan-300/30"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5">
           <button
             type="button"
             onClick={() => setShowEmailTest(true)}
-            className="flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.07] px-3 text-xs font-bold text-cyan-200 transition-colors hover:bg-cyan-300/[0.11]"
+            className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/52 hover:text-white"
           >
-            <Send className="h-3.5 w-3.5" />
+            <Send className="h-4 w-4" />
             Test e-mailu
           </button>
+
           <button
             type="button"
             onClick={() => setIsAddingNew(true)}
-            className="flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 text-xs font-bold text-[#071019] transition-colors hover:bg-amber-200"
+            className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-cyan-200/[0.20] bg-cyan-300/[0.10] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-cyan-100 hover:bg-cyan-300/[0.16]"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             Přidat kanál
           </button>
         </div>
       </section>
 
       {filteredNotifications.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-[22px] py-16 text-center"
-          style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.12)' }}
-        >
+        <section className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
           <MessageSquareText className="mb-3 h-9 w-9 text-white/16" />
           <p className="text-sm font-semibold text-white/45">
             {notifications.length === 0 ? 'Zatím nejsou vytvořené žádné notifikace' : 'Filtru neodpovídá žádný kanál'}
           </p>
           <p className="mt-1 text-xs text-white/25">Upravte filtr nebo přidejte nový notifikační kanál.</p>
-        </div>
+        </section>
       ) : (
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+        <section className="grid gap-2.5 xl:grid-cols-2">
           {filteredNotifications.map(notification => (
             <NotificationCard
               key={notification.id}
@@ -595,7 +514,7 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({ onNotificat
               onConfirmDelete={() => handleDeleteNotification(notification.id)}
             />
           ))}
-        </div>
+        </section>
       )}
 
       <AnimatePresence>

@@ -1,9 +1,8 @@
 import { createHmac } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSession } from '@/lib/auth/server';
-import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
-import { isAdminRole } from '../../../../lib/auth/roles';
+import { requireHospitalIdAccess } from '@/lib/hospital/access';
 
 export const runtime = 'nodejs';
 
@@ -21,19 +20,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Neplatné zařízení' }, { status: 400 });
   }
 
-  const admin = getSupabaseAdmin();
-  const { data: hospital } = await admin.from('hospitals').select('id').eq('id', hospitalId).maybeSingle();
-  if (!hospital) return NextResponse.json({ error: 'Zařízení neexistuje' }, { status: 404 });
-
-  if (!isAdminRole(auth.user.role)) {
-    const { data: membership } = await admin
-      .from('hospital_user_memberships')
-      .select('user_id')
-      .eq('user_id', auth.user.sub)
-      .eq('hospital_id', hospitalId)
-      .maybeSingle();
-    if (!membership) return NextResponse.json({ error: 'K zařízení nemáte přístup' }, { status: 403 });
-  }
+  const hospitalAccess = await requireHospitalIdAccess(auth.user, hospitalId);
+  if (hospitalAccess instanceof NextResponse) return hospitalAccess;
 
   const secret = process.env.SUPABASE_JWT_SECRET;
   if (!secret) return NextResponse.json({ error: 'SUPABASE_JWT_SECRET není nastaven' }, { status: 500 });

@@ -1,58 +1,600 @@
-**Design QA — tabulka rozpisu sálů**
+## 2026-09-10 — obnovený 3D úhel a oddělené stavové zvýraznění
 
-- Source visual truth (výchozí tabulka): `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-07 v 1.08.35.png`
-- Source visual truth (cílová buňka): `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-07 v 1.08.49.png`
-- Source pixels: 3062 × 1618 a 1726 × 424; desktop; density neuvedena.
-- Implementation: `http://localhost:3000/`, `components/RoomSpecialtyScheduleManager.tsx`.
-- Browser viewport: 1280 × 720 CSS px, devicePixelRatio 2.
-- Implementation screenshot: `/tmp/operatingroom-schedule-auth-blocked.png` (1280 × 720 px).
-- State: přihlašovací stránka; autentizovaný rozpis sálů není v kontrolním browseru dostupný.
-
-**Full-view comparison evidence**
-
-- První zdrojový snímek ukazuje týdenní tabulku s barevnými buňkami, centrovanou zkratkou a DOP/ODP v pravém horním rohu.
-- Druhý zdrojový snímek definuje cílovou hierarchii: zkratka vlevo nahoře, celý název pod ní, kruhový indikátor vpravo, souvislá barevná plocha a jemné tmavé oddělovače.
-- Implementace nyní používá tuto hierarchii v týdenních i měsíčních buňkách, ale autentizovanou obrazovku nelze zachytit ve stejném stavu. Zobrazená login stránka proto není platný vizuální protějšek.
-
-**Focused region comparison evidence**
-
-- Zdrojová cílová oblast byla otevřena v původním rozlišení a její typografie, zarovnání, výplň, dělicí linka a kruhový indikátor byly posouzeny samostatně.
-- Odpovídající vykreslenou oblast aplikace nelze bez přihlášení otevřít; přesné porovnání fontu, zalomení a hustoty je zablokované.
+- Source context: uživatelské upřesnění k nežádoucímu rovnému pohledu a k předchozímu celoplošnému barevnému zvýraznění; původní problematický snímek `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 13.27.29.png`.
+- Implementation: `http://localhost:3000/`, dashboard v režimu `3D dispozice`, mírně pootočený ortografický pohled.
+- Browser screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-perspective-status-final.jpg` (1600 × 1000 px).
+- Browser viewport: 1600 × 1000 CSS px, devicePixelRatio 1.
+- State: `TRAUMATOLOGIE - 1` aktivní ve fázi `Příjezd na sál`, následně ověřen připravený `PCHO SÁL Č.2`.
 
 **Findings**
 
-- [P2] Chybí autentizovaný post-fix snímek tabulky.
-  Location: Rozpis sálů → týdenní a měsíční buňky.
-  Evidence: cílové snímky jsou dostupné, kontrolní browser se zastaví na přihlášení.
-  Impact: nelze spolehlivě potvrdit zalomení dlouhých názvů a proporce kruhu při skutečné šířce buněk.
-  Fix: otevřít přihlášený rozpis a zachytit týdenní pohled s několika obsazenými buňkami.
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči upřesnění. 3D pohled je znovu mírně natočený a lze jej volně rotovat, ale kamera zůstává ortografická, takže přední ani zadní stěny nemění velikost podle vzdálenosti.
+- Fázová barva je jemná a omezená pouze na materiály `wall` a `facade`. Podlaha, vybavení, dveře a ostatní konstrukce ji nepřebírají.
+- Aktivní sály mají tenké žluté provozní světlo. Připravený sál nemá stavové tónování ani žlutou záři; při výběru používá pouze neutrální modrý štítek.
 
 **Required fidelity surfaces**
 
-- Fonts and typography: kód používá kompaktní tučnou zkratku a menší celý název bez truncation; vykreslená optická shoda čeká na autentizovaný snímek.
-- Spacing and layout rhythm: levé zarovnání, dvouřádková hierarchie a pravý indikátor odpovídají cíli; responsivní hustotu je nutné potvrdit v browseru.
-- Colors and visual tokens: buňky používají stejnou uloženou barvu a alfa povrch jako popup; původní výrazný barevný obrys byl nahrazen jemnou světlou linkou.
-- Image quality and asset fidelity: cílový návrh neobsahuje bitmapové assety ani nestandardní ikony; žádný asset nebyl nahrazen aproximací.
-- Copy and content: zkratka, celý název oboru a DOP/ODP zůstávají datově napojené a čitelné v DOM.
+- Fonts and typography: štítky a provozní panel zůstaly beze změny.
+- Spacing and layout rhythm: původní prostorové měřítko, vycentrování a mírně diagonální kompozice jsou obnoveny.
+- Colors and visual tokens: živá fáze používá 16% příměs barvy a emissive intenzitu 0,14 pouze na stěnách; aktivní provozní linka zůstává žlutá `#FFDA28`.
+- Image quality and asset fidelity: jde o nativní Three.js materiály a světla reagující na rotaci a zoom.
+- Copy and content: názvy místností i statusů zůstaly beze změny.
 
-**Implementation checks**
+**Interaction and implementation checks**
 
-- Produkční Next.js build včetně TypeScript kontroly prošel.
-- Samostatný `npx tsc --noEmit` po buildu prošel.
-- `21st review` skončil bez chyb; eviduje pouze již existující upozornění na pevnou minimální šířku scrollovatelné plánovací tabulky a dynamické databázové barvy.
-- `git diff --check` prošel.
-- Kontrolní browser nehlásí konzolové chyby.
+- Pro aktivní sál geometrický test potvrdil fialový emissive odstín stěny `#8B5CF6`, neutrální podlahu a viditelné žluté linky.
+- Pro připravený sál test potvrdil původní neutrální materiál stěny `#9AA6C0` a skryté žluté linky. Browser ověřil neutrální štítek připraveného sálu.
+- Projekční test stejné stěny v přední a zadní části scény naměřil shodnou obrazovou šířku `0,099608611626`; rozdíl je přesně `0`.
+- `node --check`, `npx tsc --noEmit`, `npm run build` a `git diff --check` prošly bez chyb.
+
+final result: passed
+
+---
+
+## 2026-09-10 — barva vybraného sálu podle aktuálního statusu
+
+- Implementation: `http://localhost:3000/`, dashboard v režimu `3D dispozice`, osově zarovnaný pohled.
+- Browser screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-status-color-final.jpg` (1600 × 1000 px).
+- Browser viewport: 1600 × 1000 CSS px, devicePixelRatio 1.
+- State: vybraný sál `TRAUMATOLOGIE - 1`, aktuální fáze `Příjezd na sál`, barva statusu `#8B5CF6`.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči požadavku. Dřívější pevná žlutá byla odstraněna ze štítku, obvodových světel, stěn, podlahy, vstupního indikátoru i bodového světla vybraného sálu.
+- Vybraný sál nyní přebírá `accent_color` konkrétního workflow statusu. Emergency a uzamčený stav dál používají své prioritní barvy; při chybějícím propojení se použije neutrální šedomodrá.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: text, velikost, váha a zalamování štítku zůstaly beze změny.
+- Spacing and layout rhythm: rozměry štítku, modelu a pravého detailu se nezměnily.
+- Colors and visual tokens: štítek, 3D materiály a záře sdílejí jeden aktuální statusový token; pro `TRAUMATOLOGIE - 1` prohlížeč potvrdil `#8B5CF6` a po výběru `PCHO SÁL Č.2` potvrdil `#00FFEE`.
+- Image quality and asset fidelity: zvýraznění zůstává součástí živých Three.js materiálů a osvětlení.
+- Copy and content: názvy sálů i statusů zůstaly beze změny.
+
+**Interaction and implementation checks**
+
+- Ověřena změna výběru mezi dvěma sály s odlišnými statusy; barva štítku i 3D zvýraznění se přepnula bez obnovy celé scény.
+- Deterministický test materiálů potvrdil fialovou `#8B5CF6` na obvodových světlech a emissive vrstvě stěn; po zrušení výběru se světla skryla a původní materiál stěny se obnovil.
+- `node --check`, `npx tsc --noEmit`, `npm run build` a `git diff --check` prošly bez chyb.
+
+final result: passed
+
+---
+
+## 2026-09-10 — osově zarovnaný 3D pohled bez zkosení
+
+- Source visual truth — nežádoucí zkosený stav: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 13.27.29.png` (1852 × 888 px).
+- Implementation: `http://localhost:3000/`, dashboard v režimu `3D dispozice`, podlaží `Operační blok`, vybraný sál `TRAUMATOLOGIE - 1`.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-no-skew-final.jpg` (1600 × 1000 px).
+- Focused 3D region: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-no-skew-focus.jpg` (1076 × 489 px).
+- Browser viewport: 1600 × 1000 CSS px, devicePixelRatio 1; dokument má shodných 1600 × 1000 px a nevzniká vodorovné ani svislé přetečení.
+
+**Full-view and focused comparison evidence**
+
+- Normalizované porovnání problémového snímku vlevo a finálního 3D výřezu vpravo: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-no-skew-comparison.jpg` (2860 × 650 px).
+- Levý stav má bočně vyosený azimut: vodorovné a hloubkové osy se promítají diagonálně a jednotlivé řady působí zkoseně. Pravý stav zachovává 3D výšku stěn a pohled shora, ale kameru zarovnává přesně s osami budovy; řady jsou rovnoběžné a místnosti si zachovávají skutečné vzájemné proporce.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: HTML štítky sálů, jejich velikost, váha a zalamování zůstaly beze změny.
+- Spacing and layout rhythm: poloha hlavičky, detailu sálu, spodních souhrnů a ovládání se nezměnila; scéna je znovu automaticky vycentrovaná v dostupné ploše.
+- Colors and visual tokens: materiály, modré pozadí, žlutý vybraný stav i stavové barvy zůstaly zachované.
+- Image quality and asset fidelity: jde dál o živou Three.js scénu se skutečnou 3D geometrií, osvětlením a stíny, nikoli o rastrový nebo CSS překryv.
+- Copy and content: názvy sálů a živá provozní data zůstaly beze změny.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči požadavku na reálné osové zobrazení bez zkosení.
+- [P3] Pevné osové zarovnání je záměrně méně dramatické než volný izometrický pohled; volná rotace zůstává dostupná v 3D editoru, kde slouží k úpravám dispozice.
 
 **Comparison history**
 
-- Pass 1: Zdrojové snímky otevřeny a cílová buňka rozebrána. Implementace převedena na dvouřádkovou hierarchii s kruhovým indikátorem a shodným povrchem popupu.
-- Pass 2: Produkční build a statické kontroly prošly. Vizuální post-fix porovnání zůstává zablokované přihlášením.
+- Baseline P1: kamera byla umístěna mimo střed osy X a OrbitControls dovoloval volný azimut; po otočení vzniklo výrazné diagonální zkosení celé dispozice.
+- Pass 1 P2: zarovnání os odstranilo zkosení, ale nižší úhel kamery příliš zplošťoval skutečnou hloubku místností.
+- Final fix: kamera je osově zarovnaná na `[0, 42, 30]`, používá ortografickou projekci a vyšší náklon, který čitelně zachovává podlahy i výšku stěn. Rotace je v provozním dashboardu uzamčena, posun a přiblížení zůstávají funkční.
 
-**Implementation checklist**
+**Interaction and implementation checks**
 
-- Zachytit autentizovaný týdenní rozpis při stejné datové situaci.
-- Ověřit celý název u nejužší obsazené buňky.
-- Ověřit hover a otevření přiřazovacího popupu.
-- Zopakovat kontrolu v měsíčním pohledu.
+- Ověřeno přepnutí `3D pohled` → `Půdorys` → `3D pohled`; oba ovladače po kliknutí hlásily aktivní stav a finální scéna se vrátila do rovného osového pohledu.
+- Projekční test potvrdil nulový svislý rozdíl obou konců vodorovné hrany a nulový vodorovný rozdíl obou konců hloubkové hrany (`0`, `0`).
+- Browser runtime nezaznamenal žádnou chybu; `node --check`, `npm run build` a `git diff --check` prošly bez chyb.
+
+final result: passed
+
+---
+
+## 2026-09-10 — parametrické KNL ohraničení podle šířky chodby
+
+- Source truth: `/Users/jaroslavjedlicka/Desktop/KNL_ohraniceni_pro_Codex.zip`, zejména `KNL_ohraniceni/KNL_ohraniceni.json`, `boundaries.mjs` a konstrukční profily `bridge` / `facade`. Balíček neobsahuje rastrovou referenci; shoda je proto ověřena proti jeho číselným geometrickým a materiálovým hodnotám.
+- Implementation: `http://localhost:3000/`, dashboard v režimu `3D dispozice`, podlaží `Operační blok`, KNL profil `Fasádní prosklení`, automatické odsazení 3 m podle uložené šířky chodby.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-knl-boundary-final.jpg` (1600 × 1000 px).
+- Focused 3D region: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-knl-boundary-focus.jpg` (1076 × 489 px).
+- Browser viewport: 1600 × 1000 CSS px, devicePixelRatio 1; dokument přesně odpovídá viewportu a nemá vodorovné ani svislé přetečení.
+
+**Full-view and focused comparison evidence**
+
+- Celý provozní dashboard i zaměřený výřez ukazují transparentní modré prosklení s pravidelnými sloupky, souvislý pás pochozí plochy a stejnoměrný odstup po celém obvodu skutečné dispozice.
+- Zdrojová specifikace nemá obrazový mockup, proto není účelné skládat falešné pixelové porovnání. Vizuální výsledek je porovnán se zdrojovými profily a zároveň ověřen numericky: výška, tloušťka, rozteč, opacity, roughness i metalness jsou převzaty z dodaného balíčku.
+- Vnitřní sály, chodba, obvodový plášť, dveře, futra, tablety ani vybavení se přidáním KNL ohraničení neposouvají a nemění rozměry.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: názvy sálů a provozní panely zůstaly beze změny; editorový blok používá stejnou typografii a hierarchii jako stávající nastavení patra.
+- Spacing and layout rhythm: ohraničení používá jeden konzistentní odstup na všech čtyřech stranách; výchozí hodnota se počítá z aktuální šířky chodby a lze ji nahradit vlastní hodnotou 0,5–20 m.
+- Colors and visual tokens: sklo, sloupky a podlaha používají přesné lineární RGB, průhlednost a materiálové parametry z KNL balíčku, přizpůsobené stávajícímu modrému prostorovému pozadí aplikace.
+- Image quality and asset fidelity: ohraničení je nativní Three.js geometrie, nikoli statický obrázek; zůstává prostorové při rotaci, přiblížení i změně kamery.
+- Copy and content: editor nabízí srozumitelné volby `Podle šířky chodby`, `Vlastní hodnota`, `Fasádní prosklení` a `Spojovací chodba`.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči dodané KNL konstrukční specifikaci a požadavku na odsazení podle šířky chodby nebo editace.
+- [P3] Dodaný dokument je označen jako koncept, nikoli ověřená výrobní dokumentace; aplikace proto zachovává parametrickou editovatelnost místo uzamčení rozměrů.
+
+**Interaction and implementation checks**
+
+- Automatický režim vrací při 3m chodbě odstup 3 m; po změně její šířky na 4,25 m se hranice přepočítá na 4,25 m. Ruční režim zachová zadaných 5,5 m nezávisle na chodbě.
+- Deterministický geometrický test potvrdil čtyři skleněné úseky, samostatné sloupky a čtyři pochozí pásy bez změny geometrie místností.
+- `node --check`, `npm run build` a `git diff --check` prošly bez chyb.
+
+final result: passed
+
+---
+
+## 2026-09-10 — skutečné proporce 3D dispozice
+
+- Source visual truth — nežádoucí zkosený/snížený stav: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 11.30.28.png` (2054 × 1136 px) a `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 11.30.37.png` (2178 × 1030 px).
+- Implementation: `http://localhost:3000/`, dashboard v režimu `3D dispozice`, podlaží `Operační blok`, vybraný sál `TRAUMATOLOGIE - 1`.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-real-walls-final.jpg` (1920 × 1200 px).
+- Focused 3D region: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-real-walls-focus.png` (1396 × 687 px).
+- Browser viewport: 1920 × 1200 CSS px, devicePixelRatio 1; stránka má shodnou šířku a výšku dokumentu s viewportem, bez vodorovného či svislého přetečení.
+
+**Full-view and focused comparison evidence**
+
+- Normalizované porovnání problémového stavu vlevo a opravené 3D geometrie vpravo: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-real-walls-comparison.png` (1944 × 614 px).
+- Provozní 3D dashboard již nepoužívá pracovní `cutaway` režim. Přední stěny místností i automatický obvodový plášť proto mají skutečnou uloženou výšku a jejich horní hrana není proti ostatním stěnám snížena.
+- Kamera zůstává ortografická; šířka, hloubka, pozice ani otočení žádné místnosti se opravou nemění. Prostorové uspořádání tak odpovídá uloženému projektu bez perspektivního zmenšování přední či zadní řady.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: HTML štítky sálů, velikosti písma, zalamování a provozní panel zůstaly beze změny.
+- Spacing and layout rhythm: ovládání, pravý detail a spodní souhrny se neposunuly; změna se týká pouze způsobu sestavení 3D stavebního objemu.
+- Colors and visual tokens: materiály, vybraný žlutý stav, modré pozadí a pohyblivá záře zůstaly zachované.
+- Image quality and asset fidelity: stěny jsou dál nativní Three.js geometrie se stíny, dveřmi, futry, tablety a materiály; nebyl přidán žádný rastrový překryv.
+- Copy and content: názvy sálů a živá data zůstaly beze změny.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči požadavku na skutečnou výšku a zachování půdorysu.
+- [P3] Plné přední stěny záměrně zakrývají větší část interiéru při velmi nízkém úhlu kamery; půdorysný pohled a rotace zůstávají k dispozici pro kontrolu vybavení.
+
+**Comparison history**
+
+- Baseline P1: pracovní `cutaway` režim snižoval přední stěnu místností na 1,32 m a exponované přední části obvodového pláště na 1,28 m; zadní a boční stěny zůstávaly vysoké, takže stavební objem působil zkoseně.
+- Final fix: dashboard sestavuje projekt bez `cutaway` režimu. Editor si nadále zachovává volitelný pracovní pohled s nízkými stěnami, ale tento režim již neovlivňuje provozní 3D zobrazení.
+
+**Interaction and implementation checks**
+
+- Ověřen návrat z detailu sálu, režim `3D dispozice`, vycentrování scény, výběr sálu a finální render při 1920 × 1200.
+- Deterministický geometrický test potvrdil: přední stěny 3,25 m stejně jako ostatní stěny testovací místnosti, všechny části obvodového pláště 3,00 m a beze změny pozice `[2, 0, -4]` i půdorysu `8,4 × 6,8 m`.
+- `node --check`, `npm run build` a `git diff --check` prošly bez chyb.
+
+final result: passed
+
+---
+
+## 2026-09-10 — obnovené pozadí detailu sálu
+
+- Source visual truth — nežádoucí aktuální stav: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 9.28.46.png` (3840 × 2412 px).
+- Source visual truth — požadované předchozí pozadí: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 9.29.26.png` (3840 × 2414 px).
+- Implementation: `http://localhost:3000/`, detail sálu `TRAUMATOLOGIE - 1`, fáze `Chirurgický výkon`.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-room-detail-background-restored-trauma.jpg` (1920 × 1207 px).
+- Browser viewport: 1920 × 1207 CSS px, devicePixelRatio 1.
+- Density normalization: zdroj byl zmenšen z 3840 × 2414 na 1920 × 1207; implementační snímek byl kvůli internímu měřítku snímacího nástroje oříznut na 960 × 604 a normalizován na stejných 1920 × 1207 px.
+
+**Full-view comparison evidence**
+
+- Reference vlevo a obnovená implementace vpravo: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-room-detail-background-comparison-trauma-final.jpg`.
+- Obě strany ukazují stejný sál, stejnou fázi, tmavý černý základ, vínové světlo aktivní fáze a plynulé zhasnutí do černé u okrajů.
+
+**Focused region comparison evidence**
+
+- Samostatný výřez nebyl nutný: požadovanou plochou je celé pozadí a normalizované full-view porovnání jej zobrazuje v plné výšce i šířce. Typografie a ovládací prvky nebyly předmětem změny.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: rodina písma, velikosti, váhy, řádkování a zalamování názvů fází zůstaly beze změny.
+- Spacing and layout rhythm: poloha kruhové grafiky, hlavičky, postranních akcí i spodní fáze zůstala stejná; při 1280 × 800 nevzniká vodorovné ani svislé přetečení.
+- Colors and visual tokens: detail znovu používá černý základ, tmavý svislý přechod a 90% okrajovou vinětaci. Modré prostorové pozadí ostatních modulů se uvnitř detailu již nevykresluje.
+- Image quality and asset fidelity: pozadí je tvořeno původními nativními vrstvami aplikace bez rastrového překryvu; fázové světlo zůstává dynamické podle barvy aktivního stavu.
+- Copy and content: názvy sálu, fází a všech akcí zůstaly beze změny.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči požadovanému předchozímu pozadí.
+- [P3] Intenzita vínové záře se může nepatrně měnit podle aktuálně uložené barvy aktivní fáze; jde o zamýšlené provozní chování.
+
+**Comparison history**
+
+- Baseline P1: globální 3D podklad pronikl také do detailu sálu a vytvořil širokou modrou plochu, která změnila původní černo-vínový charakter obrazovky.
+- Pass 1 P2: detail dostal samostatný tmavý přechod, ale normalizované porovnání odhalilo přetrvávající modrofialový spodní tón a slabší vinětaci.
+- Final fix: obnoven čistě černý kořen, původní přechod `from-black via-black/50 to-black/80` a radiální vinětace s 90% černou na okrajích. Následné porovnání se shodným sálem a stavem odstranění modrého závoje potvrzuje.
+
+**Interaction and implementation checks**
+
+- Ověřen přechod z 3D dashboardu do detailu sálu a zpět, výběr `TRAUMATOLOGIE - 1` a nové otevření detailu.
+- V detailu není žádná vnořená vrstva `app-module-background` ani prostorový 3D podklad.
+- Browser console po finálním testu: 0 error-level položek.
+- `npm run build` a `git diff --check` prošly bez chyb.
+
+final result: passed
+
+---
+
+**Design QA — automatický obvodový plášť dispozice**
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 9.05.32.png`.
+- Source pixels: 2652 × 1350, vložený sRGB profil, 144 dpi.
+- Rendered implementation: izolovaný browser render produkčního `mountEditor` modulu se skutečnou Three.js scénou a styly aplikace.
+- Implementation screenshots: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-envelope-on.png` a `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-envelope-off.png` (oba 886 × 1119).
+- Browser viewport: 886 × 1119 CSS px, devicePixelRatio 2; screenshot nástroj normalizoval výstup na rozměr CSS viewportu.
+- State: desktop, první patro se šesti sály a centrální chodbou, nízká přední stěna, obvodový plášť zapnutý a následně vypnutý/znovu zapnutý.
+
+**Full-view and focused comparison evidence**
+
+- Full-view comparison: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-envelope-comparison.png` (2567 × 920, oba vstupy normalizované na výšku 920 px).
+- Focused geometry comparison: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-envelope-focused.png` (2003 × 760, reference vlevo a výřez skutečné 3D scény vpravo).
+- Implementace stejně jako reference vytváří jeden čitelný stavební objem: vysoké zadní a boční obvodové stěny, sníženou přední fasádu pro čitelný interiér, souvislou horní krycí hranu, sokl a modulové spáry.
+- Společné hrany sousedních místností se do vnějšího pláště negenerují. Dveřní otvory na skutečně vnější hraně zůstávají průchozí.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: nový ovladač používá stávající editorovou typografii, 10–11px pomocný text a jasnou hierarchii `OBVOD BUDOVY` → stav → rozměry.
+- Spacing and layout rhythm: ovládání je součástí formuláře patra a nepřidává nový plovoucí panel; pole výšky a tloušťky jsou ve stejné dvousloupcové mřížce jako ostatní rozměry.
+- Colors and visual tokens: plášť používá studené modrošedé materiály, světlejší krycí hrany a tmavý sokl; editorový ovladač navazuje na azurové linky stávající aplikace.
+- Image quality and asset fidelity: obvod je nativní Three.js geometrie, nikoli statický obrázek či překryv; při rotaci a přiblížení si zachovává perspektivu, stíny i materiál.
+- Copy and content: ovladač přesně popisuje automatický obvod, jeho stav a skutečnost, že se přepočítává po přesunu, otočení i změně velikosti prostoru.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl pro požadovaný jednotný vnější obvod dispozice.
+- [P3] Referenční obraz obsahuje detailnější atypické vybavení a nepravidelnější půdorys; to není součástí tohoto požadavku na obvodové stěny a stávající editor dál používá vlastní datovou dispozici.
+
+**Comparison history**
+
+- Baseline P1: místnosti měly vlastní stěny, ale chyběl samostatný stavební plášť sledující obrys celého patra, takže celek mohl působit jako soustava samostatných boxů.
+- Fix: přidán výpočet exponovaných hran sjednocené dispozice a generátor fasády se soklem, krycí hranou, panelovými spárami a rohovými pilíři.
+- Post-fix evidence: finální a zaměřený kombinovaný snímek ukazují uzavřený souvislý vnější obvod; `off` snímek potvrzuje, že jej lze samostatně odebrat.
+
+**Interaction and build checks**
+
+- V editoru bylo kliknutím ověřeno vypnutí i opětovné přidání obvodových stěn; stavový text skončil na `Obvodové stěny přidány`.
+- Runtime `error` a `unhandledrejection` události byly během načtení a dvojího přepnutí prázdné.
+- Deterministický geometrický test dvou sousedních sálů potvrdil nula vnitřních obvodových segmentů a zachované vnější dveřní otvory.
+- `node --check`, `npx tsc --noEmit`, `npm run build` a `git diff --check` prošly.
+
+final result: passed
+
+---
+
+## 2026-09-10 — typografie 3D dashboardu
+
+- Source visual truth — detail sálu: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 9.17.32.png` (778 × 1130 px).
+- Source visual truth — spodní souhrny: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 9.19.06.png` (3556 × 434 px).
+- Implementation: `http://localhost:3000/`, dashboard v režimu `3D dispozice`, vybraný sál `PCHO SÁL Č.2`.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-type-final.jpg` (1920 × 1200 px; nástroj prohlížeče zachytil aplikaci v levé polovině obrazu při interním měřítku 0,5).
+- Browser viewport: 1920 × 1200 CSS px, devicePixelRatio 1.
+- State: desktop, 3D perspektiva, otevřený detail sálu, živá provozní data.
+
+**Full-view comparison evidence**
+
+- Celý dashboard: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-type-final.jpg`.
+- Rozvržení zůstalo beze změny: panel má 338 × 647 CSS px, spodní souhrn 1752 × 198 CSS px a stránka nemá vodorovný overflow.
+
+**Focused region comparison evidence**
+
+- Detail sálu, reference vlevo a implementace vpravo: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-type-panel-comparison-final.jpg`.
+- Spodní karty, reference vlevo a implementace vpravo: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-type-summary-comparison-final.jpg`.
+- Pro detail byl zdroj i implementace normalizován na šířku 169 px; pro spodní souhrny na 876 px. Porovnání proto hodnotí typografickou hierarchii při stejné hustotě obrazu.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: zachována rodina písma; nadpis detailu 24 px, stav 16 px, názvy metrik 13,8 px, hodnoty 27 px, doplňkové řádky 13 px a CTA 16 px. Spodní titulky mají 13 px, hlavní hodnoty 36 px a názvy sálů v programu přibližně 10 px.
+- Spacing and layout rhythm: původní mřížka 2 × 2, rozměry panelu, CTA i sloupce spodního souhrnu zůstaly zachované. Na nižších výškách je detail bezpečně svisle rolovatelný místo oříznutí obsahu.
+- Colors and visual tokens: barvy, kontrast, žlutá CTA i živé provozní odstíny nebyly měněny.
+- Image quality and asset fidelity: změna je čistě typografická v CSS; 3D model, materiály, nasvícení a ikony zůstaly beze změny.
+- Copy and content: texty, názvy sálů a živá data nebyly upraveny. Rozdíly hodnot proti referenci odpovídají aktuálním provozním datům.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči požadované čitelnosti.
+- [P3] Dlouhý doplňkový text může být v nejužší kartě zkrácen elipsou; hlavní informace a hodnota zůstávají vždy viditelné.
+
+**Comparison history**
+
+- Baseline: názvy metrik, stav sálu, doplňkové texty a typografie spodních karet byly proti referenci příliš malé.
+- Pass 1: zvětšeny hlavní hodnoty, titulky a graf programu ve spodních kartách; dorovnána základní hierarchie pravého panelu.
+- Pass 2: zesílen nadpis detailu, stav, popisky a metadata; názvy metrik byly uzamčeny na jeden řádek.
+- Final: ověřeno při 1920 × 1200 a 1440 × 900; panel se na kratší obrazovce neztrácí a nabízí svislý posun, bez vodorovného přetečení.
+
+**Interaction and implementation checks**
+
+- Ověřen výběr sálu `PCHO SÁL Č.2`; obsah pravého panelu se správně aktualizoval.
+- Všechny čtyři názvy metrik zůstaly na jednom řádku.
+- Browser console po finálním testu: 0 error-level položek.
+- `npm run build` a `git diff --check` prošly bez chyb.
+
+final result: passed
+
+---
+
+**Design QA — zjednodušená horní část 3D editoru**
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 9.03.09.png` (původní stav) a `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 9.03.50.png` (cílový styl ikon).
+- Source pixels: 3554 × 426 a 524 × 132.
+- Rendered implementation: izolovaný browser render produkčních stylů a skutečného `mountEditor` modulu.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-editor-icons-final.png` (886 × 1119).
+- Browser viewport: 886 × 1119 CSS px, devicePixelRatio 1.
+- State: desktop, 3D editor načtený s výchozí dispozicí; uložený stav reprezentuje ikona se zaškrtnutím.
+
+**Full-view and focused comparison evidence**
+
+- Combined comparison: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-editor-icons-comparison.png` (původní horní blok a cílová ikonová reference vlevo, finální render vpravo).
+- Původní souhrnný řádek `Patra / Prostory / Vybavení / Propojené sály`, textová stavová linka i duplicitní hlavička `OR MEDROX` byly odstraněny.
+- Čtyři akce `Doplnit vazby`, `Nová dispozice`, `Načíst` a `Uložit` jsou vpravo nahoře jako stejně velké ikonové ovladače s tooltipy a přístupnými názvy.
+- Focused comparison nebyl potřeba samostatně: kombinovaný snímek má pouze 280 px výšky a ikonová oblast je v něm čitelná v plné velikosti.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: nadpis modulu a editoru používá stávající typografii aplikace; z odstraněných technických bloků nezůstaly žádné nadbytečné textové popisky.
+- Spacing and layout rhythm: ikonový dock používá 46 × 46 px ovladače, 8px mezery a 11px rádius; editor začíná přímo pod titulkem a získal přibližně 85 px svislé pracovní plochy.
+- Colors and visual tokens: klidový stav používá tmavě modrý povrch a jemnou linku podle 3D zobrazení, neuložený stav zvýrazní ikonu uložení žlutě a uložený stav používá tlumený mentolový akcent.
+- Image quality and asset fidelity: všechny ovladače používají vektorové ikony z již používané knihovny Lucide; nebyly přidány rastrové náhrady ani vlastní kreslené ikony.
+- Copy and content: texty zůstávají dostupné v `aria-label` a `title`, takže odstranění viditelných popisků nesnižuje srozumitelnost ani přístupnost.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči požadavku.
+- [P3] Přihlášená hlavní browser session nemá oprávnění k modulu Nastavení; finální editor proto prošel izolovaným browser renderem se stejným produkčním CSS a skutečným editorem. Databázové handlery ikon byly ověřeny strukturálně a TypeScriptem.
+
+**Comparison history**
+
+- Baseline P1: dvě nad sebou umístěné informační/technické lišty zabíraly velkou část výšky a používaly textová tlačítka odlišná od 3D dashboardu.
+- Fix: souhrny a interní hlavička byly odstraněny; čtyři hlavní akce se přesunuly do jednotného ikonového docku u titulku.
+- Post-fix evidence: finální render v kombinovaném snímku ukazuje pouze jeden titulek, jeden ikonový dock a editor začínající bez mezilehlého pruhu.
+
+**Interaction and build checks**
+
+- DOM obsahuje přesně čtyři ikonové akce s názvy pro asistivní technologie.
+- Načtení a uložení zůstávají připojené ke stávajícím databázovým handlerům; doplnění vazeb a vytvoření nové dispozice ke stávajícím editorovým funkcím.
+- Klávesové `Ctrl/Cmd+Z` a `Ctrl/Cmd+Shift+Z` zůstaly zachované i po odstranění duplicitní hlavičky.
+- `node --check`, strukturální test, `npx tsc --noEmit`, `npm run build` a `git diff --check` prošly.
+
+final result: passed
+
+---
+
+**Design QA — dveřní portály, vstupní tablety a prostorové transformace**
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/c9a87c58-31d8-42d8-891d-0218ecd44e69.png`.
+- Detail reference crop: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-ref-door-details.png`.
+- Source pixels: 1448 × 1086.
+- Implementation: `http://localhost:3000/`, dashboard v režimu `3D dispozice`.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-details-final.png` (1456 × 1092).
+- Browser viewport: 1456 × 1092 CSS px, devicePixelRatio 1.
+- State: desktop, 3D perspektiva, vybraný sál `PCHO SÁL Č.2`.
+
+**Comparison evidence**
+
+- Side-by-side focused comparison: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-details-comparison-final.png` (reference vlevo, implementace vpravo).
+- Dveře mají zapuštěný tmavý dvoukřídlý portál, oddělené výplně, středovou spáru, práh, světlé boční obložky a horní překlad podle reference.
+- Vedle dveří je samostatný vstupní terminál se čtečkou a stavovou diodou; tablet má stěnový držák, rámeček, modré sklo, stavovou hlavičku, řádky rozhraní, žlutou diodu a spodní senzor.
+- Vnitřní řady si zachovávají plnou chodbovou stěnu, takže dveře, futra a tablety zůstávají viditelné; snížená stěna se používá jen v nejbližší řadě kvůli čitelnosti interiéru.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: beze změny.
+- Spacing and layout rhythm: původní rozvržení 3D dashboardu zůstalo zachované; nové díly jsou součástí geometrie místností.
+- Colors and visual tokens: dveře používají studené modrošedé výplně, futra světlejší periwinkle odstín, obrazovky sytou modrou a stavové prvky žlutou v souladu se zdrojem.
+- Image quality and asset fidelity: detaily jsou nativní Three.js geometrie a materiály, nikoli plošná překryvná grafika; reagují na výběr, kameru a rotaci celé místnosti.
+- Copy and content: názvy sálů a provozní data beze změny.
+
+**Spatial editor interaction checks**
+
+- Místnosti včetně sálu, přípravny, skladu a dalších prostor lze otáčet v přesných 90° krocích; vybavení používá jemnější 15° krok.
+- Režim `Rozměry` mění šířku a hloubku prostoru přímo v ploše; inspektor poskytuje i přesné krokové změny rozměrů.
+- Přichycení pracuje s mřížkou i se středy a vnějšími hranami sousedních místností, počítá s jejich rotací a zobrazuje azurové zarovnávací vodicí linky.
+- Transformace zapisují polohu, rotaci, šířku a hloubku do stávajícího projektového modelu, takže se ukládají stejnou cestou jako ostatní změny dispozice.
+- Deterministický test ověřil otočení přípravny na 90°, rozměr 8,25 × 5,5 m, přichycení obou os, validitu projektu a přítomnost všech dveřních i tabletových částí.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl pro požadované dveřní, futrové, tabletové a transformační funkce.
+- [P3] Aktuální přihlášená browser session nemá administrační položku Nastavení, proto byl samotný editor ověřen deterministickými testy transformačního enginu a validací geometrie; finální dashboard render byl ověřen v prohlížeči.
+
+**Comparison history**
+
+- Baseline: dveře byly příliš ploché, bez čitelných obložek, samostatného vstupního terminálu a detailního tabletu.
+- Pass 1: přidán dvoukřídlý portál, futra, práh, terminál a detail tabletu; vysoké dveřní díly však u snížených stěn působily odděleně.
+- Pass 2: výška portálu se navázala na profil stěny a plná chodbová stěna zůstala u vnitřních řad.
+- Final: zvýšen lokální kontrast dveří a futer, ověřena viditelnost tabletů i vybraného sálu a porovnána finální scéna se zdrojem.
+
+**Build and validation**
+
+- `node --check` prošel pro model, geometrii, oba viewery i editor.
+- `npx tsc --noEmit`, `npm run build` a `git diff --check` prošly.
+
+final result: passed
+
+---
+
+**Design QA — odstín stěn 3D dispozice**
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/c9a87c58-31d8-42d8-891d-0218ecd44e69.png`.
+- Source pixels: 1448 × 1086.
+- Implementation: `http://localhost:3000/`, dashboard v režimu `3D dispozice`.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-wall-tone-final.png` (1456 × 1092).
+- Browser viewport: 1456 × 1092 CSS px, devicePixelRatio 1.
+- State: desktop, 3D perspektiva, vybraný sál `PCHO SÁL Č.2`.
+- Density normalization: oba výřezy byly převedeny na shodných 955 × 525 px.
+
+**Comparison evidence**
+
+- Side-by-side focused comparison: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-wall-tone-comparison-final.png` (reference vlevo, implementace vpravo).
+- Konstrukční stěny nyní používají světlý studený modrošedý odstín se samostatně světlejšími horními hranami. Výsledný odstín odpovídá periwinkle/slate charakteru reference a už nepůsobí tmavě námořnicky.
+- Teplé žluté zvýraznění vybraného sálu zůstalo zachováno a nebylo přebarveno společně se stěnami.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: beze změny.
+- Spacing and layout rhythm: beze změny; rozměry sálů, stěn, vybavení i ovládacích prvků zůstaly stejné.
+- Colors and visual tokens: stěny `#9aa6c0`, čelní stěny `#8492ae`, konstrukční hrany `#aebbd5`; materiály mají nízkou kovovost a měkkou difuzní odezvu, aby odstín zůstal čitelný i mimo přímé světlo.
+- Image quality and asset fidelity: změna je provedena v nativních Three.js materiálech, bez překryvného filtru nebo rastrového zabarvení.
+- Copy and content: názvy sálů i provozní data beze změny.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl pro požadovaný odstín stěn.
+- [P3] Referenční vizualizace používá odlišnou geometrii a nasvícení; tyto části nebyly předmětem této barevné úpravy.
+
+**Comparison history**
+
+- Baseline: stěny byly výrazně tmavší a sytěji modré než reference.
+- Pass 1: konstrukční hrany byly odděleny od materiálu vybavení, aby jejich zesvětlení neovlivnilo přístroje.
+- Pass 2: stěny a fasády byly posunuty do neutrálnějšího modrošedého odstínu a zesvětleny v zastíněných částech.
+- Final: jemně zvýšena světlost stěn a hran; porovnání potvrzuje shodný studený modrošedý charakter bez plošného barevného filtru.
+
+**Interaction and implementation checks**
+
+- Ověřen výběr sálu `PCHO SÁL Č.2`; detail i žluté zvýraznění reagují správně.
+- DOM po finálním testu neobsahuje chybový překryv aplikace.
+- `npx tsc --noEmit`, `npm run build` a `git diff --check` prošly.
+
+final result: passed
+
+---
+
+**Předchozí Design QA — prostorová záře 3D dispozice**
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-09 v 23.55.17.png`, doplněný uživatelskou anotací, že velká statická záře a její obdélníkový konec jsou nežádoucí.
+- Source pixels: 3840 × 2402 (`@2x`); pro porovnání normalizováno na 1920 × 1201.
+- Implementation: `http://localhost:3000/`, přihlášený dashboard v režimu `3D dispozice`.
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-halo-final.png` (1920 × 1201).
+- Browser viewport: 1920 × 1201 CSS px, devicePixelRatio 1.
+- State: desktop, 3D perspektiva, vybraný sál `TRAUMATOLOGIE - 3`.
+- Density normalization: zdroj byl zmenšen přesně na 50 %; zdrojová i implementační strana porovnání mají shodných 1920 × 1201 px.
+
+**Full-view comparison evidence**
+
+- Side-by-side comparison: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-halo-comparison.png` (původní stav vlevo, opravený stav vpravo).
+- Původní velký modrý závoj vyplňoval téměř celou obdélníkovou plochu jeviště a vizuálně končil před souhrnnými kartami. V opraveném stavu je tato statická DOM vrstva odstraněna; podklad zůstává souvislý a model má jen měkký nízko-kontrastní lem podél vlastního obvodu.
+
+**Focused region comparison evidence**
+
+- Focused model comparison: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-halo-focus.png`.
+- Výřez potvrzuje, že halo končí plynulým přechodem do nuly kolem siluety budovy, nikoli hranou obdélníku. Záře nepřekrývá vybavení, popisky ani pravý detail sálu.
+- Alternate-camera evidence: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-halo-plan-final.png` ukazuje stejný jemný obvod po přechodu do půdorysu; efekt je součástí 3D skupiny podlaží, takže se transformuje společně s ní.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: rodina, optické váhy, velikosti, řádkování, proklady, zalamování a kontrast textu nebyly změněny.
+- Spacing and layout rhythm: rozměry jeviště, modelu, detailního panelu, ovládání a spodních souhrnů zůstaly beze změny; odstranění statických pseudo-vrstev neovlivnilo layout.
+- Colors and visual tokens: halo používá tlumenou modrou `#526bc7` s maximální opacitou `0.13`; nepřidává fialový ani bílý závoj a souzní s námořnickým pozadím aplikace.
+- Image quality and asset fidelity: efekt je nativní průhledný WebGL shader pod modelem, nikoli rastrový obrázek nebo oříznutý CSS gradient. SDF přechod dosáhne plné transparentnosti ještě před hranicí geometrie, takže nemůže ukázat pravoúhlý okraj.
+- Copy and content: názvy sálů, provozní data i ovládací texty zůstaly nezměněné.
+
+**Findings**
+
+- Nezůstává žádný akční P0/P1/P2 rozdíl vůči požadavku.
+- [P3] Softwarový renderer bez WebGL halo záměrně vynechá, aby jeho jednodušší rasterizace nevykreslila neprůhlednou plochu. Model i ovládání v tomto nouzovém režimu zůstávají funkční.
+
+**Comparison history**
+
+- Původní P1: dvě absolutně umístěné CSS radiální vrstvy vytvářely velkou statickou plochu, nereagovaly na kameru a jejich rozsah četl jako obdélníkový box.
+- Oprava: obě pseudo-vrstvy byly odstraněny. Do skupiny podlaží byl přidán zaoblený obvodový shader s průhledností, nulovým zápisem do hloubky a úplným vyhasnutím před hranicí vlastní roviny.
+- Post-fix evidence: full-view i focused comparison výše; žádná obdélníková hrana ani velký statický závoj nezůstává. Další P0/P1/P2 iterace nebyla nutná.
+
+**Interaction and implementation checks**
+
+- Ověřen výběr sálu `TRAUMATOLOGIE - 3`.
+- Ověřen přechod `3D pohled` → `Půdorys` → `3D pohled`; halo změnilo perspektivu společně s modelem.
+- Browser console po finálním testu neobsahovala error-level položky.
+- `node --check`, `git diff --check` a validace `.21st/design.json` prošly.
+- Produkční `npm run build` prošel včetně TypeScriptu a generování stránek.
+- `21st review` pro oba změněné moduly prostorového rendereru: 0 findings.
+
+final result: passed
+
+---
+
+## 2026-09-10 — barevné sjednocení carouselových karet
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 18.16.19.png` a `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-10 v 18.16.35.png`.
+- Implementation: `http://localhost:3000/`, modul `Nastavení systému`, carousel modulů.
+- Viewport: ověření bylo spuštěno v in-app prohlížeči; chráněný stav carouselu nebyl bez administrátorské relace dostupný.
+- State: přihlašovací obrazovka bez dostupného zdravotnického zařízení.
+
+**Findings**
+
+- Zdrojové snímky potvrzují příliš černý spodní tón aktivních i vzdálených karet.
+- Implementace nahrazuje černé výplně transparentní námořnickou modří, zachovává fialový akcent aktivního modulu a používá modře tónovaný stín.
+- Vizuální post-fix snímek chráněného carouselu nelze bez aktivní administrátorské relace bezpečně pořídit.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: beze změny.
+- Spacing and layout rhythm: rozměry, perspektiva, pozice a animace karet jsou beze změny.
+- Colors and visual tokens: upraveny pouze výplně a stíny carouselových karet.
+- Image quality and asset fidelity: carousel neobsahuje rastrové obrazové prvky; ikony zůstaly beze změny.
+- Copy and content: beze změny.
+
+**Implementation checks**
+
+- `git diff --check` a produkční `npm run build` včetně TypeScriptu prošly.
+- Browser console chráněného carouselu nebylo možné zkontrolovat, protože test skončil na přihlášení.
 
 final result: blocked
+
+---
+
+## 2026-09-10 — věrnost 3D operačních sálů referenčnímu renderu
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/c9a87c58-31d8-42d8-891d-0218ecd44e69.png`.
+- Source comparison crop: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-reference-crop.png` (1280 × 720 px).
+- Implementation screenshot: `/Users/jaroslavjedlicka/COWORK/operatingroommanagement/design-qa-spatial-final-preview.png` (1280 × 720 px).
+- Implementation: izolovaný náhled stejného `DashboardViewer`, stejného modelového stromu, materiálů a světel jako produkční 3D dispozice.
+- State: šest operačních sálů, mírně natočená ortografická kamera, architektonický řez, aktivní `PCHO 2`, načtené GLB vybavení.
+- Density normalization: zdrojový výřez i implementace byly porovnány v přesně shodném rastru 1280 × 720 px.
+
+**Full-view comparison evidence**
+
+- Kamera má shodný izometrický charakter bez perspektivního sbíhání; mírně nižší elevace odpovídá referenci a ponechává čitelné dveře, čelní stěny i interiér.
+- Studený modrošedý stavební plášť, tmavé spáry panelů, podlahová mřížka a měkké pozadí odpovídají charakteru zdroje.
+- Aktivní sál používá samostatné teplé lokální světlo a netonemapované žluté světelné linky. Ostatní sály zůstávají studené a neutrální.
+
+**Focused region comparison evidence**
+
+- Vybavení již není pouze nízkopolygonová procedurální náhrada: renderer asynchronně načítá všech 12 dodaných GLB modelů (`table`, `light`, `anesthesia`, `monitor`, `cabinet`, `trolley`, `wallScreen`, `tablet`, `sink`, `bed`, `stool`, `pendant`).
+- GLB materiály mají studený kovový tón, environmentální odraz, emisivní čočky operačních světel a emisivní obrazovky. Pod podlahovým vybavením je jemná eliptická kontaktní stínová vrstva.
+- Dveřní portály, obložky, křídla, prahy, čtečky a tablety zůstávají samostatné geometrické prvky a vrhají/přijímají stíny.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: popisky sálů zůstaly beze změny; aktivní popisek používá žlutou zdroje.
+- Spacing and layout rhythm: půdorysné rozměry a pozice místností se nemění; architektonický řez ovlivňuje pouze viditelnost stěny směrem ke kameře.
+- Colors and visual tokens: sníženo přepalování globálním světlem; teplé světlo je omezené na aktivní sál, neutrální stěny zůstávají studeně modrošedé.
+- Image quality and asset fidelity: používají se binární modely z dodaného `orms-spatial-editor-v0.2.2.zip`, PBR prostředí, ACES tonemapping, sRGB výstup a 2048px PCF stíny.
+- Copy and content: názvy, provozní stav ani datové vazby nebyly změněny.
+
+**Findings and capability boundary**
+
+- [P2] Zdrojový PNG je hotový prerender s jemnější autorskou geometrií a obrazovými materiálovými mapami. Dodané GLB soubory tuto úroveň detailu ani bitmapové textury/normal mapy neobsahují; přesná pixelová shoda proto vyžaduje původní 3D scénu nebo kvalitnější texturované modely. Implementace nyní používá nejdetailnější dostupné zdrojové assety namísto aproximací.
+- Nezůstává regresní P0/P1 rozdíl v načítání, barevném řízení stavu, ovládání kamery ani výběru sálu.
+
+**Interaction and implementation checks**
+
+- Loader čeká na skutečné GLB požadavky a hlásí jejich průběh místo předčasného skrytí.
+- Při chybě jednoho souboru zůstává pro daný kus bezpečný procedurální fallback.
+- Stejná GLB hydratační vrstva je zapojena v dashboardu i prostorovém editoru.
+- Produkční `npm run build` včetně TypeScriptu a generování všech 29 stránek prošel.
+
+final result: passed within supplied-asset fidelity; source-asset boundary documented

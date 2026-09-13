@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Stethoscope, Heart, Search, Plus, Trash2, X, Check,
   Shield, Activity, UserPlus, Loader2, Star, MapPin,
-  UserRoundCheck, UserRoundX, SlidersHorizontal
+  UserRoundCheck, UserRoundX, SlidersHorizontal, LayoutGrid, List, Pencil
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel } from '../types';
@@ -135,6 +135,87 @@ const StaffRow: React.FC<{
         <SlidersHorizontal className="h-3 w-3" />
         Upravit
       </button>
+    </article>
+  );
+};
+
+/** Karta pracovníka ve stejném jazyce jako karty modulů v Nastavení. */
+const StaffCard: React.FC<{
+  member: StaffMember;
+  onEdit: () => void;
+  onToggleActive: () => void;
+}> = ({ member, onEdit, onToggleActive }) => {
+  const isDoctor = member.role === 'DOCTOR';
+  const accent = isDoctor ? COLORS.cyan : COLORS.amber;
+  const availability = Math.max(0, Math.min(100, member.availability ?? 100));
+  const skillMeta = member.skill_level ? SKILL_LEVELS[member.skill_level] : null;
+  const absenceDays = (member.sick_leave_days ?? 0) + (member.vacation_days ?? 0);
+  const availabilityColor = availability >= 70 ? COLORS.green : availability >= 40 ? COLORS.amber : COLORS.red;
+
+  return (
+    <article
+      className={`relative flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4 transition-colors ${member.is_active ? 'hover:bg-white/[0.04]' : 'opacity-55 hover:opacity-80'}`}
+      style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
+    >
+      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}88` }} />
+
+      <div className="flex items-center gap-3.5">
+        <span
+          className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border px-1 text-[12px] font-black leading-none tracking-[0.02em]"
+          style={{ borderColor: `${accent}58`, backgroundColor: `${accent}1f`, color: accent }}
+        >
+          <span className="truncate">{staffInitials(member.name)}</span>
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[15px] font-bold leading-tight text-white/90">{member.name}</h3>
+          <p className="mt-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
+            <span
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: member.is_active ? COLORS.green : 'rgba(255,255,255,0.22)' }}
+            />
+            {isDoctor ? 'Anesteziolog' : 'Sálová sestra'}
+            <span className="text-white/16">·</span>
+            <span className="tabular-nums text-white/44">{availability} %</span> kapacita
+          </p>
+        </div>
+
+        <div className="flex shrink-0 gap-1.5">
+          <button
+            type="button"
+            onClick={onToggleActive}
+            aria-label={member.is_active ? `Deaktivovat ${member.name}` : `Aktivovat ${member.name}`}
+            title={member.is_active ? 'Deaktivovat pracovníka' : 'Aktivovat pracovníka'}
+            className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors ${member.is_active ? 'border-emerald-200/[0.14] text-emerald-200/70 hover:bg-emerald-300/[0.08] hover:text-emerald-200' : 'border-white/[0.065] text-white/34 hover:bg-white/[0.06] hover:text-white/75'}`}
+          >
+            {member.is_active ? <UserRoundCheck className="h-3.5 w-3.5" /> : <UserRoundX className="h-3.5 w-3.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Upravit ${member.name}`}
+            title="Upravit pracovníka"
+            className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.065] text-white/42 transition-colors hover:bg-white/[0.06] hover:text-white/80"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-auto flex min-h-[30px] items-center gap-2 pt-3">
+        {skillMeta && <span className={`rounded-md border px-2 py-1 text-[8px] font-bold ${skillMeta.bgColor} ${skillMeta.color}`}>{skillMeta.label}</span>}
+        {member.is_recommended && <span title="Doporučený"><Star className="h-3 w-3 text-amber-300/75" /></span>}
+        {member.is_external && <span title="Externí pracovník"><MapPin className="h-3 w-3 text-orange-300/75" /></span>}
+        <span className={`text-[10px] ${absenceDays > 0 ? 'text-amber-200/70' : 'text-white/32'}`}>
+          {absenceDays > 0 ? `PN ${member.sick_leave_days ?? 0} · Dovolená ${member.vacation_days ?? 0}` : 'Bez absence'}
+        </span>
+
+        <span className="ml-auto flex w-[92px] shrink-0 items-center gap-2">
+          <span className="h-px flex-1 overflow-hidden bg-white/[0.08]">
+            <span className="block h-full" style={{ width: `${availability}%`, background: availabilityColor }} />
+          </span>
+        </span>
+      </div>
     </article>
   );
 };
@@ -401,6 +482,7 @@ export default function StaffManager() {
   const [activeCategory, setActiveCategory] = useState<StaffCategory>('doctors');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [staffView, setStaffView] = useState<'cards' | 'table'>('cards');
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newStaffName, setNewStaffName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -464,6 +546,31 @@ export default function StaffManager() {
     available: staff.filter(member => member.is_active && (member.availability ?? 100) > 0).length,
   }), [counts, staff]);
 
+  const staffViewToggle = (
+    <div className="flex items-center gap-1">
+      {([
+        ['cards', 'Karty', LayoutGrid],
+        ['table', 'Tabulku', List],
+      ] as const).map(([value, label, Icon]) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setStaffView(value)}
+          aria-pressed={staffView === value}
+          title={`Zobrazit jako ${label.toLocaleLowerCase('cs')}`}
+          aria-label={`Zobrazit jako ${label.toLocaleLowerCase('cs')}`}
+          className={`grid h-[clamp(2.5rem,7vh,4rem)] w-[clamp(2.5rem,7vh,4rem)] place-items-center rounded-[clamp(0.75rem,1.8vh,1rem)] transition-colors duration-200 ${staffView === value ? 'bg-white/[0.15] text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+        >
+          {/* Stejná velikost jako ikony v levém postranním menu. */}
+          <Icon
+            className="h-[clamp(1.1rem,2.7vh,1.5rem)] w-[clamp(1.1rem,2.7vh,1.5rem)] transition-colors duration-200"
+            strokeWidth={staffView === value ? 2.5 : 2}
+          />
+        </button>
+      ))}
+    </div>
+  );
+
   const categories = [
     { id: 'doctors' as StaffCategory, label: 'Anesteziologové', count: counts.doctors, icon: Stethoscope, role: 'DOCTOR' },
     { id: 'nurses' as StaffCategory, label: 'Sestry', count: counts.nurses, icon: Heart, role: 'NURSE' },
@@ -482,18 +589,15 @@ export default function StaffManager() {
     };
     
     try {
-      const newStaff = {
-        id: `staff-${Date.now()}`,
-        name: newStaffName.trim(),
-        role: roleMap[activeCategory],
-        is_active: true,
-        hospital_id: activeHospitalId || 'default',
-      };
+      const response = await fetch('/api/admin/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newStaffName.trim(), role: roleMap[activeCategory] }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.staff) throw new Error(result.error || 'Zaměstnance se nepodařilo vytvořit.');
       
-      const { error } = await supabase.from('staff').insert(newStaff);
-      if (error) throw error;
-      
-      setStaff(prev => [...prev, newStaff as StaffMember]);
+      setStaff(prev => [...prev, result.staff as StaffMember]);
       setNewStaffName('');
       setIsAddingNew(false);
     } catch (err) {
@@ -514,8 +618,8 @@ export default function StaffManager() {
     }))) return;
 
     try {
-      const { error } = await supabase.from('staff').delete().eq('id', id).eq('hospital_id', activeHospitalId || 'default');
-      if (error) throw error;
+      const response = await fetch(`/api/admin/staff?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Zaměstnance se nepodařilo smazat.');
       
       setStaff(prev => prev.filter(s => s.id !== id));
       setSelectedStaffId(null);
@@ -530,9 +634,11 @@ export default function StaffManager() {
     
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('staff')
-        .update({
+      const response = await fetch('/api/admin/staff', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: updated.id,
           name: updated.name,
           role: updated.role,
           skill_level: updated.skill_level,
@@ -543,11 +649,9 @@ export default function StaffManager() {
           sick_leave_days: updated.sick_leave_days,
           vacation_days: updated.vacation_days,
           notes: updated.notes,
-        })
-        .eq('id', updated.id)
-        .eq('hospital_id', activeHospitalId || 'default');
-      
-      if (error) throw error;
+        }),
+      });
+      if (!response.ok) throw new Error('Zaměstnance se nepodařilo uložit.');
       
       setStaff(prev => prev.map(s => s.id === updated.id ? updated : s));
       setSelectedStaffId(null);
@@ -563,13 +667,12 @@ export default function StaffManager() {
     if (!supabase) return;
     
     try {
-      const { error } = await supabase
-        .from('staff')
-        .update({ is_active: !member.is_active })
-        .eq('id', member.id)
-        .eq('hospital_id', activeHospitalId || 'default');
-      
-      if (error) throw error;
+      const response = await fetch('/api/admin/staff', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: member.id, is_active: !member.is_active }),
+      });
+      if (!response.ok) throw new Error('Stav zaměstnance se nepodařilo změnit.');
       
       setStaff(prev => prev.map(s => s.id === member.id ? { ...s, is_active: !s.is_active } : s));
     } catch (err) {
@@ -579,94 +682,109 @@ export default function StaffManager() {
 
   return (
     <>
-      <div className="min-h-full w-full pb-8 font-sans">
+      <div className="statistics-module min-h-full w-full pb-10 font-sans">
         <header className="mb-7">
-          <ModulePageHeading icon={Shield} kicker="STAFF MANAGEMENT" title="PERSONÁLNÍ" mutedTitle="MANAGEMENT" />
+          <ModulePageHeading
+            icon={Shield}
+            kicker="STAFF MANAGEMENT"
+            title="PERSONÁLNÍ"
+            mutedTitle="MANAGEMENT"
+            actions={staffViewToggle}
+          />
         </header>
 
+        {/* Lišta i menu ve stejné skladbě a velikostech jako v modulu Nastavení. */}
         <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
           <div className="flex min-w-max items-center gap-2.5">
-            {[
-              { label: 'Celkem', value: stats.total, color: COLORS.cyan, icon: Users },
-              { label: 'Aktivní', value: stats.active, color: COLORS.green, icon: UserRoundCheck },
-              { label: 'Lékaři', value: stats.doctors, color: COLORS.blue, icon: Stethoscope },
-              { label: 'Sestry', value: stats.nurses, color: COLORS.amber, icon: Heart },
-              { label: 'Dostupní', value: stats.available, color: COLORS.violet, icon: Activity },
-            ].map(({ label, value, color, icon: Icon }) => (
-              <div key={label} className="flex h-[68px] w-[112px] items-center gap-2.5 rounded-lg border border-white/[0.05] bg-black/10 px-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border" style={{ color, background: `${color}0c`, borderColor: `${color}20` }}>
-                  <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
-                </span>
-                <div>
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.12em] text-white/30">{label}</p>
-                  <p className="mt-0.5 text-xl font-semibold tabular-nums tracking-tight text-white/88">{value}</p>
+            {([
+              { label: 'Celkem', value: stats.total, suffix: 'osob', icon: Users, color: COLORS.cyan },
+              { label: 'Aktivní', value: stats.active, suffix: 'osob', icon: UserRoundCheck, color: COLORS.green },
+              { label: 'Lékaři', value: stats.doctors, suffix: 'osob', icon: Stethoscope, color: COLORS.blue },
+              { label: 'Sestry', value: stats.nurses, suffix: 'osob', icon: Heart, color: COLORS.amber },
+              { label: 'Dostupní', value: stats.available, suffix: 'osob', icon: Activity, color: COLORS.violet },
+            ] as const).map(({ label, value, suffix, icon: Icon, color }) => (
+              <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
+                <div className="flex w-full items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
+                    <div className="mt-1.5 flex items-baseline gap-1">
+                      <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
+                      <span className="text-[8px] font-medium text-white/28">{suffix}</span>
+                    </div>
+                  </div>
+                  <Icon className="h-4 w-4 shrink-0" style={{ color }} strokeWidth={1.5} />
                 </div>
               </div>
             ))}
 
-            <div className="mx-0.5 h-9 w-px bg-white/[0.07]" />
+            <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
 
-            <div className="flex h-9 items-center rounded-lg border border-white/[0.06] bg-black/10 p-1">
-              {categories.map(cat => {
-                const isActive = activeCategory === cat.id;
-                const Icon = cat.icon;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => { setActiveCategory(cat.id); setSelectedStaffId(null); }}
-                    className={`flex h-7 items-center gap-1.5 rounded-md px-3 text-[9px] font-semibold transition-colors ${isActive ? 'bg-cyan-300/[0.13] text-cyan-100' : 'text-white/38 hover:bg-white/[0.04] hover:text-white/65'}`}
-                  >
-                    <Icon className="h-3 w-3" />
-                    {cat.label}
-                    <span className="tabular-nums opacity-55">{cat.count}</span>
-                  </button>
-                );
-              })}
+            <div className="w-[104px] shrink-0">
+              <h2 className="text-[11px] font-semibold leading-tight text-white/92">Personální adresář</h2>
+              <p className="mt-1 text-[8px] leading-tight text-white/38">Lékaři a sestry</p>
             </div>
 
-            <div className="relative w-[220px]">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/25" />
+            <div className="grid shrink-0 grid-cols-2 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => { setActiveCategory(cat.id); setSelectedStaffId(null); }}
+                  aria-pressed={activeCategory === cat.id}
+                  className={`h-8 rounded-md px-3 text-[8px] font-semibold uppercase tracking-[0.08em] ${activeCategory === cat.id ? 'bg-white/[0.09] text-cyan-200' : 'text-white/38 hover:text-white/70'}`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            <label className="flex h-10 w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/[0.055] bg-black/10 px-3">
+              <Search className="h-4 w-4 shrink-0 text-white/30" />
               <input
                 type="search"
-                aria-label="Hledat v personálu"
-                placeholder="Hledat pracovníka…"
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
-                className="h-9 w-full rounded-lg border border-white/[0.06] bg-black/10 pl-9 pr-3 text-[10px] text-white outline-none transition-colors placeholder:text-white/24 focus:border-cyan-300/25 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
+                placeholder="Hledat pracovníka"
+                aria-label="Hledat v personálu"
+                className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white/88 outline-none placeholder:font-normal placeholder:text-white/28"
               />
-            </div>
+            </label>
 
-            <button type="button" onClick={() => setIsAddingNew(true)} className="flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 text-[9px] font-bold uppercase tracking-[0.08em] text-[#061724] transition-colors hover:bg-cyan-200">
-              <Plus className="h-3.5 w-3.5" />
+            <button
+              type="button"
+              onClick={() => setIsAddingNew(true)}
+              className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-cyan-200/[0.20] bg-cyan-300/[0.10] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-cyan-100 hover:bg-cyan-300/[0.16]"
+            >
+              <Plus className="h-4 w-4" />
               Přidat pracovníka
             </button>
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3.5">
-            <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-cyan-300/60">Personální adresář</p>
-              <h2 className="mt-1 text-base font-semibold tracking-tight text-white/90">
-                {activeCategory === 'doctors' ? 'Anesteziologičtí lékaři' : 'Sálové sestry'}
-              </h2>
-            </div>
-            <p className="text-[9px] font-medium text-white/30">{filteredStaff.length} zobrazených</p>
-          </div>
-
-          {loading ? (
-            <div className="flex min-h-[260px] flex-col items-center justify-center gap-3">
-              <Loader2 className="h-6 w-6 animate-spin text-cyan-300/70" />
-              <p className="text-[10px] text-white/32">Načítám personální adresář…</p>
-            </div>
-          ) : filteredStaff.length === 0 ? (
-            <div className="flex min-h-[260px] flex-col items-center justify-center px-5 text-center">
-              <Users className="mb-3 h-8 w-8 text-white/14" />
-              <p className="text-xs font-semibold text-white/45">{searchQuery ? `Hledání „${searchQuery}“ nemá žádný výsledek` : 'V této kategorii zatím není žádný personál'}</p>
-              <p className="mt-1 text-[10px] text-white/24">Upravte hledání nebo přidejte nového pracovníka.</p>
-            </div>
-          ) : (
+        {loading ? (
+          <section className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025]">
+            <Loader2 className="h-6 w-6 animate-spin text-cyan-300/70" />
+            <p className="text-[10px] text-white/32">Načítám personální adresář…</p>
+          </section>
+        ) : filteredStaff.length === 0 ? (
+          <section className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
+            <Users className="mb-3 h-9 w-9 text-white/20" strokeWidth={1.4} />
+            <p className="text-sm font-semibold text-white/65">{searchQuery ? `Hledání „${searchQuery}“ nemá žádný výsledek` : 'V této kategorii zatím není žádný personál'}</p>
+            <p className="mt-1 text-xs text-white/35">Upravte hledání nebo přidejte nového pracovníka.</p>
+          </section>
+        ) : staffView === 'cards' ? (
+          <section className="grid gap-2.5 xl:grid-cols-2">
+            {filteredStaff.map(member => (
+              <StaffCard
+                key={member.id}
+                member={member}
+                onEdit={() => setSelectedStaffId(member.id)}
+                onToggleActive={() => void handleToggleActive(member)}
+              />
+            ))}
+          </section>
+        ) : (
+          <section className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
             <div className="hide-scrollbar overflow-x-auto">
               <div className="min-w-[1080px]">
                 <div className="grid h-9 grid-cols-[minmax(230px,1.5fr)_minmax(185px,1.15fr)_minmax(130px,.8fr)_minmax(170px,1fr)_minmax(140px,.85fr)_112px_112px] items-center border-b border-white/[0.06] bg-black/10 px-4 text-[7px] font-semibold uppercase tracking-[0.16em] text-white/27">
@@ -683,8 +801,8 @@ export default function StaffManager() {
                 ))}
               </div>
             </div>
-          )}
-        </section>
+          </section>
+        )}
       </div>
       {/* ========== SHARED MODALS (desktop + mobile Upravit flow) ========== */}
 

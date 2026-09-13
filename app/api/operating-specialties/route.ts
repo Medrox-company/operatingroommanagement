@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 import { requireHospitalAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
@@ -49,6 +50,8 @@ function validateHospital(hospitalId: string) {
 export async function GET(request: NextRequest) {
   const access = await requireHospitalAccess(request);
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.specialties');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const invalidHospital = validateHospital(access.hospitalId);
   if (invalidHospital) return invalidHospital;
 
@@ -87,6 +90,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.specialties');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const invalidHospital = validateHospital(access.hospitalId);
@@ -143,6 +148,8 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.specialties');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const invalidHospital = validateHospital(access.hospitalId);
@@ -199,6 +206,8 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.specialties');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const invalidHospital = validateHospital(access.hospitalId);

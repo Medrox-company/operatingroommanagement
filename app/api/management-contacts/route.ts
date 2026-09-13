@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { requireHospitalAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 
 export const runtime = 'nodejs';
@@ -16,6 +17,8 @@ function sanitizeString(v: unknown, maxLen = 500): string {
 export async function GET(request: NextRequest) {
   const access = await requireHospitalAccess(request);
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.management');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
 
   try {
     const { hospitalId } = access;
@@ -41,6 +44,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.management');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
@@ -99,6 +104,8 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.management');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
@@ -158,6 +165,8 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.management');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 

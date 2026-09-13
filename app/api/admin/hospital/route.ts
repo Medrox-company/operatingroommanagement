@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
 import { requireSession, requireAdmin } from '@/lib/auth/server';
-import { isAdminRole, isSuperAdminRole } from '../../../../lib/auth/roles';
+import { assertSameOrigin } from '@/lib/auth/csrf';
+import { isSuperAdminRole } from '../../../../lib/auth/roles';
+import { requireHospitalIdAccess } from '@/lib/hospital/access';
 
 export const runtime = 'nodejs';
 
@@ -23,7 +25,8 @@ const HOSPITAL_FIELDS = [
 ] as const;
 
 export async function GET() {
-  // Čtení informací smí každý přihlášený uživatel
+  // Kontext aplikace potřebuje název aktivního zařízení i pro provozní role.
+  // Plnou konfiguraci však smí dostat pouze superadministrátor.
   const auth = await requireSession();
   if (auth instanceof NextResponse) return auth;
 
@@ -32,16 +35,16 @@ export async function GET() {
   }
 
   const admin = getSupabaseAdmin();
-  let allowedIds: string[] | null = null;
-  if (!isAdminRole(auth.user.role)) {
-    const { data: memberships } = await admin
-      .from('hospital_user_memberships')
-      .select('hospital_id')
-      .eq('user_id', auth.user.sub);
-    allowedIds = (memberships || []).map(row => row.hospital_id);
+  const canManageHospitals = isSuperAdminRole(auth.user.role);
+  if (!canManageHospitals) {
+    const hospitalAccess = await requireHospitalIdAccess(auth.user, auth.user.hospitalId);
+    if (hospitalAccess instanceof NextResponse) return hospitalAccess;
   }
-  let query = admin.from('hospitals').select(`id,${HOSPITAL_FIELDS.join(',')}`).order('hospital_name');
-  if (allowedIds) query = query.in('id', allowedIds.length ? allowedIds : ['__none__']);
+  const selectedFields = canManageHospitals
+    ? `id,${HOSPITAL_FIELDS.join(',')}`
+    : 'id,hospital_name,hospital_short_name';
+  let query = admin.from('hospitals').select(selectedFields).order('hospital_name');
+  if (!canManageHospitals) query = query.eq('id', auth.user.hospitalId);
   const { data, error } = await query;
 
   if (error) {
@@ -51,9 +54,17 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  // Úpravy jen admin
+  // Zdravotnická zařízení jsou globální konfigurace — spravuje je jen superadmin.
   const auth = await requireAdmin();
   if (auth instanceof NextResponse) return auth;
+  if (!isSuperAdminRole(auth.user.role)) {
+    return NextResponse.json(
+      { error: 'Zdravotnická zařízení může spravovat pouze superadministrátor.' },
+      { status: 403 },
+    );
+  }
+  const csrf = assertSameOrigin(req);
+  if (csrf) return csrf;
 
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json({ error: 'Supabase není nakonfigurován' }, { status: 500 });
@@ -107,69 +118,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   if (!existingHospital) {
-    const [modulesResult, statusesResult, settingsResult] = await Promise.all([
+    const [modulesResult, submodulesResult, statusesResult, settingsResult] = await Promise.all([
       admin.from('app_modules').select('*').eq('hospital_id', 'default'),
+      admin.from('app_submodules').select('*').eq('hospital_id', 'default'),
       admin.from('workflow_statuses').select('*').eq('hospital_id', 'default'),
       admin.from('app_settings').select('*').eq('hospital_id', 'default').eq('id', 'default-global'),
     ]);
     if (modulesResult.data?.length) {
       await admin.from('app_modules').insert(modulesResult.data.map(row => ({ ...row, hospital_id: id })));
     }
+    if (submodulesResult.data?.length) {
+      await admin.from('app_submodules').insert(submodulesResult.data.map(row => ({ ...row, hospital_id: id })));
+    }
     if (statusesResult.data?.length) {
       await admin.from('workflow_statuses').insert(statusesResult.data.map(row => ({ ...row, hospital_id: id })));
     }
     const baseSettings = settingsResult.data?.[0];
     if (baseSettings) {
+      const cleanSettings = { ...baseSettings } as Record<string, unknown>;
+      for (const field of HOSPITAL_FIELDS) delete cleanSettings[field];
       await admin.from('app_settings').insert({
-        ...baseSettings,
+        ...cleanSettings,
         id: `${id}-global`,
         hospital_id: id,
-        hospital_name: null,
-        hospital_short_name: null,
-        hospital_address: null,
-        hospital_city: null,
-        hospital_zip: null,
-        hospital_ico: null,
-        hospital_contact_phone: null,
-        hospital_contact_email: null,
-        hospital_notes: null,
       });
     }
 
-    // Zakladatel musí do nového zařízení sám dostat přístup.
-    //
-    // Od scripts/22 se administrátor řídí členstvím jako provozní role, takže
-    // bez tohoto kroku by právě založené zařízení nešlo spravovat. Heslo se
-    // přebírá z členství, přes které je právě přihlášený — jde o týž účet,
-    // takže se nic nesdílí napříč rolemi. Ostatní role zůstávají bez členství
-    // a přístup i heslo jim je potřeba nastavit vědomě; kopírovat sem hesla
-    // z jiné nemocnice by vrátilo přesně ten problém, kvůli kterému jsou
-    // hesla nově oddělená.
-    //
-    // Superadministrátor má přístup ke všem zařízením, ten členství nepotřebuje.
-    if (!isSuperAdminRole(auth.user.role)) {
-      const { data: sourceMembership } = await admin
-        .from('hospital_user_memberships')
-        .select('password_hash')
-        .eq('user_id', auth.user.sub)
-        .eq('hospital_id', auth.user.hospitalId)
-        .maybeSingle();
-
-      const { error: membershipError } = await admin
-        .from('hospital_user_memberships')
-        .upsert(
-          {
-            hospital_id: id,
-            user_id: auth.user.sub,
-            password_hash: sourceMembership?.password_hash ?? null,
-          },
-          { onConflict: 'hospital_id,user_id' },
-        );
-
-      if (membershipError) {
-        console.error('[admin/hospital] Členství zakladatele se nepodařilo založit:', membershipError);
-      }
-    }
   }
   return NextResponse.json({ success: true, hospital: data });
 }

@@ -18,7 +18,8 @@
       "components/ui"
     ],
     "assets": [
-      "public/images"
+      "public/images",
+      "vendor/orms-spatial-editor"
     ],
     "instructions": []
   },
@@ -255,6 +256,14 @@
     "Timeline room labels are transparent and split into two clear zones: the full room name may wrap naturally to two compact lines above its tiny muted description on the left, while one fixed 92px compact two-column schedule table sits on the right. Its header reads DOPOL./ODPOL.; its lower cells show hospital-defined specialty abbreviations with a nearly transparent persisted-color tint and hairline bottom accent. Full-day assignments repeat in both columns and empty positions use a neutral dash.",
     "Settings → Calendar is a read-only operational projection of the persisted room schedule, not a second planning source. It reuses the schedule module's compact summary rail, 12px continuous calendar table, subtle dividers, persisted specialty colors, Czech-holiday accents, room filtering, and an AM/PM day-detail table; edits remain centralized in Room Schedule. Every month cell groups assignments by operating room: matching AM and PM assignments merge into one full-day band, while different assignments remain two clearly separated color-coded halves.",
     "Personnel Management reuses the operating-room schedule shell: the shared stationary module heading, one horizontally scrollable KPI/filter/action rail, a single continuous hospital-scoped personnel table with subtle row separators, 12px surfaces, compact controls, and schedule-style dialogs. Role colors remain restrained semantic accents; decorative top gradients and nested personnel cards are omitted."
+    ,
+    "The live dashboard offers a persisted per-hospital choice between its established room-card grid and a lazy-loaded spatial view. The spatial view uses the application's deep navy canvas, restrained cyan/blue operational labels, thin 12px surfaces, explicit 3D/top controls, and direct room-detail navigation while preserving the existing dashboard hierarchy.",
+    "Settings includes a hospital-scoped 3D layout editor derived from the supplied ORMS spatial model. Its three-panel workspace, JSON/GLB interchange, room externalId links, validation, revision-safe database persistence, and WebGL-to-2D fallback are visually wrapped in the same compact transparent blue surfaces and fine separators as the schedule and settings modules.",
+    "When the persisted dashboard view is 3D, it keeps exactly the same shared top-level OPERAČNÍ SÁLY heading, view switcher, date, and live clock as the card view. Beneath it, the operating-block cockpit remains interactive: the spatial model dominates the left stage, a selected room stays yellow-highlighted with a persistent detail panel on the right, and a bottom command strip combines hospital metrics, the real daily program, and the highest-priority operational notice. The deep navy spatial canvas belongs to the full dashboard module rather than an inset rounded container; the cockpit itself is borderless and transparent.",
+    "The 3D dashboard background follows the approved 2026-09-09 reference palette: an edge-to-edge #050d30 to #030a2c navy field with no magenta cast, a broad blue-violet ambient halo centered behind the room model, and a softer contact glow beneath the rooms. Both glows must feather to transparent before their layout boundaries so no rectangular veil or clipped edge is visible.",
+    "The spatial operating block uses one continuous architectural wall system instead of isolated room boxes: substantial matte blue-gray wall panels, restrained lighter coping, a dark structural plinth, closed inset corridor doors, high far walls and cutaway near facades. Adjacent default rooms share a wall axis without bright gaps. The selected room shifts the same wall materials to a warm neutral surface with yellow coping and floor-edge light, matching the approved reference without changing room data or interaction.",
+    "The approved 3D-disposition background is the global dark application canvas: every authenticated desktop module, the dark mobile shell, login base, and operating-room detail base reuse the same edge-to-edge navy gradient and centered ambient blue halo. Module-specific semantic glows may layer above it, but no screen introduces a separate purple or magenta page gradient.",
+    "The 3D operating block has no DOM-sized glow or blurred rectangular stage overlay. Its only model-specific blue halo is a low-opacity feathered WebGL perimeter mesh attached to the building group, fully transparent before its plane boundary, so it follows orbit rotation, plan view, pan and zoom without revealing a static box."
   ],
   "evidence": [
     {

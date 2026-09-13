@@ -307,6 +307,9 @@ function DetailEditModal({
   );
 }
 
+/** Karta kontaktu ve stejném jazyce jako karty v modulu Operační obory:
+    barevný pruh na levé hraně, pevná dlaždice s iniciálami, jméno, řádek
+    metadat, ikonové akce vpravo a kontaktní údaje dole. */
 const ContactCard: React.FC<{
   contact: ManagementContact;
   onEdit: () => void;
@@ -316,108 +319,87 @@ const ContactCard: React.FC<{
 
   return (
     <article
-      className="relative min-h-[188px] overflow-hidden rounded-[22px] p-3 font-sans"
-      style={{
-        background: contact.is_active
-          ? 'linear-gradient(125deg, rgba(54,217,236,0.04), rgba(255,255,255,0.018) 52%, rgba(251,191,36,0.018))'
-          : 'rgba(255,255,255,0.016)',
-        border: `1px solid ${contact.is_active ? 'rgba(125,165,185,0.16)' : 'rgba(255,255,255,0.07)'}`,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
-      }}
+      className={`relative flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4 transition-colors ${contact.is_active ? 'hover:bg-white/[0.04]' : 'opacity-55 hover:opacity-80'}`}
+      style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
     >
-      <div
-        aria-hidden
-        className="absolute inset-x-10 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
-      />
+      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}88` }} />
 
-      <div className="grid h-full grid-cols-[112px_minmax(0,1fr)] gap-3 sm:grid-cols-[132px_minmax(0,1fr)]">
-        <div
-          className="flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl px-3 py-3"
-          style={{
-            background: contact.is_active
-              ? 'linear-gradient(145deg, rgba(54,217,236,0.18), rgba(54,217,236,0.075))'
-              : 'linear-gradient(145deg, rgba(148,163,184,0.11), rgba(148,163,184,0.04))',
-            border: `1px solid ${contact.is_active ? 'rgba(54,217,236,0.32)' : 'rgba(148,163,184,0.15)'}`,
-          }}
+      <div className="flex items-center gap-3.5">
+        {/* Pevná velikost dlaždice — iniciály zabírají vždy stejné místo. */}
+        <span
+          className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border px-1 text-[12px] font-black leading-none tracking-[0.02em]"
+          style={{ borderColor: `${accent}58`, backgroundColor: `${accent}1f`, color: accent }}
         >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Management</span>
+          <span className="truncate">{initials(contact)}</span>
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[15px] font-bold leading-tight text-white/90">
+            {contact.name || contact.position}
+          </h3>
+          <p className="mt-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
             <span
-              className="h-1.5 w-1.5 rounded-full"
+              className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
               style={{ background: contact.is_active ? COLORS.green : 'rgba(255,255,255,0.22)' }}
             />
-          </div>
-          <div className="my-2">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold"
-              style={{ color: accent, background: `${accent}16`, border: `1px solid ${accent}25` }}
-            >
-              {initials(contact)}
-            </div>
-            <p className="mt-2 line-clamp-2 text-sm font-bold leading-tight text-white">
-              {contact.name || contact.position}
-            </p>
-            <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-white/42">{contact.position}</p>
-          </div>
-          <span className={`text-[9px] font-semibold ${contact.is_active ? 'text-emerald-300/75' : 'text-white/28'}`}>
             {contact.is_active ? 'Aktivní' : 'Neaktivní'}
-          </span>
+            <span className="text-white/16">·</span>
+            <span className="tabular-nums text-white/44">{notificationCount}</span>
+            {notificationCount === 1 ? 'odběr' : notificationCount < 5 ? 'odběry' : 'odběrů'}
+          </p>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-2 py-0.5">
+        <div className="flex shrink-0 gap-1.5">
           <a
             href={`mailto:${contact.email}`}
-            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-cyan-300/10 bg-cyan-300/[0.035] px-3 transition-colors hover:border-cyan-300/25"
+            aria-label={`Napsat na ${contact.email}`}
+            title={contact.email}
+            className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.065] text-white/42 transition-colors hover:bg-white/[0.06] hover:text-cyan-200"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-300/[0.09] text-cyan-300">
-              <Mail className="h-3.5 w-3.5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[9px] font-medium text-white/32">E-mail</p>
-              <p className="truncate text-xs font-semibold text-white/72">{contact.email}</p>
-            </div>
+            <Mail className="h-3.5 w-3.5" />
           </a>
-
-          {contact.phone ? (
+          {contact.phone && (
             <a
               href={`tel:${contact.phone}`}
-              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-amber-300/10 bg-amber-300/[0.03] px-3 transition-colors hover:border-amber-300/25"
+              aria-label={`Zavolat na ${contact.phone}`}
+              title={contact.phone}
+              className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.065] text-white/42 transition-colors hover:bg-white/[0.06] hover:text-amber-200"
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-300/[0.08] text-amber-300">
-                <Phone className="h-3.5 w-3.5" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[9px] font-medium text-white/32">Telefon</p>
-                <p className="truncate text-xs font-semibold text-white/72">{contact.phone}</p>
-              </div>
+              <Phone className="h-3.5 w-3.5" />
             </a>
-          ) : (
-            <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-white/[0.055] bg-white/[0.018] px-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.035] text-white/22">
-                <Phone className="h-3.5 w-3.5" />
-              </span>
-              <div>
-                <p className="text-[9px] font-medium text-white/28">Telefon</p>
-                <p className="text-xs font-semibold text-white/28">Neuveden</p>
-              </div>
-            </div>
           )}
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Upravit ${contact.name || contact.position}`}
+            title="Upravit kontakt"
+            className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.065] text-white/42 transition-colors hover:bg-white/[0.06] hover:text-white/80"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
 
-          <div className="flex items-center justify-between gap-2 px-1 pt-0.5">
-            <div className="flex items-center gap-1.5 text-[9px] font-semibold text-white/38">
-              <Bell className="h-3 w-3 text-violet-300/70" />
-              {notificationCount} {notificationCount === 1 ? 'odběr' : notificationCount < 5 ? 'odběry' : 'odběrů'}
-            </div>
-            <button
-              type="button"
-              onClick={onEdit}
-              className="flex h-7 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.025] px-2.5 text-[9px] font-bold uppercase tracking-[0.1em] text-white/48 transition-colors hover:border-cyan-300/25 hover:text-cyan-200"
-            >
-              <SlidersHorizontal className="h-3 w-3" />
-              Upravit
-            </button>
-          </div>
+      <p className="mt-3 min-h-[30px] text-[11.5px] leading-[15px] text-white/42 line-clamp-2">
+        {contact.position || 'Bez uvedené pozice'}
+      </p>
+
+      {/* Kontaktní údaje na místě patičky karty oboru. */}
+      <div className="mt-auto grid grid-cols-2 gap-x-3 border-t border-white/[0.055] pt-2.5">
+        <div className="min-w-0">
+          <p className="truncate text-[8px] font-bold uppercase tracking-[0.16em] text-cyan-300/60">E-mail</p>
+          <p className="mt-0.5 truncate text-[11.5px] font-semibold leading-[15px] text-white/82" title={contact.email}>
+            {contact.email || '—'}
+          </p>
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-[8px] font-bold uppercase tracking-[0.16em] text-amber-300/60">Telefon</p>
+          <p
+            className={`mt-0.5 truncate text-[11.5px] font-semibold leading-[15px] ${contact.phone ? 'text-white/82' : 'text-white/28'}`}
+            title={contact.phone || 'Neuveden'}
+          >
+            {contact.phone || 'Neuveden'}
+          </p>
         </div>
       </div>
     </article>
@@ -517,136 +499,98 @@ export default function ManagementManager() {
   }, [contacts, filter, searchQuery]);
 
   return (
-    <div className="w-full min-h-full pb-8 font-sans">
+    <div className="statistics-module min-h-full w-full pb-10 font-sans">
       <header className="mb-7">
         <ModulePageHeading icon={BriefcaseBusiness} kicker="MANAGEMENT DIRECTORY" title="MANAGEMENT" mutedTitle="KONTAKTY" />
-        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
-          <p className="text-sm font-medium text-white/40">
-            Kontaktní síť vedení, distribuční pravidla a krizová komunikace
-          </p>
-          <div className="inline-flex items-center gap-2 text-[9px] font-bold tracking-[0.16em] text-emerald-300/75">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            KOMUNIKAČNÍ CENTRUM AKTIVNÍ
-          </div>
-        </div>
       </header>
 
-      <section
-        className="relative mb-4 overflow-hidden rounded-[26px] p-2.5"
-        style={{
-          background: 'rgba(255,255,255,0.024)',
-          border: '1px solid rgba(125,165,185,0.18)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
-        }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-x-24 top-0 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.45), transparent)' }}
-        />
-        <div className="grid grid-cols-2 gap-1.5 md:grid-cols-5">
-          {[
-            { label: 'Celkem kontaktů', value: stats.total, suffix: 'osob', color: COLORS.cyan, icon: Users },
-            { label: 'Aktivní', value: stats.active, suffix: 'osob', color: COLORS.green, icon: UserRoundCheck },
-            { label: 'Krizová linka', value: stats.emergencyRecipients, suffix: 'příjemců', color: COLORS.red, icon: ShieldCheck },
-            { label: 'Reporty', value: stats.reportRecipients, suffix: 'příjemců', color: COLORS.blue, icon: FileText },
-            { label: 'Aktivní odběry', value: stats.configuredChannels, suffix: 'pravidel', color: COLORS.violet, icon: Bell },
-          ].map(({ label, value, suffix, color, icon: Icon }, index) => (
-            <div
-              key={label}
-              className={`relative flex min-h-[78px] flex-col justify-between rounded-2xl px-3.5 py-3 ${index === 4 ? 'col-span-2 md:col-span-1' : ''}`}
-              style={{ background: `${color}08`, border: `1px solid ${color}17` }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</p>
-                <Icon className="h-3.5 w-3.5" style={{ color }} />
-              </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold tabular-nums tracking-tight" style={{ color }}>{value}</span>
-                <span className="text-[9px] text-white/25">{suffix}</span>
+      {/* Stejná lišta jako v Rozpisu sálů a Operačních oborech. */}
+      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+        <div className="flex min-w-max items-center gap-2.5">
+          {([
+            { label: 'Celkem kontaktů', value: stats.total, suffix: 'osob', icon: Users, color: COLORS.cyan },
+            { label: 'Aktivní', value: stats.active, suffix: 'osob', icon: UserRoundCheck, color: COLORS.green },
+            { label: 'Krizová linka', value: stats.emergencyRecipients, suffix: 'příjemců', icon: ShieldCheck, color: COLORS.red },
+            { label: 'Reporty', value: stats.reportRecipients, suffix: 'příjemců', icon: FileText, color: COLORS.blue },
+            { label: 'Aktivní odběry', value: stats.configuredChannels, suffix: 'pravidel', icon: Bell, color: COLORS.violet },
+          ] as const).map(({ label, value, suffix, icon: Icon, color }) => (
+            <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
+              <div className="flex w-full items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
+                    <span className="text-[8px] font-medium text-white/28">{suffix}</span>
+                  </div>
+                </div>
+                <Icon className="h-4 w-4 shrink-0" style={{ color }} strokeWidth={1.5} />
               </div>
             </div>
           ))}
-        </div>
-      </section>
 
-      <section
-        className="mb-5 flex flex-col gap-2 rounded-[22px] p-2 xl:flex-row xl:items-center"
-        style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
-      >
-        <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
-          {([
-            ['all', 'Všechny kontakty', Users],
-            ['active', 'Aktivní', UserRoundCheck],
-            ['inactive', 'Neaktivní', UserRoundX],
-          ] as const).map(([id, label, Icon]) => {
-            const active = filter === id;
-            return (
+          <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
+
+          <div className="w-[104px] shrink-0">
+            <h2 className="text-[11px] font-semibold leading-tight text-white/92">Kontakty vedení</h2>
+            <p className="mt-1 text-[8px] leading-tight text-white/38">Distribuce zpráv</p>
+          </div>
+
+          <div className="grid shrink-0 grid-cols-3 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
+            {([['all', 'Všechny'], ['active', 'Aktivní'], ['inactive', 'Neaktivní']] as const).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setFilter(id)}
-                className="flex h-9 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-semibold transition-colors"
-                style={active
-                  ? { background: 'rgba(54,217,236,0.12)', color: COLORS.cyan, border: '1px solid rgba(54,217,236,0.22)' }
-                  : { color: 'rgba(255,255,255,0.42)', border: '1px solid transparent' }}
+                aria-pressed={filter === id}
+                className={`h-8 rounded-md px-3 text-[8px] font-semibold uppercase tracking-[0.08em] ${filter === id ? 'bg-white/[0.09] text-cyan-200' : 'text-white/38 hover:text-white/70'}`}
               >
-                <Icon className="h-3.5 w-3.5" />
                 {label}
-                <span className="text-[9px] tabular-nums opacity-60">
-                  {id === 'all' ? stats.total : id === 'active' ? stats.active : stats.inactive}
-                </span>
               </button>
-            );
-          })}
+            ))}
+          </div>
+
+          <label className="flex h-10 w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/[0.055] bg-black/10 px-3">
+            <Search className="h-4 w-4 shrink-0 text-white/30" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              placeholder="Hledat kontakt"
+              aria-label="Hledat v management kontaktech"
+              className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white/88 outline-none placeholder:font-normal placeholder:text-white/28"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => setSelectedContact(createContact(contacts.length))}
+            className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-cyan-200/[0.20] bg-cyan-300/[0.10] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-cyan-100 hover:bg-cyan-300/[0.16]"
+          >
+            <Plus className="h-4 w-4" />
+            Přidat kontakt
+          </button>
         </div>
-
-        <div className="hidden h-7 w-px bg-white/[0.07] xl:block" />
-
-        <div className="relative min-w-0 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/28" />
-          <input
-            type="search"
-            aria-label="Hledat v management kontaktech"
-            placeholder="Hledat jméno, pozici, e-mail nebo telefon…"
-            value={searchQuery}
-            onChange={event => setSearchQuery(event.target.value)}
-            className="h-9 w-full rounded-xl border border-white/[0.07] bg-black/10 pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/25 focus:border-cyan-300/30"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setSelectedContact(createContact(contacts.length))}
-          className="flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 text-xs font-bold text-[#071019] transition-colors hover:bg-amber-200"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Přidat kontakt
-        </button>
       </section>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-20">
+        <section className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025]">
           <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/15 border-t-cyan-300/70" />
           <p className="text-xs text-white/35">Načítám management kontakty…</p>
-        </div>
+        </section>
       ) : filteredContacts.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-[22px] py-16 text-center"
-          style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.12)' }}
-        >
+        <section className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
           <MessageSquareText className="mb-3 h-9 w-9 text-white/16" />
           <p className="text-sm font-semibold text-white/45">
             {contacts.length === 0 ? 'Zatím nejsou uložené žádné kontakty' : 'Filtru neodpovídá žádný kontakt'}
           </p>
           <p className="mt-1 text-xs text-white/25">Upravte filtr nebo přidejte nový kontakt managementu.</p>
-        </div>
+        </section>
       ) : (
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+        <section className="grid gap-2.5 xl:grid-cols-2">
           {filteredContacts.map(contact => (
             <ContactCard key={contact.id} contact={contact} onEdit={() => setSelectedContact(contact)} />
           ))}
-        </div>
+        </section>
       )}
 
       <AnimatePresence>

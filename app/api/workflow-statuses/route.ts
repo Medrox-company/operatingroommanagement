@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 import { requireHospitalAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 import { logger } from '@/lib/logger';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 
@@ -30,6 +31,8 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.statuses');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const { hospitalId } = access;
@@ -74,6 +77,8 @@ export async function PUT(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.statuses');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const { hospitalId } = access;
@@ -123,6 +128,8 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.statuses');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const { hospitalId } = access;

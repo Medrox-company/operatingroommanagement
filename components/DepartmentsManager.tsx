@@ -1,7 +1,7 @@
 'use client';
 
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, CircleOff, Layers3, Loader2, Pencil, Plus, Search, Stethoscope, Trash2, X } from 'lucide-react';
+import { CalendarDays, Check, CircleCheck, CircleOff, Layers3, Loader2, Pencil, Plus, RefreshCw, Search, Stethoscope, Trash2, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useHospital } from '../contexts/HospitalContext';
 import { useHospitalRealtime } from '../contexts/RealtimeContext';
@@ -223,81 +223,159 @@ const DepartmentsManager: React.FC = () => {
   };
 
   return (
-    <div className="statistics-module min-h-full w-full pb-8 font-sans">
+    <div className="statistics-module min-h-full w-full pb-10 font-sans">
       <header className="mb-7">
         <ModulePageHeading icon={Stethoscope} kicker="SYSTEM CONFIGURATION" title="OPERAČNÍ" mutedTitle="OBORY" />
       </header>
 
-      <section className="mb-4 overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025]">
-        <div className="flex flex-col gap-4 border-b border-white/[0.06] px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="grid grid-cols-2 gap-x-7 gap-y-3 sm:grid-cols-4">
-            {([['Celkem', stats.total], ['Aktivní', stats.active], ['V rozpisu', stats.used], ['Neaktivní', stats.inactive]] as const).map(([label, value]) => (
-              <div key={label} className="min-w-24">
-                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/34">{label}</p>
-                <p className="mt-1 text-2xl font-light tabular-nums text-white/90">{value}</p>
+      {/* Jedna vodorovná lišta ve stejné skladbě i velikostech jako v modulu
+          Rozpis sálů: dlaždice čísel · dělítko · popisek · přepínač · akce. */}
+      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+        <div className="flex min-w-max items-center gap-2.5">
+          {([
+            { label: 'Celkem oborů', value: stats.total, suffix: 'oborů', icon: Layers3, color: '#38BDF8' },
+            { label: 'Aktivní', value: stats.active, suffix: 'oborů', icon: CircleCheck, color: '#34D399' },
+            { label: 'V rozpisu', value: stats.used, suffix: 'oborů', icon: CalendarDays, color: '#A78BFA' },
+            { label: 'Neaktivní', value: stats.inactive, suffix: 'oborů', icon: CircleOff, color: '#FBBF24' },
+          ] as const).map(({ label, value, suffix, icon: Icon, color }) => (
+            <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
+              <div className="flex w-full items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
+                    <span className="text-[8px] font-medium text-white/28">{suffix}</span>
+                  </div>
+                </div>
+                <Icon className="h-4 w-4 shrink-0" style={{ color }} strokeWidth={1.5} />
               </div>
+            </div>
+          ))}
+
+          <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
+
+          <div className="w-[104px] shrink-0">
+            <h2 className="text-[11px] font-semibold leading-tight text-white/92">Katalog oborů</h2>
+            <p className="mt-1 text-[8px] leading-tight text-white/38">Zdroj pro rozpis</p>
+          </div>
+
+          <div className="grid shrink-0 grid-cols-3 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
+            {([['all', 'Všechny'], ['active', 'Aktivní'], ['inactive', 'Neaktivní']] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                aria-pressed={filter === value}
+                className={`h-8 rounded-md px-3 text-[8px] font-semibold uppercase tracking-[0.08em] ${filter === value ? 'bg-white/[0.09] text-cyan-200' : 'text-white/38 hover:text-white/70'}`}
+              >
+                {label}
+              </button>
             ))}
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-white/[0.07] bg-black/[0.08] px-3 sm:w-64">
-              <Search className="h-4 w-4 shrink-0 text-white/30" />
-              <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Hledat operační obor" className="min-w-0 flex-1 rounded-sm bg-transparent text-xs text-white/80 outline-none placeholder:text-white/25 focus-visible:ring-2 focus-visible:ring-cyan-300/50" />
-            </label>
-            {isAdmin && (
-              <button type="button" onClick={openCreate} className="flex h-10 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 text-[10px] font-bold text-[#061724] transition-colors hover:bg-cyan-200">
-                <Plus className="h-4 w-4" /> Přidat obor
-              </button>
-            )}
-          </div>
-        </div>
 
-        <div className="flex items-center gap-1.5 px-4 py-3">
-          {([['all', 'Všechny'], ['active', 'Aktivní'], ['inactive', 'Neaktivní']] as const).map(([value, label]) => (
-            <button key={value} type="button" onClick={() => setFilter(value)} className={`h-8 rounded-lg px-3 text-[9px] font-bold uppercase tracking-[0.1em] transition-colors ${filter === value ? 'bg-white/[0.10] text-white' : 'text-white/38 hover:bg-white/[0.04] hover:text-white/65'}`}>{label}</button>
-          ))}
-          {!isAdmin && <span className="ml-auto text-[9px] font-semibold text-white/30">Pouze pro čtení</span>}
+          <label className="flex h-10 w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/[0.055] bg-black/10 px-3">
+            <Search className="h-4 w-4 shrink-0 text-white/30" />
+            <input
+              value={query}
+              onChange={event => setQuery(event.target.value)}
+              placeholder="Hledat obor"
+              aria-label="Hledat operační obor"
+              className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white/88 outline-none placeholder:font-normal placeholder:text-white/28"
+            />
+          </label>
+
+          {isAdmin ? (
+            <button type="button" onClick={openCreate} className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-cyan-200/[0.20] bg-cyan-300/[0.10] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-cyan-100 hover:bg-cyan-300/[0.16]">
+              <Plus className="h-4 w-4" /> Přidat obor
+            </button>
+          ) : (
+            <span className="h-10 shrink-0 rounded-lg border border-white/[0.06] bg-white/[0.025] px-4 text-[9px] font-semibold uppercase leading-10 tracking-[0.08em] text-white/38">Pouze pro čtení</span>
+          )}
+
+          <button type="button" onClick={() => void loadDepartments()} disabled={loading} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.025] text-white/42 hover:text-white disabled:opacity-40" aria-label="Obnovit obory">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </section>
 
-      {error && <div className="mb-4 rounded-xl border border-amber-300/15 bg-amber-300/[0.045] px-4 py-3 text-xs text-amber-100/85">{error}</div>}
+      {error && <div className="mb-4 rounded-xl border border-amber-300/15 bg-amber-300/[0.045] p-3.5 text-xs text-amber-100/85">{error}</div>}
 
-      <section className="overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025]">
-        <div className="hidden grid-cols-[minmax(230px,1.3fr)_minmax(180px,1fr)_120px_115px_112px] gap-4 border-b border-white/[0.06] px-5 py-3 text-[9px] font-bold uppercase tracking-[0.14em] text-white/30 md:grid">
-          <span>Operační obor</span><span>Popis</span><span>Použití</span><span>Stav</span><span className="text-right">Akce</span>
-        </div>
+      {/* Místo široké pětisloupcové tabulky, kde se každý obor táhl přes celou
+          šířku obrazovky, jsou obory ve dvou sloupcích kompaktních karet.
+          Každá karta drží jméno, popis, použití i akce pohromadě. */}
+      {loading && departments.length === 0 ? (
+        <section className="flex min-h-[320px] items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025]">
+          <Loader2 className="h-6 w-6 animate-spin text-cyan-300/70" />
+        </section>
+      ) : visibleDepartments.length === 0 ? (
+        <section className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
+          <Layers3 className="h-9 w-9 text-white/20" strokeWidth={1.4} />
+          <p className="mt-4 text-sm font-semibold text-white/65">{departments.length === 0 ? 'Zatím nejsou založené žádné operační obory.' : 'Žádný obor neodpovídá filtru.'}</p>
+          {departments.length === 0 && isAdmin && <p className="mt-1 text-xs text-white/35">Přidejte první obor a následně jej přiřaďte v Rozpisu sálů.</p>}
+        </section>
+      ) : (
+        <section className="grid gap-2.5 xl:grid-cols-2">
+          {visibleDepartments.map(department => {
+            const color = department.accent_color ?? COLOR_PRESETS[0];
+            return (
+              <article
+                key={department.id}
+                className={`relative flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] pl-5 pr-4 py-3.5 transition-colors ${department.is_active ? 'hover:bg-white/[0.04]' : 'opacity-55 hover:opacity-80'}`}
+                style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
+              >
+                <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${color}88` }} />
 
-        {loading && departments.length === 0 ? (
-          <div className="flex min-h-72 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-cyan-300/70" /></div>
-        ) : visibleDepartments.length === 0 ? (
-          <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
-            <Layers3 className="h-9 w-9 text-white/20" strokeWidth={1.4} />
-            <p className="mt-4 text-sm font-semibold text-white/65">{departments.length === 0 ? 'Zatím nejsou založené žádné operační obory.' : 'Žádný obor neodpovídá filtru.'}</p>
-            {departments.length === 0 && isAdmin && <p className="mt-1 text-xs text-white/35">Přidejte první obor a následně jej přiřaďte v Rozpisu sálů.</p>}
-          </div>
-        ) : visibleDepartments.map(department => {
-          const color = department.accent_color ?? COLOR_PRESETS[0];
-          return (
-            <article key={department.id} className={`relative grid gap-3 border-b border-white/[0.055] px-5 py-4 last:border-b-0 md:grid-cols-[minmax(230px,1.3fr)_minmax(180px,1fr)_120px_115px_112px] md:items-center md:gap-4 ${department.is_active ? 'hover:bg-white/[0.025]' : 'opacity-55 hover:opacity-75'}`}>
-              <span className="absolute inset-y-3 left-0 w-px" style={{ backgroundColor: color }} />
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="grid h-9 min-w-9 shrink-0 place-items-center rounded-lg border px-2 text-[11px] font-black tracking-[0.04em]" style={{ borderColor: `${color}58`, backgroundColor: `${color}22`, color }}>{department.short_code}</span>
-                <div className="min-w-0"><h3 className="truncate text-sm font-bold text-white/88">{department.name}</h3><p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-white/27">Pořadí {department.sort_order + 1}</p></div>
-              </div>
-              <p className="min-w-0 text-xs leading-5 text-white/43 md:line-clamp-2">{department.description || 'Bez doplňujícího popisu'}</p>
-              <div><p className="text-sm font-semibold tabular-nums text-white/75">{department.allocation_count}</p><p className="text-[9px] text-white/30">položek rozpisu</p></div>
-              <button type="button" onClick={() => isAdmin && void toggleDepartment(department)} disabled={!isAdmin || saving} className={`inline-flex h-8 w-fit items-center gap-2 rounded-lg px-2.5 text-[9px] font-bold uppercase tracking-[0.08em] ${department.is_active ? 'bg-emerald-300/[0.08] text-emerald-200/75' : 'bg-white/[0.04] text-white/36'} disabled:cursor-default`}>
-                {department.is_active ? <Check className="h-3.5 w-3.5" /> : <CircleOff className="h-3.5 w-3.5" />}{department.is_active ? 'Aktivní' : 'Neaktivní'}
-              </button>
-              {isAdmin && (
-                <div className="flex justify-start gap-1.5 md:justify-end">
-                  <button type="button" onClick={() => openEdit(department)} aria-label={`Upravit ${department.name}`} className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.065] text-white/42 transition-colors hover:bg-white/[0.06] hover:text-white/80"><Pencil className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => void deleteDepartment(department)} aria-label={`Smazat ${department.name}`} title={department.allocation_count > 0 ? 'Používaný obor lze pouze deaktivovat' : 'Smazat obor'} className={`grid h-9 w-9 place-items-center rounded-lg border transition-colors ${department.allocation_count > 0 ? 'cursor-not-allowed border-white/[0.04] text-white/16' : 'border-red-200/[0.08] text-red-200/40 hover:bg-red-300/[0.06] hover:text-red-200/75'}`}><Trash2 className="h-3.5 w-3.5" /></button>
+                <div className="flex items-center gap-3.5">
+                  {/* Pevná velikost dlaždice se zkratkou — 3písmenná i delší
+                      zkratka zabírá stejné místo, takže sloupec drží linku. */}
+                  <span
+                    className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border px-1 text-[12px] font-black leading-none tracking-[0.02em]"
+                    style={{ borderColor: `${color}58`, backgroundColor: `${color}1f`, color }}
+                  >
+                    <span className="truncate">{department.short_code}</span>
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-[15px] font-bold leading-tight text-white/90">{department.name}</h3>
+                    <p className="mt-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
+                      <span
+                        className="inline-block h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: department.is_active ? '#34D399' : 'rgba(255,255,255,0.22)' }}
+                      />
+                      {department.is_active ? 'Aktivní' : 'Neaktivní'}
+                      <span className="text-white/16">·</span>
+                      pořadí {department.sort_order + 1}
+                      <span className="text-white/16">·</span>
+                      <span className="tabular-nums text-white/44">{department.allocation_count}</span> v rozpisu
+                    </p>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="flex shrink-0 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => void toggleDepartment(department)}
+                        disabled={saving}
+                        aria-label={department.is_active ? `Deaktivovat ${department.name}` : `Aktivovat ${department.name}`}
+                        title={department.is_active ? 'Deaktivovat obor' : 'Aktivovat obor'}
+                        className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors disabled:cursor-default ${department.is_active ? 'border-emerald-200/[0.14] text-emerald-200/70 hover:bg-emerald-300/[0.08] hover:text-emerald-200' : 'border-white/[0.065] text-white/34 hover:bg-white/[0.06] hover:text-white/75'}`}
+                      >
+                        {department.is_active ? <Check className="h-3.5 w-3.5" /> : <CircleOff className="h-3.5 w-3.5" />}
+                      </button>
+                      <button type="button" onClick={() => openEdit(department)} aria-label={`Upravit ${department.name}`} className="grid h-8 w-8 place-items-center rounded-lg border border-white/[0.065] text-white/42 transition-colors hover:bg-white/[0.06] hover:text-white/80"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button type="button" onClick={() => void deleteDepartment(department)} aria-label={`Smazat ${department.name}`} title={department.allocation_count > 0 ? 'Používaný obor lze pouze deaktivovat' : 'Smazat obor'} className={`grid h-8 w-8 place-items-center rounded-lg border transition-colors ${department.allocation_count > 0 ? 'cursor-not-allowed border-white/[0.04] text-white/16' : 'border-red-200/[0.08] text-red-200/40 hover:bg-red-300/[0.06] hover:text-red-200/75'}`}><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </article>
-          );
-        })}
-      </section>
+
+                <p className="mt-auto pt-3 min-h-[30px] text-[11.5px] leading-[15px] text-white/42 line-clamp-2">
+                  {department.description || 'Bez doplňujícího popisu'}
+                </p>
+              </article>
+            );
+          })}
+        </section>
+      )}
 
       {editor && (
         <div className="fixed inset-0 z-[120] grid place-items-center bg-[#030611]/80 p-4 backdrop-blur-md" onMouseDown={event => { if (event.target === event.currentTarget && !saving) setEditor(null); }}>

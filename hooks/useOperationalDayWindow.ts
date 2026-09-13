@@ -38,7 +38,7 @@ type Listener = (window: OperationalDayWindow) => void;
 
 let current: OperationalDayWindow = operationalDayWindow();
 const listeners = new Set<Listener>();
-let timer: ReturnType<typeof setInterval> | null = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
 
 function tick() {
   const next = operationalDayWindow();
@@ -47,16 +47,29 @@ function tick() {
   listeners.forEach((listener) => listener(current));
 }
 
+function scheduleNextBoundary() {
+  if (timer) clearTimeout(timer);
+  const now = new Date();
+  const nextBoundary = new Date(now);
+  nextBoundary.setHours(OPERATIONAL_DAY_START_HOUR, 0, 1, 0);
+  if (nextBoundary.getTime() <= now.getTime()) nextBoundary.setDate(nextBoundary.getDate() + 1);
+  timer = setTimeout(() => {
+    timer = null;
+    tick();
+    if (listeners.size > 0) scheduleNextBoundary();
+  }, Math.max(1_000, nextBoundary.getTime() - now.getTime()));
+}
+
 function subscribe(listener: Listener) {
   listeners.add(listener);
   if (!timer) {
-    // Stačí minutová granularita — okno se mění jednou za 24 h.
-    timer = setInterval(tick, 60_000);
+    // Okno se mění jednou denně, proto není důvod probouzet aplikaci každou minutu.
+    scheduleNextBoundary();
   }
   return () => {
     listeners.delete(listener);
     if (listeners.size === 0 && timer) {
-      clearInterval(timer);
+      clearTimeout(timer);
       timer = null;
     }
   };

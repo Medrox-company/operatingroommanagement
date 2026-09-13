@@ -3,6 +3,9 @@ import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-serv
 import { getSessionUser } from '@/lib/auth/server';
 import { isAdminRole, isSuperAdminRole } from '@/lib/auth/roles';
 import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
+import { assertSameOrigin } from '@/lib/auth/csrf';
+import { requireHospitalIdAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 
 export const runtime = 'nodejs';
 
@@ -89,6 +92,8 @@ export async function PUT(request: NextRequest) {
   if (!isAdminRole(session.role)) {
     return NextResponse.json({ error: 'Nemáte oprávnění měnit hesla' }, { status: 403 });
   }
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json({ error: 'Server není nakonfigurovaný' }, { status: 503 });
   }
@@ -113,22 +118,10 @@ export async function PUT(request: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
-  // Administrátor smí zasahovat jen do zařízení, kam sám patří.
-  if (!isSuperAdminRole(session.role)) {
-    const { data: ownMembership } = await supabase
-      .from('hospital_user_memberships')
-      .select('user_id')
-      .eq('user_id', session.sub)
-      .eq('hospital_id', hospitalId)
-      .maybeSingle();
-
-    if (!ownMembership) {
-      return NextResponse.json(
-        { error: 'K tomuto zdravotnickému zařízení nemáte přístup.' },
-        { status: 403 },
-      );
-    }
-  }
+  const hospitalAccess = await requireHospitalIdAccess(session, hospitalId);
+  if (hospitalAccess instanceof NextResponse) return hospitalAccess;
+  const submoduleAccess = await requireSubmoduleAccess(hospitalAccess, 'settings.access');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
 
   const { data: target, error: targetError } = await supabase
     .from('app_users')

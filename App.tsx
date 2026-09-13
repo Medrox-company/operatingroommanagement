@@ -36,6 +36,7 @@ import { WorkflowStatusesProvider, useWorkflowStatusesContext } from './contexts
 import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 import { useOperatingRoomsData } from './hooks/useOperatingRoomsData';
+import { SIDEBAR_ITEMS } from './constants';
 
 // Main App Content - Operating Rooms Management System
 type CompletedOperations = NonNullable<OperatingRoom['completedOperations']>;
@@ -52,13 +53,17 @@ const SWR_OPTIONS = {
 };
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, isAdmin, isSuperAdmin, modules, user } = useAuth();
+  const { isAuthenticated, isAdmin, hasModuleAccess, user } = useAuth();
   const { activeHospitalId, loading: hospitalLoading } = useHospital();
   const { workflowStatuses } = useWorkflowStatusesContext();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
+  const hasAnyModuleAccess = useMemo(
+    () => SIDEBAR_ITEMS.some(item => hasModuleAccess(item.id)),
+    [hasModuleAccess],
+  );
   const {
     rooms,
     roomsLoaded,
@@ -67,7 +72,7 @@ const AppContent: React.FC = () => {
     ensureRoomDetails,
     markRoomLocallyUpdated,
   } = useOperatingRoomsData({
-    enabled: isAuthenticated && !hospitalLoading,
+    enabled: isAuthenticated && !hospitalLoading && hasAnyModuleAccess,
     loadAllDetails: currentView === 'timeline',
   });
 
@@ -155,26 +160,26 @@ const AppContent: React.FC = () => {
     [rooms, selectedRoomId]
   );
 
-  // Check if module is enabled AND the current user's role is allowed to see it.
-  const isModuleEnabled = useCallback((moduleId: string) => {
-    // Superadministrátor vidí vše. Administrátor už výjimku nemá — jeho
-    // přístup nastavuje superadmin stejně jako u ostatních rolí.
-    if (isSuperAdmin) return true;
-    if (moduleId === 'dashboard') return true; // Dashboard je vždy přístupný
-    const module = modules.find(m => m.id === moduleId);
-    if (!module || module.is_enabled === false) return false;
-    const allowed = module.allowed_roles;
-    if (!allowed || allowed.length === 0) return false;
-    const currentRole = user?.role;
-    return !!currentRole && allowed.includes(currentRole);
-  }, [isSuperAdmin, modules, user]);
+  // Jediný klientský zdroj pravdy pro přístup do modulů. Díky tomu se stejné
+  // oprávnění používá v navigaci i při přímém přepnutí pohledu.
+  const isModuleEnabled = useCallback(
+    (moduleId: string) => hasModuleAccess(moduleId),
+    [hasModuleAccess],
+  );
+  const defaultView = useMemo(
+    () => SIDEBAR_ITEMS.find(item => isModuleEnabled(item.id))?.id ?? 'no-access',
+    [isModuleEnabled],
+  );
 
-  // Guard: If current view is not enabled, redirect to dashboard
+  // Zakázaný modul přesměruje na první skutečně povolený modul. Pokud role
+  // nemá nic přiděleno, zobrazí se jednoznačný stav bez přístupu místo toho,
+  // aby se dashboard otevřel napevno navzdory konfiguraci superadmina.
   useEffect(() => {
-    if (currentView !== 'dashboard' && !isModuleEnabled(currentView)) {
-      setCurrentView('dashboard');
+    if (currentView !== defaultView && !isModuleEnabled(currentView)) {
+      setSelectedRoomId(null);
+      setCurrentView(defaultView);
     }
-  }, [currentView, isModuleEnabled]);
+  }, [currentView, defaultView, isModuleEnabled]);
 
   const roomsRef = useRef<OperatingRoom[]>(rooms);
   roomsRef.current = rooms;
@@ -364,10 +369,16 @@ const AppContent: React.FC = () => {
         ? { ...room, weeklySchedule: schedule }
         : room
     ));
-    await updateOperatingRoom(roomId, {
-      weekly_schedule: schedule,
+    const response = await fetch('/api/admin/operating-rooms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ id: roomId, weekly_schedule: schedule }),
     });
-  }, [markRoomLocallyUpdated, setRooms]);
+    if (!response.ok) {
+      await refreshRooms();
+    }
+  }, [markRoomLocallyUpdated, refreshRooms, setRooms]);
 
   const handleStaffChange = useCallback(async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
     markRoomLocallyUpdated(roomId);
@@ -423,6 +434,7 @@ const AppContent: React.FC = () => {
   // Stabilní handlery pro Sidebar / MobileNav — bez useCallbacku se recreatují
   // každý render a bustují memo na navigačních komponentách.
   const handleNavigate = useCallback((view: string) => {
+    if (!isModuleEnabled(view)) return;
     setCurrentView(prevView => {
       if (prevView === 'settings' && view === 'settings') {
         setSettingsResetTrigger(t => t + 1);
@@ -431,7 +443,7 @@ const AppContent: React.FC = () => {
       return view;
     });
     setSelectedRoomId(null);
-  }, []);
+  }, [isModuleEnabled]);
 
   const handleCloseRoomDetail = useCallback(() => setSelectedRoomId(null), []);
 
@@ -442,11 +454,11 @@ const AppContent: React.FC = () => {
     const onNativeBack = (e: Event) => {
       if (noticeComposerOpen) { e.preventDefault(); setNoticeComposerOpen(false); return; }
       if (selectedRoomId) { e.preventDefault(); setSelectedRoomId(null); return; }
-      if (currentView !== 'dashboard') { e.preventDefault(); setCurrentView('dashboard'); }
+      if (currentView !== defaultView) { e.preventDefault(); setCurrentView(defaultView); }
     };
     window.addEventListener('nativeBackButton', onNativeBack);
     return () => window.removeEventListener('nativeBackButton', onNativeBack);
-  }, [selectedRoomId, currentView, noticeComposerOpen]);
+  }, [selectedRoomId, currentView, defaultView, noticeComposerOpen]);
   // Stabilní RoomDetail callbacky — používají selectedRoomId přímo (zdroj pravdy), takže
   // se NErecreatují při každém update sálů. Bez useCallbacku se po realtime updatu
   // recreate inline arrow funkce → memo na RoomDetailu by selhal a 1745řádková komponenta
@@ -477,13 +489,13 @@ const AppContent: React.FC = () => {
 
   // Admin → odeslat informační zprávu na jeden či více sálů (popup v detailu sálu)
   const handleSendRoomNotice = useCallback(async (roomIds: string[], message: string) => {
-    if (roomIds.length === 0) return;
+    if (!isAdmin || !hasModuleAccess('alerts') || roomIds.length === 0) return;
     const at = new Date().toISOString();
     const sender = user?.name || user?.email || 'Administrátor';
     const idSet = new Set(roomIds);
     setRooms(prev => prev.map(r => idSet.has(r.id) ? { ...r, noticeMessage: message, noticeAt: at, noticeSender: sender } : r));
     await Promise.all(roomIds.map(id => updateOperatingRoom(id, { notice_message: message, notice_at: at, notice_sender: sender })));
-  }, [user]);
+  }, [hasModuleAccess, isAdmin, setRooms, user]);
 
   // Zavření zprávy na sále (z detailu) — smaže zprávu z DB i lokálně
   const handleClearRoomNotice = useCallback(async (roomId: string) => {
@@ -516,7 +528,7 @@ const AppContent: React.FC = () => {
       <MobileNav currentView={currentView} onNavigate={handleNavigate} />
 
       {/* Admin → odeslání informační zprávy na konkrétní sál */}
-      {noticeComposerOpen && isAdmin && (
+      {noticeComposerOpen && isAdmin && hasModuleAccess('alerts') && (
         <RoomNoticeComposer
           rooms={rooms}
           onClose={() => setNoticeComposerOpen(false)}
@@ -625,8 +637,19 @@ const AppContent: React.FC = () => {
                   rooms={rooms} 
                   onRoomsChange={setRooms} 
                   onScheduleUpdate={handleUpdateWeeklySchedule}
+                  onStaffChange={handleStaffChange}
                   resetTrigger={settingsResetTrigger} 
                 />
+              </div>
+            )}
+
+            {currentView === 'no-access' && (
+              <div className="flex h-full w-full items-center justify-center px-6 text-center">
+                <div className="max-w-md rounded-2xl border border-amber-300/15 bg-amber-300/[0.04] p-8">
+                  <AlertTriangle className="mx-auto h-8 w-8 text-amber-300/70" />
+                  <p className="mt-4 text-base font-semibold text-white/85">Nemáte přidělený žádný modul.</p>
+                  <p className="mt-2 text-sm leading-6 text-white/45">Přístup k modulům pro toto zdravotnické zařízení nastavuje superadministrátor.</p>
+                </div>
               </div>
             )}
 

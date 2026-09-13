@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   CircleDot,
   HeartPulse,
+  LayoutGrid,
+  List,
   Loader2,
   Lock,
   Radio,
@@ -24,7 +26,9 @@ import type { OperatingRoom } from '../types';
 import { useStaffData } from '../hooks/useStaffData';
 import { MobileHeaderMetrics, MobileModuleHeader } from './mobile/MobileShell';
 import { useIsMobileDark } from '../hooks/useIsMobileDark';
+import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import ModulePageHeading from './ModulePageHeading';
+import StaffPickerModal from './StaffPickerModal';
 
 interface RoomWithStaff {
   id: string;
@@ -36,6 +40,12 @@ interface RoomWithStaff {
   nurse: StaffRow | null;
   anesthesiologist: StaffRow | null;
   isActive: boolean;
+  /** Skutečný workflow status sálu z databáze — název a jeho barva. */
+  statusName: string | null;
+  statusColor: string | null;
+  /** Pozice v sekvenci aktivních statusů a jejich celkový počet. */
+  stepIndex: number;
+  stepCount: number;
 }
 
 type FilterMode = 'all' | 'active' | 'gaps';
@@ -80,11 +90,20 @@ const initials = (name: string) =>
 
 const roomNumber = (name: string) => name.match(/\d+/)?.[0] || name.slice(0, 2).toUpperCase();
 
+/** Stav sálu vychází z reálného workflow statusu uloženého u sálu.
+    Zámek a pauza mají přednost, protože přebíjejí běžící krok. */
 const roomState = (room: RoomWithStaff) => {
-  if (room.is_locked) return { label: 'Uzamčeno', color: COLORS.amber, icon: Lock };
-  if (room.is_paused) return { label: 'Pozastaveno', color: COLORS.blue, icon: CircleDot };
-  if (room.isActive) return { label: 'Výkon probíhá', color: COLORS.cyan, icon: Activity };
-  return { label: 'Připraveno', color: COLORS.green, icon: CheckCircle2 };
+  if (room.is_locked) return { label: 'Uzamčeno', color: COLORS.amber, icon: Lock, running: false };
+  if (room.is_paused) return { label: 'Pozastaveno', color: COLORS.blue, icon: CircleDot, running: false };
+  if (room.isActive) {
+    return {
+      label: room.statusName || 'V provozu',
+      color: room.statusColor || COLORS.cyan,
+      icon: Activity,
+      running: true,
+    };
+  }
+  return { label: 'Mimo provoz', color: COLORS.green, icon: CheckCircle2, running: false };
 };
 
 const StaffNode: React.FC<{
@@ -127,6 +146,102 @@ const StaffNode: React.FC<{
   );
 };
 
+/** Dlaždice jednoho člověka nebo neobsazené pozice.
+    Nástěnka pracuje s lidmi, ne se sály — proto je atomem karty člověk. */
+type BoardTone = 'gap' | 'working' | 'free';
+
+const PersonTile: React.FC<{
+  tone: BoardTone;
+  name: string;
+  role: StaffRole;
+  /** Kde je — název sálu, nebo popis dostupnosti. */
+  place: string;
+  /** Barva sálu u nasazených, zelená u volných, červená u díry v rozpisu. */
+  accent: string;
+  badge?: string;
+  onClick?: () => void;
+}> = ({ tone, name, role, place, accent, badge, onClick }) => {
+  const meta = roleMeta[role];
+  const isGap = tone === 'gap';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={`relative flex w-full items-center gap-2.5 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left font-sans transition-colors ${onClick ? 'hover:bg-white/[0.045]' : 'cursor-default'} focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60`}
+      style={{
+        background: isGap ? `${COLORS.red}0B` : 'rgba(255,255,255,0.025)',
+        borderColor: isGap ? `${COLORS.red}2E` : 'rgba(255,255,255,0.06)',
+        borderStyle: isGap ? 'dashed' : 'solid',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
+      }}
+    >
+      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}${isGap ? 'AA' : '88'}` }} />
+
+      <span
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-full border text-[9px] font-black"
+        style={{
+          color: isGap ? COLORS.red : meta.color,
+          background: isGap ? `${COLORS.red}12` : `${meta.color}16`,
+          borderColor: isGap ? `${COLORS.red}45` : `${meta.color}40`,
+        }}
+      >
+        {isGap ? '—' : initials(name)}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span
+          className="block truncate text-[12.5px] font-semibold leading-tight"
+          style={{ color: isGap ? COLORS.red : 'rgba(255,255,255,0.9)' }}
+        >
+          {name}
+        </span>
+        <span className="mt-0.5 flex items-center gap-1.5 text-[9.5px] leading-tight">
+          <span className="shrink-0 font-semibold" style={{ color: `${meta.color}B0` }}>{meta.shortLabel}</span>
+          <span className="text-white/16">·</span>
+          <span className="truncate" style={{ color: tone === 'working' ? `${accent}D0` : 'rgba(255,255,255,0.42)' }}>
+            {place}
+          </span>
+        </span>
+      </span>
+
+      {badge && (
+        <span
+          className="shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold tabular-nums"
+          style={{
+            borderColor: `${accent}30`,
+            background: `${accent}12`,
+            color: accent,
+          }}
+        >
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+};
+
+/** Nadpis sekce nástěnky — název, počet a vlasová linka přes zbytek řádku. */
+const BoardSectionHeading: React.FC<{
+  title: string;
+  count: number;
+  color: string;
+  hint?: string;
+}> = ({ title, count, color, hint }) => (
+  <div className="mb-2.5 flex items-center gap-3">
+    <span className="inline-flex shrink-0 items-center gap-2">
+      <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+      <span className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color }}>{title}</span>
+      <span className="text-[13px] font-light tabular-nums text-white/85">{count}</span>
+    </span>
+    {hint && <span className="shrink-0 text-[9px] text-white/26">{hint}</span>}
+    <span className="h-px flex-1 bg-white/[0.07]" />
+  </div>
+);
+
+/** Karta sálu ve stejném jazyce jako karty v modulu Operační obory.
+    Je stavěná tak, aby se četla i ve třech sloupcích vedle sebe. */
 const RoomNetworkCard: React.FC<{
   room: RoomWithStaff;
   isSelected: boolean;
@@ -134,117 +249,157 @@ const RoomNetworkCard: React.FC<{
 }> = ({ room, isSelected, onSelect }) => {
   const state = roomState(room);
   const StateIcon = state.icon;
-  const missing = [
-    room.anesthesiologist,
-    room.nurse,
-  ].filter(staff => !staff).length;
-  const accent = missing > 0 ? COLORS.red : state.color;
+  const roles = [
+    { role: 'anesthesiologist' as StaffRole, staff: room.anesthesiologist },
+    { role: 'nurse' as StaffRole, staff: room.nurse },
+  ];
+  const filled = roles.filter(item => item.staff).length;
+  const missing = roles.length - filled;
+  const accent = state.color;
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onSelect}
-      className="mobile-staff-room-card group relative w-full min-h-[154px] rounded-[22px] p-3 text-left overflow-hidden font-sans focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+      aria-pressed={isSelected}
+      aria-label={`${room.name} — ${state.running ? 'v provozu' : 'mimo provoz'}, ${state.label}, obsazeno ${filled} z ${roles.length}`}
+      className={`mobile-staff-room-card relative flex h-full w-full flex-col overflow-hidden rounded-xl border py-3 pl-4 pr-3 text-left font-sans transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 ${state.running ? '' : 'opacity-[0.72] hover:opacity-95'}`}
       style={{
-        background: isSelected
-          ? `linear-gradient(125deg, ${accent}16 0%, rgba(54,217,236,0.035) 55%, rgba(251,191,36,0.025) 100%)`
-          : 'linear-gradient(125deg, rgba(54,217,236,0.035) 0%, rgba(255,255,255,0.018) 52%, rgba(251,191,36,0.018) 100%)',
-        border: `1px solid ${isSelected ? `${accent}52` : 'rgba(125,165,185,0.16)'}`,
-        boxShadow: isSelected ? `0 18px 55px ${accent}0D, inset 0 1px 0 rgba(255,255,255,0.04)` : 'inset 0 1px 0 rgba(255,255,255,0.025)',
+        background: isSelected ? `${accent}10` : 'rgba(255,255,255,0.025)',
+        borderColor: isSelected ? `${accent}45` : 'rgba(255,255,255,0.06)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
       }}
     >
-      <div
-        aria-hidden
-        className="absolute inset-x-10 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}70, transparent)` }}
-      />
-      <div
-        aria-hidden
-        className="absolute -left-16 top-1/2 -translate-y-1/2 w-36 h-36 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity"
-        style={{ background: accent }}
-      />
+      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}88` }} />
 
-      <div className="relative h-full grid grid-cols-[136px_1fr] sm:grid-cols-[150px_1fr] gap-4 items-stretch">
-        <div className="relative flex flex-col justify-between rounded-2xl px-3 py-3 overflow-hidden"
-          style={{
-            background: `linear-gradient(145deg, ${accent}38 0%, ${accent}22 62%, ${accent}14 100%)`,
-            border: `1px solid ${accent}66`,
-            boxShadow: `inset 0 1px 0 ${accent}55, 0 18px 34px -28px ${accent}`,
-          }}>
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-[11px] font-medium text-white/40">Sál</span>
-            <span className="text-[11px] font-bold tabular-nums" style={{ color: accent }}>
-              {2 - missing}/2
+      <div className="flex items-center gap-2.5">
+        {/* Pevná velikost dlaždice — jednomístné i víceznakové číslo sálu
+            zabírá stejné místo, takže sloupec drží linku. */}
+        <span
+          className="flex h-9 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border px-1 text-[11px] font-black leading-none"
+          style={{ borderColor: `${accent}58`, backgroundColor: `${accent}1f`, color: accent }}
+        >
+          <span className="truncate">{roomNumber(room.name)}</span>
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[13.5px] font-bold leading-tight text-white/90">{room.name}</h3>
+          {/* Ve třech sloupcích se nevejde dlouhý řetěz metadat, proto zůstal
+              jen provoz a název statusu; oddělení je o řádek níž. */}
+          <p className="mt-0.5 flex items-center gap-1.5 text-[9.5px] leading-tight">
+            <span
+              className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${state.running ? 'staff-orb-pulse-dot' : ''}`}
+              style={{ backgroundColor: state.running ? accent : 'rgba(255,255,255,0.22)' }}
+            />
+            <StateIcon className="h-2.5 w-2.5 shrink-0" style={{ color: state.color }} />
+            <span className="truncate font-semibold" style={{ color: state.running ? accent : 'rgba(255,255,255,0.38)' }}>
+              {state.running ? state.label : 'Mimo provoz'}
             </span>
-          </div>
-          <div className="mt-1">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white tabular-nums"
-              style={{ background: accent, boxShadow: `0 0 14px ${accent}35` }}
-            >
-              {roomNumber(room.name)}
-            </div>
-            <p className="text-sm font-bold text-white leading-tight mt-2">{room.name}</p>
-            <p className="text-[11px] text-white/50 leading-tight mt-0.5">{room.department || 'Bez oddělení'}</p>
-          </div>
-          <div className="text-[11px] tabular-nums flex items-center gap-1.5 min-w-0" style={{ color: state.color }}>
-            <StateIcon className="w-3 h-3 shrink-0" />
-            <span className="truncate">{state.label}</span>
-          </div>
+          </p>
         </div>
 
-        <div className="relative grid grid-rows-2 gap-2.5 py-1">
-          <div
-            aria-hidden
-            className="absolute -left-4 top-1/2 w-4 h-px"
-            style={{ background: `linear-gradient(90deg, ${accent}22, ${accent}88)` }}
-          />
-          <div
-            aria-hidden
-            className="absolute -left-[17px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
-            style={{ background: accent, boxShadow: `0 0 10px ${accent}` }}
-          />
-          <div
-            aria-hidden
-            className="absolute left-0 top-[22%] bottom-[22%] w-px"
-            style={{ background: `linear-gradient(180deg, transparent, ${accent}75 18%, ${accent}75 82%, transparent)` }}
-          />
-
-          {([
-            ['anesthesiologist', room.anesthesiologist],
-            ['nurse', room.nurse],
-          ] as const).map(([role, staff]) => (
-            <div key={role} className="relative pl-2">
-              <span
-                aria-hidden
-                className="absolute left-0 top-1/2 w-2 h-px"
-                style={{ background: `${roleMeta[role].color}70` }}
-              />
-              <StaffNode role={role} staff={staff} isRoomActive={room.isActive} />
-            </div>
-          ))}
-        </div>
+        <span
+          className="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-bold tabular-nums"
+          style={{
+            borderColor: missing > 0 ? `${COLORS.red}30` : `${accent}30`,
+            backgroundColor: missing > 0 ? `${COLORS.red}12` : `${accent}12`,
+            color: missing > 0 ? COLORS.red : accent,
+          }}
+        >
+          <Users className="h-2.5 w-2.5" />
+          {filled}/{roles.length}
+        </span>
       </div>
 
-    </motion.button>
+      {/* Kdo je na sále — dvě pozice pod sebou, ať se jména nezkracují. */}
+      <div className="mt-2.5 grid gap-1 border-t border-white/[0.055] pt-2">
+        {roles.map(({ role, staff }) => (
+          <div key={role} className="flex min-w-0 items-baseline gap-2">
+            <span
+              className="w-[82px] shrink-0 whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.12em]"
+              style={{ color: `${roleMeta[role].color}99` }}
+            >
+              {roleMeta[role].shortLabel}
+            </span>
+            <span
+              className="min-w-0 flex-1 truncate text-[11.5px] font-semibold leading-[15px]"
+              style={{ color: staff ? 'rgba(255,255,255,0.88)' : COLORS.red }}
+              title={staff ? staff.name : 'Neobsazeno'}
+            >
+              {staff ? staff.name : 'Neobsazeno'}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-2 truncate text-[8.5px] uppercase tracking-[0.14em] text-white/22">
+        {room.department || 'Bez oddělení'}
+      </p>
+    </button>
   );
 };
 
-const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: operatingRooms }) => {
+interface StaffOverviewModuleProps {
+  rooms: OperatingRoom[];
+  /** Stejná cesta k uložení jako z detailu sálu (App → updateOperatingRoom). */
+  onStaffChange?: (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
+}
+
+const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operatingRooms, onStaffChange }) => {
   const isMobileDark = useIsMobileDark();
   const { staff: staffList, loading } = useStaffData();
+  const { activeStatuses } = useWorkflowStatusesContext();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterMode>('all');
   const [department, setDepartment] = useState('all');
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [overviewView, setOverviewView] = useState<'cards' | 'list'>('cards');
+  /** Otevřený výběr personálu — který sál a která pozice se obsazuje. */
+  const [picker, setPicker] = useState<{ roomId: string; role: StaffRole } | null>(null);
+
+  /** Přepínač zobrazení — stejná velikost ikon jako v levém postranním menu. */
+  const overviewViewToggle = (
+    <div className="flex items-center gap-1">
+      {([
+        ['cards', 'Nástěnku směny', LayoutGrid],
+        ['list', 'Seznam', List],
+      ] as const).map(([value, label, Icon]) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setOverviewView(value)}
+          aria-pressed={overviewView === value}
+          title={`Zobrazit jako ${label.toLocaleLowerCase('cs')}`}
+          aria-label={`Zobrazit jako ${label.toLocaleLowerCase('cs')}`}
+          className={`grid h-[clamp(2.5rem,7vh,4rem)] w-[clamp(2.5rem,7vh,4rem)] place-items-center rounded-[clamp(0.75rem,1.8vh,1rem)] transition-colors duration-200 ${overviewView === value ? 'bg-white/[0.15] text-white' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+        >
+          <Icon
+            className="h-[clamp(1.1rem,2.7vh,1.5rem)] w-[clamp(1.1rem,2.7vh,1.5rem)] transition-colors duration-200"
+            strokeWidth={overviewView === value ? 2.5 : 2}
+          />
+        </button>
+      ))}
+    </div>
+  );
 
   const rooms = useMemo<RoomWithStaff[]>(() => {
     const staffMap = new Map(staffList.map((staff) => [staff.id, staff]));
+    const stepCount = activeStatuses.length;
     return operatingRooms.map((room) => {
-      // Po sloučení rolí je anesteziolog primárně v doctor; starší záznamy
-      // používají samostatné pole anesthesiologist.
-      const anesthesiologistId = room.staff.doctor.id || room.staff.anesthesiologist?.id;
+      // Přiřazení se čte jen z polí, do kterých aplikace opravdu zapisuje —
+      // doctor_id a nurse_id. Sloupec anesthesiologist_id je pozůstatek
+      // starších dat a drží jména lidí, kteří na sále dávno nejsou; dřív se
+      // z něj brala záloha, a přehled proto hlásil obsazené sály, které
+      // obsazené nejsou.
+      const anesthesiologistId = room.staff.doctor.id;
       const nurseId = room.staff.nurse.id;
+      // currentStepIndex je pozice v seznamu AKTIVNÍCH statusů, ne order_index
+      // přes všechny záznamy. Dřív se sahalo i po vypnutých statusech, takže
+      // sál hlásil krok, který je v nastavení deaktivovaný.
+      const safeIndex = stepCount > 0
+        ? Math.min(Math.max(0, room.currentStepIndex ?? 0), stepCount - 1)
+        : 0;
+      const step = stepCount > 0 ? activeStatuses[safeIndex] ?? null : null;
       return {
         id: room.id,
         name: room.name,
@@ -254,10 +409,18 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
         is_paused: room.isPaused,
         nurse: nurseId ? staffMap.get(nurseId) || null : null,
         anesthesiologist: anesthesiologistId ? staffMap.get(anesthesiologistId) || null : null,
-        isActive: room.currentStepIndex >= 0 && room.currentStepIndex < 6 && !room.isLocked,
+        // Sál je v provozu, pokud je na některém z reálných workflow kroků
+        // a není uzamčený. Dřív tu byla natvrdo napsaná šestka.
+        isActive: room.currentStepIndex >= 0
+          && (stepCount === 0 || room.currentStepIndex < stepCount)
+          && !room.isLocked,
+        statusName: step?.title || step?.name || null,
+        statusColor: step?.accent_color || step?.color || null,
+        stepIndex: safeIndex,
+        stepCount,
       };
     });
-  }, [operatingRooms, staffList]);
+  }, [activeStatuses, operatingRooms, staffList]);
 
   const assignedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -324,9 +487,61 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
     });
   }, [department, filter, rooms, search]);
 
+  /** Podklad pro nástěnku směny: díry v rozpisu, nasazení lidé a lavička. */
+  const board = useMemo(() => {
+    const gaps: { roomId: string; roomName: string; roomNumber: string; role: StaffRole }[] = [];
+    const working: {
+      id: string;
+      name: string;
+      role: StaffRole;
+      roomId: string;
+      roomNumber: string;
+      place: string;
+      accent: string;
+    }[] = [];
+
+    filteredRooms.forEach(room => {
+      const state = roomState(room);
+      ([
+        ['anesthesiologist', room.anesthesiologist],
+        ['nurse', room.nurse],
+      ] as const).forEach(([role, staff]) => {
+        if (staff) {
+          working.push({
+            id: `${room.id}-${role}`,
+            name: staff.name,
+            role,
+            roomId: room.id,
+            roomNumber: roomNumber(room.name),
+            place: `${room.name} · ${state.label}`,
+            accent: state.color,
+          });
+        } else {
+          gaps.push({
+            roomId: room.id,
+            roomName: room.name,
+            roomNumber: roomNumber(room.name),
+            role,
+          });
+        }
+      });
+    });
+
+    const query = search.toLocaleLowerCase('cs').trim();
+    const free = availableStaff
+      .filter(person => !query || person.name.toLocaleLowerCase('cs').includes(query))
+      .map(person => ({
+        id: person.id,
+        name: person.name,
+        role: (person.role === 'NURSE' ? 'nurse' : 'anesthesiologist') as StaffRole,
+      }));
+
+    return { gaps, working, free };
+  }, [availableStaff, filteredRooms, search]);
+
   return (
     <div
-      className={`mobile-staff-overview ${isMobileDark ? 'is-dark' : 'is-light'} relative w-full min-h-full pb-8 font-sans`}
+      className={`mobile-staff-overview ${isMobileDark ? 'is-dark' : 'is-light'} relative w-full min-h-full pb-10 font-sans`}
       style={{ zIndex: 1 }}
     >
       <div
@@ -363,59 +578,89 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
           kicker="REAL-TIME OVERVIEW"
           title="PŘEHLED"
           mutedTitle="PERSONÁLU"
+          actions={overviewViewToggle}
         />
-        <div className="mt-3 flex justify-end">
-          <div className="inline-flex items-center gap-2 text-[9px] tracking-[0.16em] font-bold text-emerald-300/75">
-            <span className="relative flex w-2 h-2">
-              <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-50" />
-              <span className="relative w-2 h-2 rounded-full bg-emerald-400" />
-            </span>
-            DATA V REÁLNÉM ČASE
-          </div>
-        </div>
       </header>
 
-      <section
-        className="hidden md:block relative rounded-[26px] p-2.5 mb-4 overflow-hidden"
-        style={{
-          background: 'rgba(255,255,255,0.024)',
-          border: '1px solid rgba(125,165,185,0.18)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
-        }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-x-24 top-0 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(54,217,236,0.45), transparent)' }}
-        />
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-1.5">
-          {[
-            { label: 'V provozu', value: stats.activeRooms, suffix: 'sálů', color: COLORS.cyan, icon: Activity },
-            { label: 'Na sálech', value: stats.activeStaff, suffix: 'osob', color: COLORS.cyan, icon: Users },
-            { label: 'Dostupní', value: stats.available, suffix: 'osob', color: COLORS.green, icon: Zap },
-            { label: 'Chybí obsadit', value: stats.missingSlots, suffix: 'pozic', color: stats.missingSlots ? COLORS.red : COLORS.green, icon: AlertTriangle },
-            { label: 'Pokrytí směny', value: stats.coverage, suffix: '%', color: stats.coverage >= 90 ? COLORS.green : COLORS.amber, icon: ShieldCheck },
-          ].map(({ label, value, suffix, color, icon: Icon }, index) => (
-            <div
-              key={label}
-              className={`relative rounded-2xl px-3.5 py-3 min-h-[78px] flex flex-col justify-between ${index === 4 ? 'col-span-2 md:col-span-1' : ''}`}
-              style={{ background: `${color}08`, border: `1px solid ${color}17` }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[8px] font-bold tracking-[0.16em] text-white/38 uppercase">{label}</p>
-                <Icon className="w-3.5 h-3.5" style={{ color }} />
-              </div>
-              <div className="flex items-baseline gap-1.5 mt-2">
-                <span className="text-2xl font-semibold tracking-tight tabular-nums" style={{ color }}>{value}</span>
-                <span className="text-[9px] text-white/25">{suffix}</span>
+      {/* Lišta i menu ve stejné skladbě a velikostech jako v modulu Nastavení. */}
+      <section className="hide-scrollbar mb-4 hidden overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 md:block">
+        <div className="flex min-w-max items-center gap-2.5">
+          {([
+            { label: 'V provozu', value: stats.activeRooms, suffix: 'sálů', icon: Activity, color: COLORS.cyan },
+            { label: 'Na sálech', value: stats.activeStaff, suffix: 'osob', icon: Users, color: COLORS.blue },
+            { label: 'Dostupní', value: stats.available, suffix: 'osob', icon: Zap, color: COLORS.green },
+            { label: 'Chybí obsadit', value: stats.missingSlots, suffix: 'pozic', icon: AlertTriangle, color: stats.missingSlots ? COLORS.red : COLORS.green },
+            { label: 'Pokrytí směny', value: stats.coverage, suffix: '%', icon: ShieldCheck, color: stats.coverage >= 90 ? COLORS.green : COLORS.amber },
+          ] as const).map(({ label, value, suffix, icon: Icon, color }) => (
+            <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
+              <div className="flex w-full items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
+                    <span className="text-[8px] font-medium text-white/28">{suffix}</span>
+                  </div>
+                </div>
+                <Icon className="h-4 w-4 shrink-0" style={{ color }} strokeWidth={1.5} />
               </div>
             </div>
           ))}
+
+          <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
+
+          <div className="w-[104px] shrink-0">
+            <h2 className="text-[11px] font-semibold leading-tight text-white/92">Personální síť</h2>
+            <p className="mt-1 text-[8px] leading-tight text-white/38">Živé obsazení sálů</p>
+          </div>
+
+          <div className="grid shrink-0 grid-cols-3 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
+            {([['all', 'Všechny'], ['active', 'V provozu'], ['gaps', 'Chybí']] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setFilter(id)}
+                aria-pressed={filter === id}
+                className={`h-8 rounded-md px-3 text-[8px] font-semibold uppercase tracking-[0.08em] ${filter === id ? 'bg-white/[0.09] text-cyan-200' : 'text-white/38 hover:text-white/70'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {departments.length > 1 && (
+            <select
+              value={department}
+              onChange={event => setDepartment(event.target.value)}
+              aria-label="Filtrovat podle oddělení"
+              className="h-10 w-[180px] shrink-0 rounded-lg border border-white/[0.07] bg-[#10182a] px-3 text-[9px] font-semibold text-white/78 outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
+            >
+              <option value="all">Všechna oddělení</option>
+              {departments.map(item => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          )}
+
+          <label className="flex h-10 w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/[0.055] bg-black/10 px-3">
+            <Search className="h-4 w-4 shrink-0 text-white/30" />
+            <input
+              type="search"
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              placeholder="Hledat sál nebo tým"
+              aria-label="Hledat sál nebo člena týmu"
+              className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white/88 outline-none placeholder:font-normal placeholder:text-white/28"
+            />
+          </label>
+
+          <span className="shrink-0 px-1 text-[9px] font-semibold tabular-nums text-white/28">
+            {filteredRooms.length} / {rooms.length} SÁLŮ
+          </span>
         </div>
       </section>
 
       <section
-        className="mobile-staff-panel rounded-[22px] p-2 mb-5 flex flex-col xl:flex-row xl:items-center gap-2"
+        className="mobile-staff-panel rounded-[22px] p-2 mb-5 flex flex-col gap-2 md:hidden"
         style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
       >
         <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
@@ -488,71 +733,144 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
       </section>
 
       {loading ? (
-        <div className="min-h-[320px] flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-7 h-7 text-cyan-300/70 animate-spin" />
-          <p className="text-[10px] tracking-[0.2em] font-bold text-white/28">SYNCHRONIZUJI TÝMY</p>
-        </div>
+        <section className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025]">
+          <Loader2 className="h-7 w-7 animate-spin text-cyan-300/70" />
+          <p className="text-[10px] font-bold tracking-[0.2em] text-white/28">SYNCHRONIZUJI TÝMY</p>
+        </section>
       ) : rooms.length === 0 ? (
-        <div className="min-h-[320px] rounded-[26px] border border-white/[0.07] bg-white/[0.018] flex flex-col items-center justify-center text-center p-8">
-          <Users className="w-9 h-9 text-white/20 mb-4" />
-          <h2 className="text-base font-semibold text-white/75">Personální data nejsou dostupná</h2>
-          <p className="text-xs text-white/32 mt-2 max-w-md">
+        <section className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
+          <Users className="mb-4 h-9 w-9 text-white/20" strokeWidth={1.4} />
+          <h2 className="text-sm font-semibold text-white/65">Personální data nejsou dostupná</h2>
+          <p className="mt-2 max-w-md text-xs text-white/35">
             Jakmile se připojí databáze a načtou sály, živá personální síť se zobrazí zde.
           </p>
-        </div>
+        </section>
       ) : (
         <div className="grid grid-cols-1 gap-5 items-start">
-          <section
-            className="mobile-staff-panel relative rounded-[28px] p-3 sm:p-4 overflow-hidden"
-            style={{
-              background: 'linear-gradient(180deg, rgba(5,16,25,0.56) 0%, rgba(5,11,18,0.32) 100%)',
-              border: '1px solid rgba(125,165,185,0.15)',
-            }}
-          >
-            <div
-              aria-hidden
-              className="absolute inset-0 opacity-[0.055] pointer-events-none"
-              style={{
-                backgroundImage: 'linear-gradient(rgba(54,217,236,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(54,217,236,0.35) 1px, transparent 1px)',
-                backgroundSize: '42px 42px',
-                maskImage: 'linear-gradient(to bottom, black, transparent 90%)',
-              }}
-            />
-            <div className="relative flex items-center justify-between gap-3 mb-4 px-1">
+          {/* Panel v jazyce modulu Nastavení — bez přechodů a rastru na pozadí. */}
+          <section className="mobile-staff-panel relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 sm:p-4">
+            <div className="relative mb-4 flex items-center justify-between gap-3 px-1">
               <div>
-                <div className="flex items-center gap-2">
-                  <Radio className="w-3.5 h-3.5" style={{ color: COLORS.cyan }} />
-                  <h2 className="text-[11px] font-bold tracking-[0.16em] text-white/78 uppercase">Personální síť sálů</h2>
-                </div>
-                <p className="text-[9px] text-white/28 mt-1 ml-5.5">Kliknutím zvýrazníte konkrétní tým</p>
+                <h2 className="text-[11px] font-semibold leading-tight text-white/92">Kdo pracuje a kdo je volný</h2>
+                <p className="mt-1 text-[8px] leading-tight text-white/38">Vlevo volný personál · vpravo obsazení sálů</p>
               </div>
-              <div className="hidden sm:flex items-center gap-3 text-[8px] font-semibold tracking-wider text-white/28">
-                <span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-cyan-300" /> VÝKON</span>
-                <span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-300" /> PŘIPRAVENO</span>
-                <span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-300" /> NEOBSAZENO</span>
+              <div className="hidden items-center gap-3 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/28 sm:flex">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'linear-gradient(90deg, #36D9EC, #A78BFA)' }} />
+                  Barva = aktuální status sálu
+                </span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-white/25" /> Mimo provoz</span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-rose-300" /> Neobsazená pozice</span>
               </div>
             </div>
 
             <AnimatePresence mode="popLayout">
               {filteredRooms.length > 0 ? (
-                <motion.div layout className="relative grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 min-[1800px]:grid-cols-4 gap-3">
-                  {filteredRooms.map(room => (
-                    <RoomNetworkCard
-                      key={room.id}
-                      room={room}
-                      isSelected={selectedRoomId === room.id}
-                      onSelect={() => setSelectedRoomId(current => current === room.id ? null : room.id)}
-                    />
-                  ))}
-                </motion.div>
+                overviewView === 'cards' ? (
+                  /* Nástěnka směny — atomem je člověk, ne sál. Nejdřív díry
+                     v rozpisu, pak kdo na kterém sále je, nakonec lavička. */
+                  <motion.div layout className="relative">
+                    {board.gaps.length > 0 && (
+                      <section className="mb-5">
+                        <BoardSectionHeading
+                          title="Chybí obsadit"
+                          count={board.gaps.length}
+                          color={COLORS.red}
+                          hint="kliknutím přiřadíte personál"
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                          {board.gaps.map(item => (
+                            <PersonTile
+                              key={`${item.roomId}-${item.role}`}
+                              tone="gap"
+                              name="Neobsazeno"
+                              role={item.role}
+                              place={item.roomName}
+                              accent={COLORS.red}
+                              badge={item.roomNumber}
+                              onClick={onStaffChange ? () => setPicker({ roomId: item.roomId, role: item.role }) : undefined}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    <section className="mb-5">
+                      <BoardSectionHeading
+                        title="Na sálech"
+                        count={board.working.length}
+                        color={COLORS.cyan}
+                        hint="kliknutím změníte přiřazení"
+                      />
+                      {board.working.length === 0 ? (
+                        <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-6 text-center text-[11px] text-white/32">
+                          Na žádném sále není přiřazený personál.
+                        </p>
+                      ) : (
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                          {board.working.map(item => (
+                            <PersonTile
+                              key={item.id}
+                              tone="working"
+                              name={item.name}
+                              role={item.role}
+                              place={item.place}
+                              accent={item.accent}
+                              badge={item.roomNumber}
+                              onClick={onStaffChange ? () => setPicker({ roomId: item.roomId, role: item.role }) : undefined}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </section>
+
+                    <section>
+                      <BoardSectionHeading
+                        title="Volní"
+                        count={board.free.length}
+                        color={COLORS.green}
+                        hint="k dispozici pro nasazení"
+                      />
+                      {board.free.length === 0 ? (
+                        <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-6 text-center text-[11px] text-white/32">
+                          Nikdo není volný — celý aktivní personál je nasazený.
+                        </p>
+                      ) : (
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                          {board.free.map(item => (
+                            <PersonTile
+                              key={item.id}
+                              tone="free"
+                              name={item.name}
+                              role={item.role}
+                              place="K dispozici"
+                              accent={COLORS.green}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  </motion.div>
+                ) : (
+                  <motion.div layout className="relative grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
+                    {filteredRooms.map(room => (
+                      <RoomNetworkCard
+                        key={room.id}
+                        room={room}
+                        isSelected={selectedRoomId === room.id}
+                        onSelect={() => setSelectedRoomId(current => current === room.id ? null : room.id)}
+                      />
+                    ))}
+                  </motion.div>
+                )
               ) : (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="relative min-h-[280px] flex flex-col items-center justify-center text-center"
+                  className="relative flex min-h-[320px] flex-col items-center justify-center text-center"
                 >
-                  <Search className="w-7 h-7 text-white/16 mb-3" />
-                  <p className="text-sm font-medium text-white/55">Žádný sál neodpovídá filtru</p>
+                  <Search className="mb-3 h-9 w-9 text-white/20" strokeWidth={1.4} />
+                  <p className="text-sm font-semibold text-white/65">Žádný sál neodpovídá filtru</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -568,13 +886,36 @@ const StaffOverviewModule: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms: oper
               )}
             </AnimatePresence>
           </section>
-
-          {/* Postranní panely „Pohotovostní tým" a „Integrita směny" jsou
-              odstraněné — dostupnost personálu se zatím nikde nenastavuje,
-              takže by zobrazovaly nepodložená čísla. Uvolněnou šířku dostala
-              Personální síť sálů. */}
         </div>
       )}
+
+      {/* Výběr personálu — tentýž modal jako v detailu sálu, včetně uložení
+          přes App → updateOperatingRoom, takže se zapíše do databáze. */}
+      {picker && (() => {
+        const room = rooms.find(item => item.id === picker.roomId);
+        const current = picker.role === 'nurse' ? room?.nurse : room?.anesthesiologist;
+        const dbRole = picker.role === 'nurse' ? 'nurse' : 'doctor';
+        return (
+          <StaffPickerModal
+            isOpen
+            onClose={() => setPicker(null)}
+            onSelect={(staffId, staffName) => {
+              onStaffChange?.(picker.roomId, dbRole, staffId, staffName);
+              setPicker(null);
+            }}
+            onUnassign={() => {
+              onStaffChange?.(picker.roomId, dbRole, '', '');
+              setPicker(null);
+            }}
+            currentStaffId={current?.id ?? null}
+            currentStaffName={current?.name ?? null}
+            filterRole={picker.role === 'nurse' ? 'NURSE' : 'DOCTOR'}
+            title={picker.role === 'nurse' ? 'Sestra — výběr a správa' : 'Lékař — výběr a správa'}
+            allRooms={operatingRooms}
+            currentRoomId={picker.roomId}
+          />
+        );
+      })()}
     </div>
   );
 };

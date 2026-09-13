@@ -119,16 +119,26 @@ const SETTINGS_TAB_SUBMODULE: Record<TabId, string> = {
   access: 'settings.access',
 };
 
+const SETTINGS_TABS = [
+  { id: 'hospital' as const, label: 'Zdravotnické zařízení', icon: Building2, sub: 'settings.hospital' },
+  { id: 'modules' as const, label: 'Správa modulů', icon: SlidersHorizontal, sub: 'settings.modules' },
+  { id: 'diagnostics' as const, label: 'Rychlost a připojení', icon: Gauge, sub: 'settings.diagnostics' },
+  { id: 'database' as const, label: 'Administrace databáze', icon: Database, sub: 'settings.database' },
+  { id: 'access' as const, label: 'Přihlášení a přístup', icon: UserCog, sub: 'settings.access' },
+];
+
 const SystemSettingsModule: React.FC = () => {
-  const { user, isAdmin, isSuperAdmin, canManageModuleRoles, logout, modules, submodules, toggleModule, toggleModuleRole, toggleSubmoduleRole, hasSubmoduleAccess } = useAuth();
+  const { user, isAdmin, isSuperAdmin, canManageModuleRoles, logout, modules, submodules, toggleModule, toggleModuleRole, toggleSubmodule, toggleSubmoduleRole, hasSubmoduleAccess } = useAuth();
   const { hospitals, activeHospital, activeHospitalId, selectHospital, refreshHospitals, loading: hospitalsLoading } = useHospital();
   // Otevřený panel přežije i případné přemontování komponenty (např. když
   // uložení nastavení vyvolá načtení modulů). Bez toho by uživatele po každé
   // změně vrátilo zpět na „Zdravotnické zařízení".
   const [activeTab, setActiveTab] = useState<TabId>(() => {
-    if (typeof window === 'undefined') return 'hospital';
+    const defaultTab: TabId = isSuperAdmin ? 'hospital' : 'modules';
+    if (typeof window === 'undefined') return defaultTab;
     const saved = window.sessionStorage.getItem('orm-settings-tab');
-    return saved && saved in SETTINGS_TAB_SUBMODULE ? (saved as TabId) : 'hospital';
+    const requested = saved && saved in SETTINGS_TAB_SUBMODULE ? (saved as TabId) : defaultTab;
+    return requested === 'hospital' && !isSuperAdmin ? defaultTab : requested;
   });
 
   useEffect(() => {
@@ -139,37 +149,17 @@ const SystemSettingsModule: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Kdyby role ztratila přístup k právě otevřenému panelu, přepneme na první
-  // dostupný — jinak by zůstala prázdná obrazovka.
-  //
-  // Pozor na závislosti: `hasSubmoduleAccess` z kontextu mění identitu při
-  // každé úpravě modulů, takže po každém přepnutí role by se efekt spustil
-  // znovu a uživatele to vyhodilo zpět na první panel. Proto se tu vyhodnocuje
-  // jen konkrétní seznam rolí aktivního panelu a efekt reaguje výhradně na
-  // jeho skutečnou změnu.
-  const activeTabSubmoduleId = SETTINGS_TAB_SUBMODULE[activeTab];
-  const activeTabRolesKey = (
-    submodules.find(s => s.id === activeTabSubmoduleId)?.allowed_roles ?? []
-  ).join(',');
+  const availableTabs = useMemo(
+    () => SETTINGS_TABS.filter(tab => (tab.id !== 'hospital' || isSuperAdmin) && hasSubmoduleAccess(tab.sub)),
+    [hasSubmoduleAccess, isSuperAdmin],
+  );
+  const availableTabsKey = availableTabs.map(tab => tab.id).join(',');
+  const activeTabIsAvailable = availableTabs.some(tab => tab.id === activeTab);
 
   useEffect(() => {
-    // Superadministrátor má přístup ke všemu, není co hlídat.
-    if (user?.role === 'superadmin') return;
-    // Dokud se podmoduly nenačetly, nic nepřepínáme.
-    if (submodules.length === 0) return;
-
-    const activeSub = submodules.find(s => s.id === activeTabSubmoduleId);
-    if (!activeSub) return; // neznámý panel = bez omezení
-    if (activeSub.allowed_roles?.includes(user?.role ?? '')) return;
-
-    const fallback = (Object.keys(SETTINGS_TAB_SUBMODULE) as TabId[]).find(id => {
-      const sub = submodules.find(s => s.id === SETTINGS_TAB_SUBMODULE[id]);
-      return sub?.allowed_roles?.includes(user?.role ?? '');
-    });
-    if (fallback && fallback !== activeTab) setActiveTab(fallback);
-    // Reagujeme jen na změnu panelu nebo jeho vlastních oprávnění.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, activeTabRolesKey, user?.role, submodules.length]);
+    if (activeTabIsAvailable || availableTabs.length === 0) return;
+    setActiveTab(availableTabs[0].id);
+  }, [activeTabIsAvailable, availableTabs, availableTabsKey]);
 
   const { isInstallable, isInstalled, handleInstall } = usePWAInstall();
   const [installLoading, setInstallLoading] = useState(false);
@@ -469,7 +459,9 @@ const SystemSettingsModule: React.FC = () => {
       <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
         <div className="flex min-w-max items-center gap-2.5">
           {[
-            { label: 'Zařízení', value: systemStats.hospital, suffix: 'konfigurace', color: systemStats.hospital ? COLORS.green : COLORS.amber, icon: Building2 },
+            ...(isSuperAdmin
+              ? [{ label: 'Zařízení', value: systemStats.hospital, suffix: 'konfigurace', color: systemStats.hospital ? COLORS.green : COLORS.amber, icon: Building2 }]
+              : []),
             { label: 'Aktivní moduly', value: systemStats.enabledModules, suffix: 'modulů', color: COLORS.cyan, icon: LayoutGrid },
             { label: 'Vypnuté moduly', value: systemStats.disabledModules, suffix: 'modulů', color: systemStats.disabledModules ? COLORS.amber : COLORS.green, icon: ShieldOff },
             { label: 'Nastavené role', value: systemStats.configuredRoles, suffix: 'rolí', color: COLORS.blue, icon: UserCog },
@@ -495,13 +487,7 @@ const SystemSettingsModule: React.FC = () => {
           <nav className="flex items-center gap-1 rounded-lg border border-white/[0.05] bg-black/10 p-1" aria-label="Sekce nastavení systému">
 {/* Panely Nastavení jsou podmoduly — superadministrátor u nich řídí, které
     role je uvidí. Zakázaný panel se v liště vůbec nezobrazí. */}
-{([
-  { id: 'hospital' as const, label: 'Zdravotnické zařízení', icon: Building2, sub: 'settings.hospital' },
-  { id: 'modules' as const,  label: 'Správa modulů',         icon: SlidersHorizontal, sub: 'settings.modules' },
-  { id: 'diagnostics' as const, label: 'Rychlost a připojení', icon: Gauge, sub: 'settings.diagnostics' },
-  { id: 'database' as const, label: 'Administrace databáze', icon: Database, sub: 'settings.database' },
-  { id: 'access' as const,   label: 'Přihlášení a přístup',  icon: UserCog, sub: 'settings.access' },
-  ]).filter(tab => hasSubmoduleAccess(tab.sub)).map(tab => {
+{availableTabs.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
@@ -523,7 +509,7 @@ const SystemSettingsModule: React.FC = () => {
       <div className="relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 sm:p-6">
 
         <AnimatePresence mode="wait">
-          {activeTab === 'hospital' && (
+          {activeTab === 'hospital' && isSuperAdmin && activeTabIsAvailable && (
             <motion.div
               key="hospital"
               initial={{ opacity: 0, y: 8 }}
@@ -543,7 +529,7 @@ const SystemSettingsModule: React.FC = () => {
           message={hospitalMessage}
           onChange={handleHospitalChange}
           onSave={handleHospitalSave}
-          isAdmin={isAdmin}
+          isAdmin={isSuperAdmin}
           isInstallable={isInstallable}
           isInstalled={isInstalled}
           onPWAInstall={handlePWAInstall}
@@ -552,7 +538,7 @@ const SystemSettingsModule: React.FC = () => {
             </motion.div>
           )}
 
-          {activeTab === 'modules' && (
+          {activeTab === 'modules' && activeTabIsAvailable && (
             <motion.div
               key="modules"
               initial={{ opacity: 0, y: 8 }}
@@ -568,12 +554,13 @@ const SystemSettingsModule: React.FC = () => {
                 submodules={submodules}
                 onToggleModule={toggleModule}
                 onToggleRole={toggleModuleRole}
+                onToggleSubmodule={toggleSubmodule}
                 onToggleSubmoduleRole={toggleSubmoduleRole}
               />
             </motion.div>
           )}
 
-          {activeTab === 'diagnostics' && (
+          {activeTab === 'diagnostics' && activeTabIsAvailable && (
             <motion.div
               key="diagnostics"
               initial={{ opacity: 0, y: 8 }}
@@ -589,7 +576,7 @@ const SystemSettingsModule: React.FC = () => {
             </motion.div>
           )}
 
-          {activeTab === 'database' && (
+          {activeTab === 'database' && activeTabIsAvailable && (
             <motion.div
               key="database"
               initial={{ opacity: 0, y: 8 }}
@@ -626,7 +613,7 @@ const SystemSettingsModule: React.FC = () => {
             </motion.div>
   )}
   
-  {activeTab === 'access' && (
+  {activeTab === 'access' && activeTabIsAvailable && (
             <motion.div
               key="access"
               initial={{ opacity: 0, y: 8 }}
@@ -639,6 +626,15 @@ const SystemSettingsModule: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        {availableTabs.length === 0 && (
+          <div className="flex min-h-48 items-center justify-center rounded-xl border border-amber-300/15 bg-amber-300/[0.04] p-6 text-center">
+            <div>
+              <Lock className="mx-auto h-6 w-6 text-amber-300/70" />
+              <p className="mt-3 text-sm font-semibold text-white/80">Nemáte přidělenou žádnou část nastavení systému.</p>
+              <p className="mt-1 text-xs text-white/40">Přístup k jednotlivým podmodulům nastavuje superadministrátor.</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Reset confirmation modal */}
@@ -708,23 +704,24 @@ const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospitals, acti
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Informace o zdravotnickém zařízení</h2>
-        <p className="text-sm text-white/50 leading-relaxed">
+        <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/38">Zdravotnické zařízení</p>
+        <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-white">Informace o zdravotnickém zařízení</h2>
+        <p className="mt-1 text-[12px] leading-relaxed text-white/38">
           Tyto údaje identifikují instanci aplikace a zobrazují se v reportech a notifikacích. Aplikace bude nasazována
           v různých nemocničních zařízeních — tato sekce slouží ke konfiguraci konkrétní instance.
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.05] p-4">
+      <div className="flex flex-col sm:flex-row gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
         <div className="flex-1">
-          <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200/60 mb-2">
+          <label className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-cyan-200/60">
             Aktivní nemocniční zařízení
           </label>
           <select
             value={hospital.id || activeHospitalId || ''}
             onChange={e => onSelectHospital(e.target.value)}
             disabled={!hospital.id}
-            className="w-full bg-[#10151d] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500/50 disabled:opacity-50"
+            className="h-10 w-full rounded-lg border border-white/[0.08] bg-[#10182a] px-3 text-sm text-white outline-none transition-colors focus:border-cyan-200/30 disabled:opacity-50"
           >
             {!hospital.id && <option value="">Nové zařízení</option>}
             {hospitals.map(item => (
@@ -736,7 +733,7 @@ const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospitals, acti
           <button
             type="button"
             onClick={onNewHospital}
-            className="self-end flex items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-bold text-cyan-200 hover:bg-cyan-400/15"
+            className="flex h-10 shrink-0 items-center gap-2 self-end rounded-lg border border-cyan-200/[0.20] bg-cyan-300/[0.10] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-cyan-100 hover:bg-cyan-300/[0.16]"
           >
             <Building2 className="w-4 h-4" />
             Přidat zařízení
@@ -814,7 +811,7 @@ const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospitals, acti
           type="email"
         />
         <div className="md:col-span-2">
-          <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
+          <label className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">
             Poznámky
           </label>
           <textarea
@@ -845,7 +842,7 @@ const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospitals, acti
         <button
           onClick={onSave}
           disabled={!isAdmin || saving}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-10 items-center gap-2 rounded-lg px-5 text-[9px] font-semibold uppercase tracking-[0.08em] text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           style={{
             background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)',
             boxShadow: '0 0 30px rgba(14,165,233,0.3)',
@@ -876,18 +873,18 @@ const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospitals, acti
 
           {/* PWA Install Card - show when installable */}
           {isInstallable && !isInstalled && (
-            <div className="rounded-2xl border border-blue-500/20 bg-blue-500/[0.04] p-5">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
                   <Smartphone className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Nainstalovat jako aplikaci</h3>
-                  <p className="text-xs text-blue-300/70 uppercase tracking-wider font-bold">Android, iOS, Mac</p>
+                  <h3 className="text-[15px] font-bold leading-tight text-white/90">Nainstalovat jako aplikaci</h3>
+                  <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-blue-300/70">Android, iOS, Mac</p>
                 </div>
               </div>
 
-              <p className="text-sm text-white/60 leading-relaxed mb-4">
+              <p className="mt-3 text-[11.5px] leading-[16px] text-white/45">
                 Nainstalujte aplikaci přímo na domovskou obrazovku vašeho zařízení. Aplikace bude fungovat bez prohlížeče a podpoří offline režim.
               </p>
 
@@ -908,13 +905,13 @@ const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospitals, acti
 
           {/* PWA Already Installed */}
           {isInstalled && (
-            <div className="rounded-2xl border border-green-500/20 bg-green-500/[0.04] p-5">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
                   <Check className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-green-300">Aplikace je již nainstalována</p>
+                  <p className="text-[13px] font-semibold text-emerald-300/85">Aplikace je již nainstalována</p>
                   <p className="text-xs text-green-300/60">Najdete ji na domovské obrazovce vašeho zařízení</p>
                 </div>
               </div>
@@ -969,7 +966,8 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Administrace databáze</h2>
+        <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/38">Databáze</p>
+        <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-white">Administrace databáze</h2>
         <p className="text-sm text-white/50 leading-relaxed max-w-3xl">
           Aplikace nyní funguje v testovacím režimu. Než začne produkční sběr dat v konkrétním zařízení, doporučujeme
           smazat aktuální provozní data. Data sbíraná v produkci zůstanou uložena — reset můžete kdykoliv provést znovu.
@@ -984,23 +982,24 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Operational reset */}
-          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-5 flex flex-col">
+          <div className="relative flex flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+              <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: '#F59E0B88' }} />
+                <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border" style={{ borderColor: '#F59E0B58', backgroundColor: '#F59E0B1f', color: '#F59E0B' }}>
                 <Database className="w-5 h-5 text-amber-400" />
-              </div>
+              </span>
               <div>
-                <h3 className="text-base font-bold text-white">Smazat provozní data</h3>
-                <p className="text-xs text-amber-300/70 uppercase tracking-wider font-bold">Doporučeno</p>
+                <h3 className="text-[15px] font-bold leading-tight text-white/90">Smazat provozní data</h3>
+                <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-amber-300/70">Doporučeno</p>
               </div>
             </div>
 
-            <p className="text-sm text-white/60 leading-relaxed mb-4 flex-1">
+            <p className="mt-3 flex-1 text-[11.5px] leading-[16px] text-white/45">
               Smaže historická data a resetuje stav sálů. Zachová konfiguraci — personál, oddělení, workflow statusy,
               operační sály a kontakty managementu.
             </p>
 
-            <ul className="text-xs text-white/50 space-y-1.5 mb-5">
+            <ul className="mt-3 space-y-1 border-t border-white/[0.055] pt-2.5 text-[11px] text-white/45">
               <li className="flex items-center gap-2">
                 <Trash2 className="w-3 h-3 text-amber-400" />
                 Historie změn stavů sálů
@@ -1025,7 +1024,7 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
 
             <button
               onClick={() => onRequestReset('operational')}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm bg-amber-500 hover:bg-amber-600 transition-colors"
+              className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-[9px] font-semibold uppercase tracking-[0.08em] transition-colors disabled:opacity-50" style={{ borderColor: '#F59E0B35', background: '#F59E0B14', color: '#F59E0B' }}
             >
               <Trash2 className="w-4 h-4" />
               Smazat provozní data
@@ -1033,23 +1032,24 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
           </div>
 
           {/* Full reset */}
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.04] p-5 flex flex-col">
+          <div className="relative flex flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+              <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: '#EF444488' }} />
+                <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border" style={{ borderColor: '#EF444458', backgroundColor: '#EF44441f', color: '#EF4444' }}>
                 <AlertTriangle className="w-5 h-5 text-red-400" />
-              </div>
+              </span>
               <div>
-                <h3 className="text-base font-bold text-white">Kompletní reset</h3>
-                <p className="text-xs text-red-300/70 uppercase tracking-wider font-bold">Příprava pro jiné zařízení</p>
+                <h3 className="text-[15px] font-bold leading-tight text-white/90">Kompletní reset</h3>
+                <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-red-300/70">Příprava pro jiné zařízení</p>
               </div>
             </div>
 
-            <p className="text-sm text-white/60 leading-relaxed mb-4 flex-1">
-              Smaže <strong className="text-white/80">veškerá data</strong> kromě u��ivatelských účtů a aplikačních
+            <p className="mt-3 flex-1 text-[11.5px] leading-[16px] text-white/45">
+              Smaže <strong className="text-white/80">veškerá data</strong> kromě uživatelských účtů a aplikačních
               nastavení. Použijte při nasazení aplikace do zcela nové nemocnice.
             </p>
 
-            <ul className="text-xs text-white/50 space-y-1.5 mb-5">
+            <ul className="mt-3 space-y-1 border-t border-white/[0.055] pt-2.5 text-[11px] text-white/45">
               <li className="flex items-center gap-2">
                 <Trash2 className="w-3 h-3 text-red-400" />
                 Všechna provozní data (jako výše)
@@ -1074,7 +1074,7 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
 
             <button
               onClick={() => onRequestReset('full')}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm bg-red-600 hover:bg-red-700 transition-colors"
+              className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-[9px] font-semibold uppercase tracking-[0.08em] transition-colors disabled:opacity-50" style={{ borderColor: '#EF444435', background: '#EF444414', color: '#EF4444' }}
             >
               <AlertTriangle className="w-4 h-4" />
               Kompletní reset databáze
@@ -1096,25 +1096,26 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Export */}
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-5 flex flex-col">
+            <div className="relative flex flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: '#34D39988' }} />
+                <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border" style={{ borderColor: '#34D39958', backgroundColor: '#34D3991f', color: '#34D399' }}>
                   <HardDriveDownload className="w-5 h-5 text-emerald-400" />
-                </div>
+                </span>
                 <div>
-                  <h3 className="text-base font-bold text-white">Exportovat databázi</h3>
-                  <p className="text-xs text-emerald-300/70 uppercase tracking-wider font-bold">
+                  <h3 className="text-[15px] font-bold leading-tight text-white/90">Exportovat databázi</h3>
+                  <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-300/70">
                     Stáhnout zálohu
                   </p>
                 </div>
               </div>
 
-              <p className="text-sm text-white/60 leading-relaxed mb-4 flex-1">
+              <p className="mt-3 flex-1 text-[11.5px] leading-[16px] text-white/45">
                 Stáhne kompletní zálohu databáze jako JSON soubor. Obsahuje veškerou konfiguraci i provozní data — s
                 výjimkou hesel uživatelů. Záloha je připravena pro pozdější obnovu.
               </p>
 
-              <ul className="text-xs text-white/50 space-y-1.5 mb-5">
+              <ul className="mt-3 space-y-1 border-t border-white/[0.055] pt-2.5 text-[11px] text-white/45">
                 <li className="flex items-center gap-2">
                   <FileJson className="w-3 h-3 text-emerald-400" />
                   Všechny tabulky v jednom JSON souboru
@@ -1132,7 +1133,7 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
               <button
                 onClick={onExport}
                 disabled={exportLoading}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm bg-emerald-500 hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-[9px] font-semibold uppercase tracking-[0.08em] transition-colors disabled:opacity-50" style={{ borderColor: '#34D39935', background: '#34D39914', color: '#34D399' }}
               >
                 {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 {exportLoading ? 'Exportuji…' : 'Exportovat databázi'}
@@ -1157,14 +1158,15 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
             </div>
 
             {/* Import */}
-            <div className="rounded-2xl border border-[#0EA5E9]/20 bg-[#0EA5E9]/[0.04] p-5 flex flex-col">
+            <div className="relative flex flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/20 flex items-center justify-center">
+                <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: '#0EA5E988' }} />
+                <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border" style={{ borderColor: '#0EA5E958', backgroundColor: '#0EA5E91f', color: '#0EA5E9' }}>
                   <HardDriveUpload className="w-5 h-5 text-[#0EA5E9]" />
-                </div>
+                </span>
                 <div>
-                  <h3 className="text-base font-bold text-white">Obnovit ze zálohy</h3>
-                  <p className="text-xs text-[#0EA5E9]/70 uppercase tracking-wider font-bold">
+                  <h3 className="text-[15px] font-bold leading-tight text-white/90">Obnovit ze zálohy</h3>
+                  <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#0EA5E9]/70">
                     Nahrát JSON soubor
                   </p>
                 </div>
@@ -1240,7 +1242,7 @@ const DatabasePanel: React.FC<DatabasePanelProps> = ({
               <button
                 onClick={onRequestImport}
                 disabled={!importFile || !importPreview}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-white text-sm bg-[#0EA5E9] hover:bg-[#0284C7] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-[9px] font-semibold uppercase tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-50" style={{ borderColor: '#0EA5E935', background: '#0EA5E914', color: '#38BDF8' }}
               >
                 <RotateCcw className="w-4 h-4" />
                 Obnovit data ze zálohy
@@ -1415,7 +1417,8 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Přihlášení a přístup</h2>
+        <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/38">Přístup</p>
+        <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-white">Přihlášení a přístup</h2>
         <p className="text-sm text-white/50 leading-relaxed max-w-3xl">
           Informace o aktuálně přihlášeném uživateli a o instanci aplikace. Přihlášení určuje, ke kterému zdravotnickému
           zařízení se připojujete a jaká oprávnění máte.
@@ -1424,12 +1427,12 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Current session */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-[#10B981]/20 flex items-center justify-center">
               <UserCog className="w-5 h-5 text-[#10B981]" />
             </div>
-            <h3 className="text-base font-bold text-white">Aktuální relace</h3>
+            <h3 className="text-[15px] font-bold leading-tight text-white/90">Aktuální relace</h3>
           </div>
 
           <dl className="space-y-3 text-sm">
@@ -1455,7 +1458,7 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
 
           <button
             onClick={onLogout}
-            className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+            className="mt-5 w-full flex items-center justify-center gap-2 h-10 rounded-lg text-[9px] font-semibold uppercase tracking-[0.08em] text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Odhlásit se
@@ -1463,12 +1466,13 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
         </div>
 
         {/* Hospital context */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/20 flex items-center justify-center">
+            <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: '#0EA5E988' }} />
+                <span className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border" style={{ borderColor: '#0EA5E958', backgroundColor: '#0EA5E91f', color: '#0EA5E9' }}>
               <Building2 className="w-5 h-5 text-[#0EA5E9]" />
-            </div>
-            <h3 className="text-base font-bold text-white">Kontext zařízení</h3>
+            </span>
+            <h3 className="text-[15px] font-bold leading-tight text-white/90">Kontext zařízení</h3>
           </div>
 
           <dl className="space-y-3 text-sm">
@@ -1483,10 +1487,10 @@ const AccessPanel: React.FC<AccessPanelProps> = ({ user, isAdmin, isSuperAdmin, 
       </div>
 
       {isAdmin && (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+        <section className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
           <div className="flex items-center justify-between gap-4 mb-4">
             <div>
-              <h3 className="text-base font-bold text-white">Uživatelé nemocnice</h3>
+              <h3 className="text-[15px] font-bold leading-tight text-white/90">Uživatelé nemocnice</h3>
               <p className="text-xs text-white/40 mt-1">
                 Povolte rolím přihlášení do {hospitalName || 'vybrané nemocnice'} a nastavte jim zdejší heslo.
                 Každé zařízení má vlastní hesla — kromě superadministrátora, který se přihlašuje přes Google.
@@ -1646,7 +1650,7 @@ interface FieldProps {
 
 const Field: React.FC<FieldProps> = ({ label, icon: Icon, placeholder, value, onChange, disabled, fullWidth, type }) => (
   <div className={fullWidth ? 'md:col-span-2' : ''}>
-    <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">{label}</label>
+    <label className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</label>
     <div className="relative">
       <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
       <input
@@ -1655,7 +1659,7 @@ const Field: React.FC<FieldProps> = ({ label, icon: Icon, placeholder, value, on
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#0EA5E9]/50 focus:ring-1 focus:ring-[#0EA5E9]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-10 w-full rounded-lg border border-white/[0.08] bg-white/[0.035] pl-10 pr-3 text-sm text-white outline-none transition-colors placeholder:text-white/22 focus:border-cyan-200/30 focus:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>
   </div>
@@ -1663,8 +1667,8 @@ const Field: React.FC<FieldProps> = ({ label, icon: Icon, placeholder, value, on
 
 const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div className="flex items-center justify-between gap-4">
-    <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">{label}</dt>
-    <dd className="text-white font-medium text-right truncate">{value}</dd>
+    <dt className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</dt>
+    <dd className="truncate text-right text-[12px] font-semibold text-white/85">{value}</dd>
   </div>
 );
 
@@ -1700,19 +1704,18 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+      className="staff-picker-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl border bg-[#0f0f14] p-6"
-        style={{ borderColor: `${accent}40` }}
+        className="staff-picker-dialog w-full max-w-md rounded-xl p-6"
       >
         <div className="flex items-center gap-3 mb-4">
           <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            className="w-12 h-12 rounded-xl flex items-center justify-center"
             style={{ background: `${accent}20` }}
           >
             <AlertTriangle className="w-6 h-6" style={{ color: accent }} />
@@ -1731,7 +1734,7 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
             : 'Smažete historii, rozpisy a notifikace. Konfigurace zůstane zachována. Opravdu pokračovat?'}
         </p>
 
-        <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
+        <label className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">
           Pro potvrzení zadejte přesně: <span className="text-white">SMAZAT DATA</span>
         </label>
         <input
@@ -1795,6 +1798,7 @@ interface ModulesPanelProps {
   submodules: AppSubmodule[];
   onToggleModule: (moduleId: string, enabled: boolean) => Promise<boolean>;
   onToggleRole: (moduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
+  onToggleSubmodule: (submoduleId: string, enabled: boolean) => Promise<boolean>;
   onToggleSubmoduleRole: (submoduleId: string, role: UserRole, enabled: boolean) => Promise<boolean>;
 }
 
@@ -1824,40 +1828,6 @@ const ROLE_DEFS: RoleDef[] = [ADMIN_ROLE, ...OPERATIONAL_ROLES];
  * pohled zřejmé, že superadministrátor stojí nad administrátorem a že provozní
  * role se nastavují níže v matici.
  */
-const ACCESS_TIERS: Array<{
-  id: 'superadmin' | 'admin' | 'roles';
-  label: string;
-  level: string;
-  description: string;
-  icon: LucideIcon;
-  color: string;
-}> = [
-  {
-    id: 'superadmin',
-    label: 'Superadministrátor',
-    level: 'Bez omezení',
-    description: 'Všechny moduly a funkce včetně administrátorského rozhraní. Jako jediný nastavuje přístup ostatních rolí.',
-    icon: Crown,
-    color: '#E0574F',
-  },
-  {
-    id: 'admin',
-    label: 'Administrátor',
-    level: 'Správa systému',
-    description: 'Všechny moduly a správa nemocnice. Nastavení přístupu rolí vidí, ale nemění.',
-    icon: ShieldCheck,
-    color: '#D99C35',
-  },
-  {
-    id: 'roles',
-    label: 'Provozní role',
-    level: 'Dle nastavení',
-    description: 'ARO, COS, Management a Primariát vidí jen moduly povolené v matici níže.',
-    icon: UserCog,
-    color: '#60A5FA',
-  },
-];
-
 const MODULE_ICON_MAP: Record<string, LucideIcon> = {
   LayoutGrid,
   Calendar: SlidersHorizontal, // fallback
@@ -1868,7 +1838,7 @@ const MODULE_ICON_MAP: Record<string, LucideIcon> = {
   Shield,
 };
 
-const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, modules, submodules, onToggleModule, onToggleRole, onToggleSubmoduleRole }) => {
+const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, modules, submodules, onToggleModule, onToggleRole, onToggleSubmodule, onToggleSubmoduleRole }) => {
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
 
@@ -1884,10 +1854,18 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
   const sortedModules = [...modules].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const handleGlobalToggle = async (moduleId: string, currentEnabled: boolean) => {
-    if (moduleId === 'settings') return; // cannot disable settings
+    if (!canManageRoles) return;
     const key = `g:${moduleId}`;
     setPendingKey(key);
     await onToggleModule(moduleId, !currentEnabled);
+    setPendingKey(null);
+  };
+
+  const handleSubmoduleToggle = async (submoduleId: string, currentEnabled: boolean) => {
+    if (!canManageRoles || submoduleId === SETTINGS_TAB_SUBMODULE.modules) return;
+    const key = `sub-enabled:${submoduleId}`;
+    setPendingKey(key);
+    await onToggleSubmodule(submoduleId, !currentEnabled);
     setPendingKey(null);
   };
 
@@ -1918,7 +1896,7 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
             ? (!canManageRoles ? 'Měnit smí pouze superadministrátor' : 'Modul je vypnutý')
             : allowed ? `Odebrat přístup roli ${role.label}` : `Povolit přístup roli ${role.label}`
         }
-        className="flex w-full items-center gap-2 rounded-2xl px-2.5 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45"
         style={allowed ? { ...TILE_ACTIVE, color: '#FFFFFF' } : { ...TILE, color: 'rgba(255,255,255,0.42)' }}
       >
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
@@ -1957,9 +1935,9 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
         key={role.id}
         type="button"
         onClick={() => handleSubmoduleRoleToggle(sub.id, role.id, allowed)}
-        disabled={!canManageRoles || !mod.is_enabled || pending}
+        disabled={!canManageRoles || !mod.is_enabled || !sub.is_enabled || pending}
         aria-pressed={allowed}
-        className="flex w-full items-center gap-1.5 rounded-[11px] px-2 py-1.5 text-[10px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+        className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45"
         style={allowed ? { ...TILE_ACTIVE, color: '#FFFFFF' } : { ...TILE, color: 'rgba(255,255,255,0.38)' }}
       >
         <RoleIcon
@@ -1978,22 +1956,24 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
     );
   };
 
-  const enabledCount = sortedModules.filter(m => m.is_enabled).length;
-
   return (
     <div className="space-y-4">
       {/* ── Záhlaví: kdo jsem + hierarchie + čísla ─────────────────────────
           Materiál (rádius, nádech okraje, vnitřní světlo) odpovídá ostatním
           sekcím Nastavení, aby panel nevypadal jako cizí prvek. */}
-      <section className="relative overflow-hidden rounded-[26px] p-5" style={SURFACE}>
+      <section className="relative overflow-hidden rounded-xl p-5" style={SURFACE}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/38">Oprávnění</p>
             <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-white">Správa modulů a rolí</h2>
-            <p className="mt-1 text-[12px] text-white/38">Kdo uvidí který modul. Změny se ukládají okamžitě.</p>
+            <p className="mt-1 text-[12px] text-white/38">
+              {canManageRoles
+                ? 'Nastavte, které role uvidí jednotlivé moduly a podmoduly. Změny se ukládají okamžitě.'
+                : 'Přehled oprávnění vašeho zařízení. Změny provádí superadministrátor.'}
+            </p>
           </div>
-          <div className="flex items-center gap-3 rounded-[18px] px-4 py-2.5" style={TILE}>
-            <span className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/[0.05]">
+          <div className="flex items-center gap-3 rounded-xl px-4 py-2.5" style={TILE}>
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.05]">
               {canManageRoles
                 ? <Crown className="h-[18px] w-[18px]" style={{ color: TIER_COLOR.superadmin }} />
                 : <ShieldCheck className="h-[18px] w-[18px]" style={{ color: TIER_COLOR.admin }} />}
@@ -2005,56 +1985,6 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Úrovně přístupu */}
-        <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
-          {ACCESS_TIERS.map((tier, tierIndex) => {
-            const TierIcon = tier.icon;
-            const isMine = canManageRoles ? tier.id === 'superadmin' : tier.id === 'admin';
-            return (
-              <div
-                key={tier.id}
-                className="relative overflow-hidden rounded-[18px] p-3.5"
-                style={isMine ? TILE_ACTIVE : TILE}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-white/[0.05]">
-                    <TierIcon className="h-4 w-4" style={{ color: tier.color }} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12.5px] font-semibold text-white">{tier.label}</p>
-                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{tier.level}</p>
-                  </div>
-                  <span className="text-[22px] font-semibold leading-none tabular-nums text-white/12">
-                    {tierIndex + 1}
-                  </span>
-                </div>
-                <p className="mt-2.5 text-[10.5px] leading-relaxed text-white/32">{tier.description}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Čísla — stejný formát jako přehled nahoře v Nastavení */}
-        <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          {[
-            { label: 'Modulů celkem', value: sortedModules.length, suffix: 'modulů', color: COLORS.cyan, icon: LayoutGrid },
-            { label: 'Zapnuto', value: enabledCount, suffix: 'aktivních', color: COLORS.green, icon: Check },
-            { label: 'Vypnuto', value: sortedModules.length - enabledCount, suffix: 'skrytých', color: COLORS.amber, icon: ShieldOff },
-            { label: 'Podmodulů', value: submodules.length, suffix: 'částí', color: COLORS.violet, icon: Layers },
-          ].map(({ label, value, suffix, color, icon: StatIcon }) => (
-            <div key={label} className="flex min-h-[74px] flex-col justify-between rounded-[18px] px-3.5 py-3" style={TILE}>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">{label}</p>
-                <StatIcon className="h-3.5 w-3.5" style={{ color }} />
-              </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold tabular-nums tracking-tight text-white">{value}</span>
-                <span className="text-[9px] text-white/25">{suffix}</span>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -2071,92 +2001,57 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
           return (
             <article
               key={mod.id}
-              className="relative flex flex-col overflow-hidden rounded-[22px] p-3 font-sans transition-colors"
-              style={{
-                // Barevné odlišení kartou v odstínu modulu — stejný zápis jako
-                // v notifikačním centru: velmi jemný diagonální přechod, ne
-                // plocha v plné barvě.
-                background: mod.is_enabled
-                  ? `linear-gradient(125deg, ${accent}0A, rgba(255,255,255,0.018) 52%, rgba(251,191,36,0.012))`
-                  : 'rgba(255,255,255,0.016)',
-                border: `1px solid ${mod.is_enabled ? 'rgba(125,165,185,0.16)' : 'rgba(255,255,255,0.07)'}`,
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
-              }}
+              className={`relative flex flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4 font-sans transition-colors ${mod.is_enabled ? 'hover:bg-white/[0.04]' : 'opacity-55 hover:opacity-80'}`}
+              style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
             >
-              {/* Vlásková linka nahoře v barvě modulu — stejný podpis jako mají
-                  karty kontaktů v Managementu. */}
-              <div
-                aria-hidden
-                className="absolute inset-x-10 top-0 h-px"
-                style={{
-                  background: `linear-gradient(90deg, transparent, ${
-                    mod.is_enabled ? accent : 'rgba(148,163,184,0.5)'
-                  }, transparent)`,
-                }}
-              />
+              <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}88` }} />
 
-              {/* Identita vlevo, oprávnění vpravo */}
-              <div className="grid gap-3 sm:grid-cols-[136px_minmax(0,1fr)]">
-                {/* ── Identita modulu ── */}
-                <div
-                  className="flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl px-3 py-3"
-                  style={{
-                    // Sloupec identity nese barvu modulu, stejně jako dlaždice
-                    // kanálu v notifikačním centru.
-                    background: mod.is_enabled
-                      ? `linear-gradient(145deg, ${accent}2E, ${accent}12)`
-                      : 'linear-gradient(145deg, rgba(148,163,184,0.11), rgba(148,163,184,0.04))',
-                    border: `1px solid ${mod.is_enabled ? `${accent}55` : 'rgba(148,163,184,0.15)'}`,
-                  }}
+              {/* Hlavička karty — dlaždice modulu, název, stav a přepínač. */}
+              <div className="flex items-center gap-3.5">
+                <span
+                  className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border px-1 text-[11px] font-black uppercase leading-none"
+                  style={{ borderColor: `${accent}58`, backgroundColor: `${accent}1f`, color: accent }}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Modul</span>
+                  <span className="truncate">{mod.name.slice(0, 3)}</span>
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-[15px] font-bold leading-tight text-white/90">{mod.name}</h3>
+                  <p className="mt-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
                     <span
-                      className="h-1.5 w-1.5 rounded-full"
+                      className="inline-block h-1.5 w-1.5 rounded-full"
                       style={{ background: mod.is_enabled ? COLORS.green : 'rgba(255,255,255,0.22)' }}
                     />
-                  </div>
-
-                  <div className="my-2">
-                    <p className="line-clamp-2 text-sm font-bold leading-tight text-white">{mod.name}</p>
-                    <p className="mt-1 line-clamp-3 text-[10px] leading-tight text-white/42">
-                      {mod.description || '—'}
-                    </p>
-                  </div>
-
-                  {/* Stav modulu + přepínač na jednom řádku */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`text-[9px] font-semibold ${
-                        mod.is_enabled ? 'text-emerald-300/75' : 'text-white/28'
-                      }`}
-                    >
-                      {isSettingsModule ? 'Vždy aktivní' : mod.is_enabled ? 'Zapnuto' : 'Vypnuto'}
-                    </span>
-                    {!isSettingsModule && (
-                      <button
-                        type="button"
-                        onClick={() => handleGlobalToggle(mod.id, mod.is_enabled)}
-                        disabled={globalPending}
-                        aria-label={`Globální přepínač modulu ${mod.name}`}
-                        className={`relative h-5 w-10 shrink-0 rounded-full transition-colors ${
-                          mod.is_enabled ? 'bg-emerald-500' : 'bg-white/12'
-                        } disabled:opacity-50`}
-                      >
-                        <motion.div
-                          animate={{ x: mod.is_enabled ? 21 : 2 }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                          className="absolute top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow"
-                        >
-                          {globalPending && <Loader2 className="h-2.5 w-2.5 animate-spin text-emerald-500" />}
-                        </motion.div>
-                      </button>
-                    )}
-                  </div>
+                    {mod.is_enabled ? 'Zapnuto' : 'Vypnuto'}
+                  </p>
                 </div>
 
-                {/* ── Oprávnění vpravo ── */}
-                <div className="flex min-w-0 flex-col gap-1.5 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleGlobalToggle(mod.id, mod.is_enabled)}
+                  disabled={!canManageRoles || globalPending}
+                  aria-label={`Globální přepínač modulu ${mod.name}`}
+                  title={canManageRoles ? `${mod.is_enabled ? 'Vypnout' : 'Zapnout'} modul ${mod.name}` : 'Měnit smí pouze superadministrátor'}
+                  className={`relative h-5 w-10 shrink-0 rounded-full transition-colors ${
+                    mod.is_enabled ? 'bg-emerald-500' : 'bg-white/12'
+                  } disabled:cursor-not-allowed disabled:opacity-45`}
+                >
+                  <motion.div
+                    animate={{ x: mod.is_enabled ? 21 : 2 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    className="absolute top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white shadow"
+                  >
+                    {globalPending && <Loader2 className="h-2.5 w-2.5 animate-spin text-emerald-500" />}
+                  </motion.div>
+                </button>
+              </div>
+
+              <p className="mt-3 min-h-[30px] text-[11.5px] leading-[15px] text-white/42 line-clamp-2">
+                {mod.description || 'Bez doplňujícího popisu'}
+              </p>
+
+              <div className="mt-3 border-t border-white/[0.055] pt-2.5">
+                <div className="flex min-w-0 flex-col gap-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">
                       Přístup rolí
@@ -2168,7 +2063,7 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
 
                   {/* Superadmin — jediná role, které přístup odebrat nejde */}
                   <div
-                    className="flex items-center gap-2 rounded-2xl px-2.5 py-1.5 text-[11px] font-semibold text-white/85"
+                    className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold text-white/85"
                     style={TILE}
                   >
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
@@ -2201,7 +2096,7 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
                     Odebráním administrátora ztratí přístup ke správě systému.
                   </p>
                 )}
-                {!mod.is_enabled && !isSettingsModule && (
+                {!mod.is_enabled && (
                   <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/[0.07] px-2.5 py-2 text-[11px] text-amber-300/80">
                     <AlertTriangle className="h-3 w-3 shrink-0" />
                     Modul je vypnutý — role nelze nastavovat.
@@ -2216,7 +2111,7 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
                     <button
                       type="button"
                       onClick={() => setExpandedModule(expandedModule === `sub:${mod.id}` ? null : `sub:${mod.id}`)}
-                      className="flex w-full items-center gap-2 rounded-[13px] px-2.5 py-2 text-[11px] font-semibold text-white/70 transition-colors hover:text-white" style={TILE}
+                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[11px] font-semibold text-white/70 transition-colors hover:text-white" style={TILE}
                     >
                       <Layers className="h-4 w-4 shrink-0 text-white/40" />
                       <span className="flex-1 text-left">Podmoduly</span>
@@ -2232,21 +2127,54 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
 
                     {expandedModule === `sub:${mod.id}` && (
                       <div className="mt-2 space-y-2">
-                        {moduleSubmodules.map(sub => (
-                          <div key={sub.id} className="rounded-[15px] p-2.5" style={TILE}>
-                            <div className="mb-2 flex items-center gap-2">
-                              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/25" />
-                              <p className="min-w-0 flex-1 truncate text-[11px] font-bold text-white/80">{sub.name}</p>
-                              <span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-white/50">
-                                {ROLE_DEFS.filter(r => sub.allowed_roles?.includes(r.id)).length}/{ROLE_DEFS.length}
-                              </span>
+                        {moduleSubmodules.map(sub => {
+                          const superadminOnly = sub.id === SETTINGS_TAB_SUBMODULE.hospital;
+                          const controlPlane = sub.id === SETTINGS_TAB_SUBMODULE.modules;
+                          const enabledPending = pendingKey === `sub-enabled:${sub.id}`;
+                          return (
+                            <div key={sub.id} className="rounded-lg p-2.5" style={TILE}>
+                              <div className="mb-2 flex items-center gap-2">
+                                <span
+                                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                  style={{ background: sub.is_enabled ? COLORS.green : 'rgba(255,255,255,0.22)' }}
+                                />
+                                <p className="min-w-0 flex-1 truncate text-[11px] font-bold text-white/80">{sub.name}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSubmoduleToggle(sub.id, sub.is_enabled)}
+                                  disabled={!canManageRoles || !mod.is_enabled || controlPlane || enabledPending}
+                                  aria-label={`${sub.is_enabled ? 'Vypnout' : 'Zapnout'} podmodul ${sub.name}`}
+                                  title={controlPlane ? 'Řídicí podmodul musí zůstat aktivní' : canManageRoles ? `${sub.is_enabled ? 'Vypnout' : 'Zapnout'} podmodul` : 'Měnit smí pouze superadministrátor'}
+                                  className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${sub.is_enabled ? 'bg-emerald-500' : 'bg-white/12'} disabled:cursor-not-allowed disabled:opacity-45`}
+                                >
+                                  <motion.span
+                                    animate={{ x: sub.is_enabled ? 17 : 2 }}
+                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                    className="absolute top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-white shadow"
+                                  >
+                                    {enabledPending && <Loader2 className="h-2 w-2 animate-spin text-emerald-500" />}
+                                  </motion.span>
+                                </button>
+                                <span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-white/50">
+                                  {superadminOnly ? 'Pouze superadmin' : `${ROLE_DEFS.filter(r => sub.allowed_roles?.includes(r.id)).length}/${ROLE_DEFS.length}`}
+                                </span>
+                              </div>
+                              {superadminOnly ? (
+                                <div className="flex items-center gap-2 rounded-lg border border-rose-300/[0.12] bg-rose-300/[0.04] px-2.5 py-2 text-[10px] font-semibold text-white/52">
+                                  <Crown className="h-3.5 w-3.5 shrink-0" style={{ color: TIER_COLOR.superadmin }} />
+                                  Globální konfigurace bez možnosti přidělení jiné roli
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="mb-1.5">{renderSubmoduleRoleTile(mod, sub, ADMIN_ROLE)}</div>
+                                  <div className="grid grid-cols-2 gap-1.5">
+                                    {OPERATIONAL_ROLES.map(role => renderSubmoduleRoleTile(mod, sub, role))}
+                                  </div>
+                                </>
+                              )}
                             </div>
-                            <div className="mb-1.5">{renderSubmoduleRoleTile(mod, sub, ADMIN_ROLE)}</div>
-                            <div className="grid grid-cols-2 gap-1.5">
-                              {OPERATIONAL_ROLES.map(role => renderSubmoduleRoleTile(mod, sub, role))}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -2257,7 +2185,7 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
                   <div className="mt-4 pt-4 border-t border-white/10">
                     <button
                       onClick={() => setExpandedModule(expandedModule === 'devices' ? null : 'devices')}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-sm font-bold transition-all w-full justify-center"
+                      className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/52 transition-colors hover:text-white"
                     >
                       <Smartphone className="w-4 h-4" />
                       {expandedModule === 'devices' ? 'Skrýt správu zařízení' : 'Spravovat zařízení'}
@@ -2283,12 +2211,11 @@ const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, mo
         })}
       </div>
 
-      <div className="flex items-start gap-2.5 rounded-[18px] p-3.5 text-[11.5px] leading-relaxed text-white/38" style={CARD}>
+      <div className="flex items-start gap-2.5 rounded-xl p-3.5 text-[11.5px] leading-relaxed text-white/38" style={CARD}>
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-white/35" />
         <span>
-          Změny se ukládají okamžitě. Superadministrátor a administrátor mají přístup ke všem modulům bez ohledu na
-          nastavení — proto se u nich přepínač nezobrazuje. Vypnutý modul zmizí všem provozním rolím bez ohledu na
-          jejich nastavení.
+          Změny se ukládají okamžitě. Superadministrátor má trvalý přístup a jako jediný může měnit dostupnost modulů,
+          podmodulů i oprávnění rolí. Vypnutá část zmizí všem ostatním rolím bez ohledu na jejich přiřazení.
         </span>
       </div>
     </div>
@@ -2326,19 +2253,18 @@ const ImportConfirmModal: React.FC<ImportConfirmModalProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+      className="staff-picker-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl border bg-[#0f0f14] p-6"
-        style={{ borderColor: `${accent}40` }}
+        className="staff-picker-dialog w-full max-w-md rounded-xl p-6"
       >
         <div className="flex items-center gap-3 mb-4">
           <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            className="w-12 h-12 rounded-xl flex items-center justify-center"
             style={{ background: `${accent}20` }}
           >
             <HardDriveUpload className="w-6 h-6" style={{ color: accent }} />
@@ -2372,7 +2298,7 @@ const ImportConfirmModal: React.FC<ImportConfirmModalProps> = ({
           )}
         </div>
 
-        <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
+        <label className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">
           Pro potvrzení zadejte přesně: <span className="text-white">OBNOVIT DATA</span>
         </label>
         <input
@@ -2577,7 +2503,8 @@ const DevicesSettingsPanel: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white mb-1">Správa zařízení</h2>
+          <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/38">Zařízení</p>
+        <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-white">Správa zařízení</h2>
           <p className="text-sm text-white/50 leading-relaxed max-w-2xl">
             Přehled všech zařízení, která přistupují k aplikaci. Můžete jednotlivá zařízení aktivovat, deaktivovat nebo odstranit.
           </p>
@@ -2603,7 +2530,7 @@ const DevicesSettingsPanel: React.FC = () => {
             <Smartphone className="w-6 h-6 text-white/20" />
           </div>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-emerald-400">{stats.active}</p>
@@ -2612,7 +2539,7 @@ const DevicesSettingsPanel: React.FC = () => {
             <Shield className="w-6 h-6 text-emerald-500/30" />
           </div>
         </div>
-        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.04] p-4">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-cyan-400">{stats.online}</p>
@@ -2633,7 +2560,7 @@ const DevicesSettingsPanel: React.FC = () => {
       </div>
 
       {/* Info banner */}
-      <div className="rounded-2xl border border-blue-500/20 bg-blue-500/[0.04] p-4 flex gap-3">
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 flex gap-3">
         <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
         <div className="text-sm text-white/70 leading-relaxed">
           <strong className="text-white">Jak to funguje:</strong> Každé zařízení se automaticky zaregistruje při prvním přístupu do aplikace. 
@@ -2676,7 +2603,7 @@ const DevicesSettingsPanel: React.FC = () => {
             return (
               <div
                 key={device.id}
-                className={`relative rounded-2xl border p-4 transition-all ${
+                className={`relative rounded-xl border p-4 transition-all ${
                   !device.is_active
                     ? 'border-red-500/20 bg-red-500/[0.02] opacity-60'
                     : isCurrentDevice

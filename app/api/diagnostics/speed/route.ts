@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
 import { requireHospitalAccess } from '@/lib/hospital/access';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,8 @@ function createDiagnosticPayload() {
 export async function GET(request: NextRequest) {
   const access = await requireHospitalAccess(request);
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.diagnostics');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const { hospitalId, user } = access;
 
   const limiter = rateLimit(`speed-test:${getClientIdentifier(request.headers)}:${user.sub}`, {

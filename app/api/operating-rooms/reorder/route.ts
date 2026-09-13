@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { requireHospitalAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 
 export const runtime = 'nodejs';
@@ -8,6 +9,8 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   const access = await requireHospitalAccess(req, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.rooms');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(req);
   if (csrf) return csrf;
 

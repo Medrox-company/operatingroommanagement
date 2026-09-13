@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/auth/server';
+import { assertSameOrigin } from '@/lib/auth/csrf';
+import { requireHospitalIdAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 
 export const runtime = 'nodejs';
 
@@ -28,6 +31,8 @@ export async function POST(req: NextRequest) {
   const authResult = await requireAdmin();
   if (authResult instanceof NextResponse) return authResult;
   const sessionUser = authResult.user;
+  const csrf = assertSameOrigin(req);
+  if (csrf) return csrf;
 
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json(
@@ -47,6 +52,10 @@ export async function POST(req: NextRequest) {
   if (typeof hospitalId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(hospitalId)) {
     return NextResponse.json({ error: 'Neplatné zařízení' }, { status: 400 });
   }
+  const hospitalAccess = await requireHospitalIdAccess(sessionUser, hospitalId);
+  if (hospitalAccess instanceof NextResponse) return hospitalAccess;
+  const submoduleAccess = await requireSubmoduleAccess(hospitalAccess, 'settings.database');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
 
   if (confirmation !== 'SMAZAT DATA') {
     return NextResponse.json(
@@ -95,6 +104,7 @@ export async function POST(req: NextRequest) {
 
   if (mode === 'full') {
     // V režimu 'full' smažeme i konfigurační tabulky (personál, oddělení, workflow).
+    await wipeTable('spatial_projects');
     await wipeTable('sub_departments');
     await wipeTable('departments');
     await wipeTable('staff');

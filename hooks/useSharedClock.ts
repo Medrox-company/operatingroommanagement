@@ -26,6 +26,10 @@ let interval: ReturnType<typeof setInterval> | null = null;
 let now = Date.now();
 let visibilityBound = false;
 
+function toTimeBucket(value: number, granularityMs: number) {
+  return Math.floor(value / granularityMs) * granularityMs;
+}
+
 function emit() {
   now = Date.now();
   listeners.forEach((listener) => listener(now));
@@ -89,6 +93,31 @@ export function useNowMs(): number {
     return subscribe(setValue);
   }, []);
   return value;
+}
+
+/**
+ * Sdílený čas s hrubší granularitou. Odběratel stále využívá jediný aplikační
+ * časovač, ale React ho překreslí jen při změně zvoleného časového intervalu.
+ */
+export function useNowMsAtGranularity(granularityMs: number): number {
+  const safeGranularity = Math.max(1_000, Math.floor(granularityMs));
+  const [value, setValue] = useState(() => toTimeBucket(Date.now(), safeGranularity));
+
+  useEffect(() => {
+    const update = (nextNow: number) => {
+      const nextValue = toTimeBucket(nextNow, safeGranularity);
+      setValue((currentValue) => currentValue === nextValue ? currentValue : nextValue);
+    };
+    update(Date.now());
+    return subscribe(update);
+  }, [safeGranularity]);
+
+  return value;
+}
+
+/** Aktuální čas po minutách pro obrazovky bez sekundových údajů. */
+export function useNowMinuteMs(): number {
+  return useNowMsAtGranularity(60_000);
 }
 
 /** Aktuální čas jako Date. Nová instance vzniká jen při skutečné změně sekundy. */

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 import { requireHospitalAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
@@ -99,8 +100,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const access = await requireHospitalAccess(request);
+  const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.schedule');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
@@ -178,8 +181,10 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const access = await requireHospitalAccess(request);
+  const access = await requireHospitalAccess(request, { adminOnly: true });
   if (access instanceof NextResponse) return access;
+  const submoduleAccess = await requireSubmoduleAccess(access, 'settings.schedule');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 

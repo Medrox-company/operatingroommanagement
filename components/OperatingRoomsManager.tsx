@@ -3,7 +3,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, RoomStatus, WeeklySchedule, DayWorkingHours, DEFAULT_WEEKLY_SCHEDULE } from '../types';
-import { updateOperatingRoom, createOperatingRoom, deleteOperatingRoom } from '../lib/db';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { useHospital } from '../contexts/HospitalContext';
 import ModulePageHeading from './ModulePageHeading';
@@ -67,7 +66,7 @@ const TimeInput: React.FC<{
         value={hour.toString().padStart(2, '0')}
         onChange={(e) => onHourChange(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
         disabled={disabled}
-        className="h-9 w-[50px] rounded-[12px] border border-white/[0.07] bg-white/[0.03] px-1.5 text-center text-[13.5px] font-semibold tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
+        className="h-9 w-[50px] rounded-lg border border-white/[0.07] bg-white/[0.03] px-1.5 text-center text-[13.5px] font-semibold tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
       />
       <span className="text-sm font-semibold text-cyan-200/45">:</span>
       <input
@@ -78,7 +77,7 @@ const TimeInput: React.FC<{
         value={minute.toString().padStart(2, '0')}
         onChange={(e) => onMinuteChange(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
         disabled={disabled}
-        className="h-9 w-[50px] rounded-[12px] border border-white/[0.07] bg-white/[0.03] px-1.5 text-center text-[13.5px] font-semibold tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
+        className="h-9 w-[50px] rounded-lg border border-white/[0.07] bg-white/[0.03] px-1.5 text-center text-[13.5px] font-semibold tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none transition-colors focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20 disabled:cursor-not-allowed"
       />
     </div>
   </div>
@@ -108,16 +107,14 @@ const DayScheduleRow: React.FC<{
        vejde na jednu linku a popisky drží stejné podání jako pás faktů
        v popupu — malé verzálky nad hodnotou. */
     <div
-      className={`timeline-popup-card grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors ${
-        schedule.enabled ? '' : 'opacity-[0.55]'
+      className={`grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] items-center gap-x-4 gap-y-2 rounded-lg border px-4 py-3 transition-colors ${
+        schedule.enabled
+          ? 'border-cyan-300/[0.14] bg-cyan-300/[0.045]'
+          : 'border-white/[0.07] bg-white/[0.022] opacity-[0.62]'
       }`}
-      style={{
-        background: schedule.enabled
-          ? 'linear-gradient(135deg, rgba(103,232,249,0.05), rgba(103,232,249,0.01))'
-          : 'linear-gradient(135deg, rgba(153,170,244,0.028), rgba(123,99,178,0.008))',
-      }}
+      style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
     >
-      <span className={`flex h-9 min-w-10 items-center justify-center rounded-[12px] px-2 text-[10.5px] font-semibold uppercase ${schedule.enabled ? 'border border-cyan-300/25 bg-cyan-300/[0.10] text-cyan-200' : 'border border-white/[0.07] bg-white/[0.025] text-white/28'}`}>
+      <span className={`flex h-9 min-w-10 items-center justify-center rounded-lg px-2 text-[10.5px] font-semibold uppercase ${schedule.enabled ? 'border border-cyan-300/25 bg-cyan-300/[0.10] text-cyan-200' : 'border border-white/[0.07] bg-white/[0.025] text-white/28'}`}>
         {day.short}
       </span>
 
@@ -162,7 +159,7 @@ const DayScheduleRow: React.FC<{
             const next = isNaN(raw) ? 0 : Math.max(0, Math.min(480, raw));
             onChange({ ...schedule, breakMinutes: next });
           }}
-          className={`h-9 w-[68px] rounded-[12px] border px-2 text-center text-[13.5px] font-semibold tabular-nums transition-colors ${
+          className={`h-9 w-[68px] rounded-lg border px-2 text-center text-[13.5px] font-semibold tabular-nums transition-colors ${
             schedule.enabled
               ? 'border-white/[0.07] bg-white/[0.03] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] outline-none focus-visible:border-cyan-300/35 focus-visible:ring-2 focus-visible:ring-cyan-300/20'
               : 'cursor-not-allowed border-white/[0.05] bg-white/[0.018] text-white/25'
@@ -180,7 +177,7 @@ const DayScheduleRow: React.FC<{
       <button
         onClick={() => onChange({ ...schedule, enabled: !schedule.enabled })}
         aria-label={`${schedule.enabled ? 'Vypnout' : 'Zapnout'} provoz v den ${day.label}`}
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition-colors ${
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
           schedule.enabled
             ? 'border border-cyan-300/28 bg-cyan-300/[0.11] text-cyan-200'
             : 'border border-white/[0.08] bg-white/[0.03] text-white/28'
@@ -282,7 +279,9 @@ const RoomCard: React.FC<{
                 </span>
               </div>
               <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-1.5 py-2">
-                <span className={`whitespace-nowrap text-[9px] font-semibold tabular-nums ${daySchedule.enabled ? 'text-white/82' : 'text-white/24'}`}>
+                {/* Stejná velikost jako čas v „Dnešní provoz" o pár sekcí vlevo —
+                    aby stejný údaj nebyl na jedné kartě dvakrát jinak velký. */}
+                <span className={`${compact ? 'text-[13px]' : 'text-[15px]'} whitespace-nowrap font-semibold tabular-nums tracking-tight ${daySchedule.enabled ? 'text-white/82' : 'text-white/24'}`}>
                   {daySchedule.enabled
                     ? `${pad(daySchedule.startHour)}:${pad(daySchedule.startMinute)}–${pad(daySchedule.endHour)}:${pad(daySchedule.endMinute)}`
                     : 'Mimo provoz'}
@@ -469,20 +468,17 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     };
 
     // Save to database first
-    const success = await createOperatingRoom({
-      id: newRoom.id,
-      name: newRoom.name,
-      department: newRoom.department,
-      status: 'FREE',
-      queue_count: 0,
-      operations_24h: 0,
-      current_step_index: 6,
-      is_emergency: false,
-      is_locked: false,
-      is_paused: false,
-      is_septic: false,
-      sort_order: roomsList.length,
+    const createResponse = await fetch('/api/admin/operating-rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: newRoom.id,
+        name: newRoom.name,
+        department: newRoom.department,
+        sort_order: roomsList.length,
+      }),
     });
+    const success = createResponse.ok;
 
     if (!success) {
       setError('Nepodařilo se uložit sál do databáze');
@@ -500,7 +496,8 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
 
   const handleDeleteRoom = async (id: string) => {
     // Delete from database first
-    const success = await deleteOperatingRoom(id);
+    const deleteResponse = await fetch(`/api/admin/operating-rooms?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const success = deleteResponse.ok;
     if (!success) {
       setError('Nepodařilo se smazat sál z databáze');
       setDeleteConfirm(null);
@@ -516,10 +513,19 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   const handleUpdateRoom = async () => {
     if (!editingRoom) return;
 
-    await updateOperatingRoom(editingRoom.id, {
-      name: editingRoom.name,
-      department: editingRoom.department,
+    const updateResponse = await fetch('/api/admin/operating-rooms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: editingRoom.id,
+        name: editingRoom.name,
+        department: editingRoom.department,
+      }),
     });
+    if (!updateResponse.ok) {
+      setError('Nepodařilo se uložit změny operačního sálu');
+      return;
+    }
 
     const original = roomsList.find(r => r.id === editingRoom.id);
     const originalOrder = original?.sort_order ?? 0;
@@ -801,7 +807,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
+            className="staff-picker-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
             onMouseDown={event => {
               if (event.target === event.currentTarget) setIsAddingNew(false);
             }}
@@ -810,7 +816,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="timeline-popup-panel relative my-auto w-full max-w-xl overflow-hidden p-5 sm:p-6"
+              className="staff-picker-dialog relative my-auto w-full max-w-xl overflow-hidden rounded-xl p-5 sm:p-6"
             >
                             <div className="relative mb-6 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -883,7 +889,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
+            className="staff-picker-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
             onClick={() => setScheduleEditRoom(null)}
           >
             <motion.div
@@ -891,27 +897,28 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               onClick={(e) => e.stopPropagation()}
-              className="timeline-popup-panel relative max-h-[92vh] w-full max-w-4xl overflow-y-auto"
+              className="staff-picker-dialog relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl"
             >
               {/* Modal Header */}
               {/* Hlavička ve stejné skladbě jako popup v časové ose: název,
                   pod ním jeden řádek kontextu. Vlastní velikosti písma tu
                   nejsou — drží je .timeline-popup-header, takže obě okna
                   zůstanou svázaná i po dalších úpravách. */}
-              <div className="timeline-popup-header sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-4">
+              <div className="staff-picker-header sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/[0.07] px-5 py-4 sm:px-6">
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-cyan-200/[0.14] bg-cyan-300/[0.07]">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/[0.08]">
                     <SlidersHorizontal className="h-[18px] w-[18px] text-cyan-200" strokeWidth={1.8} />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="truncate">{scheduleEditRoom.name}</h2>
-                    <p className="mt-1 uppercase">Týdenní rozvrh · provozní hodiny a přestávky</p>
+                    <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-300/65">Týdenní rozvrh</p>
+                    <h2 className="truncate text-lg font-semibold tracking-tight text-white sm:text-xl">{scheduleEditRoom.name}</h2>
+                    <p className="mt-1 text-[11px] text-white/40">Provozní hodiny a přestávky</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setScheduleEditRoom(null)}
                   aria-label="Zavřít"
-                  className="timeline-popup-close flex h-9 w-9 shrink-0 items-center justify-center transition-colors"
+                  className="staff-picker-icon-button flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
                 >
                   <X className="h-4 w-4 text-white/60" />
                 </button>
@@ -943,10 +950,10 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               </div>
               
               {/* Modal Footer */}
-              <div className="sticky bottom-0 flex justify-end gap-2.5 border-t border-white/[0.055] px-6 py-4 backdrop-blur-md">
+              <div className="staff-picker-footer sticky bottom-0 flex justify-end gap-2.5 border-t border-white/[0.07] px-5 py-4 sm:px-6">
                 <button
                   onClick={() => setScheduleEditRoom(null)}
-                  className="h-11 rounded-[14px] border border-white/[0.09] bg-white/[0.05] px-5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
+                  className="h-11 rounded-lg border border-white/[0.09] bg-white/[0.04] px-5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
                   style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
                 >
                   Zrušit
@@ -956,7 +963,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     handleUpdateSchedule(scheduleEditRoom.id, scheduleEditRoom.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
                     setScheduleEditRoom(null);
                   }}
-                  className="flex h-11 items-center gap-2 rounded-[14px] px-6 text-[13px] font-semibold text-[#061725] transition-colors"
+                  className="flex h-11 items-center gap-2 rounded-lg px-6 text-[13px] font-semibold text-[#061725] transition-colors"
                   style={{ background: '#67E8F9' }}
                 >
                   <Check className="h-4 w-4" />
@@ -975,7 +982,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
+            className="staff-picker-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
             onClick={() => setEditingRoom(null)}
           >
             <motion.div
@@ -983,24 +990,25 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="timeline-popup-panel relative w-full max-w-md overflow-hidden p-6"
+              className="staff-picker-dialog relative w-full max-w-md overflow-hidden rounded-xl p-6"
             >
               {/* Tvar drží nasvícená horní hrana panelu, ne barevná linka —
                   stejně jako u popupu v ose. */}
-              <div className="timeline-popup-header -mx-6 -mt-6 mb-5 flex items-start justify-between gap-3 px-6 pt-5 pb-4">
+              <div className="staff-picker-header -mx-6 -mt-6 mb-5 flex items-start justify-between gap-3 border-b border-white/[0.07] px-6 py-4">
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-cyan-200/[0.14] bg-cyan-300/[0.07]">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/[0.08]">
                     <Edit2 className="h-[17px] w-[17px] text-cyan-200" strokeWidth={1.8} />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="truncate">{editingRoom.name || 'Upravit sál'}</h2>
-                    <p className="mt-1 uppercase">Úprava sálu · název a oddělení</p>
+                    <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-300/65">Úprava sálu</p>
+                    <h2 className="truncate text-lg font-semibold tracking-tight text-white sm:text-xl">{editingRoom.name || 'Upravit sál'}</h2>
+                    <p className="mt-1 text-[11px] text-white/40">Název a oddělení</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setEditingRoom(null)}
                   aria-label="Zavřít"
-                  className="timeline-popup-close flex h-9 w-9 shrink-0 items-center justify-center transition-colors"
+                  className="staff-picker-icon-button flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
                 >
                   <X className="h-4 w-4 text-white/60" />
                 </button>
@@ -1013,7 +1021,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     type="text"
                     value={editingRoom.name}
                     onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
-                    className="w-full rounded-[14px] border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white placeholder-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
+                    className="w-full rounded-lg border border-white/[0.08] bg-white/[0.035] px-3.5 py-2.5 text-[13px] text-white placeholder-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
                   />
                 </div>
                 <div>
@@ -1022,7 +1030,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     type="text"
                     value={editingRoom.department}
                     onChange={(e) => setEditingRoom({ ...editingRoom, department: e.target.value })}
-                    className="w-full rounded-[14px] border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white placeholder-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
+                    className="w-full rounded-lg border border-white/[0.08] bg-white/[0.035] px-3.5 py-2.5 text-[13px] text-white placeholder-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus:outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
                   />
                 </div>
                 <p className="text-[11px] text-white/40 leading-relaxed">
@@ -1033,14 +1041,14 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               <div className="relative flex justify-end gap-2.5">
                 <button
                   onClick={() => setEditingRoom(null)}
-                  className="rounded-[14px] border border-white/[0.09] bg-white/[0.05] px-5 py-2.5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
+                  className="rounded-lg border border-white/[0.09] bg-white/[0.04] px-5 py-2.5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
                   style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
                 >
                   Zrušit
                 </button>
                 <button
                   onClick={handleUpdateRoom}
-                  className="flex items-center gap-2 rounded-[14px] px-5 py-2.5 text-[13px] font-semibold text-[#061724] transition-colors"
+                  className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-[13px] font-semibold text-[#061724] transition-colors"
                   style={{ background: '#67E8F9' }}
                 >
                   <Check className="h-4 w-4" />
@@ -1059,7 +1067,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="timeline-popup-overlay fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
+            className="staff-picker-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
             onClick={() => setDeleteConfirm(null)}
           >
             <motion.div
@@ -1067,7 +1075,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="timeline-popup-panel relative w-full max-w-md overflow-hidden p-6"
+              className="staff-picker-dialog relative w-full max-w-md overflow-hidden rounded-xl p-6"
             >
                             <div className="relative flex items-start gap-3.5 mb-5">
                 <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15">
@@ -1082,13 +1090,13 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               <div className="relative flex justify-end gap-2.5">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="rounded-[14px] border border-white/[0.09] bg-white/[0.05] px-5 py-2.5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
+                  className="rounded-lg border border-white/[0.09] bg-white/[0.04] px-5 py-2.5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
                 >
                   Zrušit
                 </button>
                 <button
                   onClick={() => handleDeleteRoom(deleteConfirm)}
-                  className="rounded-[14px] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors" style={{ background: 'rgba(229,72,77,0.88)' }}
+                  className="rounded-lg px-5 py-2.5 text-[13px] font-semibold text-white transition-colors" style={{ background: 'rgba(229,72,77,0.88)' }}
                 >
                   Smazat
                 </button>

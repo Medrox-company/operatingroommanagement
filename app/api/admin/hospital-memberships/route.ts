@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/auth/server';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { assertSameOrigin } from '@/lib/auth/csrf';
 import { hasGlobalHospitalAccess } from '../../../../lib/auth/roles';
+import { requireHospitalIdAccess } from '@/lib/hospital/access';
+import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 
 export const runtime = 'nodejs';
 
@@ -14,6 +16,10 @@ export async function GET(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
   const hospitalId = request.nextUrl.searchParams.get('hospitalId');
   if (!validId(hospitalId)) return NextResponse.json({ error: 'Neplatná nemocnice' }, { status: 400 });
+  const hospitalAccess = await requireHospitalIdAccess(auth.user, hospitalId);
+  if (hospitalAccess instanceof NextResponse) return hospitalAccess;
+  const submoduleAccess = await requireSubmoduleAccess(hospitalAccess, 'settings.access');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
 
   const admin = getSupabaseAdmin();
   const [{ data: users, error: usersError }, { data: memberships, error: membershipsError }] = await Promise.all([
@@ -62,6 +68,10 @@ export async function PUT(request: NextRequest) {
   if (!validId(hospitalId) || !userId || userId.length > 100 || typeof enabled !== 'boolean') {
     return NextResponse.json({ error: 'Neplatná data' }, { status: 400 });
   }
+  const hospitalAccess = await requireHospitalIdAccess(auth.user, hospitalId);
+  if (hospitalAccess instanceof NextResponse) return hospitalAccess;
+  const submoduleAccess = await requireSubmoduleAccess(hospitalAccess, 'settings.access');
+  if (submoduleAccess instanceof NextResponse) return submoduleAccess;
 
   const admin = getSupabaseAdmin();
   const [{ data: hospital }, { data: user }] = await Promise.all([

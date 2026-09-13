@@ -201,19 +201,19 @@ export const WorkflowStatusesProvider: React.FC<{ children: ReactNode }> = ({ ch
   }, [statuses]);
 
   const getStatusByIndex = useCallback((index: number) => {
-    // Find status by order_index matching the step index
-    // sort_order in DB starts from 0, same as currentStepIndex
-    const status = statuses.find(s => s.order_index === index);
-    if (!status && statuses.length > 0) {
-      // Fallback: try to get by position in array
-      return statuses[index];
+    // currentStepIndex je pozice v sekvenci AKTIVNÍCH statusů. Hledání přes
+    // order_index napříč všemi záznamy vracelo i deaktivované statusy, takže
+    // sál hlásil krok, který je v nastavení vypnutý.
+    const active = getActiveStatuses();
+    if (active.length > 0) {
+      return active[index] ?? undefined;
     }
-    return status;
-  }, [statuses]);
+    return statuses.find(s => s.order_index === index) ?? statuses[index];
+  }, [getActiveStatuses, statuses]);
 
   const getStatusColor = useCallback((index: number) => {
     const status = getStatusByIndex(index);
-    return status?.color || '#6B7280';
+    return status?.accent_color || status?.color || '#6B7280';
   }, [getStatusByIndex]);
 
   useEffect(() => {

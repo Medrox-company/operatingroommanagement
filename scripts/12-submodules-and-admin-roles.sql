@@ -37,13 +37,28 @@ CREATE INDEX IF NOT EXISTS app_submodules_module_idx
 INSERT INTO public.app_submodules (id, module_id, hospital_id, name, description, allowed_roles, sort_order)
 SELECT s.id, 'settings', h.id, s.name, s.description, s.roles, s.sort_order
 FROM (VALUES
-  ('settings.hospital',    'Zdravotnické zařízení',  'Údaje o nemocnici a její nastavení',        ARRAY['admin']::text[], 1),
+  ('settings.hospital',    'Zdravotnické zařízení',  'Údaje o nemocnici a její nastavení',        ARRAY[]::text[], 1),
   ('settings.modules',     'Správa modulů',          'Přístup rolí k modulům a podmodulům',       ARRAY['admin']::text[], 2),
   ('settings.diagnostics', 'Rychlost a připojení',   'Diagnostika výkonu a stavu spojení',        ARRAY['admin']::text[], 3),
   ('settings.database',    'Administrace databáze',  'Zálohy, export a obnova dat',               ARRAY['admin']::text[], 4),
   ('settings.access',      'Přihlášení a přístup',   'Účet, odhlášení a přehled oprávnění',       ARRAY['admin']::text[], 5)
 ) AS s(id, name, description, roles, sort_order)
 CROSS JOIN (SELECT DISTINCT hospital_id AS id FROM public.app_modules) AS h
+ON CONFLICT (id, hospital_id) DO NOTHING;
+
+-- Alternativní 3D zobrazení dashboardu a jeho editor. Výchozí oprávnění
+-- kopíruje nadřazený dashboard a lze je následně upravit samostatně.
+INSERT INTO public.app_submodules (id, module_id, hospital_id, name, description, allowed_roles, sort_order)
+SELECT
+  'dashboard.spatial',
+  'dashboard',
+  module.hospital_id,
+  '3D dispozice',
+  'Zobrazení prostorového modelu sálů a přístup k jeho editoru',
+  coalesce(module.allowed_roles, ARRAY[]::text[]),
+  1
+FROM public.app_modules AS module
+WHERE module.id = 'dashboard'
 ON CONFLICT (id, hospital_id) DO NOTHING;
 
 -- ── 3) Administrátor se stává omezitelnou rolí ──────────────────────────────

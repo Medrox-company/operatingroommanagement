@@ -39,8 +39,7 @@ const fetcher = async ([url]: [string, string]): Promise<SpecialtyResponse> => {
 
 export function useCurrentRoomSpecialties() {
   const { activeHospitalId } = useHospital();
-  const [clock, setClock] = useState(() => new Date());
-  const date = localScheduleDateKey(clock);
+  const [date, setDate] = useState(() => localScheduleDateKey(new Date()));
   const key: [string, string] | null = activeHospitalId
     ? [`/api/room-specialty-allocations?date=${date}`, activeHospitalId]
     : null;
@@ -93,12 +92,28 @@ export function useCurrentRoomSpecialties() {
   });
 
   useEffect(() => {
-    const interval = window.setInterval(() => setClock(new Date()), 60_000);
+    let midnightTimer = 0;
+    const scheduleDateChange = () => {
+      window.clearTimeout(midnightTimer);
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 1, 0);
+      midnightTimer = window.setTimeout(() => {
+        setDate(localScheduleDateKey(new Date()));
+        scheduleDateChange();
+      }, Math.max(1_000, nextMidnight.getTime() - now.getTime()));
+    };
+    const syncDateWhenVisible = () => {
+      if (!document.hidden) setDate(localScheduleDateKey(new Date()));
+    };
     const refresh = () => { void mutate(); };
+    scheduleDateChange();
+    document.addEventListener('visibilitychange', syncDateWhenVisible);
     window.addEventListener('roomSpecialtyScheduleChanged', refresh);
     window.addEventListener('operatingSpecialtiesChanged', refresh);
     return () => {
-      window.clearInterval(interval);
+      window.clearTimeout(midnightTimer);
+      document.removeEventListener('visibilitychange', syncDateWhenVisible);
       window.removeEventListener('roomSpecialtyScheduleChanged', refresh);
       window.removeEventListener('operatingSpecialtiesChanged', refresh);
     };
