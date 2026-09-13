@@ -3249,6 +3249,10 @@ html.capacitor-native select {
 .spatial-control-shell {
   --spatial-line: rgba(118, 151, 219, 0.13);
   --spatial-panel: rgba(16, 28, 67, 0.82);
+  --spatial-detail-width: clamp(285px, 22vw, 338px);
+  --spatial-column-gap: clamp(12px, 1.1vw, 18px);
+  --spatial-control-size: clamp(32px, 2.6vw, 40px);
+  --spatial-columns: minmax(0, 1fr) var(--spatial-detail-width);
   box-sizing: border-box;
   display: grid;
   height: 100%;
@@ -3268,9 +3272,9 @@ html.capacitor-native select {
   z-index: 30;
   display: grid;
   min-height: 0;
-  grid-template-columns: minmax(205px, 1fr) auto;
+  grid-template-columns: var(--spatial-columns);
   align-items: end;
-  gap: 18px;
+  gap: var(--spatial-column-gap);
   padding-bottom: 10px;
 }
 
@@ -3302,11 +3306,11 @@ html.capacitor-native select {
   min-width: 0;
   align-items: center;
   gap: 9px;
-  height: 40px;
-  min-width: 170px;
+  height: var(--spatial-control-size);
+  flex: 1 1 0;
   border: 1px solid rgba(117, 148, 211, 0.09);
   border-radius: 9px;
-  padding: 0 13px;
+  padding: 0 10px;
   background: rgba(18, 31, 71, 0.62);
   color: rgba(233, 239, 254, 0.84);
   font-size: 10px;
@@ -3317,11 +3321,12 @@ html.capacitor-native select {
 .spatial-floor-control select { min-width: 0; flex: 1; appearance: none; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; }
 .spatial-floor-control option { background: #0a1330; color: #f5f7ff; }
 
-.spatial-view-controls { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.spatial-view-controls { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 7px; }
 .spatial-icon-control {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: var(--spatial-control-size);
+  height: var(--spatial-control-size);
+  flex: 0 0 var(--spatial-control-size);
   place-items: center;
   border: 1px solid rgba(117, 148, 211, 0.1);
   border-radius: 9px;
@@ -3338,8 +3343,8 @@ html.capacitor-native select {
   isolation: isolate;
   display: grid;
   min-height: 0;
-  grid-template-columns: minmax(0, 1fr) clamp(285px, 22vw, 338px);
-  gap: clamp(12px, 1.1vw, 18px);
+  grid-template-columns: var(--spatial-columns);
+  gap: var(--spatial-column-gap);
 }
 
 .spatial-stage { position: relative; z-index: 1; min-height: 360px; overflow: hidden; isolation: isolate; }
@@ -3486,7 +3491,8 @@ html.capacitor-native select {
 }
 
 .spatial-room-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.spatial-room-panel-heading h2 { margin: 0; color: rgba(248, 250, 255, 0.95); font-size: clamp(20px, 1.42vw, 24px); font-weight: 560; letter-spacing: -0.01em; }
+.spatial-room-panel-heading > div { min-width: 0; }
+.spatial-room-panel-heading h2 { margin: 0; color: rgba(248, 250, 255, 0.95); font-size: clamp(20px, 1.42vw, 24px); font-weight: 560; line-height: 1.2; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .spatial-room-panel-heading p { display: flex; align-items: center; gap: 8px; margin: 7px 0 0; color: rgba(212, 222, 244, 0.78); font-size: clamp(13px, 0.86vw, 16px); line-height: 1.35; }
 .spatial-room-panel-heading p i { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
 .spatial-room-panel-heading button { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 0; border-radius: 7px; background: transparent; color: rgba(224, 232, 249, 0.68); }
@@ -3528,10 +3534,11 @@ html.capacitor-native select {
 .spatial-room-panel-empty h2 { margin: 15px 0 0; font-size: 17px; font-weight: 570; }
 .spatial-room-panel-empty p { max-width: 230px; margin: 8px 0 0; color: rgba(201, 212, 236, 0.48); font-size: 10px; line-height: 1.55; }
 
-.spatial-summary-grid { display: grid; min-height: 0; height: calc(100% - 10px); grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.spatial-summary-grid { display: grid; min-height: 0; height: calc(100% - 10px); grid-template-columns: var(--spatial-columns); gap: var(--spatial-column-gap); margin-top: 10px; }
+.spatial-summary-overview { display: grid; min-width: 0; min-height: 0; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 2fr); gap: 8px; }
 .spatial-summary-card,
 .spatial-alert-card { min-height: 0; height: 100%; border: 1px solid rgba(117, 148, 211, 0.1); border-radius: 9px; background: rgba(20, 34, 78, 0.74); }
-.spatial-metric-card { grid-column: span 2; padding: clamp(13px, 1vw, 17px); }
+.spatial-metric-card { min-width: 0; padding: clamp(13px, 1vw, 17px); }
 .spatial-metric-card > p { margin: 0; color: rgba(230, 236, 250, 0.84); font-size: clamp(11px, 0.7vw, 13px); font-weight: 560; line-height: 1.35; }
 .spatial-metric-value { display: flex; align-items: center; gap: 9px; margin-top: clamp(15px, 2vh, 22px); }
 .spatial-metric-icon { display: grid; width: 25px; height: 25px; place-items: center; color: rgba(239, 244, 255, 0.9); }
@@ -3539,7 +3546,7 @@ html.capacitor-native select {
 .spatial-metric-value strong { font-size: clamp(28px, 2.15vw, 36px); font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
 .spatial-metric-value > span:last-child { color: rgba(202, 213, 238, 0.5); font-size: clamp(18px, 1.35vw, 23px); font-weight: 420; }
 
-.spatial-program-card { grid-column: span 4; overflow: hidden; padding: 12px 17px; }
+.spatial-program-card { overflow: hidden; padding: 12px 17px; }
 .spatial-program-heading { display: flex; align-items: flex-start; justify-content: space-between; }
 .spatial-program-heading p { margin: 0; color: rgba(233, 238, 250, 0.86); font-size: clamp(11px, 0.7vw, 13px); font-weight: 570; }
 .spatial-program-heading span { display: block; margin-top: 3px; color: rgba(202, 213, 237, 0.48); font-size: clamp(8px, 0.52vw, 10px); }
@@ -3553,12 +3560,12 @@ html.capacitor-native select {
 .spatial-program-row i { position: absolute; top: 1px; height: 9px; border-radius: 2px; background: #436ac6; box-shadow: inset 0 0 0 1px rgba(143, 177, 255, 0.18); }
 .spatial-program-row i.is-current { background: #ffdb1f; box-shadow: 0 0 10px rgba(255, 215, 31, 0.12); }
 
-.spatial-alert-card { grid-column: span 2; display: flex; min-width: 0; flex-direction: column; border: 1px solid rgba(130, 162, 234, 0.35); padding: 15px 17px; background: linear-gradient(145deg, #426be0, #3156c5); color: white; text-align: left; }
+.spatial-alert-card { display: flex; min-width: 0; flex-direction: column; gap: 6px; border: 1px solid rgba(130, 162, 234, 0.35); padding: 15px 17px; background: linear-gradient(145deg, #426be0, #3156c5); color: white; text-align: left; }
 .spatial-alert-card > span { display: flex; align-items: center; gap: 8px; font-size: clamp(10px, 0.66vw, 12px); font-weight: 580; }
 .spatial-alert-card > span svg { width: 15px; height: 15px; }
-.spatial-alert-card strong { margin-top: 15px; overflow: hidden; font-size: clamp(17px, 1.1vw, 21px); font-weight: 580; text-overflow: ellipsis; white-space: nowrap; }
-.spatial-alert-card p { margin: 5px 0 0; overflow: hidden; opacity: 0.76; font-size: clamp(10px, 0.62vw, 12px); text-overflow: ellipsis; white-space: nowrap; }
-.spatial-alert-card i { display: flex; align-items: center; justify-content: space-between; margin-top: auto; border: 1px solid rgba(255, 255, 255, 0.26); border-radius: 6px; padding: 8px 11px; font-size: clamp(10px, 0.58vw, 11px); font-style: normal; }
+.spatial-alert-card strong { margin-top: 2px; overflow: hidden; font-size: clamp(17px, 1.1vw, 21px); font-weight: 580; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.spatial-alert-card p { margin: 0; overflow: hidden; opacity: 0.76; font-size: clamp(10px, 0.62vw, 12px); line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.spatial-alert-card i { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; margin-top: auto; border: 1px solid rgba(255, 255, 255, 0.26); border-radius: 6px; padding: 8px 11px; font-size: clamp(10px, 0.58vw, 11px); line-height: 1.2; font-style: normal; }
 .spatial-alert-card i svg { width: 14px; height: 14px; }
 .spatial-alert-card:hover { filter: brightness(1.06); }
 
@@ -3852,15 +3859,15 @@ html.capacitor-native select {
 
 @media (max-width: 700px) {
   .spatial-control-shell { height: auto; min-height: 0; grid-template-rows: auto auto auto auto; overflow: visible; padding: 12px; }
-  .spatial-control-header { min-height: 0; grid-template-columns: 1fr auto; gap: 10px; padding-bottom: 10px; }
-  .spatial-view-controls { grid-column: 2; grid-row: 1; }
-  .spatial-floor-control { min-width: 132px; }
+  .spatial-control-header { min-height: 0; grid-template-columns: minmax(0, 1fr); gap: 10px; padding-bottom: 10px; }
+  .spatial-view-controls { grid-column: 1; grid-row: 2; }
   .spatial-icon-control:first-child { display: none; }
   .spatial-control-main { grid-template-columns: 1fr; }
   .spatial-stage { min-height: 390px; }
   .spatial-room-panel { height: auto; min-height: 400px; }
   .spatial-stage-modes { left: 4px; transform: scale(0.88); transform-origin: top left; }
-  .spatial-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .spatial-summary-grid { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .spatial-summary-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .spatial-summary-card,
   .spatial-alert-card { min-height: 132px; }
   .spatial-metric-card { grid-column: span 1; }
@@ -3886,30 +3893,24 @@ html.capacitor-native select {
 }
 
 @media (min-width: 701px) and (max-width: 1180px) {
-  .spatial-control-shell { height: 100%; min-height: 0; overflow: hidden; }
-  .spatial-control-header { min-height: 0; grid-template-columns: minmax(190px, 1fr) auto; padding-bottom: 10px; }
+  .spatial-control-shell { --spatial-detail-width: 285px; height: 100%; min-height: 0; overflow: hidden; }
+  .spatial-control-header { min-height: 0; padding-bottom: 10px; }
   .spatial-view-controls { grid-column: 2; grid-row: 1; }
-  .spatial-floor-control { min-width: 148px; }
-  .spatial-control-main { grid-template-columns: minmax(0, 1fr) 285px; min-height: 0; }
-  .spatial-summary-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
-  .spatial-metric-card { grid-column: span 2; }
-  .spatial-program-card { grid-column: span 4; }
-  .spatial-alert-card { grid-column: span 2; min-height: 0; }
+  .spatial-control-main { min-height: 0; }
+  .spatial-alert-card { min-height: 0; }
 }
 
 /* Výškově omezené desktopové displeje: všechny části zůstávají v jednom
    viewportu. Komprimují se mezery a informační dlaždice, nikoli celé plátno. */
 @media (min-width: 701px) and (max-height: 900px) {
   .spatial-control-shell {
+    --spatial-control-size: 32px;
     grid-template-rows: 52px minmax(285px, 1fr) 126px 18px;
   }
 
   .spatial-control-header { padding-bottom: 6px; }
   .spatial-control-mark { width: 34px; height: 34px; }
   .spatial-control-title p { margin-top: 2px; }
-  .spatial-floor-control,
-  .spatial-icon-control { height: 36px; }
-  .spatial-icon-control { width: 36px; }
   .spatial-room-panel { padding: 11px 12px; }
   .spatial-room-panel-heading h2 { font-size: 18px; }
   .spatial-room-panel-heading p { margin-top: 4px; font-size: 12px; }
@@ -3927,6 +3928,7 @@ html.capacitor-native select {
   .spatial-metric-value { margin-top: 12px; }
   .spatial-program-card,
   .spatial-alert-card { padding-top: 10px; padding-bottom: 10px; }
-  .spatial-alert-card strong { margin-top: 8px; }
+  .spatial-alert-card { gap: 4px; }
+  .spatial-alert-card strong { margin-top: 0; }
   .spatial-alert-card i { padding-block: 6px; }
 }

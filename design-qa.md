@@ -1,3 +1,74 @@
+## 2026-09-14 — zarovnání pravého sloupce 3D dispozice
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/Snímek obrazovky 2026-09-14 v 0.32.06.png` (794 × 2106 px). Jde o výřez chybného stavu; cílem je srovnat hrany a mezery, nikoli zkopírovat nesouosé rozložení.
+- Browser implementation: `http://localhost:3000/`, 3D dispozice, vybraná `GYNEKOLOGIE HLAVNÍ`, připravený sál. Živé časy/počty se proti dodanému historickému snímku přirozeně liší.
+- Full-view evidence: `design-qa-spatial-alignment-desktop.png` (1920 × 1080 px) a `design-qa-spatial-alignment-compact.png` (1280 × 720 px). Screenshoty odpovídají CSS viewportu; browser DPR 2.
+- Focused comparison: `design-qa-spatial-alignment-comparison.png` (807 × 1085 px), vlevo zdroj normalizovaný z 2× na 397 × 1053 px, vpravo nezdeformovaný výřez pravého sloupce ze 1920px renderu. Výška historického viewportu není známa; porovnávají se hrany, šířky, text a mezery, nikoli absolutní výška panelu.
+
+**Findings and fixes**
+
+- [P1, vyřešeno] Toolbar měl šířku podle obsahu, detail samostatnou pevnou šířku a upozornění dva sloupce z dvanácti. Všechny tři řádky nyní používají společné CSS proměnné pro šířku detailu a mezeru. Horní ovládání se vejde dovnitř stejného sloupce.
+- [P2, vyřešeno] Text upozornění se dotýkal tlačítka. Explicitní mezery, řádkování a nesmrštitelné tlačítko zachovávají oddělení prvků.
+- [P2, vyřešeno] Dlouhý název měl příliš volné řádkování. Nadpis má řízené řádkování 1.2 a může bezpečně zalomit dlouhá slova; zavírací ikona má vlastní místo.
+
+**Required fidelity surfaces**
+
+- Fonts/typography: rodina, barvy, velikostní hierarchie a tabulární čísla zachované; zpřesněno pouze řádkování nadpisu a upozornění. Dvouřádkový název nezasahuje do zavíracího tlačítka.
+- Spacing/layout: u 1920 × 1080 mají toolbar, detail i alert přesně x = 1542, šířku 338 px, pravou hranu 1880. U 1280 × 720 mají přesně x = 955, šířku 285 px. Spodní metriky a program zachovávají vzájemný poměr 1:1:1:2 v levé části.
+- Colors/tokens: původní tmavomodré plochy, stavové barvy, žlutá akce a modré upozornění beze změny.
+- Image quality/assets: tato oprava nemění modely, světla, textury ani používanou knihovnu ikon. Nové rastrové assety nejsou potřeba.
+- Copy/content: názvy, živá data a texty akcí zachované; do backendu se nezapisovalo.
+
+**Interaction and responsive checks**
+
+- V prohlížeči ověřen výběr dlouhého názvu sálu. Detail i upozornění zobrazují stejný sál.
+- U 1280 × 720 je celý detail vysoký 393 px, jeho scrollHeight = clientHeight = 391 px; tlačítko je celé uvnitř panelu. Mezera upozornění nad tlačítkem 12.1 px, na širokém monitoru 6.7 px.
+- U 700 × 900 se části skládají do jednoho sloupce se shodnými hranami x = 36, pravá hrana 664, šířka 628 px. Bez horizontálního přetečení; mobilní stránka přirozeně roluje.
+- TypeScript a `git diff --check` prošly. Browser konzole bez error záznamů; jeden dřívější warning Realtime heartbeat timeout není způsoben změnou rozložení a není zde označen za opravený.
+- Předchozí chyby jsou na normalizovaném porovnání odstraněné. Nezbývá akční P0/P1/P2 v rozsahu zarovnání označeného sloupce. Rozložení na ostatních netestovaných rozměrech není prohlášeno za ověřené.
+
+final result: passed
+
+---
+
+## 2026-09-14 — odstranění žlutých linek pod sály
+
+- Požadavek: nezobrazovat žluté linky ve 3D projekci, které měnily viditelnost po kliknutí na sál. Teplé osvětlení aktivních sálů a živé barvy statusů mají zůstat zachované.
+- Implementace: `vendor/orms-spatial-editor/src/dashboard-viewer.js`, `geometry.js`, `room-assets.js`.
+- Provozní browser evidence: `design-qa-spatial-fidelity-dashboard.png` (1308 × 981 px), `http://localhost:3000/`, 3D dispozice po plném reloadu a výběru `Sál č. 7`.
+- Aktivní stav bez zásahu do provozních dat: `design-qa-spatial-fidelity-fixture.png` (1448 × 1086 px), šest ukázkových sálů, PCHO 2 aktivní; `design-qa-spatial-fidelity-status.png` zachycuje další přepnutí statusu/výběru.
+- Dashboard potlačuje dekorativní pásky před prvním vykreslením. Potlačení respektují změna aktivity, výběr a dokončení asynchronního načítání GLB. Editor tímto příznakem není změněn.
+- Bodové světlo aktivního sálu je samostatná vrstva a zůstává zapnuté. Barvy statusů, modelové tablety a kontrolky nejsou odstraňovány.
+- V prohlížeči ověřen reload, výběr sousedního sálu, změny ukázkových statusů a otočení scény. Konzole provozního dashboardu i ukázkové scény bez error/warn záznamů.
+- Nezávislý smoke test se skutečným `DashboardViewer.setProject` a zpožděným GLB: 0 viditelných pásků před načtením, během výběru, po načtení i při přechodu aktivity na jiný sál; aktivní PointLight správně zůstává a přesouvá se.
+- Automatické kontroly: 19/19 prostorových testů, TypeScript a `git diff --check` prošly. Produkční build `npm exec next build -- --webpack` prošel. Výchozí Turbopack build v tomto prostředí skončil na oprávnění sandboxu při bindování portu, nikoli na chybě aplikace.
+
+final result: passed
+
+---
+
+## 2026-09-14 — detailnější živý 3D model a porovnání s předlohou
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/c9a87c58-31d8-42d8-891d-0218ecd44e69.png` (1448 × 1086 px).
+- Full-view implementation: `design-qa-spatial-fidelity-fixture.png`, viewport 1448 × 1086, šest sálů, aktivní PCHO 2; pouze lokální ukázková data. Produkční půdorys s 15 sály se kvůli porovnání nepřepisoval.
+- Focused comparison: `design-qa-spatial-fidelity-comparison.png` (2024 × 616 px), vlevo zdrojový výřez, vpravo skutečný browser render. Výřezy jsou normalizované na šířku 1000 px; odlišná kompozice a geometrie zůstávají viditelné, nejsou maskované.
+- Asset: nový `public/spatial/models/pcho-3-detailed.glb`, odvozený z dodaného `pcho-3.glb`. Originál zůstává nezměněný. Nový model má 49 218 trojúhelníků, 5 563 460 bajtů, zachované rozměry/pivoty a bitově shodné původní UI textury.
+- Hrany dostaly fyzické malé úkosy; kontaktní stíny jsou předpočítané do jedné sdílené 2048² AO textury. Povrchy dostaly jemný saténový detail a samostatnou drsnost/kovovost. Barevná korekce sdílených materiálů probíhá pouze jednou, nikoli opakovaně pro každý mesh.
+- Studené modrofialové stěny, světlejší hrany, stříbřité vybavení a teplé aktivní světlo byly laděny podle přímého porovnání. Stíny používají měkkou VSM mapu 2048²; žádný nový fullscreen AO průchod při otáčení scény.
+- Kamera zachovává ortografickou projekci, mírné natočení a skutečné poměry stran. Automatické orámování používá promítnuté rohy modelu. Opravena Eulerova rotace klonovaných místností/vybavení, která u některých 180° klonů vracela dveře na nesprávnou stranu.
+- Fonts, copy, panel layout: provozní typografie, názvy a údaje se neměnily. Testovací ovládání slouží pouze pro opakovatelné porovnání světel a statusů; nejde o náhradu dashboardu.
+- Interakce: ověřeny výběr, aktivita, různé statusy, půdorys a rotace. Testy chrání projekci, správnou rotaci klonů, nezávislé statusové materiály, načítání a strukturu optimalizovaného GLB.
+
+**Zbývající rozdíly vůči požadavku na naprostou identitu**
+
+- [P2, otevřeno] Dodaný GLB není původní scéna ze snímku: jiný tvar/rozmístění lamp, stolů a přístrojů, jiné členění stěn a přípraven. Materiálová a světelná úprava tyto rozdíly sama neodstraní. Úplná shoda vyžaduje původní referenční 3D scénu nebo další cílené přemodelování vybavení a prostor.
+- [P2, otevřeno] Na některých velkých stěnách zůstává proti předloze plošší světelný přechod a neodpovídá přesně kontrast/rozložení lokálních odlesků. Výsledný render je blíže, ale není pixelově ani geometricky identický.
+- Tato kontrola tedy nepotvrzuje doslovné splnění „naprosto identicky“. Funkční úprava odstranění linek je ověřena samostatně výše.
+
+final result: blocked
+
+---
+
 ## 2026-09-13 — referenční pozadí a stínování neaktivních sálů
 
 - Source visual truth: `/Users/jaroslavjedlicka/Desktop/c9a87c58-31d8-42d8-891d-0218ecd44e69.png` (1448 × 1086 px).

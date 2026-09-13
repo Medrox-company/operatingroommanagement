@@ -585,10 +585,12 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
       </div>
 
       <div className="spatial-summary-grid">
-        <MetricTile icon={<BedDouble />} label="Sály v provozu" value={roomsInService} suffix={`/ ${rooms.length}`} />
-        <MetricTile icon={<CircleCheck />} label="Připravené sály" value={statusCounts.ready} />
-        <MetricTile icon={<ListChecks />} label="Dnešní výkony" value={completedToday} suffix={`/ ${plannedToday}`} />
-        <ProgramOverview rooms={rooms} start={operationalWindow.start} end={operationalWindow.end} now={nowMs} />
+        <div className="spatial-summary-overview">
+          <MetricTile icon={<BedDouble />} label="Sály v provozu" value={roomsInService} suffix={`/ ${rooms.length}`} />
+          <MetricTile icon={<CircleCheck />} label="Připravené sály" value={statusCounts.ready} />
+          <MetricTile icon={<ListChecks />} label="Dnešní výkony" value={completedToday} suffix={`/ ${plannedToday}`} />
+          <ProgramOverview rooms={rooms} start={operationalWindow.start} end={operationalWindow.end} now={nowMs} />
+        </div>
         <button type="button" className="spatial-alert-card" onClick={() => alertRoom && onSelectRoom(alertRoom.id)}>
           <span><BellRing />Provozní upozornění</span>
           <strong>{alertRoom?.name || 'Operační blok'}</strong>

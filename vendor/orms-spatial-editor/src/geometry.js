@@ -335,7 +335,7 @@ export function setRoomActivity(group,active){
  group.userData.operationalActive=Boolean(active);
  for(const mesh of group.children){
   if(!mesh.isMesh)continue;
-  const lightEnabled=Boolean(group.userData.operationalActive||group.userData.selectionLightEnabled);
+  const lightEnabled=!group.userData.hideActivityStrips&&Boolean(group.userData.operationalActive||group.userData.selectionLightEnabled);
   if(mesh.userData.selectionLight){mesh.visible=lightEnabled;if(lightEnabled){mesh.material.color.setHex(0xffda28);mesh.material.emissive.setHex(0xffca20);mesh.material.emissiveIntensity=1.1;}}
   if(mesh.userData.selectionIndicator){mesh.material.emissive.setHex(group.userData.operationalActive?0xffca20:group.userData.selectionLightEnabled?(group.userData.selectedAccent??0xffca20):0x3c70db);mesh.material.emissiveIntensity=0.7;}
  }
@@ -348,7 +348,7 @@ export function setRoomSelected(group,selected,accent=0xffda28,{tintSurfaces=tru
  group.userData.selected=selected;group.userData.selectedAccent=selected?accentHex:null;group.userData.selectionSurfaceTint=selected?tintSurfaces:null;group.userData.selectionLightEnabled=lightEnabled;
  for(const mesh of group.children){
   if(!mesh.isMesh)continue;
-  if(mesh.userData.selectionLight){const visible=Boolean(lightEnabled||group.userData.operationalActive);mesh.visible=visible;if(visible){const color=group.userData.operationalActive?new THREE.Color(0xffda28):accentColor;mesh.material.color.copy(color);mesh.material.emissive.copy(color);mesh.material.emissiveIntensity=1.1;}continue;}
+  if(mesh.userData.selectionLight){const visible=!group.userData.hideActivityStrips&&Boolean(lightEnabled||group.userData.operationalActive);mesh.visible=visible;if(visible){const color=group.userData.operationalActive?new THREE.Color(0xffda28):accentColor;mesh.material.color.copy(color);mesh.material.emissive.copy(color);mesh.material.emissiveIntensity=1.1;}continue;}
   const hasSurfaceTint=selected&&tintSurfaces&&mesh.userData.selectedMaterialToken,token=hasSurfaceTint?mesh.userData.selectedMaterialToken:mesh.userData.baseMaterialToken;
   const materialKey=hasSurfaceTint?`${token}-${accentHex}`:token;
   if(token&&mesh.userData.appliedMaterialToken!==materialKey){
@@ -486,11 +486,11 @@ export function buildFloor(project,floorId,options={}){
   const angle=r.rotation*Math.PI/180,halfZ=Math.abs(Math.sin(angle))*r.width/2+Math.abs(Math.cos(angle))*r.depth/2,lowerNearWall=r.type!=='corridor'&&r.z+halfZ>=nearEdge-0.12;
   const roomOptions={cutaway:options.cutaway??true,selected:selectedIds.has(r.id),lowerNearWall},signature=roomGeometrySignature(r,roomOptions),prototype=roomPrototypes?.get(signature);
   const group=prototype?cloneDashboardRoom(prototype,r):createRoomGeometry(r,roomOptions);if(roomPrototypes&&!prototype)roomPrototypes.set(signature,group);
-  group.position.set(r.x,0,r.z);group.rotation.y=angle;g.add(group);map.set(r.id,group);
+  group.position.set(r.x,0,r.z);group.rotation.set(0,angle,0);g.add(group);map.set(r.id,group);
  }
  for(const a of project.items.filter(a=>a.floorId===floorId)){
   const prototype=equipmentPrototypes?.get(a.kind),item=prototype?prototype.clone(true):createEquipment(a.kind);if(equipmentPrototypes&&!prototype)equipmentPrototypes.set(a.kind,item);
-  item.name=a.name;item.userData={entity:'item',entityId:a.id,assetKind:a.kind};item.position.set(a.x,a.y,a.z);item.rotation.y=a.rotation*Math.PI/180;item.scale.setScalar(a.scale);(map.get(a.roomId)||g).add(item);map.set(a.id,item);
+  item.name=a.name;item.userData={entity:'item',entityId:a.id,assetKind:a.kind};item.position.set(a.x,a.y,a.z);item.rotation.set(0,a.rotation*Math.PI/180,0);item.scale.setScalar(a.scale);(map.get(a.roomId)||g).add(item);map.set(a.id,item);
  }
  return {group:g,entities:map};
 }
