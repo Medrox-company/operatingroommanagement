@@ -12,9 +12,10 @@ import {
 import type { OperatingRoom } from '../../types';
 import type { StatusHistoryRow } from '../../lib/db';
 import {
-  C, Card, AnimatedCounter, DistributionHeader, DistributionRing, formatMinutes,
+  C, Card, KPIBlock, AnimatedCounter, DistributionHeader, DistributionRing, formatMinutes, formatNumber,
 } from './shared';
 import { GlassCalendar } from './AppCharts';
+import { useStatisticsReport } from './StatisticsReportContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -45,16 +46,16 @@ const TIP = {
   contentStyle: {
     background: 'rgba(10,15,26,0.96)',
     border: `1px solid ${C.border}`,
-    borderRadius: 10,
+    borderRadius: 8,
     fontSize: 11,
     color: C.text,
-    boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
     padding: '10px 14px',
   },
   cursor: { fill: 'rgba(255,255,255,0.02)' },
 };
 
-const PHASE_CARD_CLASS = '!rounded-xl [background:var(--stats-surface)!important] [box-shadow:none!important]';
+const PHASE_CARD_CLASS = 'stats-phases-panel';
 const INNER_PANEL_STYLE: React.CSSProperties = {
   background: 'var(--stats-surface-2)',
   border: `1px solid ${C.border}`,
@@ -65,28 +66,6 @@ function isIdlePhaseName(name: string): boolean {
   const normalized = (name || '').toLowerCase().normalize('NFD').replace(DIACRITICS, '');
   return normalized.includes('priprav') && normalized.includes('sal');
 }
-
-const PhaseMetric: React.FC<{
-  label: string;
-  value: string;
-  detail: string;
-  icon: React.ElementType;
-  color: string;
-}> = ({ label, value, detail, icon: Icon, color }) => (
-  <div className="group relative min-h-[112px] overflow-hidden rounded-xl p-4" style={INNER_PANEL_STYLE}>
-    <span className="absolute inset-x-4 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-    <div className="flex min-h-[44px] items-start justify-between gap-3">
-      <div className="min-w-0">
-        <p className="truncate text-[11px] font-medium" style={{ color: C.textHi }}>{label}</p>
-        <p className="mt-1 truncate text-[10px]" style={{ color: C.muted }}>{detail}</p>
-      </div>
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-105" style={{ color, border: `1px solid ${color}35`, background: `${color}0e` }}>
-        <Icon className="h-4 w-4" strokeWidth={1.8} />
-      </span>
-    </div>
-    <p className="mt-3 truncate text-[26px] font-light leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
-  </div>
-);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase Card Component — jednotlivá fáze s detailem
@@ -108,17 +87,16 @@ const PhaseCard = ({
 }) => {
   return (
     <div
-      className="group relative min-h-[176px] overflow-hidden rounded-xl p-4 transition-colors hover:bg-white/[0.025]"
+      className="relative overflow-hidden rounded-lg p-3.5"
       style={{
-        background: isBottleneck ? `linear-gradient(145deg, ${C.red}0d, var(--stats-surface-2))` : C.surface2,
-        border: `1px solid ${isBottleneck ? 'rgba(239,68,68,0.3)' : C.border}`,
+        background: C.surface2,
+        border: `1px solid ${C.border}`,
       }}
     >
-      <span className="absolute inset-x-4 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${step.color}, transparent)` }} />
       {/* Longest measured phase badge */}
       {isBottleneck && (
-        <div className="absolute top-2 right-2">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase"
+        <div className="mb-2 flex justify-end">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-semibold"
             style={{ background: 'rgba(239,68,68,0.15)', color: C.red }}>
             Nejdelší fáze
           </span>
@@ -128,16 +106,16 @@ const PhaseCard = ({
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
         <div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
           style={{
-            background: `${step.color}20`,
-            border: `1px solid ${step.color}40`,
+            background: C.surface2,
+            border: `1px solid ${C.border}`,
           }}
         >
           <Layers className="h-4 w-4" style={{ color: step.color }} strokeWidth={1.9} />
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="text-sm font-semibold text-white truncate">{step.title}</h4>
+          <h4 className="text-[13px] font-semibold leading-5" style={{ color: C.textHi }}>{step.title}</h4>
           <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>
             {step.organizer}
           </p>
@@ -151,7 +129,7 @@ const PhaseCard = ({
             Trvání
           </p>
           <div className="flex items-baseline gap-1">
-            <span className="text-[26px] font-light leading-none tabular-nums" style={{ color: C.textHi }}>
+            <span className="text-[24px] font-semibold leading-none tabular-nums" style={{ color: C.textHi }}>
               {Math.round(duration)}
             </span>
             <span className="text-xs" style={{ color: C.faint }}>min</span>
@@ -162,7 +140,7 @@ const PhaseCard = ({
             Podíl cyklu
           </p>
           <div className="flex items-baseline gap-1">
-            <span className="text-[26px] font-light leading-none tabular-nums" style={{ color: C.textHi }}>
+            <span className="text-[24px] font-semibold leading-none tabular-nums" style={{ color: C.textHi }}>
               {pct}
             </span>
             <span className="text-xs" style={{ color: C.faint }}>%</span>
@@ -209,7 +187,7 @@ const TimelineGantt = ({
   return (
     <div className="space-y-3">
       {/* Timeline bar */}
-      <div className="relative h-14 overflow-hidden rounded-xl" style={INNER_PANEL_STYLE}>
+      <div className="relative h-14 overflow-hidden rounded-lg" style={INNER_PANEL_STYLE}>
         <div className="absolute inset-0 flex">
           {steps.map(({ step, duration }) => {
             const widthPct = (duration / Math.max(1, totalDuration)) * 100;
@@ -247,7 +225,7 @@ const TimelineGantt = ({
                     style={{
                       background: 'rgba(10,15,26,0.95)',
                       border: `1px solid ${step.color}50`,
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                     }}
                   >
                     <p className="font-semibold text-white">{step.title}</p>
@@ -420,16 +398,70 @@ export function PhasesTab({
     ? calendarDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })
     : periodLabel;
 
+  useStatisticsReport('faze', {
+    context: [
+      calendarSelectionActive
+        ? `Provozní den ${activePeriodLabel}, od 07:00 do 07:00 následujícího dne. Denní filtr používá čas záznamu události v již načtené historii; délky fází nejsou oříznuté na hranici dne.`
+        : `Vybrané období: ${periodLabel}.`,
+      'Klidový stav Sál připraven je z operačního cyklu vynechán. Průměrný cyklus je součet průměrných délek fází; počty a přiřazení sálů jsou aktuální stav při sestavení reportu.',
+    ].join(' '),
+    metrics: [
+      { label: 'Průměrný cyklus', value: `${formatNumber(Math.round(avgCycleDuration))} min`, detail: 'Součet průměrných délek fází' },
+      { label: 'Nejdelší fáze', value: `${formatNumber(Math.round(avgStepDurations[longestPhaseIdx] || 0))} min`, detail: workflowSteps[longestPhaseIdx]?.title || 'Bez dat' },
+      { label: 'Nejrychlejší fáze', value: `${formatNumber(Math.round(avgStepDurations[shortestPhaseIdx] || 0))} min`, detail: workflowSteps[shortestPhaseIdx]?.title || 'Bez dat' },
+      { label: 'Fází cyklu', value: cyclePhaseIndices.length },
+      { label: 'Operačních sálů', value: rooms.length },
+      { label: 'Aktuálně obsazených fází cyklu', value: cyclePhaseIndices.filter(index => roomsPerPhase[index] > 0).length },
+    ],
+    sections: [
+      {
+        title: 'Úplný přehled fází operačního cyklu',
+        description: 'Pořadí odpovídá nastavení workflow. Nulové trvání může znamenat chybějící měření nebo délku zaokrouhlenou na nulu; podíly jsou převzaté ze stejného výpočtu jako obrazovka.',
+        columns: [
+          { label: 'Fáze' },
+          { label: 'Organizátor' },
+          { label: 'Průměrná délka', align: 'right' },
+          { label: 'Podíl cyklu', align: 'right' },
+          { label: 'Kumulativně', align: 'right' },
+          { label: 'Vyhodnocení' },
+        ],
+        rows: cyclePhaseIndices.map((index, position) => {
+          const duration = avgStepDurations[index] || 0;
+          return [
+            workflowSteps[index].title,
+            workflowSteps[index].organizer || '—',
+            `${formatNumber(Math.round(duration))} min`,
+            `${formatNumber(workflowAgg[index]?.pct || 0)} %`,
+            `${formatNumber(Math.round(cumulativeData[position]?.cumulative || 0))} min`,
+            duration > 0 && index === longestPhaseIdx ? 'Nejdelší fáze'
+              : duration > 0 && index === shortestPhaseIdx ? 'Nejkratší fáze' : 'Standardní průběh',
+          ];
+        }),
+        emptyMessage: 'Nejsou nastavené žádné fáze operačního cyklu.',
+      },
+      {
+        title: 'Aktuální rozložení sálů v cyklu',
+        description: 'Počty sálů vycházejí z jejich aktuální fáze; nejde o historické rozložení ve vybraném dni nebo období.',
+        columns: [{ label: 'Fáze' }, { label: 'Počet sálů', align: 'right' }, { label: 'Operační sály' }],
+        rows: cyclePhaseIndices.map(index => [
+          workflowSteps[index].title,
+          roomsPerPhase[index],
+          rooms.filter(room => room.currentStepIndex === index).map(room => room.name).join(', ') || '—',
+        ]),
+        emptyMessage: 'Nejsou nastavené žádné fáze operačního cyklu.',
+      },
+    ],
+  });
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
         <div className="flex flex-col gap-4 xl:order-2">
-          <Card className={`relative overflow-hidden p-5 ${PHASE_CARD_CLASS}`}>
-            <span className="absolute inset-x-10 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}aa, transparent)` }} />
+          <Card className={PHASE_CARD_CLASS}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-[10px] font-medium" style={{ color: C.muted }}>Fáze</p>
-                <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>
+                <h2 className="mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>
                   Průběh operačního cyklu
                 </h2>
                 <p className="mt-1 text-[11px]" style={{ color: C.muted }}>
@@ -441,23 +473,22 @@ export function PhasesTab({
               </span>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <PhaseMetric label="Průměrný cyklus" value={`${Math.round(avgCycleDuration)} min`} detail="součet průměrných fází" icon={Timer} color={C.accent} />
-              <PhaseMetric label="Nejdelší fáze" value={`${Math.round(avgStepDurations[longestPhaseIdx] || 0)} min`} detail={workflowSteps[longestPhaseIdx]?.title || 'Bez dat'} icon={Clock} color={C.red} />
-              <PhaseMetric label="Nejrychlejší fáze" value={`${Math.round(avgStepDurations[shortestPhaseIdx] || 0)} min`} detail={workflowSteps[shortestPhaseIdx]?.title || 'Bez dat'} icon={Zap} color={C.green} />
-              <PhaseMetric label="Operační sály" value={String(rooms.length)} detail={`${cyclePhaseIndices.filter(index => roomsPerPhase[index] > 0).length} aktivních fází cyklu`} icon={Layers} color={C.purple} />
+            <div className="stats-kpi-strip mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+              <KPIBlock label="Průměrný cyklus" value={`${Math.round(avgCycleDuration)} min`} sublabel="součet průměrných fází" icon={Timer} color={C.accent} />
+              <KPIBlock label="Nejdelší fáze" value={`${Math.round(avgStepDurations[longestPhaseIdx] || 0)} min`} sublabel={workflowSteps[longestPhaseIdx]?.title || 'Bez dat'} icon={Clock} color={C.red} />
+              <KPIBlock label="Nejrychlejší fáze" value={`${Math.round(avgStepDurations[shortestPhaseIdx] || 0)} min`} sublabel={workflowSteps[shortestPhaseIdx]?.title || 'Bez dat'} icon={Zap} color={C.green} />
+              <KPIBlock label="Operační sály" value={String(rooms.length)} sublabel={`${cyclePhaseIndices.filter(index => roomsPerPhase[index] > 0).length} aktivních fází cyklu`} icon={Layers} color={C.purple} />
             </div>
           </Card>
 
-          <Card className={`relative overflow-hidden p-5 ${PHASE_CARD_CLASS}`}>
-            <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+          <Card className={PHASE_CARD_CLASS}>
             <DistributionHeader
               eyebrow="Fáze"
               title="Podíl jednotlivých fází"
               subtitle="Poměr průměrného času vůči celému operačnímu cyklu"
               badge={`${cycleWorkflowAgg.filter(item => item.pct > 0).length} měřených fází`}
             />
-            <div className="mt-6 grid gap-x-5 gap-y-8 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+            <div className="mt-4 grid gap-x-4 gap-y-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
               {cycleWorkflowAgg.filter(item => item.pct > 0).map(item => (
                 <div key={`${item.title}-${item.index}`} className="flex min-w-0 flex-col items-center gap-2.5">
                   <DistributionRing
@@ -479,10 +510,10 @@ export function PhasesTab({
             </div>
           </Card>
 
-          <Card className={`p-5 ${PHASE_CARD_CLASS}`}>
+          <Card className={PHASE_CARD_CLASS}>
             <div className="mb-4 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ color: C.accent, background: `${C.accent}14`, border: `1px solid ${C.accent}2e` }}>
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg" style={{ color: C.accent, background: C.surface2, border: `1px solid ${C.border}` }}>
                   <Layers size={16} />
                 </span>
                 <div>
@@ -495,11 +526,10 @@ export function PhasesTab({
             <TimelineGantt workflowSteps={workflowSteps} avgStepDurations={avgStepDurations} />
           </Card>
 
-          <Card className={`relative overflow-hidden p-5 ${PHASE_CARD_CLASS}`}>
-            <span className="absolute inset-x-10 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.green}aa, transparent)` }} />
+          <Card className={PHASE_CARD_CLASS}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-[10px] font-medium" style={{ color: C.green }}>Evropská referenční praxe</p>
+                <p className="text-[10px] font-medium" style={{ color: C.muted }}>Evropská referenční praxe</p>
                 <h3 className="mt-1 text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Optimální timeline operačního cyklu</h3>
                 <p className="mt-1 text-[10px]" style={{ color: C.muted }}>Procesní benchmark pro elektivní provoz; délka samotného výkonu zůstává závislá na typu operace.</p>
               </div>
@@ -513,10 +543,9 @@ export function PhasesTab({
                 { order: '03', title: 'Anesteziologický přechod', time: 'kritická cesta ≈ 10 min', note: 'Další pacient je připraven při návratu anesteziologa', color: C.purple },
                 { order: '04', title: 'Operační výkon', time: 'dle výkonu a oboru', note: 'Klinickou délku nelze bezpečně stanovit jedním limitem', color: C.green },
               ].map(item => (
-                <div key={item.order} className="relative overflow-hidden rounded-xl p-3.5" style={INNER_PANEL_STYLE}>
-                  <span className="absolute inset-x-3 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${item.color}, transparent)` }} />
+                <div key={item.order} className="relative overflow-hidden rounded-lg p-3" style={INNER_PANEL_STYLE}>
                   <div className="flex items-center gap-2.5">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-mono" style={{ color: item.color, background: `${item.color}12`, border: `1px solid ${item.color}2a` }}>{item.order}</span>
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[9px] font-mono" style={{ color: item.color, background: C.surface2, border: `1px solid ${C.border}` }}>{item.order}</span>
                     <p className="text-[10px] font-semibold leading-4" style={{ color: C.textHi }}>{item.title}</p>
                   </div>
                   <p className="mt-3 text-[14px] font-light tabular-nums" style={{ color: item.color }}>{item.time}</p>
@@ -542,18 +571,17 @@ export function PhasesTab({
         </div>
 
         <aside className="flex flex-col gap-4 xl:order-1">
-          <Card className={`relative overflow-hidden p-5 ${PHASE_CARD_CLASS}`}>
-            <div className="absolute -right-14 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: C.accent }} />
+          <Card className={PHASE_CARD_CLASS}>
             <div className="relative">
               <div className="flex items-center justify-between gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-xl" style={{ color: C.accent, background: `${C.accent}0f`, border: `1px solid ${C.accent}2f` }}>
-                  <Timer className="h-5 w-5" />
+                <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ color: C.accent, background: C.surface2, border: `1px solid ${C.border}` }}>
+                  <Timer className="h-4 w-4" />
                 </span>
-                <span className="rounded-full px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.13em]" style={{ color: C.accent, border: `1px solid ${C.accent}35` }}>reálná data</span>
+                <span className="rounded-md px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.muted, border: `1px solid ${C.border}` }}>reálná data</span>
               </div>
-              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: C.muted }}>Průměrný cyklus</p>
+              <p className="mt-4 text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.muted }}>Průměrný cyklus</p>
               <div className="mt-1 flex items-end gap-2">
-                <AnimatedCounter value={avgCycleDuration} format={value => Math.round(value).toString()} className="text-[52px] font-light leading-none tracking-[-0.05em] tabular-nums" style={{ color: C.textHi }} />
+                <AnimatedCounter value={avgCycleDuration} format={value => Math.round(value).toString()} className="text-[32px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: C.textHi }} />
                 <span className="pb-1 text-[11px]" style={{ color: C.muted }}>minut</span>
               </div>
               <p className="mt-2 text-[11px]" style={{ color: C.muted }}>{activePeriodLabel} · naměřené fáze výkonu</p>
@@ -616,7 +644,7 @@ export function PhasesTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className={`p-5 ${PHASE_CARD_CLASS}`} icon={BarChart3} title="Trvání jednotlivých fází" subtitle="Průměr v minutách" accent={C.blue}>
+        <Card className={PHASE_CARD_CLASS} icon={BarChart3} title="Trvání jednotlivých fází" subtitle="Průměr v minutách" accent={C.blue}>
           <div className="mt-3 rounded-lg p-3" style={INNER_PANEL_STYLE}>
             <ResponsiveContainer width="100%" height={190} minWidth={0} minHeight={0}>
               <BarChart data={barChartData} layout="vertical" margin={{ top: 0, right: 12, bottom: 0, left: 58 }} barSize={13}>
@@ -632,7 +660,7 @@ export function PhasesTab({
           </div>
         </Card>
 
-        <Card className={`p-5 ${PHASE_CARD_CLASS}`} icon={Timer} title="Kumulativní průběh" subtitle="Nárůst času během cyklu" accent={C.cyan}>
+        <Card className={PHASE_CARD_CLASS} icon={Timer} title="Kumulativní průběh" subtitle="Nárůst času během cyklu" accent={C.cyan}>
           <div className="mt-3 rounded-lg p-3" style={INNER_PANEL_STYLE}>
             <ResponsiveContainer width="100%" height={190} minWidth={0} minHeight={0}>
               <AreaChart data={cumulativeData} margin={{ top: 8, right: 8, bottom: 0, left: -14 }}>
@@ -652,14 +680,14 @@ export function PhasesTab({
           </div>
         </Card>
 
-        <Card className={`p-5 ${PHASE_CARD_CLASS}`} icon={Layers} title="Nejvýznamnější fáze" subtitle="Pořadí podle podílu cyklu" accent={C.purple}>
+        <Card className={PHASE_CARD_CLASS} icon={Layers} title="Nejvýznamnější fáze" subtitle="Pořadí podle podílu cyklu" accent={C.purple}>
           <div className="mt-4 space-y-3">
             {[...cycleWorkflowAgg]
               .sort((a, b) => b.pct - a.pct)
               .slice(0, 5)
               .map((item, rank) => (
                 <div key={`${item.title}-${item.index}`} className="flex items-center gap-3">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[9px] font-semibold tabular-nums" style={{ color: item.color, background: `${item.color}12`, border: `1px solid ${item.color}30` }}>{String(rank + 1).padStart(2, '0')}</span>
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[9px] font-semibold tabular-nums" style={{ color: item.color, background: C.surface2, border: `1px solid ${C.border}` }}>{String(rank + 1).padStart(2, '0')}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
                       <span className="truncate text-[10px] font-medium" style={{ color: C.text }}>{item.title}</span>
@@ -675,7 +703,7 @@ export function PhasesTab({
         </Card>
       </div>
 
-      <Card className={`p-5 ${PHASE_CARD_CLASS}`}>
+      <Card className={PHASE_CARD_CLASS}>
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Přehled jednotlivých fází</h3>
@@ -701,7 +729,7 @@ export function PhasesTab({
         </div>
       </Card>
 
-      <Card className={`p-5 ${PHASE_CARD_CLASS}`}>
+      <Card className={PHASE_CARD_CLASS}>
         <div className="mb-4 flex items-center gap-2.5">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ color: C.blue, background: C.ghost, border: `1px solid ${C.border}` }}><Layers className="h-4 w-4" /></span>
           <div>

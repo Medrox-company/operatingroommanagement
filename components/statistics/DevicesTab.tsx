@@ -14,6 +14,7 @@ import {
   Wifi, WifiOff, Download, Globe, Cpu,
 } from 'lucide-react';
 import { C, Card, DistributionHeader, DistributionRing, formatNumber } from './shared';
+import { useStatisticsReport, type StatisticsReport } from './StatisticsReportContext';
 import type { DeviceRow } from '../../lib/db';
 
 interface DevicesTabProps {
@@ -46,8 +47,6 @@ const BROWSER_COLORS: Record<string, string> = {
   unknown: '#6B7280',
 };
 
-const DEVICE_CARD_CLASS = '!rounded-xl [background:var(--stats-surface)!important] [box-shadow:none!important]';
-
 const DeviceMetric: React.FC<{
   label: string;
   value: string;
@@ -55,18 +54,15 @@ const DeviceMetric: React.FC<{
   icon: React.ElementType;
   color: string;
 }> = ({ label, value, note, icon: Icon, color }) => (
-  <div className="group relative min-h-[112px] overflow-hidden rounded-xl p-4 text-left" style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}>
-    <span className="absolute inset-x-4 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-    <div className="flex min-h-[44px] items-start justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-[11px] font-medium" style={{ color: C.textHi }}>{label}</p>
-        <p className="mt-1 truncate text-[10px]" style={{ color: C.muted }}>{note}</p>
-      </div>
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-105" style={{ color, background: `${color}14`, border: `1px solid ${color}28` }}>
-        <Icon className="h-4 w-4" strokeWidth={1.8} />
-      </span>
+  <div className="flex min-w-[156px] flex-1 items-start gap-2.5 border-r px-3 py-3 last:border-r-0" style={{ borderColor: C.border }}>
+    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ color, background: C.surface2, border: `1px solid ${C.border}` }}>
+      <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
+    </span>
+    <div className="min-w-0">
+      <p className="truncate text-[8px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.muted }} title={label}>{label}</p>
+      <p className="mt-1 whitespace-nowrap text-[22px] font-semibold leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
+      <p className="mt-1.5 truncate text-[10px]" style={{ color: C.muted }} title={note}>{note}</p>
     </div>
-    <p className="mt-3 whitespace-nowrap text-[26px] font-light leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
   </div>
 );
 
@@ -200,12 +196,66 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
     };
   }, [devices]);
 
+  const report = useMemo<StatisticsReport | null>(() => {
+    if (!devices) return null;
+    const allDevices = [...devices].sort((a, b) => {
+      const aTime = a.last_seen_at ? new Date(a.last_seen_at).getTime() : 0;
+      const bTime = b.last_seen_at ? new Date(b.last_seen_at).getTime() : 0;
+      return bTime - aTime;
+    });
+    return {
+      context: `Aktuální evidence registrovaných zařízení bez časového omezení. Vybrané období „${periodLabel}“ tuto evidenci nefiltruje. Online znamená aktivitu v posledních pěti minutách.`,
+      metrics: [
+        { label: 'Registrovaná zařízení', value: formatNumber(stats?.total ?? 0) },
+        { label: 'Online nyní', value: formatNumber(stats?.online ?? 0), detail: `${formatNumber(stats?.onlinePct ?? 0, 1)} % ze všech zařízení` },
+        { label: 'Instalace PWA', value: formatNumber(stats?.pwaInstalled ?? 0), detail: `${formatNumber(stats?.pwaPct ?? 0, 1)} % pokrytí` },
+        { label: 'Aktivní zařízení', value: formatNumber(stats?.active ?? 0), detail: 'Povolený přístup' },
+      ],
+      sections: [
+        {
+          title: 'Typy zařízení',
+          columns: [{ label: 'Typ' }, { label: 'Počet', align: 'right' }, { label: 'Podíl', align: 'right' }],
+          rows: (stats?.byType ?? []).map(item => [item.label, formatNumber(item.count), `${formatNumber(item.pct, 1)} %`]),
+          emptyMessage: 'Žádná registrovaná zařízení.',
+        },
+        {
+          title: 'Platformy',
+          columns: [{ label: 'Platforma' }, { label: 'Počet', align: 'right' }, { label: 'Podíl', align: 'right' }],
+          rows: (stats?.byPlatform ?? []).map(item => [item.platform === 'unknown' ? 'Neznámá' : item.platform, formatNumber(item.count), `${formatNumber(item.pct, 1)} %`]),
+          emptyMessage: 'Žádné údaje o platformách.',
+        },
+        {
+          title: 'Prohlížeče',
+          columns: [{ label: 'Prohlížeč' }, { label: 'Počet', align: 'right' }, { label: 'Podíl', align: 'right' }],
+          rows: (stats?.byBrowser ?? []).map(item => [item.browser === 'unknown' ? 'Neznámý' : item.browser, formatNumber(item.count), `${formatNumber(item.pct, 1)} %`]),
+          emptyMessage: 'Žádné údaje o prohlížečích.',
+        },
+        {
+          title: 'Evidence zařízení',
+          description: 'Všechna načtená zařízení, seřazená podle poslední aktivity. PWA označuje instalaci aplikace do zařízení.',
+          columns: [{ label: 'Stav' }, { label: 'Název' }, { label: 'Typ' }, { label: 'Platforma' }, { label: 'Prohlížeč' }, { label: 'PWA' }, { label: 'Poslední aktivita' }],
+          rows: allDevices.map(device => [
+            isOnline(device.last_seen_at) ? 'Online' : 'Offline',
+            device.device_name || device.device_id?.slice(0, 8) || '—',
+            stats?.byType.find(item => item.type === (device.device_type?.toLowerCase() ?? 'unknown'))?.label ?? 'Neznámé',
+            device.platform || '—',
+            device.browser || '—',
+            device.is_pwa_installed ? 'Ano' : 'Ne',
+            device.last_seen_at ? new Date(device.last_seen_at).toLocaleString('cs-CZ') : 'Nikdy',
+          ]),
+          emptyMessage: 'Žádná registrovaná zařízení.',
+        },
+      ],
+    };
+  }, [devices, periodLabel, stats]);
+  useStatisticsReport('zarizeni', report);
+
   if (!devices) {
     return (
-      <Card className={DEVICE_CARD_CLASS}>
+      <Card>
         <div className="flex items-center gap-3 py-6 px-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-            style={{ background: `${C.muted}1a` }}>
+            style={{ background: C.surface2 }}>
             <Clock size={16} color={C.muted} strokeWidth={2.2} />
           </div>
           <div>
@@ -221,7 +271,7 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
 
   if (!stats || stats.total === 0) {
     return (
-      <Card className={DEVICE_CARD_CLASS}>
+      <Card>
         <div className="flex items-center gap-3 py-6 px-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: `${C.yellow}1a` }}>
@@ -244,17 +294,14 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
         <main className="flex flex-col gap-4 xl:order-2">
-          <Card className={`relative overflow-hidden p-5 ${DEVICE_CARD_CLASS}`}>
-            <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-medium" style={{ color: C.muted }}>Zařízení</p>
-                <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>Přehled připojených zařízení</h2>
-                <p className="mt-1 text-[11px]" style={{ color: C.muted }}>Aktuální stav registrací a přístupů · {periodLabel}</p>
-              </div>
-              <span className="rounded-md px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.accent, background: `${C.accent}12`, border: `1px solid ${C.accent}28` }}>Živá data</span>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Card>
+            <DistributionHeader
+              eyebrow="Zařízení"
+              title="Přehled připojených zařízení"
+              subtitle={`Aktuální stav registrací a přístupů · ${periodLabel}`}
+              badge="Živá data"
+            />
+            <div className="mt-4 flex overflow-x-auto rounded-lg border" style={{ background: C.surface2, borderColor: C.border }}>
               <DeviceMetric label="Celkem zařízení" value={formatNumber(stats.total)} note="Registrovaná zařízení" icon={Cpu} color={C.accent} />
               <DeviceMetric label="Online nyní" value={formatNumber(stats.online)} note={`${stats.onlinePct.toFixed(0)} % ze všech zařízení`} icon={Wifi} color={C.green} />
               <DeviceMetric label="Instalace PWA" value={formatNumber(stats.pwaInstalled)} note={`${stats.pwaPct.toFixed(0)} % pokrytí`} icon={Download} color={C.yellow} />
@@ -262,15 +309,14 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
             </div>
           </Card>
 
-          <Card className={`relative overflow-hidden p-5 ${DEVICE_CARD_CLASS}`}>
-            <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+          <Card>
             <DistributionHeader
               eyebrow="Zařízení"
               title="Podíl podle typu zařízení"
               subtitle="Rozložení registrovaných zařízení podle používaného typu"
               badge={`${stats.byType.length} typy`}
             />
-            <div className="mt-6 grid gap-x-5 gap-y-8 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+            <div className="mt-4 grid gap-x-5 gap-y-6 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
               {stats.byType.map(item => (
                 <div key={item.type} className="flex min-w-0 flex-col items-center gap-2.5">
                   <DistributionRing
@@ -298,27 +344,26 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
           </Card>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card className={`p-5 ${DEVICE_CARD_CLASS}`} icon={Globe} title="Platforma" subtitle="Používané operační systémy" accent={C.purple}>
+            <Card icon={Globe} title="Platforma" subtitle="Používané operační systémy" accent={C.purple}>
               <RankingList items={stats.byPlatform.map(item => ({ key: item.platform, label: item.platform, count: item.count, pct: item.pct, color: item.color }))} />
             </Card>
-            <Card className={`p-5 ${DEVICE_CARD_CLASS}`} icon={Globe} title="Prohlížeč" subtitle="Používané webové klienty" accent={C.cyan}>
+            <Card icon={Globe} title="Prohlížeč" subtitle="Používané webové klienty" accent={C.cyan}>
               <RankingList items={stats.byBrowser.map(item => ({ key: item.browser, label: item.browser, count: item.count, pct: item.pct, color: item.color }))} />
             </Card>
           </div>
         </main>
 
         <aside className="flex flex-col gap-4 xl:order-1">
-          <Card className={`relative overflow-hidden p-5 ${DEVICE_CARD_CLASS}`}>
-            <div className="absolute -right-14 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: C.accent }} />
-            <div className="relative">
+          <Card>
+            <div>
               <div className="flex items-center justify-between gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-xl" style={{ color: C.accent, background: `${C.accent}0f`, border: `1px solid ${C.accent}2f` }}><Cpu className="h-5 w-5" /></span>
-                <span className="rounded-full px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.13em]" style={{ color: C.accent, border: `1px solid ${C.accent}35` }}>reálná data</span>
+                <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ color: C.accent, background: C.surface2, border: `1px solid ${C.border}` }}><Cpu className="h-4 w-4" /></span>
+                <span className="rounded-lg px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.muted, background: C.surface2, border: `1px solid ${C.border}` }}>reálná data</span>
               </div>
-              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: C.muted }}>Registrovaná zařízení</p>
-              <p className="mt-1 text-[52px] font-light leading-none tracking-[-0.05em] tabular-nums" style={{ color: C.textHi }}>{formatNumber(stats.total)}</p>
+              <p className="mt-4 text-[8px] font-semibold uppercase tracking-[0.16em]" style={{ color: C.muted }}>Registrovaná zařízení</p>
+              <p className="mt-1 text-[36px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: C.textHi }}>{formatNumber(stats.total)}</p>
               <p className="mt-2 text-[11px]" style={{ color: C.muted }}>evidovaných zařízení · {periodLabel}</p>
-              <div className="mt-5 flex h-2 overflow-hidden rounded-full" style={{ background: C.ghost }}>
+              <div className="mt-4 flex h-2 overflow-hidden rounded-full" style={{ background: C.ghost }}>
                 {stats.byType.map(item => <span key={item.type} style={{ width: `${item.pct}%`, background: item.color }} title={`${item.label}: ${item.pct.toFixed(1)} %`} />)}
               </div>
               <div className="mt-4 space-y-2.5">
@@ -346,10 +391,10 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
             </div>
           </Card>
 
-          <Card className={`p-5 ${DEVICE_CARD_CLASS}`} icon={Wifi} title="Stav připojení" subtitle="Posledních pět minut" accent={C.green}>
-            <div className="mt-4 space-y-2">
+          <Card icon={Wifi} title="Stav připojení" subtitle="Posledních pět minut" accent={C.green}>
+            <div className="mt-4 overflow-hidden rounded-lg border" style={{ background: C.surface2, borderColor: C.border }}>
               {[{ label: 'Online', value: stats.online, color: C.green }, { label: 'Offline', value: stats.total - stats.online, color: C.muted }, { label: 'Aktivní', value: stats.active, color: C.cyan }].map(row => (
-                <div key={row.label} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}>
+                <div key={row.label} className="flex items-center justify-between border-b px-3 py-2.5 last:border-b-0" style={{ borderColor: C.border }}>
                   <span className="text-[10px]" style={{ color: C.muted }}>{row.label}</span>
                   <span className="text-[12px] font-semibold tabular-nums" style={{ color: row.color }}>{row.value}</span>
                 </div>
@@ -359,11 +404,11 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
         </aside>
       </div>
 
-      <Card className={`p-5 ${DEVICE_CARD_CLASS}`} icon={Cpu} title="Evidence zařízení" subtitle="Naposledy aktivní registrovaná zařízení" accent={C.accent}>
-        <div className="mt-4 overflow-x-auto rounded-xl" style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}>
+      <Card icon={Cpu} title="Evidence zařízení" subtitle="Naposledy aktivní registrovaná zařízení" accent={C.accent}>
+        <div className="mt-4 overflow-x-auto rounded-lg" style={{ background: C.surface2, border: `1px solid ${C.border}` }}>
           <table className="w-full min-w-[760px] text-[11px]">
             <thead>
-              <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.ghost }}>
+              <tr className="text-[9px] uppercase tracking-[0.1em]" style={{ borderBottom: `1px solid ${C.border}`, background: C.surface2 }}>
                 <th className="text-left py-2 px-2 font-medium" style={{ color: C.muted }}>Stav</th>
                 <th className="text-left py-2 px-2 font-medium" style={{ color: C.muted }}>Název</th>
                 <th className="text-left py-2 px-2 font-medium" style={{ color: C.muted }}>Typ</th>
@@ -377,7 +422,7 @@ export const DevicesTab: React.FC<DevicesTabProps> = memo(({
               {stats.recentDevices.map(d => {
                 const online = isOnline(d.last_seen_at);
                 return (
-                  <tr key={d.id} className="transition-colors hover:bg-white/[0.02]" style={{ borderBottom: `1px solid ${C.ghost}` }}>
+                  <tr key={d.id} className="transition-colors hover:bg-white/[0.02]" style={{ borderBottom: `1px solid ${C.border}` }}>
                     <td className="py-2 px-2">
                       {online ? (
                         <span className="flex items-center gap-1" style={{ color: C.green }}>

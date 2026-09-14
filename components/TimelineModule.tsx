@@ -1088,7 +1088,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   return (
     <div
       ref={moduleRootRef}
-      className={`w-full h-full text-white overflow-hidden flex flex-col relative antialiased ${isFullscreen ? 'app-module-background' : ''}`}
+      className={`w-full h-full text-white overflow-hidden flex flex-col relative antialiased ${isFullscreen ? 'app-timeline-background' : ''}`}
       style={{
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',

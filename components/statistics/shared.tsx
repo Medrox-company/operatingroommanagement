@@ -8,8 +8,8 @@
  *     seededPreviousValue, gradeFromScore, hashStr)
  *
  * Smyslem je dát novým záložkám (Executive Scorecard, Staff, Efficiency,
- * Forecast) konzistentní vizuální jazyk: tmavé glass surfaces, accent
- * akcenty na hexových barvách, micro-animace, sparkline mini-grafy.
+ * Forecast) konzistentní vizuální jazyk: neutrální plochy Nastavení,
+ * sémantické barevné akcenty a sparkline mini-grafy.
  */
 
 'use client';
@@ -24,10 +24,10 @@ export type IconComponent = React.ElementType<React.SVGProps<SVGSVGElement> & {
 }>;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design tokens — vylepšená paleta s lepším kontrastem, glows a vygenerovanými shadow efekty
+// Design tokens — sémantické barvy grafů a neutrální plochy Nastavení
 // ─────────────────────────────────────────────────────────────────────────────
 export const C = {
-  // Primary accent colors - více živé a kontrastní s glow capabilities
+  // Primary accent colors — identita datových řad a provozních stavů
   accent:  '#00D9FF',  // Vivid cyan - main accent
   cyan:    '#00D9FF',  // Alias
   green:   '#00F5A0',  // Emerald green - success
@@ -39,7 +39,7 @@ export const C = {
   blue:    '#60A5FA',  // Sky blue
   teal:    '#2DD4BF',  // Teal
   
-  // Surface & background - vylepšené glass morphism style s vrstvami
+  // Surface & background — sdílené neutrální plochy
   bg:        'var(--stats-bg)',
   surface:   'var(--stats-surface)',
   surface2:  'var(--stats-surface-2)',
@@ -159,7 +159,7 @@ export interface CardProps {
   accent?: string;
   className?: string;
   children?: React.ReactNode;
-  /** Vyšší vizuální váha — výraznější border + jemný gradient */
+  /** Vyšší vizuální váha — mírně zesílená neutrální plocha */
   elevated?: boolean;
   noPadding?: boolean;
   /** Lucide ikona renderovaná v hlavičce vedle title */
@@ -173,40 +173,32 @@ export const Card: React.FC<CardProps> = memo(({
   const HeadingTag = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
   return (
     <div
-      className={`rounded-2xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
+      className={`rounded-xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
       style={{
-        background: elevated
-          ? `linear-gradient(180deg, ${C.surface3} 0%, ${C.surface2} 100%)`
-          : C.surface,
-        border: `1px solid ${elevated ? C.borderActive : C.border}`,
+        background: elevated ? C.surface2 : C.surface,
+        border: `1px solid ${C.border}`,
         minWidth: 0,
-        boxShadow: elevated 
-          ? `0 8px 32px rgba(0,217,255,0.08), inset 0 1px 0 rgba(255,255,255,0.08)`
-          : `0 4px 16px rgba(0,0,0,0.4)`,
       }}>
       {(title || action) && (
-        <div className={`flex items-start justify-between ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
+        <div className={`flex items-start justify-between gap-3 ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
           <div className="flex items-center gap-2 min-w-0">
-            {accent && (
-              <div className="w-1 h-5 rounded-full shrink-0" style={{ background: accent }} />
-            )}
             {Icon && (
               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                 style={{ 
-                  background: `${accent ?? C.accent}1a`, 
-                  border: `1px solid ${accent ?? C.accent}33`,
+                  background: C.surface2,
+                  border: `1px solid ${C.border}`,
                 }}>
                 <Icon size={14} color={accent ?? C.accent} strokeWidth={2.2} />
               </div>
             )}
             <div className="min-w-0">
               {title && (
-                <HeadingTag className="truncate text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>
+                <HeadingTag className="text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>
                   {title}
                 </HeadingTag>
               )}
               {subtitle && (
-                <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>{subtitle}</p>
+                <p className="text-[11px] mt-1 leading-relaxed" style={{ color: C.muted }}>{subtitle}</p>
               )}
             </div>
           </div>
@@ -229,17 +221,17 @@ export const DistributionHeader: React.FC<{
   badge?: string;
   action?: React.ReactNode;
   accent?: string;
-}> = ({ eyebrow, title, subtitle, badge, action, accent = C.accent }) => (
-  <div className="flex flex-wrap items-start justify-between gap-4">
+}> = ({ eyebrow, title, subtitle, badge, action }) => (
+  <div className="flex flex-wrap items-start justify-between gap-3">
     <div className="min-w-0">
-      <p className="text-[10px] font-medium uppercase tracking-[0.15em]" style={{ color: accent }}>{eyebrow}</p>
-      <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>{title}</h2>
-      <p className="mt-1 text-[11px]" style={{ color: C.muted }}>{subtitle}</p>
+      <p className="text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ color: C.muted }}>{eyebrow}</p>
+      <h2 className="mt-1.5 text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>{title}</h2>
+      <p className="mt-1 text-[11px] leading-relaxed" style={{ color: C.muted }}>{subtitle}</p>
     </div>
     {action ?? (badge ? (
       <span
-        className="rounded-md px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em]"
-        style={{ color: accent, background: `${accent}12`, border: `1px solid ${accent}28` }}
+        className="rounded-lg px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.1em]"
+        style={{ color: C.muted, background: C.surface2, border: `1px solid ${C.border}` }}
       >
         {badge}
       </span>
@@ -565,31 +557,24 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
   const progressPct = showProgress ? Math.min(100, (progressBase / effectiveTarget!) * 100) : 0;
   return (
     <div
-      className="rounded-2xl p-4 relative overflow-hidden"
+      className="rounded-xl p-3 relative overflow-hidden"
       style={{ 
-        background: C.surface2, 
-        border: `1px solid ${C.borderHover}`,
-        boxShadow: `0 4px 16px rgba(0,0,0,0.3)`,
+        background: C.surface,
+        border: `1px solid ${C.border}`,
       }}>
-      {/* Decorative accent corner with glow */}
-      <div className="absolute top-0 right-0 w-12 h-12 rounded-bl-3xl"
-        style={{ background: `${accentColor}12` }} />
-      <div className="absolute top-1 right-1 w-8 h-8 rounded-bl-2xl"
-        style={{ background: `${accentColor}08` }} />
-      
       <div className="flex items-start justify-between mb-2 relative">
         <div className="flex items-center gap-2 min-w-0">
           {Icon && (
             <div
               className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
               style={{ 
-                background: `${accentColor}18`, 
-                border: `1px solid ${accentColor}30`,
+                background: C.surface2,
+                border: `1px solid ${C.border}`,
               }}>
               <Icon size={13} color={accentColor} strokeWidth={2.4} />
             </div>
           )}
-          <span className="text-[10px] font-bold uppercase tracking-wider truncate" style={{ color: C.muted }}>
+          <span className="text-[8px] font-semibold uppercase tracking-[0.1em] truncate" style={{ color: C.muted }}>
             {label}
           </span>
         </div>
@@ -600,9 +585,9 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
       <div className="flex items-baseline gap-1.5 relative mb-2">
         {typeof value === 'number'
           ? <AnimatedCounter value={value} format={format}
-              className="text-2xl font-bold leading-none tabular-nums"
+              className="text-2xl font-semibold leading-none tabular-nums"
               style={{ color: C.textHi }} />
-          : <span className="text-2xl font-bold leading-none tabular-nums" style={{ color: C.textHi }}>
+          : <span className="text-2xl font-semibold leading-none tabular-nums" style={{ color: C.textHi }}>
               {value}
             </span>
         }
@@ -639,7 +624,7 @@ export const KPIBlock: React.FC<KPIBlockProps> = memo(({
 KPIBlock.displayName = 'KPIBlock';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// IconBubble — kruhová ikona s barevným pozadím (pro hero karty)
+// IconBubble — kompaktní ikona na neutrální ploše
 // ─────────────────────────────────────────────────────────────────────────────
 export const IconBubble: React.FC<{
   // Lucide icony jsou ForwardRefExoticComponent — přijímáme libovolnou ikonovou komponentu.
@@ -647,22 +632,14 @@ export const IconBubble: React.FC<{
   color?: string;
   size?: number;
   pulsing?: boolean;
-}> = memo(({ icon: Icon, color = C.accent, size = 36, pulsing }) => {
+}> = memo(({ icon: Icon, color = C.accent, size = 36 }) => {
   return (
     <div className="relative shrink-0">
-      {pulsing && (
-        <motion.div
-          className="absolute inset-0 rounded-full"
-          style={{ background: color }}
-          animate={{ opacity: [0.3, 0.0, 0.3], scale: [1, 1.6, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      )}
-      <div className="relative rounded-full flex items-center justify-center"
+      <div className="relative rounded-lg flex items-center justify-center"
         style={{
           width: size, height: size,
-          background: `${color}20`,
-          border: `1.5px solid ${color}40`,
+          background: C.surface2,
+          border: `1px solid ${C.border}`,
         }}>
         <Icon size={size * 0.5} color={color} strokeWidth={2.2} />
       </div>
@@ -679,17 +656,16 @@ export const SectionHeader: React.FC<{
   subtitle?: string;
   accent?: string;
   action?: React.ReactNode;
-}> = memo(({ title, subtitle, accent = C.accent, action }) => {
+}> = memo(({ title, subtitle, action }) => {
   return (
     <div className="flex items-end justify-between gap-3 mb-3">
       <div className="flex items-center gap-2.5 min-w-0">
-        <div className="w-1 h-7 rounded-full" style={{ background: accent }} />
         <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>
+          <h2 className="text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>
             {title}
           </h2>
           {subtitle && (
-            <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>{subtitle}</p>
+            <p className="text-[11px] mt-1 leading-relaxed" style={{ color: C.muted }}>{subtitle}</p>
           )}
         </div>
       </div>

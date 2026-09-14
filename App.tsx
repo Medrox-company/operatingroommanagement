@@ -548,7 +548,7 @@ const AppContent: React.FC = () => {
       {/* Statická CSS pozadí — bez fotografií, vzdálených zdrojů a runtime konfigurace. */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div
-          className={`${currentView === 'dashboard' && selectedRoom ? 'app-room-detail-background' : 'app-module-background'} absolute inset-0`}
+          className={`${currentView === 'dashboard' && selectedRoom ? 'app-room-detail-background' : currentView === 'timeline' ? 'app-timeline-background' : 'app-module-background'} absolute inset-0`}
         />
 
       </div>

@@ -6,7 +6,7 @@ import {
   Building2, DollarSign, Activity, Hourglass, Pencil,
 } from 'lucide-react';
 import {
-  Card,
+  Card, KPIBlock,
   C, DistributionHeader, DistributionRing, formatNumber,
 } from './shared';
 import { toast } from '@/components/ui/toast';
@@ -20,6 +20,7 @@ import {
   type StatusHistoryRow,
 } from '../../lib/db';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
+import { useStatisticsReport } from './StatisticsReportContext';
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 
@@ -66,7 +67,7 @@ const PERIOD_HOURS: Record<Period, number> = {
   'rok':   24 * 365,
 };
 
-const STATS_CARD_CLASS = '!rounded-xl [background:var(--stats-surface)!important] [box-shadow:none!important]';
+const STATS_CARD_CLASS = 'stats-finance-panel';
 
 /**
  * „Sál připraven" je klidový stav mezi výkony — sál nikdo neobsazuje, takže se
@@ -202,16 +203,12 @@ const fmtCZKShort = (v: number) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Prvky ve stylu předlohy — hluboká plocha s barevným nádechem, kruhová ikona
-// vpravo nahoře, oddělovač a řádky štítek/hodnota.
-//
-// Velikosti písma zůstávají shodné se zbytkem aplikace: popisky 10–11 px
-// prostrkaně, hlavní hodnota 24 px (text-2xl), doplňky 11 px.
+// Kompaktní finanční přehledy: neutrální plochy nastavení, jemné oddělovače
+// a barvy vyhrazené pro ikony, grafy a provozní stavy.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Kompaktní karta sálu podle dodané předlohy: modře tónované sklo, dominantní
- * částka a šest rychle čitelných provozních metrik.
+ * Kompaktní karta sálu s částkou a šesti provozními metrikami.
  */
 const YieldCard: React.FC<{
   value: string;
@@ -224,7 +221,7 @@ const YieldCard: React.FC<{
   rows: Array<{ label: string; value: string }>;
 }> = ({ value, unit, sub, caption, color, rows, onClick, costLabel = 'Náklady za období' }) => (
   <div
-    className="group relative rounded-xl p-3.5 flex flex-col overflow-hidden w-full text-left transition-colors duration-200"
+    className="group relative rounded-lg p-3 flex flex-col overflow-hidden w-full text-left transition-colors duration-200"
     style={{
       background: 'var(--stats-surface-2)',
       border: `1px solid ${C.border}`,
@@ -235,21 +232,15 @@ const YieldCard: React.FC<{
         type="button"
         onClick={onClick}
         aria-label={`Zobrazit rozpad nákladů sálu ${sub ?? 'operační sál'}`}
-        className="absolute inset-0 z-10 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+        className="absolute inset-0 z-10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
         style={{ color }}
       >
         <span className="sr-only">Zobrazit detail nákladů</span>
       </button>
     )}
-    <span
-      aria-hidden
-      className="absolute inset-x-4 top-0 h-px"
-      style={{ background: `linear-gradient(90deg, transparent, ${color}cc, transparent)` }}
-    />
-
     <div className="relative flex items-start min-h-[50px]">
       <div className="min-w-0 flex-1">
-        <p className="text-[9px] uppercase font-bold tracking-[0.14em]" style={{ color }}>
+        <p className="text-[9px] uppercase font-semibold tracking-[0.1em]" style={{ color: C.muted }}>
           Operační sál
         </p>
         <p
@@ -267,7 +258,7 @@ const YieldCard: React.FC<{
       </div>
     </div>
 
-    <div className="relative mt-2.5 pt-2.5 flex items-end justify-between gap-3" style={{ borderTop: `1px solid ${color}25` }}>
+    <div className="relative mt-2.5 pt-2.5 flex items-end justify-between gap-3" style={{ borderTop: `1px solid ${C.border}` }}>
       <p className="text-[8px] uppercase font-semibold tracking-[0.1em] pb-0.5" style={{ color: C.muted }}>
         {costLabel}
       </p>
@@ -277,15 +268,15 @@ const YieldCard: React.FC<{
       </p>
     </div>
 
-    <div className="relative mt-2.5 grid grid-cols-2 gap-1">
+    <div className="relative mt-2.5 grid grid-cols-2 gap-x-3">
       {rows.map(row => (
         <div
           key={row.label}
-          className="rounded-md px-2 py-1.5 min-w-0 flex items-center justify-between gap-1.5"
-          style={{ background: `${color}0a`, border: `1px solid ${color}1c` }}
+          className="py-1.5 min-w-0 flex flex-col gap-0.5"
+          style={{ borderTop: `1px solid ${C.border}` }}
         >
-          <p className="text-[7px] uppercase font-semibold tracking-[0.06em] truncate" style={{ color: C.muted }}>{row.label}</p>
-          <p className="text-[10px] font-semibold tabular-nums truncate shrink-0" style={{ color: C.textHi }} title={row.value}>
+          <p className="text-[9px] font-medium leading-4 [overflow-wrap:anywhere]" style={{ color: C.muted }}>{row.label}</p>
+          <p className="text-[10px] font-semibold leading-4 tabular-nums whitespace-normal [overflow-wrap:anywhere]" style={{ color: C.textHi }} title={row.value}>
             {row.value}
           </p>
         </div>
@@ -295,8 +286,7 @@ const YieldCard: React.FC<{
 );
 
 /**
- * Panel se seznamem ve stylu předlohy: tlumená plocha, nahoře pilulka
- * s názvem a vpravo pilulka se souhrnem, pod tím řádky s číslicemi.
+ * Panel se seznamem, kompaktní hlavičkou a souhrnem.
  */
 const PanelCard: React.FC<{
   title: string;
@@ -307,33 +297,22 @@ const PanelCard: React.FC<{
   accent?: string;
   children: React.ReactNode;
 }> = ({ title, badge, note, footer, icon: Icon = Wallet, accent = C.accent, children }) => (
-  <div
-    className="relative overflow-hidden rounded-xl p-4 sm:p-5 flex flex-col"
-    style={{
-      background: 'var(--stats-surface)',
-      border: `1px solid ${C.border}`,
-    }}
-  >
-    <span
-      aria-hidden
-      className="absolute left-8 right-8 top-0 h-px"
-      style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
-    />
-    <div className="flex items-center gap-2">
+  <Card className="flex flex-col">
+    <div className="flex flex-wrap items-center gap-2 border-b pb-3" style={{ borderColor: C.border }}>
       <span
-        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-        style={{ background: `${accent}1f`, color: accent, border: `1px solid ${accent}33` }}
+        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+        style={{ background: C.surface2, color: accent, border: `1px solid ${C.border}` }}
       >
         <Icon className="w-4 h-4" />
       </span>
       <div className="min-w-0">
-        <p className="text-[10px] uppercase font-bold tracking-[0.16em]" style={{ color: accent }}>Finance</p>
-        <p className="truncate text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>{title}</p>
+        <p className="text-[9px] uppercase font-semibold tracking-[0.1em]" style={{ color: C.muted }}>Finance</p>
+        <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>{title}</h3>
       </div>
       {badge && (
         <span
-          className="ml-auto px-3 py-1.5 rounded-md text-[11px] font-semibold tabular-nums shrink-0"
-          style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}2b` }}
+          className="ml-auto px-2.5 py-1 rounded-md text-[10px] font-medium tabular-nums shrink-0"
+          style={{ background: C.surface2, color: C.text, border: `1px solid ${C.border}` }}
         >
           {badge}
         </span>
@@ -342,7 +321,7 @@ const PanelCard: React.FC<{
 
     {note && <p className="text-[10px] mt-0.5" style={{ color: C.muted }}>{note}</p>}
 
-    <div className="mt-4 flex flex-col">{children}</div>
+    <div className="mt-3 flex flex-col">{children}</div>
 
     {footer && (
       <div
@@ -357,7 +336,7 @@ const PanelCard: React.FC<{
         </span>
       </div>
     )}
-  </div>
+  </Card>
 );
 
 /** Jeden řádek panelu — vlevo popisek, vpravo číslo. */
@@ -369,8 +348,8 @@ const PanelRow: React.FC<{
   children?: React.ReactNode;
 }> = ({ index, label, value, dot, children }) => (
   <div
-    className="flex items-center gap-2 rounded-xl px-3 py-2.5 min-h-11"
-    style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}
+    className="flex items-center gap-2 px-1 py-2.5 min-h-11"
+    style={{ borderBottom: `1px solid ${C.border}` }}
   >
     {index && (
       <span className="text-[10px] font-medium tabular-nums w-5 shrink-0" style={{ color: C.faint }}>
@@ -402,7 +381,7 @@ const HeadChip: React.FC<{
   >
     <span
       className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
-      style={{ background: `${color}14`, color, border: `1px solid ${color}28` }}
+      style={{ background: C.surface2, color, border: `1px solid ${C.border}` }}
     >
       <Icon className="w-4 h-4" />
     </span>
@@ -420,12 +399,12 @@ const PillMetric: React.FC<{
   color?: string;
 }> = ({ label, value, icon: Icon, color = C.text }) => (
   <div
-    className="rounded-xl px-3.5 py-3 flex items-center gap-3"
+    className="rounded-lg px-3 py-3 flex items-center gap-3"
     style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}
   >
     <span
-      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-      style={{ background: `${color}14`, color, border: `1px solid ${color}28` }}
+      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+      style={{ background: C.surface2, color, border: `1px solid ${C.border}` }}
     >
       <Icon className="w-4 h-4" />
     </span>
@@ -435,28 +414,6 @@ const PillMetric: React.FC<{
       </p>
       <p className="text-[15px] font-semibold tabular-nums mt-0.5" style={{ color: C.text }}>{value}</p>
     </div>
-  </div>
-);
-
-const RateMetric: React.FC<{
-  label: string;
-  value: string;
-  detail: string;
-  icon: React.ElementType;
-  color: string;
-}> = ({ label, value, detail, icon: Icon, color }) => (
-  <div className="group relative min-h-[112px] overflow-hidden rounded-xl p-4 text-left" style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}>
-    <span className="absolute inset-x-4 top-0 h-px opacity-70" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-    <div className="flex min-h-[44px] items-start justify-between gap-3">
-      <div className="min-w-0">
-        <p className="truncate text-[11px] font-medium" style={{ color: C.textHi }}>{label}</p>
-        <p className="mt-1 truncate text-[10px]" style={{ color: C.muted }}>{detail}</p>
-      </div>
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-105" style={{ color, border: `1px solid ${color}35`, background: `${color}0e` }}>
-        <Icon className="h-4 w-4" strokeWidth={1.8} />
-      </span>
-    </div>
-    <p className="mt-3 truncate whitespace-nowrap text-[26px] font-light leading-none tabular-nums tracking-tight" style={{ color: C.textHi }}>{value}</p>
   </div>
 );
 
@@ -476,15 +433,18 @@ export function FinanceTab({
   const { workflowStatuses } = useWorkflowStatusesContext();
   const [history, setHistory] = useState<StatusHistoryRow[]>(providedHistory ?? []);
   const [historyLoading, setHistoryLoading] = useState(!providedHistory);
+  const [historyReportError, setHistoryReportError] = useState(false);
   const [notificationRows, setNotificationRows] = useState<NotificationLogRow[]>(providedNotifications ?? []);
   const [specialtyAllocations, setSpecialtyAllocations] = useState<SpecialtyAllocation[]>([]);
   const [specialtyDepartments, setSpecialtyDepartments] = useState<SpecialtyDepartment[]>([]);
   const [delayDataLoading, setDelayDataLoading] = useState(true);
+  const [delayDataReportError, setDelayDataReportError] = useState(false);
   const [calendarDay, setCalendarDay] = useState<Date>(() => operationalToday());
   const [calendarSelectionActive, setCalendarSelectionActive] = useState(false);
   const [selectedDayHistory, setSelectedDayHistory] = useState<StatusHistoryRow[]>([]);
   const [selectedDayNotifications, setSelectedDayNotifications] = useState<NotificationLogRow[]>([]);
   const [selectedDayLoading, setSelectedDayLoading] = useState(false);
+  const [selectedDayReportKey, setSelectedDayReportKey] = useState<string | null>(null);
   // Optimistická lokální mapa hodinových sazeb (do doby než parent rerendruje rooms)
   const [hourlyCostOverride, setHourlyCostOverride] = useState<Record<string, number | null>>({});
   // Editor state
@@ -498,11 +458,13 @@ export function FinanceTab({
     if (providedHistory) {
       setHistory(providedHistory);
       setHistoryLoading(false);
+      setHistoryReportError(false);
       return;
     }
     let cancelled = false;
     (async () => {
       setHistoryLoading(true);
+      setHistoryReportError(false);
       try {
         const fromDate = new Date();
         fromDate.setHours(fromDate.getHours() - PERIOD_HOURS[periodLabel]);
@@ -513,7 +475,10 @@ export function FinanceTab({
         if (!cancelled) setHistory(data ?? []);
       } catch (err) {
         console.error('[FinanceTab] failed to load status history', err);
-        if (!cancelled) setHistory([]);
+        if (!cancelled) {
+          setHistory([]);
+          setHistoryReportError(true);
+        }
       } finally {
         if (!cancelled) setHistoryLoading(false);
       }
@@ -561,6 +526,7 @@ export function FinanceTab({
     toDate.setMilliseconds(-1);
 
     setSelectedDayLoading(true);
+    setSelectedDayReportKey(null);
     setSelectedDayHistory([]);
     setSelectedDayNotifications([]);
 
@@ -571,6 +537,7 @@ export function FinanceTab({
       if (cancelled) return;
       setSelectedDayHistory(statusRows ?? []);
       setSelectedDayNotifications(notifications ?? []);
+      setSelectedDayReportKey(localDateKey(calendarDay));
     }).catch(error => {
       console.error('[FinanceTab] failed to load selected calendar day', error);
       if (!cancelled) {
@@ -603,6 +570,7 @@ export function FinanceTab({
 
     void (async () => {
       setDelayDataLoading(true);
+      setDelayDataReportError(false);
       const now = new Date();
       const from = new Date(now.getTime() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000);
       const years = Array.from(new Set([from.getFullYear(), now.getFullYear(), calendarDay.getFullYear()]));
@@ -633,6 +601,7 @@ export function FinanceTab({
         if (!cancelled) {
           setSpecialtyAllocations([]);
           setSpecialtyDepartments([]);
+          setDelayDataReportError(true);
         }
       } finally {
         if (!cancelled) setDelayDataLoading(false);
@@ -1191,7 +1160,7 @@ export function FinanceTab({
     : 0;
 
   const hourlyRatesPanel = (
-    <div className="relative overflow-hidden rounded-xl p-4 sm:p-5" style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}>
+    <Card>
       <div className="flex items-center gap-2">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md" style={{ color: C.cyan, background: C.ghost, border: `1px solid ${C.border}` }}>
           <DollarSign className="h-4 w-4" />
@@ -1203,7 +1172,7 @@ export function FinanceTab({
         <span className="ml-auto rounded-md px-2.5 py-1 text-[10px] font-medium tabular-nums" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>{summary.configuredCount}/{rooms.length}</span>
       </div>
       <div className="my-4 h-px" style={{ background: C.border }} />
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+      <div className="grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))]">
         {roomFinance.map((rf, index) => {
           const room = rooms.find(r => r.id === rf.id);
           if (!room) return null;
@@ -1212,7 +1181,6 @@ export function FinanceTab({
 
           return (
             <div key={rf.id} className="group relative min-h-[126px] overflow-hidden rounded-lg p-3 transition-colors hover:bg-white/[0.035]" style={{ background: isEditing ? `${C.cyan}0c` : C.surface2, border: `1px solid ${isEditing ? `${C.cyan}65` : C.border}` }}>
-              <span className="absolute inset-x-3 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${rf.configured ? C.cyan : C.yellow}, transparent)` }} />
               <div className="flex items-start gap-2.5">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-[8px] font-mono" style={{ color: rf.configured ? C.cyan : C.yellow, background: rf.configured ? `${C.cyan}12` : `${C.yellow}12`, border: `1px solid ${rf.configured ? `${C.cyan}28` : `${C.yellow}28`}` }}>{String(index + 1).padStart(2, '0')}</span>
                 <div className="min-w-0 flex-1">
@@ -1234,7 +1202,7 @@ export function FinanceTab({
                       if (e.key === 'Enter') saveEdit(rf.id);
                       if (e.key === 'Escape') cancelEdit();
                     }}
-                    className="w-[112px] rounded-md px-2 py-1 text-right text-[24px] font-light leading-none tabular-nums tracking-tight"
+                    className="w-[96px] rounded-md px-2 py-1 text-right text-[20px] font-semibold leading-none tabular-nums tracking-tight"
                     style={{ background: 'var(--stats-ghost)', color: C.text, border: `1px solid ${C.cyan}`, outline: 'none' }}
                     placeholder="0"
                     min={0}
@@ -1279,13 +1247,13 @@ export function FinanceTab({
                 >
                   {rf.configured ? (
                     <>
-                      <span className="text-[26px] font-light leading-none tracking-tight" style={{ color: C.textHi }}>{Math.round(rf.rate ?? 0).toLocaleString('cs-CZ')}</span>
+                      <span className="text-[22px] font-semibold leading-none tracking-tight" style={{ color: C.textHi }}>{Math.round(rf.rate ?? 0).toLocaleString('cs-CZ')}</span>
                       <span className="text-[10px] font-medium" style={{ color: C.muted }}>Kč/h</span>
                     </>
                   ) : (
                     <span className="text-[13px] font-medium" style={{ color: C.yellow }}>Nenastaveno</span>
                   )}
-                  <Pencil className="h-4 w-4 shrink-0 transition-transform group-hover/edit:scale-110" style={{ color: C.cyan }} strokeWidth={2.1} />
+                  <Pencil className="h-3.5 w-3.5 shrink-0" style={{ color: C.cyan }} strokeWidth={2.1} />
                 </button>
               )}
               </div>
@@ -1297,20 +1265,169 @@ export function FinanceTab({
         <span className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: C.faint }}>Průměrná sazba</span>
         <span className="text-[12px] font-semibold tabular-nums" style={{ color: C.textHi }}>{fmtCZKShort(summary.avgRate)} Kč/h</span>
       </div>
-    </div>
+    </Card>
   );
+
+  const reportMoney = (amount: number | null) => amount === null ? 'Sazba chybí' : `${formatNumber(amount, 0)} Kč`;
+  const reportHours = (hours: number) => `${formatNumber(hours, 1)} h`;
+  const reportScope = calendarSelectionActive
+    ? `Kalendářní den ${calendarDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}, od 00:00 do 24:00. Filtr vybírá události podle času záznamu; délky fází se omezují na pracovní dobu sálu, nikoli na hranici kalendářního dne.`
+    : `Vybrané období: ${periodLabel}. Výpočty používají načtenou historii tohoto období a nastavenou pracovní dobu sálů.`;
+  const financeReportReady = !delayDataLoading && !delayDataReportError && (
+    calendarSelectionActive
+      ? !selectedDayLoading && selectedDayReportKey === localDateKey(calendarDay)
+      : !historyLoading && !historyReportError
+  );
+
+  useStatisticsReport(view === 'rates' ? 'sazby' : 'finance', view === 'rates' ? {
+    context: [
+      'Aktuální hodinové sazby všech evidovaných operačních sálů. Výběr období nemění sazby a nepředstavuje historický přehled jejich změn.',
+      `${summary.unconfiguredCount} sálů nemá nastavenou sazbu a není zahrnuto do finančních výpočtů.`,
+      savingRoomId ? 'Probíhá ukládání změny sazby; report zachycuje právě zobrazené hodnoty.' : '',
+      editingRoomId ? 'Rozepsaná neuložená hodnota v editoru není zahrnuta.' : '',
+    ].filter(Boolean).join(' '),
+    metrics: [
+      { label: 'Průměrná sazba', value: `${formatNumber(summary.avgRate, 0)} Kč/h`, detail: 'Napříč sály s nastavenou sazbou' },
+      { label: 'Nastavené sály', value: `${summary.configuredCount} / ${rooms.length}` },
+      { label: 'Bez sazby', value: summary.unconfiguredCount },
+      { label: 'Pokrytí sazeb', value: `${costCoverage} %` },
+      { label: 'Nejvyšší sazba', value: highestRateRoom ? `${formatNumber(highestRateRoom.rate ?? 0, 0)} Kč/h` : '—', detail: highestRateRoom?.name },
+      { label: 'Medián sazby', value: `${formatNumber(medianRate, 0)} Kč/h` },
+      { label: 'Nejnižší sazba', value: lowestRateRoom ? `${formatNumber(lowestRateRoom.rate ?? 0, 0)} Kč/h` : '—', detail: lowestRateRoom?.name },
+      { label: 'Rozpětí sazeb', value: `${formatNumber(rateSpread, 0)} Kč/h` },
+    ],
+    sections: [
+      {
+        title: 'Hodinové sazby všech operačních sálů',
+        description: 'Platná sazba je nezáporná hodnota včetně nuly. Sál bez sazby zůstává v přehledu a do výpočtu nákladů se nezahrnuje.',
+        columns: [{ label: 'Sál' }, { label: 'Oddělení' }, { label: 'Hodinová sazba', align: 'right' }, { label: 'Stav konfigurace' }],
+        rows: roomFinance.map(room => [
+          room.name,
+          room.department || 'Bez přiřazeného oddělení',
+          room.configured ? `${formatNumber(room.rate ?? 0, 0)} Kč/h` : 'Nenastaveno',
+          room.configured ? 'Zahrnuto do výpočtů' : 'Vyžaduje doplnění',
+        ]),
+        emptyMessage: 'Žádné operační sály k zobrazení.',
+      },
+    ],
+  } : !financeReportReady ? null : {
+    context: [
+      reportScope,
+      'Náklady vycházejí z naměřeného času provozních fází v pracovní době a aktuální hodinové sazby; klidový stav Sál připraven se nezapočítává.',
+      `${summary.unconfiguredCount} sálů bez sazby není zahrnuto do součtů nákladů a provozních hodin s nastavenou sazbou.`,
+      !providedHistory && !calendarSelectionActive ? 'Samostatné načtení historie v této záložce je omezeno na 5 000 záznamů.' : '',
+    ].filter(Boolean).join(' '),
+    metrics: [
+      { label: 'Celkové náklady provozu', value: reportMoney(summary.totalCost) },
+      { label: 'Provozní hodiny', value: reportHours(summary.totalHours), detail: 'Sály s nastavenou sazbou' },
+      { label: 'Výkony v pracovní době', value: workingOpsCount, detail: 'Všechny evidované sály' },
+      { label: 'Průměrné využití', value: `${formatNumber(workingAvgUtilization, 0)} %` },
+      { label: 'Náklad na hodinu', value: `${formatNumber(summary.costPerHour, 0)} Kč/h` },
+      { label: 'Náklad na výkon', value: reportMoney(summary.costPerOperation), detail: 'Sály s nastavenou sazbou' },
+      { label: 'Průměrná sazba', value: `${formatNumber(summary.avgRate, 0)} Kč/h` },
+      { label: 'Pokrytí sazeb', value: `${summary.configuredCount} / ${rooms.length}`, detail: `${costCoverage} % sálů` },
+    ],
+    sections: [
+      {
+        title: 'Náklady všech operačních sálů',
+        description: 'Seřazeno podle nákladů. U sálů bez sazby nelze náklady vyčíslit; nulová sazba je platná. Částky jsou zaokrouhlené na celé koruny.',
+        columns: [{ label: 'Sál' }, { label: 'Oddělení' }, { label: 'Sazba', align: 'right' }, { label: 'Provoz', align: 'right' }, { label: 'Náklady', align: 'right' }],
+        rows: allRoomsByCost.map(room => [
+          room.name,
+          room.department || 'Bez přiřazeného oddělení',
+          room.configured ? `${formatNumber(room.rate ?? 0, 0)} Kč/h` : 'Nenastaveno',
+          reportHours(room.hours),
+          reportMoney(room.cost),
+        ]),
+        emptyMessage: 'Žádné operační sály k zobrazení.',
+      },
+      {
+        title: 'Kapacita a výkonnost sálů',
+        description: 'Kapacita odpovídá nastavené pracovní době po odečtení přestávek. Využití se poměřuje s touto kapacitou, nikoli s kalendářním časem.',
+        columns: [{ label: 'Sál' }, { label: 'Provoz', align: 'right' }, { label: 'Kapacita', align: 'right' }, { label: 'Využití', align: 'right' }, { label: 'Výkony', align: 'right' }],
+        rows: allRoomsByCost.map(room => [room.name, reportHours(room.hours), reportHours(room.capacityHours), `${formatNumber(room.utilizationPct, 0)} %`, room.opsCount]),
+        emptyMessage: 'Žádné operační sály k zobrazení.',
+      },
+      {
+        title: 'Prostoje mezi operacemi',
+        description: 'Interval od konce operace k dalšímu začátku ve stejném kalendářním dni, omezený na pracovní dobu sálu. Náklad odpovídá délce prostoje krát hodinová sazba.',
+        columns: [{ label: 'Sál' }, { label: 'Prostoj', align: 'right' }, { label: 'Intervalů', align: 'right' }, { label: 'Náklad prostoje', align: 'right' }],
+        rows: allRoomsByCost.map(room => [room.name, formatDuration(room.downtimeMinutes), room.downtimeIntervals, reportMoney(room.downtimeCost)]),
+        emptyMessage: 'Žádné operační sály k zobrazení.',
+      },
+      {
+        title: 'Pozdní začátek programu',
+        description: `Vyhodnocuje se první operace dne s ranním rozpisem odbornosti a známým začátkem pracovní doby. Zpoždění začíná až po toleranci ${LATEST_PROGRAM_START_GRACE_MINUTES} minut. Neúplný první den období se neporovnává; Bez rozpisu znamená, že není dostupný vyhodnotitelný den.`,
+        columns: [{ label: 'Sál' }, { label: 'Zpoždění', align: 'right' }, { label: 'Pozdní / vyhodnocené dny', align: 'right' }, { label: 'Náklad zpoždění', align: 'right' }],
+        rows: allRoomsByCost.map(room => [
+          room.name,
+          room.scheduledDaysWithOperation > 0 ? formatDuration(room.delayedStartMinutes) : 'Bez rozpisu',
+          room.scheduledDaysWithOperation > 0 ? `${room.delayedStartDays} / ${room.scheduledDaysWithOperation}` : 'Nelze porovnat s plánem',
+          room.scheduledDaysWithOperation > 0 ? reportMoney(room.delayedStartCost) : '—',
+        ]),
+        emptyMessage: 'Žádné operační sály k zobrazení.',
+      },
+      {
+        title: 'Hlášení provozních příčin',
+        description: 'Počty skutečně odeslaných hlášení v pracovní době sálů. Hlášení neobsahují dobu trvání, proto se nepřevádějí na minuty ani náklady.',
+        columns: [{ label: 'Sál' }, { label: 'Pozdní operatér', align: 'right' }, { label: 'Pozdní anesteziolog', align: 'right' }, { label: 'Nepřipravený pacient', align: 'right' }],
+        rows: allRoomsByCost.map(room => [room.name, room.lateSurgeon, room.lateAnesthesiologist, room.patientNotReady]),
+        emptyMessage: 'Žádné operační sály k zobrazení.',
+      },
+      {
+        title: 'Pozdní operatér podle odbornosti v rozpisu',
+        description: 'Odbornost je převzatá z dopoledního nebo odpoledního rozpisu sálu v okamžiku hlášení; chybějící přiřazení zůstává výslovně uvedené.',
+        columns: [{ label: 'Sál' }, { label: 'Odbornost' }, { label: 'Hlášení', align: 'right' }],
+        rows: allRoomsByCost.flatMap(room => room.surgeonSpecialties.map(specialty => [room.name, specialty.name, specialty.count])),
+        emptyMessage: 'Bez hlášení pozdního operatéra.',
+      },
+      {
+        title: 'Náklady podle oddělení',
+        description: 'Součty sálů s nastavenou sazbou, bez omezení na největší oddělení.',
+        columns: [{ label: 'Oddělení' }, { label: 'Provoz', align: 'right' }, { label: 'Výkony', align: 'right' }, { label: 'Náklady', align: 'right' }, { label: 'Podíl', align: 'right' }],
+        rows: departmentBreakdown.map(department => [
+          department.label || 'Bez přiřazeného oddělení',
+          reportHours(department.hours),
+          department.ops,
+          reportMoney(department.value),
+          `${formatNumber(summary.totalCost > 0 ? (department.value / summary.totalCost) * 100 : 0, 1)} %`,
+        ]),
+        emptyMessage: 'Žádná oddělení s nastavenými sazbami.',
+      },
+      {
+        title: 'Náklady jednotlivých fází podle sálů',
+        description: 'Úplný rozpad všech sálů a fází s kladným vypočteným nákladem. Fáze s nulovým nákladem ani sály bez sazby nejsou v tomto rozpadu zahrnuty.',
+        columns: [{ label: 'Sál' }, { label: 'Fáze' }, { label: 'Provoz', align: 'right' }, { label: 'Náklady', align: 'right' }, { label: 'Podíl nákladů sálu', align: 'right' }],
+        rows: allRoomPhaseCosts.flatMap(room => room.phases.map(phase => [
+          room.name,
+          phase.name,
+          reportHours(phase.hours),
+          reportMoney(phase.cost),
+          `${formatNumber(room.cost > 0 ? (phase.cost / room.cost) * 100 : 0, 1)} %`,
+        ])),
+        emptyMessage: 'Pro vybraný rozsah nejsou dostupné fáze s kladným vypočteným nákladem.',
+      },
+      ...(dailySeries.length > 0 ? [{
+        title: 'Denní vývoj nákladů',
+        description: calculationPeriod === 'rok'
+          ? 'Stejně jako graf na obrazovce obsahuje denní řada posledních 30 kalendářních dnů i při výběru roku; nejde o celý roční rozpad. Hodiny zahrnují i sály bez sazby, náklady pouze sály s nastavenou sazbou.'
+          : 'Stejná denní řada jako graf na obrazovce. Hodiny zahrnují i sály bez sazby, náklady pouze sály s nastavenou sazbou.',
+        columns: [{ label: 'Datum' }, { label: 'Provoz', align: 'right' as const }, { label: 'Náklady', align: 'right' as const }],
+        rows: dailySeries.map(day => [new Date(`${day.date}T12:00:00`).toLocaleDateString('cs-CZ'), reportHours(day.hours), reportMoney(day.cost)]),
+      }] : []),
+    ],
+  });
 
   if (view === 'rates') {
     return (
       <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
           <div className="flex flex-col gap-4 xl:order-2">
-            <Card className={`relative overflow-hidden p-5 ${STATS_CARD_CLASS}`}>
-              <span className="absolute inset-x-10 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.cyan}aa, transparent)` }} />
+            <Card className={STATS_CARD_CLASS}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[10px] font-medium" style={{ color: C.muted }}>Sazby</p>
-                  <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>Hodinové sazby operačních sálů</h2>
+                  <h2 className="mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>Hodinové sazby operačních sálů</h2>
                   <p className="mt-1 text-[11px]" style={{ color: C.muted }}>Hodnoty používané ve všech finančních výpočtech aplikace</p>
                 </div>
                 <span className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-[11px] font-medium tabular-nums" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>
@@ -1319,11 +1436,11 @@ export function FinanceTab({
                 </span>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <RateMetric label="Průměrná sazba" value={`${fmtCZKShort(summary.avgRate)} Kč/h`} detail="napříč nastavenými sály" icon={DollarSign} color={C.cyan} />
-                <RateMetric label="Nastavené sály" value={`${summary.configuredCount}/${rooms.length}`} detail="zahrnuté do výpočtů" icon={Check} color={C.green} />
-                <RateMetric label="Bez sazby" value={String(summary.unconfiguredCount)} detail="vyžadují doplnění" icon={AlertTriangle} color={summary.unconfiguredCount > 0 ? C.yellow : C.green} />
-                <RateMetric label="Pokrytí sazeb" value={`${costCoverage} %`} detail="úplnost konfigurace" icon={Activity} color={C.purple} />
+              <div className="stats-kpi-strip mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <KPIBlock label="Průměrná sazba" value={`${fmtCZKShort(summary.avgRate)} Kč/h`} sublabel="napříč nastavenými sály" icon={DollarSign} color={C.cyan} />
+                <KPIBlock label="Nastavené sály" value={`${summary.configuredCount}/${rooms.length}`} sublabel="zahrnuté do výpočtů" icon={Check} color={C.green} />
+                <KPIBlock label="Bez sazby" value={String(summary.unconfiguredCount)} sublabel="vyžadují doplnění" icon={AlertTriangle} color={summary.unconfiguredCount > 0 ? C.yellow : C.green} />
+                <KPIBlock label="Pokrytí sazeb" value={`${costCoverage} %`} sublabel="úplnost konfigurace" icon={Activity} color={C.purple} />
               </div>
             </Card>
 
@@ -1331,15 +1448,14 @@ export function FinanceTab({
           </div>
 
           <aside className="flex flex-col gap-4 xl:order-1">
-            <Card className={`relative overflow-hidden p-5 ${STATS_CARD_CLASS}`}>
-              <div className="absolute -right-14 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: C.cyan }} />
+            <Card className={STATS_CARD_CLASS}>
               <div className="relative">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl" style={{ color: C.cyan, background: `${C.cyan}0f`, border: `1px solid ${C.cyan}2f` }}><DollarSign className="h-5 w-5" /></span>
+                  <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ color: C.cyan, background: C.surface2, border: `1px solid ${C.border}` }}><DollarSign className="h-4 w-4" /></span>
                   <span className="rounded-full px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.13em]" style={{ color: costCoverage === 100 ? C.green : C.yellow, border: `1px solid ${costCoverage === 100 ? `${C.green}35` : `${C.yellow}35`}` }}>{costCoverage === 100 ? 'kompletní' : 'doplnit sazby'}</span>
                 </div>
-                <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: C.muted }}>Průměrná hodinová sazba</p>
-                <p className="mt-1 text-[44px] font-light leading-none tracking-[-0.05em] tabular-nums" style={{ color: C.textHi }}>{Math.round(summary.avgRate).toLocaleString('cs-CZ')}</p>
+                <p className="mt-4 text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.muted }}>Průměrná hodinová sazba</p>
+                <p className="mt-2 text-[32px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: C.textHi }}>{Math.round(summary.avgRate).toLocaleString('cs-CZ')}</p>
                 <p className="mt-2 text-[11px]" style={{ color: C.muted }}>Kč za hodinu provozu sálu</p>
 
                 <div className="mt-5">
@@ -1348,7 +1464,7 @@ export function FinanceTab({
                     <span className="font-semibold tabular-nums" style={{ color: costCoverage === 100 ? C.green : C.cyan }}>{costCoverage} %</span>
                   </div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full" style={{ background: C.ghost }}>
-                    <div className="h-full rounded-full" style={{ width: `${costCoverage}%`, background: `linear-gradient(90deg, ${C.blue}, ${C.cyan})` }} />
+                    <div className="h-full rounded-full" style={{ width: `${costCoverage}%`, background: C.cyan }} />
                   </div>
                 </div>
 
@@ -1368,7 +1484,7 @@ export function FinanceTab({
               </div>
             </Card>
 
-            <Card className={`p-5 ${STATS_CARD_CLASS}`}>
+            <Card className={STATS_CARD_CLASS}>
               <div className="flex items-center gap-2.5">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ color: summary.unconfiguredCount > 0 ? C.yellow : C.green, background: C.ghost, border: `1px solid ${C.border}` }}>
                   {summary.unconfiguredCount > 0 ? <AlertTriangle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
@@ -1394,19 +1510,17 @@ export function FinanceTab({
   // ─────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-4">
-      {/* ══ Hlavní panel — rozvržení podle předlohy: vlevo obsah,
-             vpravo úzký sloupec se souhrnem a doporučeními. ══ */}
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
+      {/* Souhrn a kalendář vlevo, náklady jednotlivých sálů v hlavním sloupci. */}
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
         <div className="flex flex-col gap-4 xl:order-2">
           {/* Hlavička s odznaky */}
-          <Card className={`relative overflow-hidden p-5 ${STATS_CARD_CLASS}`}>
-            <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+          <Card className={STATS_CARD_CLASS}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-[10px] uppercase font-medium tracking-[0.15em]" style={{ color: C.accent }}>
+                <p className="text-[9px] uppercase font-medium tracking-[0.1em]" style={{ color: C.muted }}>
                   Finance
                 </p>
-                <h2 className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: C.textHi }}>
+                <h2 className="mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>
                   {calendarSelectionActive
                     ? `Náklady provozu · ${calendarDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}`
                     : `Náklady provozu za ${periodLabel}`}
@@ -1448,7 +1562,7 @@ export function FinanceTab({
             </div>
 
             {/* Karty nejdražších sálů — částka, reálný průběh, metriky a detail */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-2.5 mt-4">
               {featuredRooms.length > 0 ? (
                 featuredRooms.map(room => {
                   const color = C.blue;
@@ -1493,8 +1607,7 @@ export function FinanceTab({
 
           {/* Podíl na nákladech patří přímo pod hlavní finanční přehled. */}
           {roomPhaseCosts.length > 0 && (
-            <Card className={`relative overflow-hidden p-5 ${STATS_CARD_CLASS}`}>
-              <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)` }} />
+            <Card className={STATS_CARD_CLASS}>
               <DistributionHeader
                 eyebrow="Finance"
                 title="Podíl na nákladech"
@@ -1502,7 +1615,7 @@ export function FinanceTab({
                 badge={`${roomPhaseCosts.length} sálů`}
               />
 
-              <div className="mt-6 grid gap-x-5 gap-y-8 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+              <div className="mt-4 grid gap-x-4 gap-y-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
                 {roomPhaseCosts.map(room => (
                   <div key={room.id} className="flex min-w-0 flex-col items-center gap-2.5">
                     <DistributionRing
@@ -1535,22 +1648,21 @@ export function FinanceTab({
 
         {/* ── Boční sloupec ── */}
         <div className="flex flex-col gap-4 xl:order-1">
-          <Card className={`relative overflow-hidden p-5 ${STATS_CARD_CLASS}`}>
-            <div className="absolute -right-14 -top-16 h-40 w-40 rounded-full opacity-20 blur-3xl" style={{ background: C.accent }} />
+          <Card className={STATS_CARD_CLASS}>
             <div className="relative">
               <div className="flex items-center justify-between gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-xl" style={{ color: C.accent, background: `${C.accent}0f`, border: `1px solid ${C.accent}2f` }}>
-                  <Wallet className="h-5 w-5" />
+                <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ color: C.accent, background: C.surface2, border: `1px solid ${C.border}` }}>
+                  <Wallet className="h-4 w-4" />
                 </span>
                 <span className="rounded-full px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.13em]" style={{ color: C.accent, border: `1px solid ${C.accent}35` }}>
                   reálná data
                 </span>
               </div>
-              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: C.muted }}>
+              <p className="mt-4 text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.muted }}>
                 {calendarSelectionActive ? 'Souhrn vybraného dne' : 'Souhrn období'}
               </p>
               <div className="mt-1 flex items-end gap-2">
-                <p className="text-[52px] font-light leading-none tracking-[-0.05em] tabular-nums" style={{ color: C.textHi }}>{fmtCZKShort(summary.totalCost)}</p>
+                <p className="text-[32px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: C.textHi }}>{fmtCZKShort(summary.totalCost)}</p>
                 <span className="pb-1 text-[11px]" style={{ color: C.muted }}>Kč</span>
               </div>
               <p className="mt-2 text-[11px]" style={{ color: C.muted }}>celkové náklady provozu · {periodLabel}</p>
@@ -1611,7 +1723,7 @@ export function FinanceTab({
 
       {/* ─── DENNÍ TREND NÁKLADŮ ────────────────────────────────── */}
       {dailySeries.length > 0 && (
-        <Card className={`p-5 ${STATS_CARD_CLASS}`} title="Denní vývoj nákladů" subtitle="Skutečné hodiny × hodinová sazba" icon={TrendingUp} accent={C.accent}>
+        <Card className={STATS_CARD_CLASS} title="Denní vývoj nákladů" subtitle="Skutečné hodiny × hodinová sazba" icon={TrendingUp} accent={C.accent}>
           {/* Sloupce ve stejném vizuálním jazyce jako Přehled — hodnota nad
               sloupcem, popisek pod ním, žádné osy a mřížky navíc. */}
           <StatSectionLabel>Náklady po dnech</StatSectionLabel>
@@ -1648,7 +1760,7 @@ export function FinanceTab({
                 return (
                   <div
                     key={d.label}
-                    className="relative overflow-hidden rounded-xl px-3 py-2.5"
+                    className="relative overflow-hidden rounded-lg px-3 py-2.5"
                     style={{
                       background: 'var(--stats-surface-2)',
                       border: `1px solid ${C.border}`,
@@ -1747,7 +1859,7 @@ export function FinanceTab({
       </PanelCard>
 
       {/* ─── EFEKTIVITA NÁKLADŮ ────────────────────────────────── */}
-      <Card className={`p-5 ${STATS_CARD_CLASS}`} title="Efektivita nákladů" subtitle="Klíčové indikátory pro řízení sálu" icon={Activity} accent={C.green} headingLevel={2}>
+      <Card className={STATS_CARD_CLASS} title="Efektivita nákladů" subtitle="Klíčové indikátory pro řízení sálu" icon={Activity} accent={C.green} headingLevel={2}>
         {/* Pilulkové dlaždice ve stylu předlohy — ikona ve čtverečku vlevo,
             popisek a hodnota vedle sebe. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
@@ -1784,11 +1896,11 @@ export function FinanceTab({
             role="dialog"
             aria-modal="true"
             aria-labelledby="finance-room-detail-title"
-            className="relative w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-[24px] p-5 sm:p-6"
+            className="relative w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-xl p-4 sm:p-5"
             style={{
-              background: 'linear-gradient(145deg, var(--stats-surface-2), var(--stats-surface))',
+              background: 'var(--stats-modal-bg, #10182a)',
               border: `1px solid ${C.accent}38`,
-              boxShadow: '0 30px 90px rgba(0, 0, 0, 0.45)',
+              boxShadow: '0 16px 48px rgba(0, 0, 0, 0.24)',
             }}
             onClick={event => event.stopPropagation()}
           >
@@ -1796,24 +1908,24 @@ export function FinanceTab({
               type="button"
               onClick={() => setSelectedCostRoomId(null)}
               aria-label="Zavřít detail nákladů"
-              className="absolute right-4 top-4 w-9 h-9 rounded-full flex items-center justify-center"
+              className="absolute right-4 top-4 w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: 'var(--stats-ghost)', color: C.muted, border: `1px solid ${C.border}` }}
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="pr-12">
-              <p className="text-[11px] uppercase font-bold tracking-[0.18em]" style={{ color: C.accent }}>
+              <p className="text-[9px] uppercase font-semibold tracking-[0.1em]" style={{ color: C.muted }}>
                 Podíl na nákladech
               </p>
-              <h3 id="finance-room-detail-title" className="text-2xl font-semibold mt-1" style={{ color: C.textHi }}>
+              <h3 id="finance-room-detail-title" className="text-[18px] font-semibold mt-1" style={{ color: C.textHi }}>
                 {selectedCostRoom.name}
               </h3>
               <p className="text-[12px] font-medium mt-1" style={{ color: C.muted }}>{selectedCostRoom.department}</p>
             </div>
 
             {selectedCostRoom.phases.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 items-center mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-4 items-center mt-4">
                 <div className="flex justify-center">
                   <DistributionRing
                     size={200}
@@ -1834,7 +1946,7 @@ export function FinanceTab({
                     return (
                       <div
                         key={phase.name}
-                        className="rounded-xl px-3.5 py-3"
+                        className="rounded-lg px-3 py-2.5"
                         style={{ background: `${color}12`, border: `1px solid ${color}38` }}
                       >
                         <div className="flex items-center gap-2.5">
@@ -1858,16 +1970,16 @@ export function FinanceTab({
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl py-10 px-4 text-center mt-6" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}>
+              <div className="rounded-lg py-8 px-4 text-center mt-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}>
                 <p className="text-[13px] font-semibold" style={{ color: C.text }}>Pro tento sál nejsou dostupná data fází.</p>
                 <p className="text-[11px] mt-1" style={{ color: C.faint }}>Graf se zobrazí po zaznamenání provozu v daném období.</p>
               </div>
             )}
 
-            <div className="mt-7 pt-6" style={{ borderTop: `1px solid ${C.border}` }}>
+            <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${C.border}` }}>
               <div className="flex flex-wrap items-end justify-between gap-2">
                 <div>
-                  <p className="text-[11px] uppercase font-bold tracking-[0.16em]" style={{ color: C.orange }}>
+                  <p className="text-[10px] uppercase font-semibold tracking-[0.1em]" style={{ color: C.muted }}>
                     Prostoje a zpoždění
                   </p>
                   <p className="text-[12px] mt-1" style={{ color: C.muted }}>
@@ -1880,7 +1992,7 @@ export function FinanceTab({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.orange}38` }}>
+                <div className="rounded-lg p-3" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}>
                   <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Mezi operacemi</p>
                   <p className="text-[26px] font-semibold tabular-nums mt-2 leading-none" style={{ color: C.orange }}>
                     {formatDuration(selectedCostRoom.downtimeMinutes)}
@@ -1895,7 +2007,7 @@ export function FinanceTab({
                   </div>
                 </div>
 
-                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.yellow}38` }}>
+                <div className="rounded-lg p-3" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}>
                   <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Pozdní začátek programu</p>
                   <p className="text-[26px] font-semibold tabular-nums mt-2 leading-none" style={{ color: C.yellow }}>
                     {selectedCostRoom.scheduledDaysWithOperation > 0
@@ -1920,7 +2032,7 @@ export function FinanceTab({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.purple}30` }}>
+                <div className="rounded-lg p-3" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}>
                   <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Pozdní operatér</p>
                   <p className="text-[24px] font-semibold tabular-nums mt-1" style={{ color: C.purple }}>{selectedCostRoom.lateSurgeon}×</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
@@ -1939,13 +2051,13 @@ export function FinanceTab({
                   </div>
                 </div>
 
-                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.cyan}30` }}>
+                <div className="rounded-lg p-3" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}>
                   <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Pozdní anesteziolog</p>
                   <p className="text-[24px] font-semibold tabular-nums mt-1" style={{ color: C.cyan }}>{selectedCostRoom.lateAnesthesiologist}×</p>
                   <p className="text-[10px] mt-2" style={{ color: C.faint }}>Odeslaná hlášení</p>
                 </div>
 
-                <div className="rounded-2xl p-4" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.pink}30` }}>
+                <div className="rounded-lg p-3" style={{ background: 'var(--stats-ghost)', border: `1px solid ${C.border}` }}>
                   <p className="text-[11px] font-semibold" style={{ color: C.textHi }}>Nepřipravený pacient</p>
                   <p className="text-[24px] font-semibold tabular-nums mt-1" style={{ color: C.pink }}>{selectedCostRoom.patientNotReady}×</p>
                   <p className="text-[10px] mt-2" style={{ color: C.faint }}>Odeslaná hlášení</p>

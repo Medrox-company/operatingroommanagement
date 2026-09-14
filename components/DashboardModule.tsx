@@ -15,6 +15,7 @@ import { useHospital } from '../contexts/HospitalContext';
 import { useAuth } from '../contexts/AuthContext';
 import { preloadSpatialProject } from '../hooks/useSpatialProject';
 import SpatialLoadingBar from './spatial/SpatialLoadingBar';
+import { useDashboardGridLayout } from '../hooks/useDashboardGridLayout';
 
 const loadSpatialDashboard = () => import('./spatial/SpatialDashboardView');
 
@@ -116,7 +117,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   }, [rooms]);
 
   const viewToggle = canViewSpatial ? (
-    <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.025] p-1" aria-label="Zobrazení dashboardu">
+    <div className="dashboard-view-switch" role="group" aria-label="Zobrazení dashboardu">
       {([
         ['cards', 'Karty', LayoutGrid],
         ['spatial', '3D dispozice', Cuboid],
@@ -131,21 +132,22 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
           aria-label={label}
           title={label}
           aria-pressed={dashboardView === value}
-          className={`flex h-9 items-center gap-2 rounded-lg px-2.5 text-[10px] font-semibold transition-colors ${dashboardView === value ? 'bg-white/[0.10] text-cyan-100' : 'text-white/38 hover:bg-white/[0.045] hover:text-white/70'}`}
+          className="dashboard-view-option"
         >
           <Icon className="h-4 w-4" strokeWidth={1.7} />
-          <span className="hidden xl:inline">{label}</span>
+          <span>{label}</span>
         </button>
       ))}
     </div>
   ) : null;
 
   const spatialMode = canViewSpatial && dashboardView === 'spatial';
+  const gridRef = useDashboardGridLayout(rooms.length, roomsLoaded && !spatialMode && rooms.length > 0);
 
   return (
-    <div className={`statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top ${spatialMode ? 'spatial-dashboard-module' : ''}`}>
+    <div className={`dashboard-module statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top ${spatialMode ? 'spatial-dashboard-module' : ''}`}>
       <div aria-hidden className="mobile-theme-surface fixed inset-0 -z-10 md:hidden" />
-      <div className={`mx-auto w-full max-w-[2400px] ${spatialMode ? 'flex h-full min-h-0 flex-col' : ''}`}>
+      <div className={`mx-auto w-full max-w-[2400px] ${spatialMode ? 'flex h-full min-h-0 flex-col' : 'dashboard-cards-layout'}`}>
         <div className="mb-4 md:hidden">
           <MobileModuleHeader
             kicker="Živý operační program"
@@ -167,6 +169,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
               </span>
             )}
           >
+            <div className="dashboard-mobile-metrics">
             <MobileHeaderMetrics items={[
               {
                 label: 'Aktivní',
@@ -183,13 +186,12 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
                 icon: <LayoutGrid className="w-5 h-5" strokeWidth={2} />,
               },
             ]} />
+            </div>
           </MobileModuleHeader>
           <div className="mt-3 flex justify-end">{viewToggle}</div>
         </div>
 
-        {/* Nadpis a čas zůstávají od tabletového breakpointu v jediném řádku.
-            Obě části používají fluidní typografii app-module-title, takže se
-            na užších monitorech zmenší, aniž by čas spadl pod nadpis. */}
+        {/* Hlavička karet se přizpůsobuje dostupné šířce; 3D má vlastní layout. */}
         <header className="dashboard-page-header mb-7 hidden min-w-0 flex-shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-[clamp(1rem,3vw,3rem)] md:grid md:pr-2">
           <ModulePageHeading
             icon={Shield}
@@ -202,7 +204,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
           <LiveClock />
         </header>
 
-        <div className={spatialMode ? 'min-h-0 flex-1' : 'px-0 pb-20 sm:px-2'}>
+        <div className={spatialMode ? 'min-h-0 flex-1' : 'dashboard-card-content'}>
           {!roomsLoaded ? (
             <div className="flex flex-col items-center justify-center py-32 gap-3">
               <div className="w-7 h-7 border-2 border-[#C7D4E8] border-t-[#2952C8] md:border-white/20 md:border-t-white/70 rounded-full animate-spin" />
@@ -220,9 +222,14 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
                 </div>
               )}
               {!spatialMode && (
-                /* Tablet na šířku zůstává ve čtyřech sloupcích. Pátý sloupec se
-                   zapíná až tam, kde karta bezpečně udrží všechny popisky v řádku. */
-                <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 min-[2200px]:grid-cols-6">
+                rooms.length === 0 ? (
+                  <div className="dashboard-empty-state" role="status">
+                    <LayoutGrid aria-hidden="true" strokeWidth={1.4} />
+                    <h2>Zatím nejsou k dispozici žádné sály</h2>
+                    <p>Sály se zde zobrazí po přiřazení k vašemu zdravotnickému zařízení.</p>
+                  </div>
+                ) : (
+                <div ref={gridRef} className="dashboard-room-grid">
                   {rooms.map((room) => (
                     <RoomCard
                       key={room.id}
@@ -234,6 +241,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
                     />
                   ))}
                 </div>
+                )
               )}
             </>
           )}

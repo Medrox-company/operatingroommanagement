@@ -18,10 +18,24 @@ import {
 export type StatisticsPeriod = 'den' | 'týden' | 'měsíc' | 'rok';
 const EMPTY_HISTORY: StatusHistoryRow[] = [];
 
+type StatisticsReportSource = 'statusHistory' | 'notifications' | 'devices' | 'dayHistory';
+export type StatisticsReportSourceErrors = Record<StatisticsReportSource, string | null>;
+
 interface StatisticsData {
   statusHistory: StatusHistoryRow[];
   notifications: NotificationLogRow[];
   devices: DeviceRow[];
+  hospitalId: string;
+  period: StatisticsPeriod;
+  reportSourceErrors: Omit<StatisticsReportSourceErrors, 'dayHistory'>;
+}
+
+interface DayHistoryData {
+  statusHistory: StatusHistoryRow[];
+  hospitalId: string;
+  coverageStart: string;
+  coverageEnd: string;
+  reportError: string | null;
 }
 
 const DAY_HISTORY_DAYS = 31;
@@ -105,6 +119,15 @@ export function useStatisticsData(period: StatisticsPeriod) {
         statusHistory: history ?? [],
         notifications: notifications ?? [],
         devices: devices ?? [],
+        hospitalId: activeHospitalId!,
+        period,
+        // Null is the existing DB helper's failure signal; keep the UI arrays
+        // while ensuring report consumers cannot mistake failures for zeroes.
+        reportSourceErrors: {
+          statusHistory: history === null ? 'Historii stavů se nepodařilo načíst.' : null,
+          notifications: notifications === null ? 'Notifikace se nepodařilo načíst.' : null,
+          devices: devices === null ? 'Evidenci zařízení se nepodařilo načíst.' : null,
+        },
       };
     },
     { revalidateOnFocus: false, dedupingInterval: 20_000, keepPreviousData: true },
@@ -118,12 +141,19 @@ export function useStatisticsData(period: StatisticsPeriod) {
     error: dayHistoryError,
     isLoading: isDayHistoryLoading,
     mutate: mutateDayHistory,
-  } = useSWR<StatusHistoryRow[]>(
+  } = useSWR<DayHistoryData | StatusHistoryRow[]>(
     activeHospitalId ? ['statistics-day-history', activeHospitalId, DAY_HISTORY_DAYS] : null,
     async () => {
       const now = new Date();
       const fromDate = new Date(now.getTime() - DAY_HISTORY_DAYS * 24 * 60 * 60 * 1000);
-      return (await fetchStatusHistory({ fromDate, toDate: now, all: true })) ?? [];
+      const history = await fetchStatusHistory({ fromDate, toDate: now, all: true });
+      return {
+        statusHistory: history ?? [],
+        hospitalId: activeHospitalId!,
+        coverageStart: fromDate.toISOString(),
+        coverageEnd: now.toISOString(),
+        reportError: history === null ? 'Denní historii stavů se nepodařilo načíst.' : null,
+      };
     },
     {
       revalidateOnFocus: true,
@@ -151,7 +181,16 @@ export function useStatisticsData(period: StatisticsPeriod) {
         statusHistory: applyHistoryEvent(current.statusHistory) ?? current.statusHistory,
       };
     }, { revalidate: false });
-    void mutateDayHistory(applyHistoryEvent, { revalidate: false });
+    void mutateDayHistory((current) => {
+      if (!current) return current;
+      // Preserve an already-populated array cache during a hot code update.
+      // It remains ineligible for reports until a normal refresh adds bounds.
+      if (Array.isArray(current)) return applyHistoryEvent(current);
+      return {
+        ...current,
+        statusHistory: applyHistoryEvent(current.statusHistory) ?? current.statusHistory,
+      };
+    }, { revalidate: false });
   });
 
   useHospitalRealtime('notifications_log', (payload) => {
@@ -186,13 +225,35 @@ export function useStatisticsData(period: StatisticsPeriod) {
 
   const statusHistory = data?.statusHistory ?? EMPTY_HISTORY;
   const dbStats = useMemo(() => aggregateRoomStatistics(statusHistory), [statusHistory]);
+  const dayHistorySnapshot = Array.isArray(dayHistoryData) ? undefined : dayHistoryData;
+  const reportSourceErrors = useMemo<StatisticsReportSourceErrors>(() => ({
+    statusHistory: error ? 'Historii stavů se nepodařilo načíst.' : data?.reportSourceErrors?.statusHistory ?? null,
+    notifications: error ? 'Notifikace se nepodařilo načíst.' : data?.reportSourceErrors?.notifications ?? null,
+    devices: error ? 'Evidenci zařízení se nepodařilo načíst.' : data?.reportSourceErrors?.devices ?? null,
+    dayHistory: dayHistoryError ? 'Denní historii stavů se nepodařilo načíst.' : dayHistorySnapshot?.reportError ?? null,
+  }), [data, error, dayHistorySnapshot, dayHistoryError]);
+  const reportError = Object.values(reportSourceErrors).filter(Boolean).join(' ') || null;
+  const periodScopeMatches = Boolean(data && data.hospitalId === activeHospitalId && data.period === period);
+  const dayScopeMatches = Boolean(dayHistorySnapshot && dayHistorySnapshot.hospitalId === activeHospitalId);
+  const isReportLoading = !activeHospitalId
+    || (!error && (isLoading || !periodScopeMatches))
+    || (!dayHistoryError && (isDayHistoryLoading || !dayScopeMatches));
+  const dayHistoryCoverageAvailable = dayScopeMatches && !reportSourceErrors.dayHistory;
+
   return {
     statusHistory,
-    dayHistory: dayHistoryData ?? EMPTY_HISTORY,
+    dayHistory: Array.isArray(dayHistoryData) ? dayHistoryData : dayHistorySnapshot?.statusHistory ?? EMPTY_HISTORY,
     notifications: data ? data.notifications : null,
     devices: data ? data.devices : null,
     dbStats,
     isLoading: isLoading || isDayHistoryLoading,
     error: error ?? dayHistoryError,
+    reportSourceErrors,
+    reportError,
+    isReportLoading,
+    // Bounds belong to the successful fetch, even when it returned no rows.
+    // Realtime upserts never turn a failed/incomplete load into full coverage.
+    dayHistoryCoverageStart: dayHistoryCoverageAvailable ? dayHistorySnapshot?.coverageStart ?? null : null,
+    dayHistoryCoverageEnd: dayHistoryCoverageAvailable ? dayHistorySnapshot?.coverageEnd ?? null : null,
   };
 }

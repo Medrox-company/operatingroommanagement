@@ -1,12 +1,9 @@
-import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, useReducedMotion } from 'framer-motion';
 import {
   TrendingUp, TrendingDown, Activity,
   AlertTriangle, Shield, Clock, Layers, X, BarChart3,
   Printer, FileDown, ChevronLeft, ChevronRight, CalendarDays,
-  Home, DollarSign, BadgeDollarSign, Building2, Bell, Monitor,
-  type LucideIcon,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus, DayWorkingHours } from '../types';
 // Step durations now calculated from real database history
@@ -36,6 +33,10 @@ import {
 import { BarList, ColumnChart, SegmentBar, ScatterGrid, GaugeRing, RingRow, InsightPanel, StatSectionLabel, DayNavigator, OrbitRings, GlassCalendar, PhasePanel } from './statistics/AppCharts';
 import type { InsightItem, OrbitItem } from './statistics/AppCharts';
 import ModulePageHeading from './ModulePageHeading';
+import { StatisticsNavigation, type StatisticsTab } from './statistics/StatisticsNavigation';
+import { StatisticsReportContext } from './statistics/StatisticsReportContext';
+import { openStatisticsPrintReport, type StatisticsReport } from '../lib/statistics-print';
+import { useHospital } from '../contexts/HospitalContext';
 const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
 const RoomsTab = dynamic(() => import('./statistics/RoomsTab').then((module) => module.RoomsTab), { ssr: false });
 const PhasesTab = dynamic(() => import('./statistics/PhasesTab').then((module) => module.PhasesTab), { ssr: false });
@@ -45,8 +46,7 @@ const DevicesTab = dynamic(() => import('./statistics/DevicesTab').then((module)
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
-type Tab    = 'prehled' | 'finance' | 'sazby'
-            | 'saly' | 'faze' | 'notifikace' | 'zarizeni';
+type Tab = StatisticsTab;
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -65,151 +65,6 @@ const C = {
   text:    'var(--stats-text)',
 };
 
-type StatisticsTabItem = {
-  id: Tab;
-  label: string;
-  icon: LucideIcon;
-  accent: string;
-  glow: string;
-};
-
-const STATISTICS_TABS: StatisticsTabItem[] = [
-  { id: 'prehled', label: 'Přehled', icon: Home, accent: '#38BDF8', glow: 'rgba(56,189,248,0.24)' },
-  { id: 'finance', label: 'Finance', icon: DollarSign, accent: '#34D399', glow: 'rgba(52,211,153,0.22)' },
-  { id: 'sazby', label: 'Sazby', icon: BadgeDollarSign, accent: '#FBBF24', glow: 'rgba(251,191,36,0.22)' },
-  { id: 'saly', label: 'Sály', icon: Building2, accent: '#22D3EE', glow: 'rgba(34,211,238,0.23)' },
-  { id: 'faze', label: 'Fáze', icon: Layers, accent: '#A78BFA', glow: 'rgba(167,139,250,0.23)' },
-  { id: 'notifikace', label: 'Notifikace', icon: Bell, accent: '#FB7185', glow: 'rgba(251,113,133,0.22)' },
-  { id: 'zarizeni', label: 'Zařízení', icon: Monitor, accent: '#60A5FA', glow: 'rgba(96,165,250,0.22)' },
-];
-
-function StatisticsGlowMenu({
-  value,
-  onChange,
-  compact = false,
-}: {
-  value: Tab;
-  onChange: (tab: Tab) => void;
-  compact?: boolean;
-}) {
-  const reduceMotion = useReducedMotion();
-  const transition = reduceMotion
-    ? { duration: 0 }
-    : { type: 'spring' as const, stiffness: 180, damping: 22, mass: 0.7 };
-
-  return (
-    <nav
-      aria-label="Sekce statistik"
-      className={`relative min-w-0 overflow-hidden rounded-xl border ${compact ? 'w-full p-1' : 'p-1.5'}`}
-      style={{
-        background: 'linear-gradient(180deg, color-mix(in srgb, var(--stats-surface) 92%, transparent), color-mix(in srgb, var(--stats-surface-2) 78%, transparent))',
-        borderColor: C.border,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.035)',
-      }}
-    >
-      <div
-        role="tablist"
-        aria-label="Záložky modulu Statistiky"
-        className="relative z-10 flex min-w-0 items-center gap-1 overflow-x-auto hide-scrollbar"
-      >
-        {STATISTICS_TABS.map(({ id, label, icon: Icon, accent, glow }) => {
-          const active = value === id;
-          const state = active ? 'active' : 'rest';
-
-          return (
-            <motion.button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              tabIndex={active ? 0 : -1}
-              onClick={() => onChange(id)}
-              onKeyDown={(event) => {
-                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-                event.preventDefault();
-                const buttons = Array.from(
-                  event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [],
-                );
-                const currentIndex = buttons.indexOf(event.currentTarget);
-                if (currentIndex < 0 || buttons.length === 0) return;
-                const nextIndex = event.key === 'Home'
-                  ? 0
-                  : event.key === 'End'
-                    ? buttons.length - 1
-                    : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
-                const nextTab = STATISTICS_TABS[nextIndex];
-                if (!nextTab) return;
-                onChange(nextTab.id);
-                buttons[nextIndex]?.focus();
-              }}
-              initial={false}
-              animate={state}
-              whileHover={reduceMotion || active ? state : 'hover'}
-              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-              className={`group relative h-10 shrink-0 overflow-visible rounded-[10px] px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent ${compact ? 'min-w-[104px] flex-1' : 'min-w-[106px]'}`}
-              style={{
-                perspective: '650px',
-                color: active ? accent : C.muted,
-                background: active ? `color-mix(in srgb, ${accent} 11%, var(--stats-surface))` : 'transparent',
-              }}
-            >
-              <motion.span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-xl"
-                variants={{
-                  rest: { opacity: 0, scale: 0.82 },
-                  active: { opacity: 0.62, scale: 1 },
-                  hover: { opacity: 0.72, scale: 1.65 },
-                }}
-                transition={transition}
-                style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 70%)` }}
-              />
-
-              <motion.span
-                className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-[10px] px-3 text-[11px] font-semibold whitespace-nowrap"
-                variants={{
-                  rest: { rotateX: 0, opacity: 1 },
-                  active: { rotateX: 0, opacity: 1 },
-                  hover: { rotateX: -90, opacity: 0 },
-                }}
-                transition={transition}
-                style={{ transformStyle: 'preserve-3d', transformOrigin: 'center bottom' }}
-              >
-                <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.2 : 1.8} />
-                <span>{label}</span>
-              </motion.span>
-
-              <motion.span
-                aria-hidden
-                className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-[10px] px-3 text-[11px] font-semibold whitespace-nowrap"
-                variants={{
-                  rest: { rotateX: 90, opacity: 0 },
-                  active: { rotateX: 90, opacity: 0 },
-                  hover: { rotateX: 0, opacity: 1 },
-                }}
-                transition={transition}
-                style={{ color: accent, transformStyle: 'preserve-3d', transformOrigin: 'center top' }}
-              >
-                <Icon className="h-4 w-4 shrink-0" strokeWidth={2.2} />
-                <span>{label}</span>
-              </motion.span>
-
-              {active && (
-                <motion.span
-                  layoutId="statistics-active-tab"
-                  aria-hidden
-                  className="absolute inset-x-3 -bottom-px h-px rounded-full"
-                  transition={transition}
-                  style={{ background: accent, boxShadow: `0 0 10px ${glow}` }}
-                />
-              )}
-            </motion.button>
-          );
-        })}
-      </div>
-    </nav>
-  );
-}
 
 const DEPT_COLORS: Record<string,string> = {
   TRA:'#06B6D4', CHIR:'#F97316', ROBOT:'#A78BFA',
@@ -1282,7 +1137,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
   ];
 
   return(
-    <div className="statistics-module fixed inset-0 z-50 flex justify-end" style={{background:'rgba(0,0,0,0.7)'}}>
+    <div className="statistics-module statistics-settings fixed inset-0 z-50 flex justify-end" style={{background:'rgba(0,0,0,0.7)'}}>
       <button
         type="button"
         aria-label="Zavřít detail operačního sálu"
@@ -1290,13 +1145,13 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
         onClick={onClose}
       />
       <div className="relative z-10 h-full w-full max-w-3xl overflow-y-auto hide-scrollbar"
-        style={{background:'#020B17',borderLeft:`1px solid ${C.border}`}}>
+        style={{background:'var(--stats-modal-bg)',borderLeft:`1px solid ${C.border}`}}>
 
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-7 py-5"
-          style={{background:'rgba(2,8,23,0.96)',borderBottom:`1px solid ${C.border}`,backdropFilter:'blur(8px)'}}>
+          style={{background:'var(--stats-modal-bg)',borderBottom:`1px solid ${C.border}`}}>
           <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full" style={{background:sc,boxShadow:`0 0 8px ${sc}`}}/>
+            <div className="w-2.5 h-2.5 rounded-full" style={{background:sc}}/>
             <div>
               <p className="text-base font-bold" style={{color:C.text}}>{room.name}</p>
               <p className="text-xs mt-0.5" style={{color:C.muted}}>
@@ -1305,7 +1160,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg transition-colors"
+          <button onClick={onClose} aria-label="Zavřít detail sálu" className="p-2 rounded-lg transition-colors"
             style={{background:C.ghost,color:C.muted}}>
             <X className="w-4 h-4"/>
           </button>
@@ -1539,6 +1394,7 @@ const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=
 // ══════════════════════════════════════════════════════════════════════════════
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms }) => {
   const isMobileDark = useIsMobileDark();
+  const { activeHospital } = useHospital();
   const isMobileViewport = useMediaQuery('(max-width: 767px)');
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -1560,7 +1416,19 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
-  const { dbStats, statusHistory, dayHistory, notifications, devices } = useStatisticsData(period);
+  const { dbStats, statusHistory, dayHistory, notifications, devices, isReportLoading: isStatisticsLoading, reportSourceErrors, dayHistoryCoverageStart } = useStatisticsData(period);
+  // A failure in a module the user is not printing must not block an otherwise
+  // complete report (e.g. a missing Devices permission must not block Rates).
+  const reportSources: Record<Tab, Array<keyof typeof reportSourceErrors>> = {
+    prehled: ['statusHistory', 'dayHistory'],
+    finance: ['statusHistory', 'dayHistory', 'notifications'],
+    sazby: [],
+    saly: ['statusHistory', 'dayHistory'],
+    faze: ['statusHistory'],
+    notifikace: ['notifications', 'statusHistory'],
+    zarizeni: ['devices'],
+  };
+  const statisticsError = reportSources[tab].map(source => reportSourceErrors[source]).find(Boolean);
 
   /* ── Provozní metriky sálů po dnech ────────────────────────────────────────
      Sekce „Jednotlivé sály" umí listovat po dnech dozadu, proto potřebuje
@@ -1570,61 +1438,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [metricsDay, setMetricsDay] = useState<Date>(() => operationalToday());
   /** Režim hero panelu: primárně orbitální rozpad po sálech, souhrn dne na klik */
   const [heroMode, setHeroMode] = useState<'summary' | 'orbit'>('orbit');
-  // ── Export do tisku / PDF ─��─────────────────────────────────────────────────
-  // Obě funkce volají `window.print()`. Prohlížeč zobrazí systémový dialog,
-  // ve kterém uživatel může:
-  //   • vybrat tiskárnu a vytisknout (varianta "Tisk")
-  //   • zvolit "Uložit jako PDF" / "Microsoft Print to PDF" jako tiskárnu
-  //     (varianta "PDF")
-  // Před tiskem dočasně přepíšeme `document.title`, aby uložený PDF soubor
-  // dostal přímo smysluplný název.
-  // `isPrinting` flag během tisku zforsuje vyrenderování VŠECH záložek
-  // (Přehled + Sály + Fáze + Heatmapa) najednou — bez něj by se exportovala
-  // pouze aktuálně aktivní záložka. Po zavření print dialogu se flag vrátí
-  // na false a zobrazení se vrátí do normálního stavu.
-  const [isPrinting, setIsPrinting] = useState(false);
-
-  const triggerPrint = useCallback((filename: string) => {
-    if (typeof window === 'undefined') return;
-    const original = document.title;
-    document.title = filename;
-    // Aktivujeme print režim — všechny záložky se vyrenderují
-    setIsPrinting(true);
-
-    // Sled timeoutů — postupně:
-    //   1× requestAnimationFrame  → React si stihne připravit nový state
-    //   2× requestAnimationFrame  → DOM commit + layout
-    //   1200 ms timeout           → Recharts ResponsiveContainery změří
-    //                               viewport, Framer Motion staggered animace
-    //                               (max ~600 ms s delay i*0.04 + 0.3 dur)
-    //                               doběhnou, line/area charty doanimují.
-    // Bez tohoto by graf zůstal prázdný a část karet by byla mid-fade.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          try {
-            window.print();
-          } finally {
-            // Robust cleanup — po zavření print dialogu nebo chybě
-            setTimeout(() => {
-              setIsPrinting(false);
-              document.title = original;
-            }, 500);
-          }
-        }, 1200);
-      });
-    });
+  // Each mounted tab publishes its own already-filtered data. A report is a
+  // frozen snapshot, independent of the app's dark, scroll-clipped DOM.
+  const reportData = useRef<Partial<Record<Tab, StatisticsReport | null>>>({});
+  const [printError, setPrintError] = useState<string | null>(null);
+  const registerReport = useCallback((reportTab: Tab, report: StatisticsReport | null) => {
+    reportData.current[reportTab] = report;
+    return () => {
+      if (reportData.current[reportTab] === report) delete reportData.current[reportTab];
+    };
   }, []);
-
-  const handlePrint = useCallback(() => {
-    const dateStr = new Date().toLocaleDateString('cs-CZ');
-    triggerPrint(`Statistiky - ${period} - ${dateStr}`);
-  }, [period, triggerPrint]);
-
-  const handleExportPdf = useCallback(() => {
-    const dateStr = new Date().toISOString().slice(0, 10);
-    triggerPrint(`Statistiky_${period}_${dateStr}.pdf`);
-  }, [period, triggerPrint]);
 
   // Lokalizovaný popis aktuálního období pro print-only hlavičku reportu
   const periodLabelMap: Record<Period, string> = {
@@ -2169,42 +1992,131 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return base;
   }), [rooms, roomDistributions, WORKFLOW_STEPS]);
 
-  return(
-    <>
-      {/* ── Print loading overlay ─────────────────────────────────────────────
-          Během 1200 ms wait okna mezi `setIsPrinting(true)` a `window.print()`
-          uživatel vidí, že export běží. Bez tohoto by mu UI vypadalo jako
-          zaseknuté nebo se náhle zdvojnásobilo (mobilní section + offscreen
-          desktop). Overlay je pomocí `print-hide` v print režimu skrytý. */}
-      {isPrinting && (
-        <div
-          className="print-hide fixed inset-0 flex items-center justify-center"
-          style={{
-            zIndex: 9999,
-            background: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <div className="flex flex-col items-center gap-4 px-8 py-6 rounded-xl"
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: `1px solid ${C.border}`,
-            }}>
-            <div className="w-10 h-10 rounded-full animate-spin"
-              style={{
-                border: `3px solid ${C.border}`,
-                borderTopColor: C.accent,
-              }} />
-            <p className="text-sm font-bold uppercase tracking-widest" style={{ color: C.text }}>
-              Připravuji export...
-            </p>
-            <p className="text-xs" style={{ color: C.muted }}>
-              Vykreslují se grafy a všechny záložky včetně detailů
-            </p>
-          </div>
-        </div>
-      )}
+  const buildOverviewReport = (): StatisticsReport => {
+    const dayLabel = metricsDay.toLocaleDateString('cs-CZ', { dateStyle: 'long' });
+    return {
+      requiredHistoryFrom: dayBounds(metricsDay).start.toISOString(),
+      context: `Vybraný provozní den: ${dayLabel}, 07:00 až 06:59 následujícího dne. Souhrn dne a denní metriky respektují kalendář. Samostatná tabulka za období používá filtr ${periodLabelMap[period].toLowerCase()}.${orbitRoom ? ` Detail sálu: ${orbitRoom.name}.` : ''}`,
+      metrics: [
+        { label: 'Výkony ve vybraném dni', value: dayStats.totalOps },
+        { label: 'Průměrné vytížení dne', value: `${dayStats.avgUtil} %`, detail: 'Z provozně otevřených sálů' },
+        { label: 'Sály s provozem', value: `${dayStats.activeRooms} / ${rooms.length}` },
+        { label: 'Plánovaně otevřeno', value: dayStats.openRooms, detail: dayLabel },
+      ],
+      sections: [
+        {
+          title: 'Provozní metriky jednotlivých sálů',
+          description: `Provozní den ${dayLabel}. Časy jsou uvedeny v minutách; kapacita vychází z nastavené pracovní doby.`,
+          columns: [{ label: 'Operační sál' }, { label: 'Pracovní doba' }, { label: 'Využití', align: 'right' }, { label: 'Výkony', align: 'right' }, { label: 'Aktivní / kapacita (min)', align: 'right' }, { label: 'Pauza (min)', align: 'right' }, { label: 'Přesah (min)', align: 'right' }],
+          rows: rooms.map(room => [
+            room.name,
+            formatRoomWorkingHours(room, weekdayIndex(metricsDay)),
+            `${calculateRoomUtilizationForDay(room, dayHistory, metricsDay)} %`,
+            countOperationsForDay(room, dayHistory, metricsDay),
+            `${Math.round(calculateActiveMinutesForDay(room, dayHistory, metricsDay))} / ${Math.round(getRoomWorkingMinutesForDate(room, metricsDay))}`,
+            Math.round(calculatePausedMinutesForDay(room, dayHistory, metricsDay)),
+            Math.round(calculateOvertimeMinutesForDay(room, dayHistory, metricsDay)),
+          ]),
+        },
+        {
+          title: 'Fáze operačního cyklu ve vybraném dni',
+          description: 'Stejný rozpad jako v souhrnu dne. Klidové fáze nejsou uvedeny; podíly jsou vůči všem naměřeným fázím, a nemusí proto dát součet 100 %.',
+          columns: [{ label: 'Fáze' }, { label: 'Naměřený čas', align: 'right' }, { label: 'Podíl času', align: 'right' }],
+          rows: dayPhaseRings.map(phase => [phase.label, phase.detail, `${phase.percent.toLocaleString('cs-CZ', { maximumFractionDigits: 1 })} %`]),
+        },
+        ...(orbitRoom ? [{
+          title: `Výkony vybraného sálu: ${orbitRoom.name}`,
+          description: `Detail pro provozní den ${dayLabel}. Rozpracované a neukončené výkony jsou výslovně označeny.`,
+          columns: [{ label: 'Čas výkonu' }, { label: 'Naměřená délka' }, { label: 'Stav záznamu' }],
+          rows: roomOperationRings.map(operation => [operation.label, operation.centerLabel ?? '', operation.detail ?? '']),
+        }] : []),
+        ...(selectedOp ? [{
+          title: `Fáze vybraného výkonu: ${selectedOp.label}`,
+          columns: [{ label: 'Fáze' }, { label: 'Doba trvání' }],
+          rows: selectedOpPhases.map(phase => [phase.label, fmtDurationMin(phase.ms / 60000)]),
+        }] : []),
+        {
+          title: `Souhrn za období: ${periodLabelMap[period]}`,
+          description: `Výkony v pracovní době za zvolené období. ${period === 'den' ? 'Využití v denním režimu se vztahuje k aktuálnímu provoznímu dni od 07:00, nikoli k posuvným 24 hodinám.' : 'Využití odpovídá zvolenému období.'} Stav sálu je aktuální v okamžiku exportu, nikoli historický.`,
+          columns: [{ label: 'Operační sál' }, { label: 'Výkony', align: 'right' }, { label: 'Využití', align: 'right' }, { label: 'Aktuální stav' }],
+          rows: rooms.map(room => [room.name, countOperationsInWorkingHours(room, statusHistory, period), `${calculateRoomUtilization(room, statusHistory, period)} %`, roomStatusLabel(room)]),
+        },
+        {
+          title: 'Výkony podle oddělení',
+          description: `Součet výkonů v pracovní době za období ${periodLabelMap[period].toLowerCase()}. Zahrnuta jsou všechna oddělení.`,
+          columns: [{ label: 'Oddělení' }, { label: 'Výkony', align: 'right' }],
+          rows: deptMap,
+        },
+        {
+          title: 'Dokončené výkony podle dne',
+          description: 'Všechna dostupná denní měření v načteném období; stejně jako zdroj trendového grafu.',
+          columns: [{ label: 'Datum' }, { label: 'Dokončené výkony', align: 'right' }],
+          rows: Object.entries(dbStats.operationsByDay).sort(([a], [b]) => a.localeCompare(b)).map(([day, count]) => [new Date(`${day}T12:00:00`).toLocaleDateString('cs-CZ'), count]),
+        },
+        {
+          title: 'Průměrný počet výkonů podle dne v týdnu',
+          description: 'Z dostupných denních měření v načteném období, shodně s grafem v přehledu.',
+          columns: [{ label: 'Den v týdnu' }, { label: 'Průměr výkonů', align: 'right' }],
+          rows: intervalCompare.map(day => [day.t, day.v]),
+        },
+        {
+          title: 'Provozní doporučení',
+          columns: [{ label: 'Zjištění' }, { label: 'Doporučení pro vybraný den' }],
+          rows: [
+            ...overviewInsights.filter(insight => !insight.title.startsWith('Nouzový režim:') && insight.title !== 'Bez mimořádností').map(insight => [insight.title, insight.text]),
+            ['Aktuální nouzový režim', `${rooms.filter(room => room.isEmergency).length} sálů v nouzovém režimu v okamžiku vytvoření reportu; nejde o počet historických událostí.`],
+          ],
+        },
+      ],
+    };
+  };
 
+  const handlePrint = () => {
+    if (isStatisticsLoading || statisticsError) {
+      setPrintError(statisticsError ? 'Data se nepodařilo úplně načíst. Report nelze bezpečně vytvořit; zkuste načtení opakovat.' : 'Statistiky se ještě načítají. Počkejte na dokončení načítání a zkuste tisk znovu.');
+      return;
+    }
+    const report = tab === 'prehled' ? buildOverviewReport() : reportData.current[tab];
+    if (!report) {
+      setPrintError('Data vybrané záložky ještě nejsou připravena pro tisk. Počkejte na jejich načtení, případně zkontrolujte zvolený filtr.');
+      return;
+    }
+    if (report.requiredHistoryFrom && (!dayHistoryCoverageStart || new Date(report.requiredHistoryFrom).getTime() < new Date(dayHistoryCoverageStart).getTime())) {
+      setPrintError('Vybraný den leží mimo úplně načtenou historii. Pro tisk vyberte novější den; chybějící data nelze vykázat jako nulové hodnoty.');
+      return;
+    }
+    setPrintError(null);
+    const generatedAt = new Date();
+    try {
+      openStatisticsPrintReport(report, {
+        tabLabel: tabLabelMap[tab],
+        periodLabel: periodLabelMap[period],
+        hospitalName: activeHospital?.hospital_name ?? activeHospital?.hospital_short_name ?? undefined,
+        generatedAt,
+        filename: `Statistiky_${tab}_${generatedAt.toISOString().slice(0, 10)}`,
+      });
+    } catch (error) {
+      setPrintError(error instanceof Error ? error.message : 'Report se nepodařilo otevřít. Zkuste tisk znovu.');
+    }
+  };
+  const handleExportPdf = handlePrint;
+
+  const printHandlerRef = useRef(handlePrint);
+  useEffect(() => { printHandlerRef.current = handlePrint; });
+  useEffect(() => {
+    const onPrintShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'p') {
+        event.preventDefault();
+        printHandlerRef.current();
+      }
+    };
+    window.addEventListener('keydown', onPrintShortcut);
+    return () => window.removeEventListener('keydown', onPrintShortcut);
+  }, []);
+
+  return(
+    <StatisticsReportContext.Provider value={registerReport}>
+      {printError && <div role="alert" className="fixed bottom-20 right-6 z-50 max-w-md rounded-xl border border-red-300/30 bg-slate-900 p-4 text-sm text-white shadow-xl"><p>{printError}</p><button type="button" onClick={() => setPrintError(null)} className="mt-2 underline">Zavřít upozornění</button></div>}
       {/* Mobile background — unified with RoomDetail / Timeline / Staff */}
       <div
         aria-hidden
@@ -2213,21 +2125,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           zIndex: 0,
         }}
       />
-      <div
-        aria-hidden
-        className="fixed inset-0 md:hidden pointer-events-none overflow-hidden"
-        style={{ zIndex: 0 }}
-      >
-        <div
-          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, var(--m-accent) 0%, transparent 65%)' }}
-        />
-      </div>
 
       {/* ========== MOBILE (md:hidden) ========== */}
-      {isMobileViewport && !isPrinting && (
+      {isMobileViewport && (
       <div
-        className={`statistics-module mobile-statistics ${isMobileDark ? 'is-dark' : 'is-light'} md:hidden w-full relative`}
+        className={`statistics-module statistics-settings mobile-statistics ${isMobileDark ? 'is-dark' : 'is-light'} md:hidden w-full relative`}
         style={{
           zIndex: 1,
           ...(!isMobileDark ? {
@@ -2249,21 +2151,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         }}
         data-print-area="statistics"
       >
-        {/* ── Print-only hlavička pro mobilní export ── */}
-        <div className="print-only mb-4" style={{ pageBreakAfter: 'avoid' }}>
-          <div className="flex items-baseline justify-between border-b-2 border-black pb-2 mb-2">
-            <h1 className="text-xl font-bold uppercase tracking-tight">
-              Statistiky operačních sálů
-            </h1>
-            <p className="text-xs font-mono">
-              {new Date().toLocaleString('cs-CZ', { dateStyle: 'short', timeStyle: 'short' })}
-            </p>
-          </div>
-          <p className="text-xs">
-            <strong>Záložka:</strong> {tabLabelMap[tab]} · <strong>Období:</strong> {periodLabelMap[period]} · <strong>Sály:</strong> {rooms.length}
-          </p>
-        </div>
-
         <div className="flex flex-col gap-5 print-section">
           <div className="print-hide">
             <MobileModuleHeader kicker="Statistiky" title="Provozní přehled">
@@ -2292,22 +2179,24 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           <div className="flex items-center gap-2 print-hide">
             <button
               onClick={handlePrint}
+              title={`Vytisknout report záložky ${tabLabelMap[tab]} v novém okně`}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest"
               style={{
-                background: `${C.accent}14`,
-                color: C.accent,
-                border: `1px solid ${C.accent}40`,
+                background: C.surface,
+                color: C.text,
+                border: `1px solid ${C.border}`,
               }}>
               <Printer className="w-4 h-4" />
               Tisk
             </button>
             <button
               onClick={handleExportPdf}
+              title={`PDF report záložky ${tabLabelMap[tab]} – v dialogu zvolte Uložit jako PDF`}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest"
               style={{
-                background: `${C.yellow}14`,
-                color: C.yellow,
-                border: `1px solid ${C.yellow}40`,
+                background: C.surface,
+                color: C.text,
+                border: `1px solid ${C.border}`,
               }}>
               <FileDown className="w-4 h-4" />
               PDF
@@ -2331,13 +2220,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           {/* Tab toggle */}
           <div className="print-hide">
-            <StatisticsGlowMenu value={tab} onChange={setTab} compact />
+            <StatisticsNavigation value={tab} onChange={setTab} compact />
           </div>
 
+          <div id={`statistics-panel-${tab}`} role="tabpanel" aria-labelledby={`statistics-tab-${tab}`} tabIndex={0} className="stats-tab-panel min-w-0">
           {/* ── Přehled ── (vždy renderováno při tisku, bez page-breaks) */}
-          {(tab === 'prehled' || isPrinting) && (
+          {(tab === 'prehled') && (
             <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Přehled</h2>}
+
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   { l: 'Obsazeno', v: `${busyCount}/${rooms.length}`, c: C.orange },
@@ -2347,10 +2237,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 ].map(k => (
                   <div
                     key={k.l}
-                    className="statistics-kpi-card rounded-2xl p-4"
+                    className="statistics-kpi-card rounded-lg p-4"
                     style={{
-                      background: `linear-gradient(135deg, ${k.c}12 0%, var(--stats-surface) 78%)`,
-                      border: `1px solid ${k.c}2b`,
+                      background: C.surface,
+                      border: `1px solid ${C.border}`,
                     }}
                   >
                     <p className="text-[10px] font-semibold uppercase tracking-[0.12em] leading-none" style={{ color: C.muted }}>
@@ -2386,9 +2276,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           )}
 
           {/* ── Sály ── (propracovaný RoomsTab) */}
-          {(tab === 'saly' || isPrinting) && (
+          {(tab === 'saly') && (
             <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Sály</h2>}
+
               <RoomsTab
                 rooms={rooms}
                 statusHistory={statusHistory}
@@ -2405,9 +2295,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           )}
 
           {/* ── Fáze — propracovaný PhasesTab ── */}
-          {(tab === 'faze' || isPrinting) && (
+          {(tab === 'faze') && (
             <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Fáze</h2>}
+
               <PhasesTab
                 rooms={rooms}
                 statusHistory={statusHistory}
@@ -2420,9 +2310,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           )}
 
           {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
-          {(tab === 'finance' || isPrinting) && (
+          {(tab === 'finance') && (
             <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Finance</h2>}
+
               <FinanceTab
                 rooms={rooms}
                 totalOps={totalOps}
@@ -2436,9 +2326,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           )}
 
           {/* ── Hodinové sazby — samostatná správa nákladových sazeb ── */}
-          {(tab === 'sazby' || isPrinting) && (
+          {(tab === 'sazby') && (
             <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Hodinové sazby</h2>}
+
               <FinanceTab
                 rooms={rooms}
                 totalOps={totalOps}
@@ -2452,9 +2342,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           )}
 
           {/* ── Notifikace ── */}
-          {(tab === 'notifikace' || isPrinting) && (
+          {(tab === 'notifikace') && (
             <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Notifikace</h2>}
+
               <MobileSectionLabel>Přehled notifikací</MobileSectionLabel>
               <NotificationsTab
                 notifications={notifications}
@@ -2467,9 +2357,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
 
           {/* ── Zařízení ── */}
-          {(tab === 'zarizeni' || isPrinting) && (
+          {(tab === 'zarizeni') && (
             <div className="flex flex-col gap-3 print-section">
-              {isPrinting && <h2 className="print-tab-header print-only">Zařízení</h2>}
+
               <MobileSectionLabel>Připojená zařízení</MobileSectionLabel>
               <DevicesTab
                 devices={devices}
@@ -2477,56 +2367,16 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               />
             </div>
           )}
+          </div>
         </div>
       </div>
       )}
 
       {/* ========== DESKTOP (hidden md:block) ========== */}
-      {/* `data-print-area="statistics"` označuje sekci, která se vytiskne /
-          uloží do PDF. Zbytek stránky (sidebar atd.) se v print režimu skryje
-          přes globální `@media print` pravidla v `app/globals.css`.
-          
-          Při `isPrinting` (i na mobilním zařízení) potřebujeme, aby desktop
-          sekce byla v DOM a měla měřitelnou šířku — jinak Recharts
-          ResponsiveContainery uvnitř měří 0×0 a grafy v PDF zůstanou prázdné.
-          Dáme ji proto fixed offscreen pozici se šířkou 1024 px (typický
-          desktop layout) — uživatel ji nevidí, ale Recharts ji změří. Print
-          CSS pak při window.print() přemístí na origin a zviditelní. */}
-      {(!isMobileViewport || isPrinting) && (
-      <div
-        className="statistics-module statistics-desktop hidden md:block w-full"
-        data-print-area="statistics"
-        style={isPrinting ? {
-          display: 'block',
-          position: 'fixed',
-          top: 0,
-          left: '-99999px',
-          width: '1024px',
-          opacity: 0,
-          pointerEvents: 'none',
-          zIndex: -1,
-        } : undefined}
-      >
-
-      {/* ── Print-only hlavička reportu (minimalistická, černý text na bílém) ── */}
-      <div className="print-only mb-3 px-3 pt-2" style={{ pageBreakAfter: 'avoid' }}>
-        <div className="flex items-baseline justify-between pb-1.5 mb-1.5"
-          style={{ borderBottom: '1px solid #cbd5e1' }}>
-          <h1 className="text-base font-bold uppercase tracking-tight" style={{ color: '#0f172a' }}>
-            Statistiky operačních sálů
-          </h1>
-          <p className="text-[9px] font-mono" style={{ color: '#475569' }}>
-            {new Date().toLocaleString('cs-CZ', { dateStyle: 'long', timeStyle: 'short' })}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[9px]" style={{ color: '#0f172a' }}>
-          <span><span style={{ color: '#475569' }}>Období:</span> <strong>{periodLabelMap[period]}</strong></span>
-          <span><span style={{ color: '#475569' }}>Počet sálů:</span> <strong>{rooms.length}</strong></span>
-        </div>
-      </div>
-
+      {!isMobileViewport && (
+      <div className="statistics-module statistics-settings statistics-desktop hidden md:block w-full" data-print-area="statistics">
       {/* ── Module header — stejný vzor jako ostatní desktopové moduly ── */}
-      <header className="mb-8 print-hide">
+      <header className="mb-7 print-hide">
         <ModulePageHeading
           icon={BarChart3}
           kicker="OPERATINGROOM CONTROL"
@@ -2534,25 +2384,24 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         />
       </header>
 
-      {/* ── Jeden ovládací řádek: vlevo záložky, vpravo období a export.
-             Dřív to byly dvě řady pod sebou a braly zbytečně místo. ── */}
+      {/* Sdílená ovládací lišta ve stylu Nastavení; na menší šířce se zalomí. */}
       <div
-        className="statistics-tabs print-hide flex flex-wrap items-center gap-2 rounded-xl p-1 mb-4"
+        className="statistics-tabs stats-commandbar print-hide mb-4"
         style={{ border: `1px solid ${C.border}` }}
       >
         {/* Záložky */}
-        <div className="min-w-0 flex-1">
-          <StatisticsGlowMenu value={tab} onChange={setTab} />
+        <div className="stats-commandbar-nav">
+          <StatisticsNavigation value={tab} onChange={setTab} />
         </div>
 
         {/* Období a export vpravo, oddělené svislou linkou */}
-        <div className="ml-auto flex items-center gap-2 shrink-0">
+        <div className="stats-commandbar-actions">
           <span aria-hidden className="h-6 w-px" style={{ background: C.border }} />
 
           <div className="flex items-center gap-1 p-1 rounded-lg"
             style={{ background: C.surface, border: `1px solid ${C.border}` }}>
             {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
-              <button key={p} onClick={()=>setPeriod(p)}
+              <button key={p} onClick={()=>setPeriod(p)} aria-pressed={period === p}
                 className="px-3 py-1.5 rounded-md text-[12px] font-medium whitespace-nowrap"
                 style={{
                   background: period === p ? C.surfaceActive : 'transparent',
@@ -2567,7 +2416,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
           <button
             onClick={handlePrint}
-            title="Vytisknout aktuální zobrazení"
+            title={`Vytisknout report záložky ${tabLabelMap[tab]} v novém okně`}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap"
             style={{ color: C.muted, border: `1px solid ${C.border}` }}>
             <Printer className="w-4 h-4" />
@@ -2575,7 +2424,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </button>
           <button
             onClick={handleExportPdf}
-            title='Uložit aktuální zobrazení jako PDF (zvolte v dialogu „Uložit jako PDF")'
+            title={`PDF report záložky ${tabLabelMap[tab]} – v dialogu zvolte Uložit jako PDF`}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap"
             style={{ color: C.muted, border: `1px solid ${C.border}` }}>
             <FileDown className="w-4 h-4" />
@@ -2585,24 +2434,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       </div>
 
       {/* ── Tab content ──
-          Obsah záložek se přepíná bez vstupních animací. Při tisku se všechny
-          sekce vyrenderují současně a prohlížeč je přirozeně stránkuje. */}
-      <>
-        {(tab==='prehled' || isPrinting) && (
+          Obrazovka zůstává nezávislá na samostatném tiskovém reportu. */}
+      <div id={`statistics-panel-${tab}`} role="tabpanel" aria-labelledby={`statistics-tab-${tab}`} tabIndex={0} className="stats-tab-panel min-w-0">
+        {(tab==='prehled') && (
           <div key="prehled" className="space-y-5 print-section">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Přehled
-              </h2>
-            )}
 
             {/* ── Hero panel — velký prstenec vytížení, doporučení a stavy sálů.
                    Stejný vizuální jazyk jako režim „Fáze" v Toku pacienta. ── */}
-            <Card className="p-6 lg:p-8">
+            <Card className="p-4 sm:p-6">
               {/* Listování po dnech / kalendář — stejný styl jako v Toku pacienta */}
               <div className="flex flex-wrap items-center justify-between gap-3 mb-7 print-hide">
                 <div>
-                  <p className="text-[15px] font-bold" style={{ color: C.text }}>
+                  <p className="text-lg font-semibold" style={{ color: C.text }}>
                     {formatDayLabel(metricsDay)}
                   </p>
                   <p className="text-[12px] capitalize" style={{ color: C.muted }}>
@@ -2620,9 +2463,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   title={heroMode === 'orbit'
                     ? 'Přepnout na souhrn dne (fáze operačního cyklu)'
                     : 'Přepnout na rozpad po sálech'}
-                  className="h-10 px-4 rounded-xl text-[13px] font-semibold flex items-center gap-2 transition-colors"
+                  className="h-10 px-4 rounded-lg text-xs font-semibold flex items-center gap-2"
                   style={heroMode === 'summary'
-                    ? { background: `${C.accent}1f`, color: C.accent, border: `1px solid ${C.accent}55` }
+                    ? { background: C.surfaceActive, color: C.accent, border: `1px solid ${C.border}` }
                     : { background: C.surface, color: C.text, border: `1px solid ${C.border}` }}
                 >
                   {heroMode === 'orbit'
@@ -2640,8 +2483,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               <div
                 className={`grid grid-cols-1 gap-8 items-start ${
                   heroMode === 'orbit' && orbitRoom
-                    ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,300px)_minmax(0,360px)]'
-                    : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]'
+                    ? '2xl:grid-cols-[minmax(0,1fr)_minmax(0,260px)_minmax(0,300px)]'
+                    : 'xl:grid-cols-[minmax(0,1fr)_minmax(0,320px)]'
                 }`}
               >
                 <div className="flex flex-col items-center">
@@ -2683,7 +2526,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                             <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
                               {roomPhaseLegend.map(p => (
                                 <span key={p.name} className="flex items-center gap-1.5 text-[12px]" style={{ color: C.muted }}>
-                                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color, boxShadow: `0 0 6px ${p.color}` }} />
+                                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
                                   {p.name}
                                   <span className="font-bold tabular-nums" style={{ color: C.text }}>
                                     {fmtDurationMin(p.ms / 60000)}
@@ -2774,7 +2617,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </Card>
 
             {/* KPI strip */}
-            <div className="grid grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
+            <div className="stats-overview-metrics"
               style={{border:`1px solid ${C.border}`}}>
               {[
                 {l:'Sálů celkem',      v:rooms.length,                          c:C.text},
@@ -2786,10 +2629,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 {l:'Nejnižší využití sálu', v:`${minUtil}%`,                     c:C.muted},
                 {l:`Výkony (${period})`,v:totalOps,                             c:C.accent},
               ].map((k,i)=>(
-                <div key={i} className="flex flex-col justify-between px-4 py-4"
+                <div key={i} className="flex flex-col justify-between px-4 py-3"
                   style={{background:C.surface,borderRight:i<7?`1px solid ${C.border}`:undefined}}>
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2.5" style={{color:C.muted}}>{k.l}</p>
-                  <p className="text-2xl font-bold leading-none" style={{color:k.c}}>{k.v}</p>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] mb-2.5" style={{color:C.muted}}>{k.l}</p>
+                  <p className="text-2xl font-light leading-none" style={{color:k.c}}>{k.v}</p>
                 </div>
               ))}
             </div>
@@ -2806,6 +2649,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 </div>
               </div>
 
+              <div className="stats-room-metrics" role="region" aria-label="Provozní metriky jednotlivých sálů" tabIndex={0}>
               {rooms.map(r => {
                 const dayIdx = weekdayIndex(metricsDay);
                 const opsInHours = countOperationsForDay(r, dayHistory, metricsDay);
@@ -2846,8 +2690,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 return (
                   <div
                     key={r.id}
-                    className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 rounded-xl overflow-hidden"
-                    style={{border:`1px solid ${C.border}`}}>
+                    className="stats-room-metrics-row">
                     {cells.map((k, i) => (
                       <div
                         key={i}
@@ -2856,13 +2699,13 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                           background: C.surface,
                           borderRight: i < cells.length - 1 ? `1px solid ${C.border}` : undefined,
                         }}>
-                        <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color: C.muted}}>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.1em] mb-2" style={{color: C.muted}}>
                           {k.l}
                         </p>
-                        {/* Hodnota buňky — JEDEN řádek s adaptivní velikostí písma. */}
+                        {/* Delší názvy a stavy se zalomí bez ztráty informace. */}
                         <p
-                          className="font-bold leading-none whitespace-nowrap overflow-hidden text-ellipsis"
-                          style={{ color: k.c, fontSize: 'clamp(11px, 0.95vw, 16px)' }}
+                          className="text-xs font-medium leading-snug whitespace-normal break-words"
+                          style={{ color: k.c }}
                           title={String(k.v)}
                         >
                           {k.v}
@@ -2877,8 +2720,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                               className="h-full rounded-full transition-all duration-500"
                               style={{
                                 width: `${k.bar}%`,
-                                background: `linear-gradient(90deg, ${k.c}CC, ${k.c})`,
-                                boxShadow: `0 0 8px ${k.c}55`,
+                                background: k.c,
                               }}
                             />
                           </div>
@@ -2893,6 +2735,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   Žádné sály k zobrazení.
                 </p>
               )}
+              </div>
             </div>
 
             {/* Row 1 odstraněna — „Využití jednotlivých sálů" i „Stav sálů — podíl"
@@ -3030,13 +2873,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
 
         {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
-        {(tab==='finance' || isPrinting) && (
+        {(tab==='finance') && (
           <div key="finance" className="space-y-5 print-section">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Finance & náklady provozu
-              </h2>
-            )}
             <FinanceTab
               rooms={rooms}
               totalOps={totalOps}
@@ -3050,13 +2888,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
 
         {/* ── Hodinové sazby — samostatná záložka ── */}
-        {(tab==='sazby' || isPrinting) && (
+        {(tab==='sazby') && (
           <div key="sazby" className="space-y-5 print-section">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Hodinové sazby operačních sálů
-              </h2>
-            )}
             <FinanceTab
               rooms={rooms}
               totalOps={totalOps}
@@ -3070,13 +2903,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
 
         {/* ── Sály — propracovaný RoomsTab ── */}
-        {(tab==='saly' || isPrinting) && (
+        {(tab==='saly') && (
           <div key="saly" className="space-y-5 print-section">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Operační sály — detailní přehled
-              </h2>
-            )}
             <RoomsTab
               rooms={rooms}
               statusHistory={statusHistory}
@@ -3093,13 +2921,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
 
         {/* ── Fáze — propracovaný PhasesTab ── */}
-        {(tab==='faze' || isPrinting) && (
+        {(tab==='faze') && (
           <div key="faze" className="space-y-5 print-section">
-            {isPrinting && (
-              <h2 className="print-only text-sm font-bold uppercase tracking-tight mb-2 mt-4 px-3" style={{ color: '#0f172a', borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                Workflow fáze �� detailní analýza
-              </h2>
-            )}
             <PhasesTab
               rooms={rooms}
               statusHistory={statusHistory}
@@ -3112,7 +2935,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
 
         {/* ── Notifikace ── (nový tab) */}
-        {(tab==='notifikace' || isPrinting) && (
+        {(tab==='notifikace') && (
         <div key="notifikace" className="flex flex-col gap-5 print-section">
           <NotificationsTab
             notifications={notifications}
@@ -3124,7 +2947,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         )}
 
         {/* ── Zařízení ── (nový tab) */}
-        {(tab==='zarizeni' || isPrinting) && (
+        {(tab==='zarizeni') && (
         <div key="zarizeni" className="flex flex-col gap-5 print-section">
           <DevicesTab
             devices={devices}
@@ -3133,7 +2956,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         </div>
         )}
 
-        </>
+        </div>
 
       </div>
       )}
@@ -3141,7 +2964,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       {selectedRoom&&(
         <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>
       )}
-    </>
+    </StatisticsReportContext.Provider>
   );
 };
 

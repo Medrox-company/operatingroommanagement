@@ -74,6 +74,11 @@
   background: var(--app-spatial-background);
 }
 
+/* Timeline má klidný podklad bez centrálního radiálního zesvětlení. */
+.app-timeline-background {
+  background: linear-gradient(180deg, #050d2d 0%, #030922 100%);
+}
+
 /* Systémová volba vyššího kontrastu přidá rezervu pro starší SDR panely.
    Barvy zůstávají stejné; mění se jen jejich oddělení od tmavého podkladu. */
 @media (prefers-contrast: more) {
@@ -1383,6 +1388,89 @@ html.capacitor-native select {
   contain: layout style;
 }
 
+/* Přepínání dashboardu ve společném vizuálním stylu aplikace. */
+.dashboard-view-switch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(181, 195, 243, 0.13);
+  border-radius: 12px;
+  background: rgba(128, 151, 216, 0.045);
+}
+
+.dashboard-view-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: rgba(222, 231, 255, 0.62);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.dashboard-view-option:hover { background: rgba(194, 211, 255, 0.065); color: #edf5ff; }
+.dashboard-view-option[aria-pressed='true'] {
+  background: rgba(152, 181, 240, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(185, 212, 255, 0.09);
+  color: #d1f3ff;
+}
+.dashboard-view-option:focus-visible { outline: 2px solid #a5def3; outline-offset: 2px; }
+
+.dashboard-cards-layout { container-type: inline-size; max-width: 3300px; }
+.dashboard-card-content { padding-bottom: 8px; }
+.dashboard-room-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.dashboard-empty-state {
+  display: flex;
+  min-height: 300px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  text-align: center;
+  border: 1px dashed rgba(181, 195, 243, 0.16);
+  border-radius: 12px;
+  background: rgba(128, 151, 216, 0.025);
+}
+.dashboard-empty-state > svg { width: 30px; height: 30px; margin-bottom: 6px; color: #9fb4dd; }
+.dashboard-empty-state h2 { font-size: 18px; font-weight: 600; color: #e4ecff; }
+.dashboard-empty-state p { max-width: 360px; font-size: 13px; color: var(--stats-muted); }
+
+@media (min-width: 600px) { .dashboard-room-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 768px) {
+  .dashboard-module:not(.spatial-dashboard-module) {
+    scrollbar-gutter: stable;
+    padding-top: clamp(20px, 3vh, 40px);
+    padding-bottom: clamp(16px, 2vh, 28px);
+  }
+  .dashboard-cards-layout .dashboard-page-header { margin-bottom: clamp(18px, 2.4vh, 32px); gap: clamp(16px, 2.5cqw, 48px); }
+  .dashboard-cards-layout .app-module-title { font-size: clamp(28px, 4.5cqw, 80px); }
+  .dashboard-cards-layout .app-module-kicker { font-size: clamp(8px, .7cqw, 11px); letter-spacing: .22em; }
+  .dashboard-cards-layout .app-module-kicker-row { gap: 8px; }
+  .dashboard-cards-layout .dashboard-room-grid {
+    grid-template-columns: repeat(var(--dashboard-columns, 2), minmax(0, 1fr));
+    gap: var(--dashboard-grid-gap, 16px);
+    max-width: var(--dashboard-grid-width, 100%);
+    margin-inline: auto;
+  }
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .dashboard-view-option { padding: 0 10px; }
+  .dashboard-view-option > span { display: none; }
+}
+@media (max-width: 767px) {
+  .dashboard-view-option { min-height: 40px; }
+  .dashboard-mobile-metrics > div > div { padding: 12px; gap: 8px; border-radius: 12px; }
+  .dashboard-mobile-metrics > div > div > span { width: 34px; height: 34px; border-radius: 10px; }
+  .dashboard-mobile-metrics p:first-child { font-size: 9px; letter-spacing: .035em; color: var(--m-muted) !important; }
+}
+
 /* Dashboard — „workspace“ karta: asymetrická kompozice reference je převedena
    do klinického dark UI bez dekorativních fotografií a bez náročné animace. */
 .dashboard-workspace-card {
@@ -1394,6 +1482,48 @@ html.capacitor-native select {
 .dashboard-workspace-card:hover {
   transform: translateY(-2px);
 }
+
+.dashboard-workspace-card--sized { height: var(--dashboard-card-height, 336px); }
+.dashboard-workspace-card-content {
+  --dashboard-card-padding: clamp(14px, 5cqw, 26px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(6px, 2cqw, 12px);
+  padding: var(--dashboard-card-padding);
+}
+.dashboard-room-name { font-size: clamp(15px, 4.6cqw, 24px); }
+.dashboard-room-department { font-size: clamp(10px, 2.7cqw, 13px); }
+.dashboard-workspace-cycle { container-type: size; display: flex; min-width: 0; min-height: 0; flex-direction: column; align-items: center; justify-content: center; }
+/* The ring also follows available height, so its caption cannot collide with
+   specialty fields when the viewport is short or a room title wraps. */
+.dashboard-workspace-cycle-indicator { width: min(160px, 36cqw, max(64px, calc(100cqh - 24px))); height: min(160px, 36cqw, max(64px, calc(100cqh - 24px))); }
+.dashboard-workspace-cycle-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 10px; row-gap: 3px; width: 100%; }
+.dashboard-workspace-cycle-caption { color: rgba(222, 231, 255, 0.65); font-size: clamp(10px, 2.6cqw, 13px); font-weight: 500; letter-spacing: .025em; }
+.dashboard-workspace-estimate { display: inline-flex; align-items: center; gap: 4px; color: #d6e1f5; font-size: clamp(11px, 3cqw, 15px); font-weight: 600; white-space: nowrap; }
+.dashboard-workspace-estimate > svg { color: #8fa4cd; }
+.dashboard-workspace-card-info { display: grid; gap: clamp(8px, 2.5cqw, 14px); }
+.dashboard-specialty-slot { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; padding: clamp(7px, 2cqw, 11px) clamp(8px, 2.6cqw, 14px); background: rgba(164, 184, 240, 0.035); text-align: left; }
+.dashboard-specialty-period { font-size: clamp(9px, 2.5cqw, 12px); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: rgba(209, 221, 252, 0.55); line-height: 1.15; }
+.dashboard-specialty-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(11px, 3cqw, 15px); font-weight: 600; color: rgba(228, 236, 255, 0.85); line-height: 1.25; }
+.dashboard-specialty-divider { width: 1px; flex-shrink: 0; background: rgba(195, 211, 249, 0.13); }
+.dashboard-staff-name { font-size: clamp(11px, 3cqw, 15px); }
+.dashboard-staff-secondary { font-size: clamp(10px, 2.7cqw, 13px); }
+.dashboard-staff-avatar { width: clamp(28px, 9cqw, 42px); height: clamp(28px, 9cqw, 42px); }
+.dashboard-room-badges { gap: 4px; }
+.dashboard-room-badges > div { padding: clamp(4px, 1.4cqw, 7px); }
+.dashboard-room-badges svg { width: clamp(12px, 3.5cqw, 17px); height: clamp(12px, 3.5cqw, 17px); }
+
+/* Compact rows still retain two-line names, readable metadata and the action pocket. */
+.dashboard-room-grid[data-density='compact'] .dashboard-workspace-card-content { --dashboard-card-padding: 14px; gap: 6px; }
+.dashboard-room-grid[data-density='compact'] .dashboard-room-name { font-size: clamp(14px, 4.6cqw, 17px); }
+.dashboard-room-grid[data-density='compact'] .dashboard-room-department { font-size: 10px; margin-top: 4px; }
+.dashboard-room-grid[data-density='compact'] .dashboard-workspace-cycle-indicator { width: min(90px, max(64px, calc(100cqh - 20px))); height: min(90px, max(64px, calc(100cqh - 20px))); }
+.dashboard-room-grid[data-density='compact'] .dashboard-workspace-card-info { gap: 7px; }
+.dashboard-room-grid[data-density='compact'] .dashboard-specialty-slot { padding: 6px 8px; gap: 3px; }
+.dashboard-room-grid[data-density='compact'] .dashboard-specialty-period { font-size: 9px; }
+.dashboard-room-grid[data-density='compact'] .dashboard-specialty-name { font-size: 11px; }
+.dashboard-room-grid[data-density='compact'] .dashboard-staff-name { font-size: 11px; }
+.dashboard-room-grid[data-density='compact'] .dashboard-staff-secondary { font-size: 10px; }
 
 .dashboard-workspace-card-surface {
   border-radius: 0;
@@ -1460,8 +1590,8 @@ html.capacitor-native select {
 }
 
 .dashboard-workspace-card-outline-path {
-  fill: rgba(255, 255, 255, 0.04);
-  stroke: rgba(203, 213, 247, 0.1);
+  fill: rgba(159, 180, 237, 0.075);
+  stroke: rgba(203, 213, 247, 0.17);
   stroke-width: 1;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -1469,8 +1599,8 @@ html.capacitor-native select {
 }
 
 .dashboard-workspace-card:hover .dashboard-workspace-card-outline-path {
-  fill: rgba(255, 255, 255, 0.055);
-  stroke: rgba(220, 226, 255, 0.17);
+  fill: rgba(159, 180, 237, 0.11);
+  stroke: rgba(220, 226, 255, 0.28);
 }
 
 .dashboard-workspace-card-outline-path--emergency {
@@ -1500,12 +1630,12 @@ html.capacitor-native select {
 
 .dashboard-workspace-card-emergency {
   left: 77.551%;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(218, 228, 250, 0.68);
 }
 
 .dashboard-workspace-card-lock {
   left: 92.653%;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(218, 228, 250, 0.68);
 }
 
 .dashboard-workspace-card-corner-action:hover {
@@ -1536,6 +1666,7 @@ html.capacitor-native select {
 
 .dashboard-workspace-card-footer {
   padding-right: 30.5%;
+  min-height: max(48px, calc(var(--dashboard-card-height, 336px) * .215 - var(--dashboard-card-padding) + 10px));
 }
 
 .dashboard-workspace-card-header {
@@ -1543,8 +1674,8 @@ html.capacitor-native select {
 }
 
 .dashboard-workspace-specialties {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.018);
+  border-radius: 8px;
+  background: rgba(128, 151, 216, 0.025);
 }
 
 @media (max-width: 1100px) {
@@ -1563,7 +1694,9 @@ html.capacitor-native select {
 
 @media (prefers-reduced-motion: reduce) {
   .dashboard-workspace-card,
-  .dashboard-workspace-card-corner-control {
+  .dashboard-workspace-card-corner-control,
+  .dashboard-view-option,
+  .mobile-dashboard-room-card {
     transition: none !important;
   }
 }
@@ -1695,6 +1828,183 @@ html.capacitor-native select {
 .statistics-module table td,
 .statistics-module table th {
   line-height: 1.35;
+}
+
+/* Statistics reuses the Settings management surfaces. Keep this scope separate
+   from .statistics-module, which is also used by other application modules. */
+.statistics-settings {
+  --stats-surface: rgba(255, 255, 255, 0.025);
+  --stats-surface-2: rgba(0, 0, 0, 0.1);
+  --stats-surface-3: #18223e;
+  --stats-surface-hover: rgba(255, 255, 255, 0.055);
+  --stats-surface-active: rgba(255, 255, 255, 0.09);
+  --stats-border: rgba(255, 255, 255, 0.06);
+  --stats-border-hover: rgba(255, 255, 255, 0.12);
+  --stats-border-active: rgba(255, 255, 255, 0.2);
+  --stats-modal-bg: #111b38;
+}
+
+.statistics-settings.is-light {
+  --stats-modal-bg: #fff;
+}
+
+.statistics-settings .statistics-card,
+.statistics-settings .statistics-kpi-card {
+  box-shadow: none;
+  min-width: 0;
+}
+
+.stats-commandbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.stats-commandbar-nav {
+  flex: 1 1 650px;
+  min-width: 0;
+}
+
+.stats-commandbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.stats-commandbar-actions button {
+  min-height: 32px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.stats-section-nav {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--stats-border);
+  border-radius: 8px;
+  background: var(--stats-surface-2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--stats-border-hover) transparent;
+}
+
+.stats-section-tabs {
+  display: flex;
+  gap: 4px;
+  width: max-content;
+  min-width: 100%;
+  padding: 4px;
+}
+
+.stats-section-tabs [role='tab'] {
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 6px;
+  color: var(--stats-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stats-section-tabs [role='tab'] svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.stats-section-tabs [role='tab']:hover {
+  color: var(--stats-text-strong);
+  background: var(--stats-surface-hover);
+}
+
+.stats-section-tabs [role='tab'][aria-selected='true'] {
+  background: var(--stats-surface-active);
+  color: #67e8f9;
+}
+
+.statistics-settings.is-light .stats-section-tabs [role='tab'][aria-selected='true'] {
+  color: #0e7490;
+}
+
+.statistics-settings :is(button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #67e8f9;
+  outline-offset: 2px;
+}
+
+.stats-section-tabs [role='tab']:focus-visible {
+  outline-offset: -2px;
+}
+
+.stats-tab-panel {
+  border-radius: 12px;
+}
+
+.stats-overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(132px, 1fr));
+  overflow-x: auto;
+  border-radius: 12px;
+}
+
+.stats-room-metrics {
+  overflow-x: auto;
+  border: 1px solid var(--stats-border);
+  border-radius: 12px;
+}
+
+.stats-room-metrics-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(160px, 1.3fr) repeat(6, minmax(100px, 1fr));
+  min-width: 1050px;
+}
+
+.stats-room-metrics-row + .stats-room-metrics-row {
+  border-top: 1px solid var(--stats-border);
+}
+
+@media (max-width: 767px) {
+  .stats-section-nav--mobile [role='tab'] {
+    min-height: 44px;
+    padding-inline: 13px;
+  }
+
+  .statistics-settings.mobile-statistics .mobile-glass-card {
+    border-radius: 12px;
+  }
+}
+
+@media print {
+  .stats-overview-metrics,
+  .stats-room-metrics {
+    overflow: visible;
+  }
+
+  .stats-overview-metrics {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  .stats-room-metrics-row {
+    min-width: 0;
+    grid-template-columns: 1.4fr 1.3fr repeat(6, minmax(0, 1fr));
+  }
+
+  .stats-room-metrics-row > div {
+    min-width: 0;
+    padding: 6px;
+    overflow-wrap: anywhere;
+  }
 }
 
 .m-dark {
@@ -1891,19 +2201,11 @@ html.capacitor-native select {
 
 @media (max-width: 767px) {
   .mobile-dashboard-room-card {
-    background: linear-gradient(145deg, var(--m-card-solid) 0%, color-mix(in srgb, var(--m-card-solid) 94%, var(--m-accent) 6%) 100%);
+    background: var(--m-card-solid);
   }
 
-  .mobile-dashboard-room-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background: linear-gradient(118deg, var(--m-card-highlight) 0%, transparent 28%, transparent 74%, rgba(var(--m-accent-rgb), 0.045) 100%);
-    opacity: 0.55;
-  }
+  .mobile-dashboard-room-card .dashboard-specialty-period { color: var(--m-muted); }
+  .mobile-dashboard-room-card .dashboard-specialty-name { color: var(--m-text); font-size: 11px; }
 
   @media (hover: hover) {
     .mobile-dashboard-room-card:hover {
@@ -1913,7 +2215,7 @@ html.capacitor-native select {
   }
 
   .m-dark .mobile-dashboard-room-card {
-    background: linear-gradient(145deg, rgba(29, 38, 70, 0.96) 0%, rgba(10, 18, 34, 0.98) 72%, rgba(7, 28, 35, 0.96) 100%);
+    background: rgba(26, 39, 78, 0.78);
   }
 
   .mobile-timeline-room-detail {

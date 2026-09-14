@@ -7,7 +7,7 @@ import { C, DistributionHeader } from './shared';
    AppCharts — čitelné grafy v jazyce aplikace (bez recharts)
    Recharts grafy s 9–10px fonty, 3% mřížkou a 20% průhledností byly na tmavém
    podkladu prakticky nečitelné. Tyto primitivy staví na stejném vizuálu jako
-   zbytek aplikace: plné barvy, tučné hodnoty, jasné popisky, glass podklad.
+   zbytek aplikace: sémantické barvy, jasné popisky a neutrální plochy Nastavení.
    ========================================================================== */
 
 /** Hodnota → čitelný krátký zápis (1 200 → 1,2 k) */
@@ -86,7 +86,6 @@ export const BarList: React.FC<{
                 style={{
                   width: `${pct}%`,
                   background: `linear-gradient(90deg, ${color}CC, ${color})`,
-                  boxShadow: `0 0 12px ${color}40`,
                 }}
               />
             </div>
@@ -156,7 +155,6 @@ export const ColumnChart: React.FC<{
                   background: it.highlight
                     ? `linear-gradient(180deg, ${color}, ${color}99)`
                     : `linear-gradient(180deg, ${color}B3, ${color}4D)`,
-                  boxShadow: it.highlight ? `0 0 16px ${color}55` : undefined,
                   outline: it.highlight ? `1px solid ${color}` : undefined,
                 }}
               />
@@ -204,7 +202,6 @@ export const SegmentBar: React.FC<{
               style={{
                 width: `${(s.value / total) * 100}%`,
                 background: s.color,
-                boxShadow: `0 0 10px ${s.color}55`,
               }}
             />
           ) : null,
@@ -269,7 +266,7 @@ export const DayNavigator: React.FC<{
     onChange(next);
   };
 
-  const btn = 'h-10 w-10 rounded-xl flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed';
+  const btn = 'h-10 w-10 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed';
   const surface: React.CSSProperties = {
     background: 'var(--stats-surface)',
     border: `1px solid ${C.border}`,
@@ -283,7 +280,7 @@ export const DayNavigator: React.FC<{
       </button>
 
       <label
-        className="h-10 px-3.5 rounded-xl flex items-center gap-2 cursor-pointer"
+        className="h-10 px-3.5 rounded-lg flex items-center gap-2 cursor-pointer"
         style={surface}
       >
         <span className="text-[13px]" style={{ color: C.accent }}>🕐</span>
@@ -309,7 +306,7 @@ export const DayNavigator: React.FC<{
       <button
         onClick={() => onChange(today)}
         disabled={isToday}
-        className="h-10 px-4 rounded-xl text-[13px] font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="h-10 px-4 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         style={surface}
       >
         Dnes
@@ -379,13 +376,10 @@ export const GlassCalendar: React.FC<{
 
   return (
     <div
-      className={`rounded-2xl p-4 ${className}`}
+      className={`rounded-xl p-4 ${className}`}
       style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02))',
+        background: C.surface,
         border: `1px solid ${C.border}`,
-        backdropFilter: 'blur(18px) saturate(120%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(120%)',
-        boxShadow: '0 18px 44px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)',
       }}
     >
       {/* Hlavička — měsíc a listování */}
@@ -399,7 +393,7 @@ export const GlassCalendar: React.FC<{
         >
           ‹
         </button>
-        <p className="text-[13px] font-bold capitalize" style={{ color: C.textHi }}>
+        <p className="text-[13px] font-semibold capitalize" style={{ color: C.textHi }}>
           {view.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })}
         </p>
         <button
@@ -418,7 +412,7 @@ export const GlassCalendar: React.FC<{
         {CZ_DAYS.map((d, i) => (
           <span
             key={d}
-            className="text-center text-[10px] font-bold uppercase tracking-wider"
+            className="text-center text-[9px] font-semibold uppercase tracking-wider"
             style={{ color: i >= 5 ? C.faint : C.muted }}
           >
             {d}
@@ -455,7 +449,6 @@ export const GlassCalendar: React.FC<{
                     : inMonth ? C.text : C.faint,
                 opacity: disabled ? 0.35 : inMonth ? 1 : 0.5,
                 border: isToday && !isSelected ? `1px solid ${accent}66` : '1px solid transparent',
-                boxShadow: isSelected ? `0 6px 18px -6px ${accent}, 0 0 14px ${accent}55` : undefined,
               }}
             >
               {d.getDate()}
@@ -476,16 +469,16 @@ export const GlassCalendar: React.FC<{
         <button
           onClick={() => onChange(today)}
           disabled={sameDay(value, today)}
-          className="flex-1 h-9 rounded-xl text-[12px] font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{ background: 'rgba(255,255,255,0.05)', color: C.text, border: `1px solid ${C.border}` }}
+          className="flex-1 h-9 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ background: C.surface2, color: C.text, border: `1px solid ${C.border}` }}
         >
           Dnes
         </button>
         <button
           onClick={() => { const d = new Date(today); d.setDate(d.getDate() - 1); onChange(d); }}
           disabled={(() => { const y = new Date(today); y.setDate(y.getDate() - 1); return sameDay(value, y); })()}
-          className="flex-1 h-9 rounded-xl text-[12px] font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{ background: 'rgba(255,255,255,0.05)', color: C.text, border: `1px solid ${C.border}` }}
+          className="flex-1 h-9 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ background: C.surface2, color: C.text, border: `1px solid ${C.border}` }}
         >
           Včera
         </button>
@@ -502,8 +495,8 @@ export const StatSectionLabel: React.FC<{ children: React.ReactNode; className?:
   className = '',
 }) => (
   <p
-    className={`text-[11px] font-bold uppercase text-center ${className}`}
-    style={{ color: C.faint, letterSpacing: '0.32em' }}
+    className={`text-[8px] font-semibold uppercase text-center ${className}`}
+    style={{ color: C.muted, letterSpacing: '0.18em' }}
   >
     {children}
   </p>
@@ -542,7 +535,7 @@ function useMounted(): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GaugeRing — velký zářící prstenec (design převzatý z modulu Tok pacienta)
+// GaugeRing — velký prstenec se sémantickou barvou metriky
 // ─────────────────────────────────────────────────────────────────────────────
 export const GaugeRing: React.FC<{
   /** Zobrazená hodnota; obvod se při přesahu vizuálně zastaví na 100 %. */
@@ -556,7 +549,7 @@ export const GaugeRing: React.FC<{
   sublabel?: string;
   /** Jednotka za číslem */
   unit?: string;
-  /** Rotující tečkované kroužky kolem prstence */
+  /** Tečkované kroužky kolem prstence */
   dotted?: boolean;
 }> = ({ value, size = 340, stroke, color = C.accent, kicker, sublabel, unit = '%', dotted = true }) => {
   const on = useMounted();
@@ -573,22 +566,17 @@ export const GaugeRing: React.FC<{
   return (
     <div className="flex flex-col items-center">
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      {/* Barevná záře za prstencem */}
-      <div className="absolute inset-[8%] rounded-full blur-[60px]" style={{ background: color, opacity: 0.22 }} />
-
       {dotted && (
         <>
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox={`0 0 ${VB} ${VB}`}
-            style={{ animation: 'spin 32s linear infinite' }}
           >
             <circle cx="180" cy="180" r="166" fill="none" stroke="var(--stats-border)" strokeWidth="1.5" strokeDasharray="2 10" />
           </svg>
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox={`0 0 ${VB} ${VB}`}
-            style={{ animation: 'spin 60s linear infinite reverse' }}
           >
             <circle cx="180" cy="180" r="150" fill="none" stroke="var(--stats-ghost)" strokeWidth="1" strokeDasharray="1 14" />
           </svg>
@@ -606,7 +594,6 @@ export const GaugeRing: React.FC<{
           strokeDasharray={`${((on ? visualPercent : 0) / 100) * CIRC} ${CIRC}`}
           style={{
             transition: 'stroke-dasharray 1.1s cubic-bezier(.22,1,.36,1)',
-            filter: `drop-shadow(0 0 8px ${color}99)`,
           }}
         />
       </svg>
@@ -621,8 +608,8 @@ export const GaugeRing: React.FC<{
           </span>
         )}
         <span
-          className="font-black tabular-nums leading-none"
-          style={{ color: C.textHi, fontSize: size * 0.185, textShadow: `0 0 28px ${color}77` }}
+          className="font-semibold tabular-nums leading-none"
+          style={{ color: C.textHi, fontSize: size * 0.185 }}
         >
           {Math.round(shown)}
           <span className="align-top" style={{ fontSize: size * 0.07, color: C.text }}>{unit}</span>
@@ -679,7 +666,6 @@ export const RingRow: React.FC<{ items: RingItem[]; size?: number; emptyText?: s
             style={{ width: size + 16 }}
           >
             <div className="relative" style={{ width: size, height: size }}>
-              <div className="absolute inset-[13%] rounded-full blur-xl" style={{ background: it.color, opacity: 0.18 }} />
               <svg viewBox="0 0 108 108" className="absolute inset-0 w-full h-full -rotate-90">
                 <circle cx="54" cy="54" r={R} fill="none" stroke="var(--stats-ghost)" strokeWidth="11" />
                 <circle
@@ -691,12 +677,11 @@ export const RingRow: React.FC<{ items: RingItem[]; size?: number; emptyText?: s
                   strokeDasharray={`${((on ? pct : 0) / 100) * CIRC} ${CIRC}`}
                   style={{
                     transition: `stroke-dasharray 0.9s cubic-bezier(.22,1,.36,1) ${0.2 + i * 0.07}s`,
-                    filter: `drop-shadow(0 0 6px ${it.color}88)`,
                   }}
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl font-black tabular-nums" style={{ color: C.textHi }}>
+                <span className="text-2xl font-semibold tabular-nums" style={{ color: C.textHi }}>
                   {pct.toFixed(0)}
                   <span className="text-xs align-top" style={{ color: C.text }}>%</span>
                 </span>
@@ -713,7 +698,7 @@ export const RingRow: React.FC<{ items: RingItem[]; size?: number; emptyText?: s
               >
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ background: it.color, boxShadow: `0 0 6px ${it.color}` }}
+                  style={{ background: it.color }}
                 />
                 <span className="min-w-0 truncate">{it.label}</span>
               </p>
@@ -847,7 +832,7 @@ export const OrbitRings: React.FC<{
           left: '50%',
           top: '50%',
           width: cellW,
-          transform: `translate(-50%, -50%) translate(${on ? x : 0}px, ${on ? y : 0}px) scale(${on ? (isHot ? 1.07 : 1) : 0.6})`,
+          transform: `translate(-50%, -50%) translate(${on ? x : 0}px, ${on ? y : 0}px) scale(${on ? 1 : 0.6})`,
           opacity: on ? (dim ? 0.45 : 1) : 0,
           transition: `transform 0.75s cubic-bezier(.22,1,.36,1) ${delayBase + idx * 0.045}s, opacity 0.5s ease ${delayBase + idx * 0.045}s`,
           cursor: onSelect ? 'pointer' : 'default',
@@ -855,14 +840,10 @@ export const OrbitRings: React.FC<{
         }}
       >
         <div className="relative" style={{ width: sat, height: sat }}>
-          <div
-            className="absolute inset-[14%] rounded-full blur-lg"
-            style={{ background: it.color, opacity: isHot ? 0.35 : 0.16, transition: 'opacity .2s' }}
-          />
           {selectedId === it.id && (
             <div
               className="absolute inset-0 rounded-full pointer-events-none"
-              style={{ border: `2px solid ${it.color}`, boxShadow: `0 0 14px ${it.color}88` }}
+              style={{ border: `2px solid ${it.color}` }}
             />
           )}
           <svg viewBox="0 0 108 108" className="absolute inset-0 w-full h-full -rotate-90">
@@ -889,7 +870,6 @@ export const OrbitRings: React.FC<{
                       strokeDashoffset={-offset}
                       style={{
                         transition: `stroke-dasharray 0.8s cubic-bezier(.22,1,.36,1) ${delayBase + 0.15 + idx * 0.045 + si * 0.05}s`,
-                        filter: `drop-shadow(0 0 4px ${sgm.color}${isHot ? 'bb' : '77'})`,
                       }}
                     >
                       <title>{sgm.label}</title>
@@ -907,7 +887,6 @@ export const OrbitRings: React.FC<{
                 strokeDasharray={`${((on ? visualPercent : 0) / 100) * CIRC} ${CIRC}`}
                 style={{
                   transition: `stroke-dasharray 0.9s cubic-bezier(.22,1,.36,1) ${delayBase + 0.2 + idx * 0.045}s`,
-                  filter: `drop-shadow(0 0 5px ${it.color}${isHot ? 'cc' : '88'})`,
                 }}
               />
             )}
@@ -915,14 +894,14 @@ export const OrbitRings: React.FC<{
           <div className="absolute inset-0 flex items-center justify-center px-2">
             {it.centerLabel ? (
               <span
-                className="font-black tabular-nums leading-none text-center"
+                className="font-semibold tabular-nums leading-none text-center"
                 style={{ color: C.textHi, fontSize: Math.max(11, sat * 0.19) }}
               >
                 {it.centerLabel}
               </span>
             ) : (
               <span
-                className="font-black tabular-nums leading-none"
+                className="font-semibold tabular-nums leading-none"
                 style={{ color: C.textHi, fontSize: sat * 0.24 }}
               >
                 {Math.round(displayPercent)}
@@ -1033,17 +1012,13 @@ export const PhasePanel: React.FC<{
 
   return (
     <div
-      className={`rounded-2xl p-4 ${className}`}
+      className={`rounded-xl p-4 ${className}`}
       style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}
     >
       <div className="flex items-baseline justify-between gap-2 mb-3">
-        <p
-          className="text-[11px] uppercase font-bold flex items-center gap-2"
-          style={{ color: C.muted, letterSpacing: '0.18em' }}
-        >
-          <span className="w-2 h-2 rounded-full" style={{ background: items[0]?.color || C.accent }} />
+        <h3 className="text-lg font-semibold tracking-tight" style={{ color: C.textHi }}>
           {title}
-        </p>
+        </h3>
         {subtitle && (
           <span className="text-[11px] tabular-nums shrink-0" style={{ color: C.faint }}>
             {subtitle}
@@ -1061,16 +1036,16 @@ export const PhasePanel: React.FC<{
               return (
                 <div
                   key={`${it.label}-${i}`}
-                  className="rounded-xl px-3 py-2.5"
-                  style={{ background: `${it.color}10`, border: `1px solid ${it.color}33` }}
+                  className="rounded-lg px-3 py-2.5"
+                  style={{ background: C.surface2, border: `1px solid ${C.border}` }}
                 >
                   <div className="flex items-baseline justify-between gap-2 mb-1.5">
                     <span className="flex items-center gap-2 min-w-0">
                       <span
                         className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ background: it.color, boxShadow: `0 0 6px ${it.color}` }}
+                        style={{ background: it.color }}
                       />
-                      <span className="text-[12px] font-bold truncate" style={{ color: C.textHi }}>
+                      <span className="text-[12px] font-semibold truncate" style={{ color: C.textHi }}>
                         {it.label}
                       </span>
                     </span>
@@ -1089,7 +1064,6 @@ export const PhasePanel: React.FC<{
                       style={{
                         width: `${pct}%`,
                         background: `linear-gradient(90deg, ${it.color}CC, ${it.color})`,
-                        boxShadow: `0 0 8px ${it.color}55`,
                       }}
                     />
                   </div>
@@ -1147,41 +1121,35 @@ export const InsightPanel: React.FC<{
 
   return (
     <div
-      className={`relative overflow-hidden ${hasSectionHeader ? 'rounded-xl p-5' : 'rounded-2xl p-4'} ${className}`}
+      className={`relative overflow-hidden rounded-xl p-4 ${className}`}
       style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}
     >
       {hasSectionHeader ? (
-        <>
-          <span className="absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
-          <DistributionHeader
-            eyebrow={eyebrow ?? 'Přehled'}
-            title={title}
-            subtitle={subtitle ?? ''}
-            badge={badge ?? `${items.length} doporučení`}
-            accent={accent}
-          />
-        </>
+        <DistributionHeader
+          eyebrow={eyebrow ?? 'Přehled'}
+          title={title}
+          subtitle={subtitle ?? ''}
+          badge={badge ?? `${items.length} doporučení`}
+          accent={accent}
+        />
       ) : (
-        <p
-          className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase"
-          style={{ color: C.muted, letterSpacing: '0.18em' }}
-        >
-          {icon ?? <span className="h-2 w-2 rounded-full" style={{ background: accent }} />}
+        <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold tracking-tight" style={{ color: C.textHi }}>
+          {icon}
           {title}
-        </p>
+        </h3>
       )}
-      <div className={hasSectionHeader ? 'mt-6 grid grid-cols-1 gap-2.5 md:grid-cols-3' : 'flex flex-col gap-2.5'}>
+      <div className={hasSectionHeader ? 'mt-4 grid grid-cols-1 gap-2.5 md:grid-cols-3' : 'flex flex-col gap-2.5'}>
       {items.map((it, i) => {
         const col = TONE_COLOR[it.tone ?? 'info'];
         return (
           <div
             key={`${it.title}-${i}`}
-            className="flex h-full items-start gap-2.5 rounded-xl p-2.5"
-            style={{ background: `${col}10`, border: `1px solid ${col}33` }}
+            className="flex h-full items-start gap-2.5 rounded-lg p-3"
+            style={{ background: C.surface2, border: `1px solid ${C.border}` }}
           >
-            <span className="w-4 h-4 mt-0.5 shrink-0 rounded-full" style={{ background: `${col}33`, boxShadow: `0 0 8px ${col}55` }} />
+            <span className="w-1.5 h-1.5 mt-1 shrink-0 rounded-full" style={{ background: col }} />
             <div className="min-w-0">
-              <p className="text-[12px] font-bold leading-tight" style={{ color: C.textHi }}>{it.title}</p>
+              <p className="text-[12px] font-semibold leading-tight" style={{ color: C.textHi }}>{it.title}</p>
               <p className="text-[11px] leading-snug mt-0.5" style={{ color: C.muted }}>{it.text}</p>
             </div>
           </div>
@@ -1219,7 +1187,7 @@ export const ScatterGrid: React.FC<{
   return (
     <div>
       <div
-        className="relative rounded-xl"
+        className="relative rounded-lg"
         style={{ height, background: 'var(--stats-surface-2)', border: `1px solid ${C.border}` }}
       >
         {/* Mřížka */}
@@ -1244,7 +1212,6 @@ export const ScatterGrid: React.FC<{
                 height: d,
                 background: `${color}59`,
                 border: `1.5px solid ${color}`,
-                boxShadow: `0 0 12px ${color}55`,
               }}
             />
           );
