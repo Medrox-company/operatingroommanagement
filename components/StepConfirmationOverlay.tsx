@@ -83,20 +83,65 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
         className="absolute inset-0 z-[200] flex items-center justify-center overflow-hidden"
       >
         {/* Průsvitné sklo ponechá čitelnou atmosféru detailu sálu pod dialogem. */}
-        <div className="absolute inset-0 step-confirm-bg" />
+        <div className="absolute inset-0 step-confirm-bg mobile-theme-surface" />
         <div className="absolute inset-0 hidden md:block bg-[radial-gradient(circle_at_50%_42%,_rgba(255,255,255,0.035)_0%,_transparent_38%,_rgba(1,10,19,0.34)_100%)]" />
 
         {/* Statická atmosféra podle pozadí notifikací, pouze v červené a zelené. */}
         <div
-          className="glow-soft absolute -left-28 top-0 bottom-0 w-[34%] z-10 opacity-[0.12] md:opacity-25"
+          className="glow-soft absolute -left-28 top-0 bottom-0 w-[34%] z-10 hidden md:block opacity-25"
           style={{ '--glow': ZRUSIT.glow, '--glow-strength': '68%' } as React.CSSProperties}
         />
         <div
-          className="glow-soft absolute -right-28 top-0 bottom-0 w-[34%] z-10 opacity-[0.12] md:opacity-25"
+          className="glow-soft absolute -right-28 top-0 bottom-0 w-[34%] z-10 hidden md:block opacity-25"
           style={{ '--glow': POTVRDIT.glow, '--glow-strength': '68%' } as React.CSSProperties}
         />
 
-        <div className="flex flex-col items-center relative z-10 px-4 w-full">
+        {/* ── Mobil: dialog uprostřed obrazovky, akce ve dvou boxech ─────── */}
+        <div className="msc-dialog md:hidden">
+          <p className="msc-kicker">Potvrzení přechodu</p>
+          <h2 id="step-confirm-title-mobile" className="msc-title room-name-nobreak">
+            {isReset ? 'Nový cyklus' : pendingStep?.name || 'Další fáze'}
+          </h2>
+
+          {/* Odkud kam — aby bylo jasné, co se potvrzuje. */}
+          <p className="msc-route">
+            <span className="msc-route-item">
+              <i style={{ background: currentStep?.color || 'var(--m-muted)' }} aria-hidden />
+              {currentStep?.name || 'Aktuální fáze'}
+            </span>
+            <span className="msc-route-arrow" aria-hidden>→</span>
+            <span className="msc-route-item msc-route-item--target">
+              <i style={{ background: pendingStep?.color || 'var(--m-accent)' }} aria-hidden />
+              {isReset ? 'Nový cyklus' : pendingStep?.name || 'Další fáze'}
+            </span>
+          </p>
+
+          {isShortInterval && (
+            <div id="step-short-interval-warning-mobile" className="msc-warning" role="alert">
+              <span className="msc-warning-icon" aria-hidden><AlertTriangle /></span>
+              <p>
+                Fáze <strong>{currentStep?.name || 'aktuální krok'}</strong> trvá pouze{' '}
+                <strong className="msc-warning-value">{elapsedLabel}</strong> — méně než 5 minut
+                a kratší než průměr tohoto kroku ({averageMinutes} min).
+              </p>
+            </div>
+          )}
+
+          {/* Dva boxy vedle sebe — stejná váha jako disky na velké obrazovce. */}
+          <div className="msc-actions">
+            <button type="button" className="msc-box msc-box--cancel" onClick={onCancel}>
+              <span className="msc-box-icon" aria-hidden><X /></span>
+              <span className="msc-box-label">Zrušit</span>
+            </button>
+            <button type="button" className="msc-box msc-box--confirm" onClick={onConfirm}>
+              <span className="msc-box-icon" aria-hidden><Check /></span>
+              <span className="msc-box-label">Potvrdit</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ── Desktop: původní dva disky ──────────────────────────────────── */}
+        <div className="hidden md:flex flex-col items-center relative z-10 px-4 w-full">
 
           {/* Záhlaví */}
           <div className="text-center">

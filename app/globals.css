@@ -2025,7 +2025,9 @@ html.capacitor-native select {
 .m-dark {
   color-scheme: dark;
   --m-bg: #050D2D;
-  --m-page-bg: linear-gradient(180deg, #0A153C 0%, #050D2D 54%, #030922 100%);
+  /* Stejný podklad jako desktopová verze — radiální modré světlo uprostřed
+     nad tmavým přechodem (--app-spatial-background). */
+  --m-page-bg: var(--app-spatial-background);
   --m-card: #131F49;
   --m-card-solid: #131F49;
   --m-card-2: #192A56;

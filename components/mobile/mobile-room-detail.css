@@ -418,3 +418,76 @@
   }
   .mobile-room-reference .mrd-header { grid-column: 1 / -1; grid-row: 1; padding: 0; }
 }
+
+@media (max-width: 767px) {
+  /* ── Potvrzení přechodu fáze ───────────────────────────────────────────
+     Dialog uprostřed obrazovky; akce jsou dva stejně velké boxy vedle sebe,
+     aby měly stejnou váhu jako disky na velké obrazovce v sále. */
+  /* Pozadí potvrzení je stejné jako zbytek aplikace — žádné černé sklo. */
+  .mobile-room-detail .step-confirm-bg,
+  .mobile-room-reference .step-confirm-bg {
+    background: var(--m-page-bg) !important;
+  }
+
+  .msc-dialog {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px var(--m-page-gutter);
+  }
+
+  .msc-kicker { margin: 0; color: var(--m-muted); font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; text-align: center; }
+  .mobile-room-detail.mobile-room-reference .msc-title, .msc-title { margin: 0 !important; color: var(--m-text-strong) !important; font-size: clamp(20px, 7vw, 28px) !important; font-weight: 700 !important; line-height: 1.15 !important; letter-spacing: -.03em !important; text-transform: none !important; text-align: center; }
+
+  .msc-route { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; margin: 0; font-size: 12px; color: var(--m-muted); }
+  .msc-route-item { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+  .msc-route-item i { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .msc-route-item--target { color: var(--m-text-strong); font-weight: 600; }
+  .msc-route-arrow { color: var(--m-muted); opacity: .6; }
+
+  .msc-warning { display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; padding: 11px 13px; border: 1px solid rgba(245, 158, 11, .3); border-radius: 16px; background: rgba(245, 158, 11, .08); }
+  .msc-warning p { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--m-text); }
+  .msc-warning strong { color: var(--m-text-strong); font-weight: 600; }
+  .msc-warning .msc-warning-value { color: #F59E0B; }
+  .msc-warning-icon { display: grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0; border-radius: 10px; border: 1px solid rgba(245, 158, 11, .3); color: #F59E0B; }
+  .msc-warning-icon svg { width: 16px; height: 16px; }
+
+  /* Dva boxy vedle sebe, stejně široké a vysoké. */
+  .msc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+  .msc-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 132px;
+    padding: 18px 12px;
+    border-radius: 22px;
+    border: 1px solid var(--m-border);
+    background: var(--m-card-solid, var(--m-card));
+    box-shadow: var(--m-card-shadow);
+  }
+  .msc-box:active { transform: scale(.97); }
+  .msc-box:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+
+  /* Plný barevný kruh s bílým symbolem — čitelný i přes rukavici a na dálku. */
+  .msc-box-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--msc-color);
+    color: #FFFFFF;
+    box-shadow: 0 10px 26px -8px var(--msc-color), inset 0 1px 0 rgba(255, 255, 255, .28);
+  }
+  .msc-box-icon svg { width: 32px; height: 32px; stroke-width: 2.4; }
+  .msc-box-label { color: #FFFFFF; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+
+  .msc-box--cancel { --msc-color: #E5484D; border-color: rgba(229, 72, 77, .5); background: rgba(229, 72, 77, .1); }
+  .msc-box--confirm { --msc-color: #10B981; border-color: rgba(16, 185, 129, .5); background: rgba(16, 185, 129, .1); }
+}
