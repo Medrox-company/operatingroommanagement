@@ -839,3 +839,160 @@ final result: passed within supplied-asset fidelity; source-asset boundary docum
 - Produkční `npm run build` včetně TypeScriptu a všech 29 stránek prošel.
 
 final result: passed
+
+---
+
+## 2026-09-15 — mobilní aplikace podle `apka.jpg`
+
+### Podklad a rozsah
+
+- Source visual truth: `/Users/jaroslavjedlicka/Desktop/apka.jpg`.
+- Implementovány skutečné komponenty `DashboardModule`, `MobileRoomOverview`, `SpatialDashboardView`, `RoomDetail` a `MobileNav`, nikoli statická maketa.
+- Rozsah: telefonní přehled sálů, 3D/půdorys, vybraný sál, detail a navigace ve světlém a tmavém režimu. Desktopový dashboard a desktopová větev detailu zachovány.
+- Izolovaný lokální náhled: `/private/tmp/orm-mobile-qa-4EjNBg`, port 4174. Autentizace a data nahrazeny explicitními ukázkovými záznamy; žádné zápisy do provozní databáze. Fixture není součástí aplikace.
+
+### Vizuální porovnání
+
+- Šest snímků implementace v 390 × 844 px: `/private/tmp/orm-mobile-final-qa/{dashboard,spatial,detail}-{light,dark}.png`.
+- Společný obraz předlohy a všech šesti implementovaných obrazovek: `/private/tmp/orm-mobile-final-qa/source-comparison.png`. Porovnáno jako jeden obraz, se zachováním poměrů stran a čitelnými popisy zdroje/implementace.
+- Trvalý náhled mimo Git: `/Users/jaroslavjedlicka/.codex/visualizations/2026/08/20/01a020bb-6261-7152-8eaa-49ba81b1cac8/mobile-implemented-preview.png`.
+- Typografie: kompaktní nadpisy, jemné pomocné texty, výrazné číselné hodnoty; velké desktopové prvky se do telefonu nepřenášejí.
+- Rozestupy: jednotné boční odsazení, jemné 12–16px zaoblení, 2 sloupce časů a akcí, pevná spodní navigace. Na nízkém telefonu je obsah detailu vnitřně posuvný a primární akce zůstává viditelná.
+- Barvy: světlé ledově modré plochy / tmavé námořnické plochy, jemné hranice, žluté primární akce, skutečné konfigurované barvy fází bez log na kartách.
+- 3D asset fidelity: stávající GLB, geometrie, materiály, osvětlení a prostorové vazby nebyly kvůli mobilnímu návrhu změněny; pouze ovládací vrstva, rozměry panelů a kompaktní štítky.
+- Záměrné rozdíly: žádný falešný rámeček telefonu ani systémový status bar; názvy a počty odpovídají skutečným datům, nikoli číslům v maketě. Skutečný workflow může mít více než pět fází a lze jím vodorovně posouvat. Aktuální fáze se při změně dostane do zorného pole. Požadované Volat, Příjezd a ±15 min jsou nad rámec původního obrázku. Rozměry skutečné dispozice zůstávají zachovány, proto model nemá v každé nemocnici stejný poměr stran jako kresba.
+
+### Opravy během kontroly
+
+- Odstraněn průnik tmavého pozadí do světlého 3D pohledu.
+- Doplněna mobilní hlavička a stav načítání pro uložený 3D pohled, zatímco se načítají sály.
+- Zmenšeny 3D štítky a skryty nevybrané popisky nepropojených pomocných místností, aby nepřekrývaly sály.
+- Odstraněno dvojité spodní odsazení; mobilní kořen používá dynamickou výšku viewportu.
+- Více zachovává autorizované položky i odhlášení; nativní Back zavírá otevřený navigační panel.
+- Počáteční chyby GLB blob textur a dvojího React kořene pocházely z CSP/HMR izolované fixture. Opraveny jen ve fixture; po úplném načtení nebyly nové chyby ani varování v konzoli.
+
+### Funkční a regresní ověření
+
+- Prohlížeč: 390 × 844 světlý/tmavý, 360 × 640 detail s dostupnými akcemi bez vodorovného přetékání, 430 × 932 3D bez vodorovného přetékání, 1440 × 900 zachovaný desktop.
+- Vyzkoušeno hledání + filtr připravených sálů; otevření detailu; výběr místnosti v 3D i půdorysu; přechod z panelu do detailu.
+- Vyzkoušeno +15/−15 minut se správnou změnou času; pauza/pokračování; hygienický režim; Volat a následné potvrzení příjezdu; potvrzovací dialog další fáze; výběr ARO lékaře. Ověřeny callbacky a události na ukázkových datech.
+- `node --test tests/*/*.test.js`: 194/194 úspěšně.
+- `npx tsc --noEmit --pretty false`, `npm run mobile:build`, `npm run build` a `git diff --check`: úspěšně. Vite pouze upozorňuje na existující velikost chunků.
+- Nativní zařízení a produkční databázové zápisy nebyly součástí testu; žádné nasazení ani push.
+
+final result: passed — mobile UI and local interactions verified; actual-device/backend verification remains outside this isolated visual test
+
+---
+
+## 2026-09-17 — iOS refinement of the mobile application
+
+### Reference and scope
+
+- User reference: https://developer.apple.com/design/resources/#ios-apps and Apple HIG segmented controls, tab bars, materials, and layout.
+- The supplied Figma document `o3xpkURlzTA80GnSDBpDsf`, node `0:1`, returned an empty Page 1 canvas. No pixel-exact Figma match is claimed.
+- Applied the 21st UI-build workflow with the existing project design tokens/components. The 21st CLI was unavailable, so no catalog package or new dependency was introduced. SwiftUI translation was not applicable to this React/Capacitor visual refinement.
+- Retained the approved light ice-blue / dark navy palette, yellow primary actions, configured phase colors, existing clinical handlers, permissions, and actual 3D assets. No native SwiftUI conversion, backend change, deployment, or push.
+
+### Visual implementation
+
+- Mobile system typography, large sentence-case page headings, inset grouped room/personnel lists, hairline separators and restrained surfaces.
+- Neutral raised segmented controls, 16px search input, minimum 44px estimate controls, translucent tab bar, and grouped More sheet with a separate logout action.
+- Detail has compact vertical spacing so all four clinical actions are visible on the tested 390 × 844 viewport; smaller screens retain an internal scroll region and a fixed primary CTA.
+- Six actual UI screenshots with synthetic data: `/private/tmp/orm-ios-qa.crqWqJ/{dashboard,spatial,detail}-{light,dark}.png`.
+- Reviewed combined preview: `/Users/jaroslavjedlicka/.codex/visualizations/2026/08/20/01a020bb-6261-7152-8eaa-49ba81b1cac8/mobile-ios-preview.png`. QA badges and hospital names belong only to the isolated fixture.
+
+### Verification
+
+- Browser checked light/dark dashboard, room detail, 3D panel and More sheet at 390 × 844. Search + prepared filter returned the expected single matching room. Selected 3D room opened the real detail component.
+- At 320 × 640, document width stayed 320px, the inner detail scrolled (559px content / 385px visible), and estimate buttons measured 59 × 44px. Call action remained reachable and enabled Arrival after invocation on synthetic data.
+- At 1440 × 900, the mobile detail was hidden and the existing desktop branch rendered; no horizontal page overflow. Phone-specific CSS has media-query regression coverage. Browser console had no errors or warnings at final inspection; viewport override reset.
+- Independent React/source review found no new regression, desktop style leakage, or permission/handler change. Shared segmented indicators use per-instance IDs and respect reduced motion.
+- 31/31 focused mobile tests passed, including 7 new iOS shell/navigation checks. Next production build (including TypeScript), mobile Vite production build, and `git diff --check` passed. Vite retains its existing large-chunk advisory.
+- Full suite: 200/201 passed. The existing statistics fixture `notification impacts keep zero distinct from unavailable and label overlapping sums` is date-dependent: fixed 14 September/Monday data is compared to the real rolling last-24-hour window. Independently verified that the unchanged test passes when its clock is frozen in memory to 14 September. No unrelated statistics code/test was modified for this UI task.
+- Physical iPhone safe areas, Safari rendering and native/backend integration remain outside this local browser check.
+
+final result: passed for scoped iOS visual refinement; one unrelated date-dependent statistics test remains failing in the full suite
+
+---
+
+## 2026-09-17 — Unified mobile cards and blue dark theme
+
+### Scope and design contract
+
+- Continued the mobile/iOS refinement, using the existing application components and shared design tokens through the 21st UI-build workflow. The CLI was unavailable; no dependency was added.
+- Unified mobile content cards: 20px radius, 16px padding, 17px/600 headings placed first at the top-left. Shared page headings use 28px text, a 44px utility row and 20px page gutters.
+- Applied to room overview/detail, patient flow, timeline, selected 3D room, statistics sections, personnel and Settings landing cards. The dark palette now uses Alerts-family navy/blue surfaces instead of greenish navy. Yellow actions and configured clinical status colors remain distinct.
+- Desktop and print styling, permissions, clinical handlers, actual 3D geometry/materials and backend data were not changed. Internal statistic tiles remain subordinate to card headings, rather than receiving oversized page typography.
+- Updated `.21st/design.json` to record the shared mobile contract. This supersedes the earlier mobile card geometry in this log.
+
+### Browser QA and fixes
+
+- Used actual application components with synthetic data in the isolated fixture `/private/tmp/orm-mobile-qa-4EjNBg` on port 4174. External/API writes were blocked; no production data was modified.
+- Inspected dark/light overview, detail, 3D selected-room panel and statistics at 390 × 844; also inspected flow, timeline, Settings carousel/grid and personnel.
+- Computed-style checks confirmed 17px/600 card headings and matching 17px outer-edge-to-text offsets (16px padding plus 1px border). Shared page headings aligned at x=20, y=74 on the tested mobile viewport.
+- Opened all seven statistics sections. Found and fixed the mobile dynamic-import adapter's handling of direct React.memo/forwardRef exports; it now provides the module-shaped result required by React.lazy. Added actual lazy-render regression tests.
+- At 320 × 640, detail and statistics had no horizontal page overflow. Detail content remained internally scrollable (710px content / 330px visible); estimate controls measured 51 × 44px. On shorter screens clinical action rows remain available by scrolling, while the primary action stays fixed.
+- Synthetic interaction checks: +15 minutes updated the estimate; Call invoked the handler and enabled Arrival. Existing clinical behavior was retained.
+- At 1440 × 900, mobile headers/styles were inactive and desktop statistics retained their prior geometry. Viewport override reset after QA.
+- Reviewed preview: `/Users/jaroslavjedlicka/.codex/visualizations/2026/08/20/01a020bb-6261-7152-8eaa-49ba81b1cac8/mobile-jednotne-karty.png`. The hospital/data and QA badge in these images are fixture-only.
+
+### Verification
+
+- Next production build, TypeScript check and final mobile Vite production build passed. Vite retains the existing large-chunk advisory.
+- Added 23 passing regression tests covering shared mobile card styles, statistics, Settings and the dynamic adapter.
+- Full suite: 223/224 passed. The sole failure is the unchanged date-dependent statistics fixture documented above (`notification impacts keep zero distinct from unavailable and label overlapping sums`); fixed 14 September data falls outside the current rolling time window.
+- Physical iPhone/Safari and real backend integration were not tested. No deployment or push was performed.
+
+final result: scoped mobile visual unification verified; unrelated date-dependent statistics test remains failing
+
+---
+
+## 2026-09-17 — Two-column iOS-style room tiles
+
+- User-selected direction: replace full-width mobile operating-room rows with two equal-width cards side by side. Reused shared mobile typography, blue/light surfaces, 20px radius and 16px insets under the 21st UI-build workflow; no dependency or external component was added. This is a React/Capacitor visual adjustment, not a SwiftUI conversion.
+- `MobileRoomOverview` now places the full room name and live phase first, two labelled times beneath, and separate Detail/context-menu controls in a footer. Czech hyphenation and balanced wrapping retain complete long names. Semantic phase colors, room actions, search/filter behavior and desktop layout are unchanged.
+- Browser verified the real component with synthetic fixture data at 390 × 844 (light/dark) and 320 × 640 (dark). Equal card widths were 169px and 135px respectively; no horizontal page/card overflow. Footer touch targets measured at least 44 × 44px. Card heights align within each grid row.
+- Verified prepared-room filtering, empty search result and reset, independent context menu opening/dismissal, and opening the correct room detail. No clinical action was sent to the real backend.
+- At 1440 × 900 the mobile overview was hidden and the existing desktop room grid remained visible without horizontal overflow. Temporary viewport override reset.
+- 27 focused regression tests passed, including six new grid/render-tree tests. TypeScript and mobile production build passed; only the existing Vite chunk-size advisory remains. No production deployment or push. Physical iOS hardware was not part of this browser check.
+- Visual evidence outside Git: `/Users/jaroslavjedlicka/.codex/visualizations/2026/08/20/01a020bb-6261-7152-8eaa-49ba81b1cac8/room-grid-dark.png` and `room-grid-light.png` (synthetic data).
+
+final result: passed for the scoped two-column mobile room grid
+
+---
+
+## 2026-09-17 — Viewport-fitted mobile Rozpis timeline
+
+- Replaced the mobile list/axis switch and long room cards with one iOS-inspired timeline. Reused the shared 20px card surface, 17px heading, 20px page gutters, navy/light palette and segmented controls through the 21st UI-build workflow. No new dependency was added.
+- Time navigation offers 2 hours, 4 hours, an operational day (07:00 to next-day 07:00), previous/next windows and Now. Available vertical space determines the number of room rows; the remaining rooms are paged with 44px controls, with no page or chart scrolling. Smaller screens hide supplementary summary/header content before reducing readability.
+- The timeline distinguishes recorded history/current phases, dashed future estimates, striped pauses and the current-time marker. Missing data explicitly says no record; ready rooms do not invent current activity. Phase lookup uses the enabled workflow array position. Accessible row names retain current state and specialty; descriptions include actual interval times. Room clicks retain the existing detail callback.
+- Parent App already reserves 80px for the fixed tab bar; the timeline adds only its small inner/safe-area inset. Desktop, permissions, clinical handlers and database access remain unchanged.
+- Browser QA used actual components with synthetic data in `/private/tmp/orm-mobile-qa-4EjNBg`, with real API writes blocked. Verified 390 × 844 light/dark (4 rooms/page), 320 × 568 (2 rooms/page) and 667 × 375 landscape (1 room/page). Document dimensions exactly matched each viewport with no overflow; paging stayed above the bottom navigation. Row heights were at least 80px in these views.
+- Verified next/previous room groups, next time window, full operational day, Now reset, absence of a misleading current-time line outside the displayed window, and opening the correct room. Browser console had no errors/warnings. Temporary viewport override was reset.
+- Reviewed screenshots outside Git: `/Users/jaroslavjedlicka/.codex/visualizations/2026/08/20/01a020bb-6261-7152-8eaa-49ba81b1cac8/mobile-timeline-dark.png` and `mobile-timeline-light.png`.
+- Next production build including TypeScript and mobile Vite production build passed; Vite retains the existing large-chunk advisory. All 34 focused regression tests passed. Data/layout coverage includes history clipping, completed cycles, pauses, estimates, missing timestamps, midnight/DST boundaries, measured pagination, resizing, empty states and screen-reader descriptions. Emergency/lock overlays retain measured workflow history without fabricating a completion time or a future forecast.
+- Physical iPhone/Safari and live backend integration were not tested. Existing app breakpoint still switches to desktop at widths of 768px and above, including wide landscape phones. No deployment or push.
+
+final result: passed for the scoped mobile timeline
+
+---
+
+## 2026-09-18 — Mobile title hierarchy and vivid current phase
+
+- Removed introductory mobile header kickers (such as Operační blok / Živý operační program). The actual screen title now occupies the top-left toolbar beside existing actions; optional facility/date metadata remains below. Shared administration kicker rows are hidden only below 768px. Removed the obsolete floating short-screen Rozpis heading rule.
+- Reused the existing shared mobile components/tokens through the 21st UI-build workflow. The room detail's active phase is a deliberate semantic exception to neutral cards: configured status-color gradient, outline/glow, colored elapsed-time accent and workflow markers. The top row contains Aktuální fáze and the actual workflow position/count. Dark mode has a deeper navy center; light mode uses a tinted surface and dark text. Ready stays neutral; pause/emergency/lock preserve existing priority colors.
+- Actual clinical handlers, confirmations, permissions, +/− timing, personnel actions and desktop presentation were preserved. No hardcoded surgery pink or six-step sequence; the screenshot is a style reference, not data.
+- Browser QA used actual components with synthetic data in `/private/tmp/orm-mobile-qa-4EjNBg` on port 4174, with external/API writes blocked. Inspected overview, flow, Settings, Rozpis, statistics and room detail at 320 × 640 / 390 × 844. Settings title and all three actions fit at 320px. No horizontal document overflow; Rozpis document remains exactly 320 × 640. Ready and paused states were inspected, and the live pause color was cyan with phase advancement disabled.
+- Visually inspected the active phase in light and dark themes. At 1440 × 900 the mobile detail is hidden, the desktop kicker retains display:flex, and the document has no horizontal overflow. Browser console reported no warnings/errors. Temporary viewport override reset.
+- 95 focused mobile regression tests pass; TypeScript, Next production build and mobile Vite production build pass. Vite retains the existing large-chunk advisory. Independent source review found no blocking regressions. `git diff --check` passes.
+- Visual evidence outside Git: `/Users/jaroslavjedlicka/.codex/visualizations/2026/08/20/01a020bb-6261-7152-8eaa-49ba81b1cac8/mobile-current-phase-dark.png` and `mobile-current-phase-light.png` (synthetic QA data). Physical iPhone/Safari and live backend integration were not tested. No deployment or push.
+
+final result: passed for scoped mobile headers and current-phase styling
+
+## 2026-09-18 — Responsive mobile room detail
+
+- Reused existing 21st design contracts and components; compacted header, timing cards, personnel and four actions without changing clinical handlers. Estimate buttons and primary controls retain 44px targets. Landscape places the phase beside timing/personnel and keeps the next-phase button in normal layout flow.
+- Actual components verified with isolated synthetic data: 320 × 568, 348 × 614, 390 × 712, 430 × 932 and 568 × 320. Additional long-title/eight-phase/paused/hygiene/emergency/locked stress checks at heights 614, 712, 780, 844, 900 and 932 showed no body overflow. Light and dark screenshots reviewed; no browser errors. Viewport override reset.
+- 98 mobile regression tests, TypeScript, mobile production build and diff whitespace checks passed. Existing Vite chunk-size advisory remains. No backend data changed, deployment or push performed. Physical iOS Safari was not tested. Widths from 768px retain existing desktop behavior. Exceptional content/accessibility enlargement retains a scrolling fallback rather than clipping controls.
+
+final result: passed for scoped mobile detail viewport fit

@@ -1,99 +1,75 @@
-import React, { memo, useMemo, useCallback } from 'react';
+'use client';
+
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronRight, Home, LogOut, MoreHorizontal, X } from 'lucide-react';
 import { SIDEBAR_ITEMS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut } from 'lucide-react';
+import { Drawer } from './ui/Drawer';
+import './mobile/mobile-navigation.css';
 
 interface MobileNavProps {
   currentView: string;
   onNavigate: (viewId: string) => void;
 }
 
-/* Plovoucí skleněná navigace ve stylu moderních mobilních aplikací —
-   zaoblená teal „pill" lišta odsazená od okrajů, aktivní položka má
-   gradientní teal podsvícení s jemnou září. */
-/* Krátké popisky pro úzkou mobilní lištu — plné názvy se nevejdou. */
-const MOBILE_LABELS: Record<string, string> = {
-  dashboard: 'Přehled',
-  flow: 'Tok',
-  timeline: 'Timeline',
-  statistics: 'Statistiky',
-  staff: 'Personál',
-  'staff-overview': 'Personál',
-  settings: 'Nastavení',
-};
+const PRIMARY_IDS = new Set(['dashboard', 'flow', 'timeline', 'statistics']);
+const MOBILE_LABELS: Record<string, string> = { dashboard: 'Přehled', flow: 'Tok', timeline: 'Rozpis', statistics: 'Statistiky' };
 
 const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) => {
   const { isSuperAdmin, hasModuleAccess, logout } = useAuth();
-
-  const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
-    if (isSuperAdmin) return true;
-    return hasModuleAccess(item.id);
-  }), [isSuperAdmin, hasModuleAccess]);
-
-  const handleLogout = useCallback(async () => {
-    try {
-      await logout();
-    } catch (err) {
-      console.error('[v0] Mobile logout failed', err);
-    }
-  }, [logout]);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
+  const moreRef = useRef<HTMLButtonElement>(null);
+  const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => isSuperAdmin || hasModuleAccess(item.id)), [isSuperAdmin, hasModuleAccess]);
+  const primaryItems = enabledItems.filter(item => PRIMARY_IDS.has(item.id));
+  const moreItems = enabledItems.filter(item => !PRIMARY_IDS.has(item.id));
+  const moreActive = moreItems.some(item => item.id === currentView);
+  const closeMore = useCallback(() => { setMoreOpen(false); moreRef.current?.focus(); }, []);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onNativeBack = (event: Event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeMore();
+    };
+    window.addEventListener('nativeBackButton', onNativeBack, { capture: true });
+    return () => window.removeEventListener('nativeBackButton', onNativeBack, { capture: true });
+  }, [moreOpen, closeMore]);
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] pointer-events-none">
-      {/* Plná tmavě modrá lišta dle prototypu — přes celou šířku, ke spodní hraně */}
-      <nav
-        className="pointer-events-auto flex items-start justify-around gap-0.5 px-2 pt-2.5 relative"
-        style={{
-          background: 'var(--m-nav-bg)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
-          boxShadow: '0 -12px 34px rgba(0,0,0,0.28), inset 0 1px 0 var(--m-card-highlight)',
-          borderTop: '1px solid var(--m-border)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        }}
-        aria-label="Hlavní navigace"
-      >
-        {enabledItems.map((item) => {
-          const isActive = currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              aria-current={isActive ? 'page' : undefined}
-              aria-label={item.label}
-              className="relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-0 py-1 transition-all duration-300 focus:outline-none"
-            >
-              <item.icon
-                className="w-[21px] h-[21px] transition-colors duration-300"
-                strokeWidth={isActive ? 2.5 : 2}
-                style={{ color: isActive ? 'var(--m-nav-active)' : 'var(--m-nav-fg)' }}
-                aria-hidden
-              />
-              <span
-                className="text-[8px] font-bold uppercase tracking-wider truncate max-w-[64px] transition-colors duration-300"
-                style={{ color: isActive ? 'var(--m-nav-active)' : 'var(--m-nav-fg)' }}
-              >
-                {MOBILE_LABELS[item.id] || item.label}
-              </span>
-              {/* Aktivní indikátor — krátká linka pod položkou */}
-              {isActive && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-[3px] rounded-full" style={{ background: 'var(--m-nav-active)' }} />
-              )}
-            </button>
-          );
+    <>
+      <nav className="mobile-reference-nav md:hidden" aria-label="Hlavní navigace">
+        {primaryItems.map(item => {
+          const Icon = item.id === 'dashboard' ? Home : item.icon;
+          const active = currentView === item.id;
+          return <button key={item.id} type="button" onClick={() => onNavigate(item.id)} aria-label={item.label} aria-current={active ? 'page' : undefined}>
+            <span className="mobile-nav-icon"><Icon size={22} strokeWidth={active ? 1.9 : 1.65} aria-hidden /></span>
+            <span>{MOBILE_LABELS[item.id] || item.label}</span>
+          </button>;
         })}
-
-        {/* Odhlášení */}
-        <button
-          onClick={handleLogout}
-          aria-label="Odhlásit se"
-          className="relative flex flex-col items-center justify-center gap-1.5 flex-1 min-w-0 py-1 transition-all duration-200"
-        >
-          <LogOut className="w-[21px] h-[21px]" strokeWidth={2} style={{ color: 'var(--m-nav-fg)' }} aria-hidden />
-          <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: 'var(--m-nav-fg)' }}>Odhlásit</span>
+        <button ref={moreRef} type="button" onClick={() => setMoreOpen(true)} aria-label="Více možností" aria-expanded={moreOpen} aria-haspopup="dialog" data-active={moreActive || undefined}>
+          <span className="mobile-nav-icon"><MoreHorizontal size={22} strokeWidth={1.8} aria-hidden /></span><span>Více</span>
         </button>
       </nav>
-    </div>
+      <Drawer open={moreOpen} onOpenChange={open => open ? setMoreOpen(true) : closeMore()} title="Další možnosti" className="mobile-nav-more-sheet">
+        <button type="button" className="mobile-more-close" onClick={closeMore} aria-label="Zavřít nabídku"><X size={18} strokeWidth={2} aria-hidden /></button>
+        <div className="mobile-more-links">
+          {moreItems.length > 0 && <div className="mobile-more-group" role="group" aria-label="Další moduly">
+            {moreItems.map(item => <button key={item.id} type="button" onClick={() => { closeMore(); onNavigate(item.id); }} aria-current={currentView === item.id ? 'page' : undefined}>
+              <item.icon className="mobile-more-icon" size={21} strokeWidth={1.7} aria-hidden /><span>{item.label}</span><ChevronRight className="mobile-more-chevron" size={16} strokeWidth={1.8} aria-hidden />
+            </button>)}
+          </div>}
+          <button className="mobile-more-logout" type="button" disabled={loggingOut} onClick={async () => {
+            setLoggingOut(true); setLogoutError('');
+            try { await logout(); closeMore(); }
+            catch { setLogoutError('Odhlášení se nezdařilo. Zkuste to znovu.'); }
+            finally { setLoggingOut(false); }
+          }}><LogOut className="mobile-more-icon" size={21} strokeWidth={1.7} aria-hidden /><span>{loggingOut ? 'Odhlašuji…' : 'Odhlásit se'}</span></button>
+          {logoutError && <p role="alert">{logoutError}</p>}
+        </div>
+      </Drawer>
+    </>
   );
 });
 

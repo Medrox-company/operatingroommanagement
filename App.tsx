@@ -28,7 +28,7 @@ import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { AlertTriangle } from 'lucide-react';
-import { updateOperatingRoom, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
+import { updateOperatingRoom, advanceRoomStepIfUnchanged, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
 import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
 import { HospitalProvider, useHospital } from './contexts/HospitalContext';
 import { RealtimeProvider } from './contexts/RealtimeContext';
@@ -192,7 +192,13 @@ const AppContent: React.FC = () => {
   const roomsRef = useRef<OperatingRoom[]>(rooms);
   roomsRef.current = rooms;
 
-  const updateRoomStep = useCallback((roomId: string, newStepIndex: number, stepColor?: string) => {
+  const updateRoomStep = useCallback((
+    roomId: string,
+    newStepIndex: number,
+    stepColor?: string,
+    /** Automatický posun: zapiš jen když sál pořád stojí na této fázi. */
+    onlyIfStepIndex?: number,
+  ) => {
     markRoomLocallyUpdated(roomId);
     const now = new Date().toISOString();
     const currentRoom = roomsRef.current.find((room) => room.id === roomId);
@@ -264,16 +270,25 @@ const AppContent: React.FC = () => {
 
     // Zápis proběhne vždy. Případný výpadek obstará retry a následné
     // cílené načtení autoritativního stavu pouze tohoto sálu.
+    if (typeof onlyIfStepIndex === 'number') {
+      void advanceRoomStepIfUnchanged(roomId, onlyIfStepIndex, dbPayload);
+      return;
+    }
     void updateOperatingRoom(roomId, dbPayload);
   }, [markRoomLocallyUpdated, setRooms]);
 
   // ── Globální auto-ukončení úklidu (běží i bez otevřeného detailu sálu) ──
   // Pokud status „úklid" trvá > 30 min (+10s po upozornění), přepne sál na další
   // status. Logika je optimistická → na dalším ticku už sál není v úklidu.
+  //
+  // Posouvá se výhradně úklid, který začal za běhu aplikace. Sál, který byl
+  // v úklidu už při otevření (typicky zůstal přes noc), se nechá být —
+  // personálu by se jinak status přepnul sám hned po spuštění.
   useEffect(() => {
     const statuses = workflowStatuses || [];
     if (statuses.length === 0) return;
     const CLEAN_MS = 30 * 60 * 1000 + 10 * 1000; // 30 min + 10 s
+    const sessionStartedMs = Date.now();
     const recentlyAdvanced = new Map<string, number>();
 
     const tick = () => {
@@ -293,13 +308,16 @@ const AppContent: React.FC = () => {
           : (room.phaseStartedAt ? new Date(room.phaseStartedAt).getTime() : NaN);
         if (isNaN(startMs)) return;
 
+        // Úklid, který běžel už před spuštěním aplikace, automatika neposouvá.
+        if (startMs < sessionStartedMs) return;
+
         if (now - startMs >= CLEAN_MS) {
           const last = recentlyAdvanced.get(room.id) || 0;
           if (now - last < 30000) return; // anti-duplicita
           recentlyAdvanced.set(room.id, now);
           const nextIndex = (idx + 1) % statuses.length;
           const nextColor = statuses[nextIndex]?.accent_color || statuses[nextIndex]?.color || '#6B7280';
-          updateRoomStep(room.id, nextIndex, nextColor);
+          updateRoomStep(room.id, nextIndex, nextColor, idx);
         }
       });
     };
@@ -371,22 +389,25 @@ const AppContent: React.FC = () => {
   }, [markRoomLocallyUpdated, rooms, setRooms]);
 
   const handleUpdateWeeklySchedule = useCallback(async (roomId: string, schedule: WeeklySchedule) => {
-    markRoomLocallyUpdated(roomId);
-    setRooms(prev => prev.map(room =>
-      room.id === roomId
-        ? { ...room, weeklySchedule: schedule }
-        : room
-    ));
     const response = await fetch('/api/admin/operating-rooms', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
       body: JSON.stringify({ id: roomId, weekly_schedule: schedule }),
     });
-    if (!response.ok) {
-      await refreshRooms();
+    const result = await response.json().catch(() => null);
+    if (!response.ok || result?.success !== true) {
+      throw new Error(typeof result?.error === 'string'
+        ? result.error
+        : 'Provozní dobu se nepodařilo uložit. Zkuste to prosím znovu.');
     }
-  }, [markRoomLocallyUpdated, refreshRooms, setRooms]);
+    // Publish only a confirmed write, and merge just the schedule so a
+    // concurrent status or staff change is never replaced by the form draft.
+    markRoomLocallyUpdated(roomId);
+    setRooms(prev => prev.map(room =>
+      room.id === roomId ? { ...room, weeklySchedule: schedule } : room
+    ));
+  }, [markRoomLocallyUpdated, setRooms]);
 
   const handleStaffChange = useCallback(async (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => {
     markRoomLocallyUpdated(roomId);
@@ -543,7 +564,7 @@ const AppContent: React.FC = () => {
 
   return (
     <ErrorBoundary>
-    <div className="flex h-screen w-full font-sans overflow-hidden bg-black text-white">
+    <div className="flex h-dvh md:h-screen w-full font-sans overflow-hidden bg-black text-white">
       {!hospitalLoading && activeHospitalId && <DeviceRegistration key={activeHospitalId} />}
       {/* Statická CSS pozadí — bez fotografií, vzdálených zdrojů a runtime konfigurace. */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
@@ -573,7 +594,7 @@ const AppContent: React.FC = () => {
         {/* Horní lišta se nezobrazuje – všechny moduly mají plnou stránku jako dashboard */}
         {/* <TopBar /> */}
 
-        <main className="flex-1 overflow-hidden relative pb-20 md:pb-0">
+        <main className={`flex-1 overflow-hidden relative ${currentView === 'dashboard' ? 'pb-0' : 'pb-20'} md:pb-0`}>
           {/* Granulární error-boundary kolem obsahu modulů — pád jednoho modulu
               neshodí celou aplikaci (sidebar/navigace zůstanou). Klíč podle
               currentView zajistí reset po přepnutí na jiný modul. */}
@@ -614,6 +635,7 @@ const AppContent: React.FC = () => {
                 onSelectRoom={setSelectedRoomId}
                 onEmergency={toggleEmergency}
                 onLock={toggleLock}
+                onNavigate={handleNavigate}
               />
             )}
 
@@ -638,7 +660,7 @@ const AppContent: React.FC = () => {
             {/* Statistics */}
             {currentView === 'statistics' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
+                <div className="mobile-module-container w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
                   <StatisticsModule rooms={rooms} />
                 </div>
               </div>
@@ -647,7 +669,7 @@ const AppContent: React.FC = () => {
   {/* Staff */}
   {currentView === 'staff' && (
   <div className="w-full h-full overflow-y-auto hide-scrollbar">
-  <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
+  <div className="mobile-module-container w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
   <StaffOverviewModule rooms={rooms} />
   </div>
   </div>

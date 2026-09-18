@@ -1,0 +1,199 @@
+/* Keep the existing tab-bar footprint: the room-detail footer reserves 70px. */
+@media (max-width: 767px) {
+  .mobile-reference-nav {
+    position: fixed;
+    z-index: 100;
+    inset: auto 0 0;
+    display: flex;
+    box-sizing: border-box;
+    height: calc(70px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(70px + env(safe-area-inset-bottom, 0px));
+    max-height: calc(70px + env(safe-area-inset-bottom, 0px));
+    align-items: flex-start;
+    justify-content: space-around;
+    gap: 2px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--m-separator, var(--m-border));
+    background: var(--m-nav-bg);
+    backdrop-filter: saturate(140%) blur(24px);
+    -webkit-backdrop-filter: saturate(140%) blur(24px);
+    box-shadow: 0 -1px 12px color-mix(in srgb, var(--m-text) 3%, transparent);
+    font-family: var(--m-font-sans, var(--font-sans));
+  }
+
+  .mobile-reference-nav > button {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 44px;
+    min-height: 56px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 1px 0;
+    border-radius: 15px;
+    color: var(--m-nav-fg);
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: 0.005em;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: color 150ms ease;
+  }
+
+  .mobile-nav-icon {
+    display: grid;
+    width: 56px;
+    height: 32px;
+    flex: 0 0 32px;
+    place-items: center;
+    border-radius: 999px;
+    transition: background-color 150ms ease;
+  }
+
+  .mobile-reference-nav > button[aria-current="page"],
+  .mobile-reference-nav > button[data-active="true"],
+  .mobile-reference-nav > button[aria-expanded="true"] {
+    color: var(--m-nav-active);
+    font-weight: 650;
+  }
+
+  .mobile-reference-nav > button[aria-current="page"] .mobile-nav-icon,
+  .mobile-reference-nav > button[data-active="true"] .mobile-nav-icon,
+  .mobile-reference-nav > button[aria-expanded="true"] .mobile-nav-icon {
+    background: color-mix(in srgb, var(--m-nav-active) 10%, transparent);
+  }
+
+  .mobile-reference-nav > button:active .mobile-nav-icon {
+    background: color-mix(in srgb, var(--m-nav-active) 15%, transparent);
+  }
+
+  .mobile-reference-nav button:focus-visible,
+  .mobile-nav-more-sheet button:focus-visible {
+    outline: 2px solid var(--m-accent);
+    outline-offset: -2px;
+  }
+
+  .mobile-nav-more-sheet {
+    --mobile-more-danger: var(--m-danger, var(--color-danger, #EF4444));
+    z-index: 210 !important;
+    border-color: var(--m-border) !important;
+    border-radius: 28px 28px 0 0;
+    background: var(--m-card-solid) !important;
+    color: var(--m-text);
+    box-shadow: var(--m-card-shadow-strong) !important;
+    font-family: var(--m-font-sans, var(--font-sans));
+  }
+
+  .mobile-nav-more-sheet > div:first-child {
+    width: 36px;
+    height: 5px;
+    margin-top: 9px;
+    background: color-mix(in srgb, var(--m-muted) 30%, transparent);
+  }
+
+  .mobile-nav-more-sheet h2 {
+    padding: 12px 70px 19px 20px;
+    color: var(--m-text-strong);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+  }
+
+  .mobile-more-close {
+    position: absolute;
+    top: 19px;
+    right: 13px;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--m-muted);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .mobile-more-close::before {
+    position: absolute;
+    inset: 6px;
+    border-radius: inherit;
+    background: var(--m-card-2);
+    content: '';
+  }
+
+  .mobile-more-close svg { position: relative; }
+  .mobile-more-close:active { color: var(--m-text-strong); }
+
+  .mobile-more-links { display: grid; gap: 18px; margin: 0 0 12px; }
+
+  .mobile-more-group {
+    overflow: hidden;
+    border: 1px solid var(--m-border);
+    border-radius: 17px;
+    background: var(--m-card-2);
+  }
+
+  .mobile-more-group > button,
+  .mobile-more-logout {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 56px;
+    align-items: center;
+    gap: 13px;
+    padding: 13px 16px;
+    color: var(--m-text);
+    text-align: left;
+    font-size: 16px;
+    font-weight: 450;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background-color 150ms ease;
+  }
+
+  .mobile-more-group > button + button::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 50px;
+    height: 1px;
+    background: var(--m-separator, var(--m-border));
+    content: '';
+  }
+
+  .mobile-more-group > button > span,
+  .mobile-more-logout > span { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+  .mobile-more-icon { flex: 0 0 auto; color: var(--m-accent); }
+  .mobile-more-chevron { flex: 0 0 auto; color: var(--m-muted); }
+  .mobile-more-group > button[aria-current="page"] { background: var(--m-accent-soft); font-weight: 600; }
+  .mobile-more-group > button:active { background: color-mix(in srgb, var(--m-accent) 10%, var(--m-card-2)); }
+
+  .mobile-more-logout {
+    border: 1px solid var(--m-border);
+    border-radius: 17px;
+    background: var(--m-card-2);
+    color: var(--mobile-more-danger);
+  }
+
+  .mobile-more-logout .mobile-more-icon { color: inherit; }
+  .mobile-more-logout:active { background: color-mix(in srgb, var(--mobile-more-danger) 8%, var(--m-card-2)); }
+  .mobile-more-links > p { margin: 0; color: var(--mobile-more-danger); font-size: 13px; line-height: 1.45; }
+  .mobile-more-logout:disabled { opacity: 0.6; cursor: wait; }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .mobile-reference-nav button,
+  .mobile-nav-icon,
+  .mobile-nav-more-sheet,
+  .mobile-more-group > button,
+  .mobile-more-logout {
+    transition: none !important;
+    animation: none !important;
+  }
+}

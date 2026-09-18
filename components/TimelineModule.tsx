@@ -237,8 +237,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   const [selectedDetailTime, setSelectedDetailTime] = useState<Date | null>(null);
   const [selectedPhaseEndTime, setSelectedPhaseEndTime] = useState<Date | null>(null);
   const [showLegend, setShowLegend] = useState(false);
-  // Mobilní přepínač: list = karty se statusem a progressem; axis = horizontální 24h osa
-  const [mobileView, setMobileView] = useState<'list' | 'axis'>('list');
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   // Hustota řádků: 'auto' = vejít vše na obrazovku; 'compact' = víc sálů (pevná nízká
   // výška + scroll); 'comfort' = víc detailu (pevná vyšší výška + scroll).
@@ -1458,14 +1456,10 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       <MobileTimelineView
         rooms={sortedRooms}
         currentSpecialties={currentSpecialties}
-        statusByOrderIndex={statusByOrderIndex}
         activeStatuses={activeStatuses}
         currentTime={currentTime}
         stats={stats}
-        mobileView={mobileView}
-        onViewChange={setMobileView}
         onSelectRoom={openLiveRoom}
-        getRemainingTime={getRemainingTime}
       />
 
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
@@ -2427,7 +2421,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                         <div className="min-w-0 flex-1 self-center">
-                          <p className="whitespace-normal break-words text-[14px] font-semibold leading-[17px] tracking-[-0.01em]" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
+                          <p className="room-name-nobreak whitespace-normal text-[14px] font-semibold leading-[17px] tracking-[-0.01em]" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
                           {room.department && (
                             <p className="mt-1 truncate text-[7.5px] font-medium uppercase leading-[9px] tracking-[0.18em] text-white/26">
                               {room.department}
@@ -2581,7 +2575,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                           {/* Název se NIKDY nezkracuje. Zalomí se přednostně mezi slovy;
                               break-words je až poslední záchrana pro jediné dlouhé
                               slovo, aby přeteklý text nezmizel za okrajem sloupce. */}
-                          <p className="whitespace-normal break-words text-[14px] font-semibold leading-[17px] tracking-[-0.01em] text-white">{room.name}</p>
+                          <p className="room-name-nobreak whitespace-normal text-[14px] font-semibold leading-[17px] tracking-[-0.01em] text-white">{room.name}</p>
                           {room.department && (
                             <p className="mt-1 truncate text-[7.5px] font-medium uppercase leading-[9px] tracking-[0.18em] text-white/26">
                               {room.department}

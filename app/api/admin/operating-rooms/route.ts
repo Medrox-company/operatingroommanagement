@@ -3,23 +3,42 @@ import { assertSameOrigin } from '@/lib/auth/csrf';
 import { requireHospitalAccess } from '@/lib/hospital/access';
 import { requireSubmoduleAccess } from '@/lib/hospital/submodule-access';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
+import { parseWeeklySchedule } from '@/lib/weekly-schedule';
 
 export const runtime = 'nodejs';
 
 const ROOM_ID = /^[a-zA-Z0-9_-]{1,150}$/;
-const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
-function isWeeklySchedule(value: unknown): boolean {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const schedule = value as Record<string, unknown>;
-  return DAY_KEYS.every((day) => {
-    const entry = schedule[day];
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false;
-    const typed = entry as Record<string, unknown>;
-    return typeof typed.enabled === 'boolean'
-      && typeof typed.start === 'string'
-      && typeof typed.end === 'string';
-  });
+async function readBody(request: NextRequest): Promise<Record<string, unknown> | null> {
+  const body: unknown = await request.json().catch(() => null);
+  return body !== null && typeof body === 'object' && !Array.isArray(body)
+    ? body as Record<string, unknown>
+    : null;
+}
+
+async function saveWeeklySchedule(id: string, value: unknown, hospitalId: string) {
+  if (!ROOM_ID.test(id)) {
+    return NextResponse.json({ error: 'Neplatný operační sál.' }, { status: 400 });
+  }
+  const parsed = parseWeeklySchedule(value);
+  if (parsed.error !== null) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from('operating_rooms')
+      .update({ weekly_schedule: parsed.schedule, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('hospital_id', hospitalId)
+      .select('id, weekly_schedule')
+      .maybeSingle();
+    if (error) return NextResponse.json({ error: 'Rozpis sálu se nepodařilo uložit.' }, { status: 500 });
+    if (!data) return NextResponse.json({ error: 'Operační sál nebyl nalezen.' }, { status: 404 });
+    return NextResponse.json({ success: true, room: data });
+  } catch {
+    return NextResponse.json({ error: 'Rozpis sálu se nepodařilo uložit. Zkuste to znovu.' }, { status: 500 });
+  }
 }
 
 async function authorize(request: NextRequest) {
@@ -36,22 +55,13 @@ export async function POST(request: NextRequest) {
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
-  const body = await request.json().catch(() => ({}));
+  const body = await readBody(request);
+  if (!body) return NextResponse.json({ error: 'Neplatné údaje operačního sálu.' }, { status: 400 });
   const id = typeof body.id === 'string' ? body.id : '';
-  if (isWeeklySchedule(body.weekly_schedule)) {
-    if (!ROOM_ID.test(id)) {
-      return NextResponse.json({ error: 'Neplatný operační sál.' }, { status: 400 });
-    }
-    const { data, error } = await getSupabaseAdmin()
-      .from('operating_rooms')
-      .update({ weekly_schedule: body.weekly_schedule, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .eq('hospital_id', access.hospitalId)
-      .select('id')
-      .maybeSingle();
-    if (error) return NextResponse.json({ error: 'Rozpis sálu se nepodařilo uložit.' }, { status: 500 });
-    if (!data) return NextResponse.json({ error: 'Operační sál nebyl nalezen.' }, { status: 404 });
-    return NextResponse.json({ success: true });
+  // Retain the existing POST schedule endpoint for older clients, with the
+  // same validation and tenant restriction as the editor's PATCH request.
+  if (Object.prototype.hasOwnProperty.call(body, 'weekly_schedule')) {
+    return saveWeeklySchedule(id, body.weekly_schedule, access.hospitalId);
   }
   const name = typeof body.name === 'string' ? body.name.trim().replace(/\s+/g, ' ') : '';
   const department = typeof body.department === 'string' ? body.department.trim().slice(0, 120) : '';
@@ -89,8 +99,12 @@ export async function PATCH(request: NextRequest) {
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
-  const body = await request.json().catch(() => ({}));
+  const body = await readBody(request);
+  if (!body) return NextResponse.json({ error: 'Neplatné údaje operačního sálu.' }, { status: 400 });
   const id = typeof body.id === 'string' ? body.id : '';
+  if (Object.prototype.hasOwnProperty.call(body, 'weekly_schedule')) {
+    return saveWeeklySchedule(id, body.weekly_schedule, access.hospitalId);
+  }
   const name = typeof body.name === 'string' ? body.name.trim().replace(/\s+/g, ' ') : '';
   const department = typeof body.department === 'string' ? body.department.trim().slice(0, 120) : '';
   if (!ROOM_ID.test(id) || name.length < 2 || name.length > 160) {

@@ -173,17 +173,17 @@ export const Card: React.FC<CardProps> = memo(({
   const HeadingTag = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
   return (
     <div
-      className={`rounded-xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
+      className={`stats-shared-card ${noPadding ? 'stats-shared-card--flush' : ''} rounded-xl ${noPadding ? '' : 'p-4'} ${className ?? ''}`}
       style={{
         background: elevated ? C.surface2 : C.surface,
         border: `1px solid ${C.border}`,
         minWidth: 0,
       }}>
       {(title || action) && (
-        <div className={`flex items-start justify-between gap-3 ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
-          <div className="flex items-center gap-2 min-w-0">
+        <div className={`stats-card-header flex items-start justify-between gap-3 ${noPadding ? 'p-4 pb-3' : 'mb-3'}`}>
+          <div className="stats-card-heading-group flex items-center gap-2 min-w-0">
             {Icon && (
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              <div className="stats-card-heading-icon w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                 style={{ 
                   background: C.surface2,
                   border: `1px solid ${C.border}`,
@@ -191,9 +191,9 @@ export const Card: React.FC<CardProps> = memo(({
                 <Icon size={14} color={accent ?? C.accent} strokeWidth={2.2} />
               </div>
             )}
-            <div className="min-w-0">
+            <div className="stats-card-heading-copy min-w-0">
               {title && (
-                <HeadingTag className="text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>
+                <HeadingTag className="stats-card-title text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>
                   {title}
                 </HeadingTag>
               )}
@@ -222,10 +222,10 @@ export const DistributionHeader: React.FC<{
   action?: React.ReactNode;
   accent?: string;
 }> = ({ eyebrow, title, subtitle, badge, action }) => (
-  <div className="flex flex-wrap items-start justify-between gap-3">
-    <div className="min-w-0">
+  <div className="stats-card-header flex flex-wrap items-start justify-between gap-3">
+    <div className="stats-card-heading-copy min-w-0">
       <p className="text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ color: C.muted }}>{eyebrow}</p>
-      <h2 className="mt-1.5 text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>{title}</h2>
+      <h2 className="stats-card-title mt-1.5 text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>{title}</h2>
       <p className="mt-1 text-[11px] leading-relaxed" style={{ color: C.muted }}>{subtitle}</p>
     </div>
     {action ?? (badge ? (

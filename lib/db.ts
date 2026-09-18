@@ -526,6 +526,54 @@ export function updateOperatingRoom(
 }
 
 /**
+ * Posun fáze, který se zapíše jen tehdy, když sál mezitím nikdo nepřepnul.
+ *
+ * Automatické ukončení úklidu běží v každém otevřeném klientovi. Bez téhle
+ * podmínky by stejný sál posunulo několik zařízení za sebou a status by
+ * přeskočil o víc fází, než měl. Podmínka `current_step_index = fromIndex`
+ * zajistí, že uspěje jen první zápis; ostatní se tiše zahodí a klient si
+ * načte autoritativní stav.
+ */
+export async function advanceRoomStepIfUnchanged(
+  id: string,
+  fromIndex: number,
+  updates: OperatingRoomUpdate,
+): Promise<boolean> {
+  const hospitalId = getDatabaseHospitalId();
+  if (!isSupabaseConfigured || !supabase) {
+    reportOperatingRoomWriteFailure(id, hospitalId, Object.keys(updates));
+    return false;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('operating_rooms')
+      .update(updates as Record<string, unknown>)
+      .eq('id', id)
+      .eq('hospital_id', hospitalId)
+      .eq('current_step_index', fromIndex)
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      logger.error('[DB] Podmíněný posun fáze selhal:', { roomId: id, message: error.message, code: error.code });
+      reportOperatingRoomWriteFailure(id, hospitalId, Object.keys(updates));
+      return false;
+    }
+
+    if (data?.id === id) return true;
+
+    // Sál už posunul někdo jiný — vrať se k tomu, co má databáze.
+    reportOperatingRoomWriteFailure(id, hospitalId, Object.keys(updates));
+    return false;
+  } catch (error) {
+    logger.error('[DB] Podmíněný posun fáze vyhodil výjimku:', error);
+    reportOperatingRoomWriteFailure(id, hospitalId, Object.keys(updates));
+    return false;
+  }
+}
+
+/**
  * Zapíše okamžik, kdy sál vstoupil do přesahu pracovní doby.
  *
  * Pořadové číslo u ikony ARO se řídí tímhle časem, proto musí být uložený

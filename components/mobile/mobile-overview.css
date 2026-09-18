@@ -1,0 +1,100 @@
+@media (max-width: 767px) {
+  .dashboard-module { background: var(--m-page-bg); color: var(--m-text); font-family: var(--m-font-sans); padding: calc(18px + env(safe-area-inset-top, 0px)) var(--m-page-gutter) calc(84px + env(safe-area-inset-bottom, 0px)); }
+  .dashboard-module.mobile-safe-top { padding-top: calc(18px + env(safe-area-inset-top, 0px)) !important; }
+  .dashboard-module :is(button, input, select) { font-family: inherit; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .dashboard-module.statistics-module { font-family: var(--m-font-sans); -webkit-font-smoothing: antialiased; }
+  .dashboard-module .dashboard-cards-layout { display: block; }
+  .dashboard-module .dashboard-card-content > .dashboard-room-grid { display: none; }
+  .dashboard-module.spatial-dashboard-module { background: var(--m-page-bg); padding-top: calc(18px + env(safe-area-inset-top, 0px)); padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+  .mobile-room-overview { width: 100%; max-width: 560px; margin: 0 auto; }
+  .mobile-spatial-module-loading h1 { color: var(--m-text-strong); font-size: 26px; font-weight: 700; margin-bottom: 18px; }
+  .dashboard-module .mobile-spatial-module-loading .spatial-load-state { min-height: 220px; background: var(--m-card); color: var(--m-text); }
+  .mro-top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: 44px; margin-bottom: 10px; }
+  .mro-context-label { margin-right: auto; color: var(--m-muted); font-size: 13px; font-weight: 500; }
+  .mro-top-actions .mobile-theme-toggle { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+  .mro-icon-button { width: 44px; height: 44px; display: grid; place-items: center; color: var(--m-accent); background: var(--m-card); position: relative; border-radius: 50%; box-shadow: 0 1px 4px rgba(18, 43, 73, .04); }
+  .mro-notice-dot { position: absolute; right: 10px; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: #EF4770; }
+  .mro-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+  .mro-heading h1 { font-size: clamp(28px, 8vw, 34px); line-height: 1.1; letter-spacing: -.035em; color: var(--m-text-strong); font-weight: 700; margin: 0 0 7px; }
+  .mro-heading p { font-size: 13px; line-height: 1.4; color: var(--m-muted); margin: 0; max-width: 30ch; }
+  .mro-date { display: flex; align-items: center; gap: 7px; color: var(--m-muted); font-size: 10px; line-height: 1.4; flex-shrink: 0; }
+  .mro-date svg { color: var(--m-accent); }
+  .mro-date time > span { display: block; text-transform: capitalize; }
+  /* Přepínač zobrazení jako dvě kruhové ikony v horní liště. Nahradil pruh
+     se třemi záložkami, který zabíral celý řádek pod hlavičkou. */
+  .mro-view-icons { display: flex; align-items: center; gap: 8px; }
+  .mro-view-icons .mro-icon-button { color: var(--m-muted); }
+  .mro-view-icons .mro-icon-button[aria-pressed=true] { color: var(--m-accent); background: var(--m-accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m-accent) 32%, transparent); }
+  .mro-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0 0 16px; padding: 14px 0; border: 1px solid var(--m-border); border-radius: 20px; background: var(--m-card); }
+  .mro-counts > div { display: flex; flex-direction: column; gap: 4px; padding: 0 16px; }
+  .mro-counts > div + div { border-left: 1px solid var(--m-separator); }
+  .mro-counts strong { font-size: 26px; font-weight: 650; line-height: 1.05; letter-spacing: -.035em; color: var(--m-text-strong); }
+  .mro-counts span { font-size: 12px; color: var(--m-muted); }
+  .mro-search { display: flex; align-items: center; gap: 9px; min-height: 46px; padding: 0 12px; background: var(--m-chip-track); border: 1px solid transparent; border-radius: 13px; color: var(--m-muted); }
+  .mro-search:focus-within { border-color: var(--m-accent); outline: 2px solid var(--m-accent-soft); }
+  .mro-search input { font-size: 16px; flex: 1; min-width: 0; padding: 10px 0; color: var(--m-text); outline: none; background: transparent; }
+  .mro-search input::placeholder { color: var(--m-muted); }
+  .mro-search input::-webkit-search-cancel-button { display: none; }
+  .mro-search button { display: grid; place-items: center; width: 44px; height: 44px; margin-right: -10px; color: var(--m-muted); }
+  .mro-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 13px; background: var(--m-chip-track); margin: 10px 0 17px; }
+  .mro-filters button { min-height: 44px; border-radius: 10px; padding: 6px 4px; font-size: 13px; border: 0; color: var(--m-muted); }
+  .mro-filters button[aria-pressed=true] { background: var(--m-control-surface); color: var(--m-text-strong); box-shadow: 0 1px 4px rgba(0, 15, 36, .10); font-weight: 600; }
+  .mro-list-heading { display: flex; justify-content: space-between; padding: 0 4px 8px; color: var(--m-muted); font-size: 12px; letter-spacing: .035em; text-transform: uppercase; }
+  .mro-room-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
+  .mro-room-list:empty { display: none; }
+  .mro-room { position: relative; display: flex; flex-direction: column; align-items: stretch; min-width: 0; overflow: hidden; container-type: inline-size; }
+  /* Zbarvení karty přebírá recept z boxu aktuální fáze v detailu sálu
+     (.mrd-phase-card) — stejný radiální nádech v rohu, stejný diagonální
+     přechod i vnitřní světlo, jen na menší ploše. */
+  .mro-room[data-emphasized=true] {
+    border-color: color-mix(in srgb, var(--room-phase-color) 65%, var(--m-border));
+    background:
+      radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--room-phase-color) 34%, transparent), transparent 70%),
+      linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 18%, var(--m-card-solid)), color-mix(in srgb, var(--room-phase-color) 5%, var(--m-card-solid)) 62%, color-mix(in srgb, var(--room-phase-color) 20%, var(--m-card-solid)));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--room-phase-color) 22%, transparent),
+      0 5px 22px color-mix(in srgb, var(--room-phase-color) 10%, transparent);
+  }
+
+  .m-dark .mro-room[data-emphasized=true] {
+    background:
+      radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--room-phase-color) 38%, transparent), transparent 70%),
+      linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 25%, #080D23), #0D142D 62%, color-mix(in srgb, var(--room-phase-color) 24%, #080D23));
+  }
+
+  /* Nouzový sál si drží červený proužek na hraně i po obarvení fází. */
+  .mro-room[data-emergency=true] { box-shadow: inset 3px 0 #E5484D; }
+  .mro-room[data-emergency=true]:not([data-emphasized=true]) { background: rgba(229, 72, 77, .08); }
+  .mro-room:focus-within { outline: 2px solid var(--m-accent); outline-offset: -3px; }
+  .mro-room-open { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding: var(--m-card-padding); text-align: left; min-height: 176px; width: 100%; box-sizing: border-box; }
+  .mro-status-dot { width: 8px; height: 8px; margin-top: 4px; flex-shrink: 0; border-radius: 50%; }
+  .mro-room-identity { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 6px; width: 100%; }
+  /* Název sálu se zmenší podle šířky karty, aby se i nejdelší jednoslovný
+     název („NEUROCHIRURGIE") vešel na malém telefonu bez přetečení. */
+  .mro-room-identity strong { color: var(--m-text-strong); font-size: clamp(9px, 8.2cqw, var(--m-card-title-size)); font-weight: var(--m-card-title-weight); min-height: 2.6em; line-height: 1.25; letter-spacing: -.015em; overflow-wrap: normal; word-break: keep-all; hyphens: none; -webkit-hyphens: none; text-wrap: balance; }
+  .mro-phase-label { display: flex; align-items: flex-start; gap: 6px; min-height: 2.7em; overflow-wrap: anywhere; min-width: 0; overflow-wrap: break-word; }
+  .mro-room-identity > span { font-size: 12px; line-height: 1.35; }
+  .mro-room-identity small { font-size: 10px; color: var(--m-muted); }
+  .mro-room-time { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--m-separator); font-variant-numeric: tabular-nums; width: 100%; min-width: 0; }
+  .mro-room-metric { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .mro-room-metric > span { min-height: 2.6em; font-size: 10px; line-height: 1.3; color: var(--m-muted); overflow-wrap: break-word; }
+  .mro-room-time strong { color: var(--m-text-strong); font-size: 18px; line-height: 1.2; letter-spacing: -.025em; font-weight: 600; white-space: nowrap; }
+  .mro-room-footer { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin: 0 var(--m-card-padding); padding-bottom: 6px; border-top: 1px solid var(--m-separator); min-width: 0; }
+  .mro-room-detail-link { display: flex; align-items: center; justify-content: flex-start; gap: 3px; min-height: 44px; min-width: 44px; flex: 1; font-size: 12px; font-weight: 500; color: var(--m-accent); border-radius: 10px; }
+  .mro-room-options { width: 44px; min-height: 44px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; color: var(--m-accent); }
+  .mro-room-open:active, .mro-room-options:active, .mro-room-detail-link:active { background: var(--m-accent-soft); }
+  .mobile-reference-menu { background: var(--m-card-solid) !important; color: var(--m-text); border-color: var(--m-border) !important; box-shadow: var(--m-card-shadow-strong) !important; z-index: 220; }
+  .mobile-reference-menu [role=menuitem] { color: var(--m-text); min-height: 44px; }
+  .mobile-reference-menu [role=menuitem].text-red-400 { color: #E5484D; }
+  .mobile-reference-menu [data-highlighted] { background: var(--m-card-2) !important; }
+  .mro-empty { text-align: center; color: var(--m-muted); font-size: 13px; line-height: 1.6; padding: 32px 16px; }
+  .mro-empty strong { color: var(--m-text); display: block; }
+  .mro-empty button { color: var(--m-accent); text-decoration: underline; padding: 12px; }
+  .mobile-room-overview button:focus-visible, .mro-view-icons button:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 2px; }
+}
+@media (max-width: 359px) {
+  .mro-date { display: none; }
+  .mro-room-list { gap: 10px; }
+  .mro-room-time { gap: 6px; }
+  .mro-room-time strong { font-size: 17px; }
+}

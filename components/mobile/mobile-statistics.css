@@ -1,0 +1,135 @@
+/* Screen-only adapters: shared statistics/personnel components keep their
+   desktop geometry and the standalone paper report keeps its own styles. */
+@media screen and (max-width: 767px) {
+  .statistics-module.statistics-settings.mobile-statistics.mobile-unified-statistics {
+    --stats-bg: var(--m-bg);
+    --stats-surface: var(--m-card);
+    --stats-surface-2: var(--m-card-2);
+    --stats-surface-3: var(--m-card-solid);
+    --stats-surface-hover: var(--m-control-surface);
+    --stats-surface-active: var(--m-accent-soft);
+    --stats-border: var(--m-border);
+    --stats-border-hover: var(--m-border);
+    --stats-border-active: var(--m-accent);
+    --stats-text: var(--m-text);
+    --stats-text-strong: var(--m-text-strong);
+    --stats-muted: var(--m-muted);
+    --stats-faint: var(--m-faint);
+    --stats-ghost: var(--m-track);
+    --stats-modal-bg: var(--m-card-solid);
+    color: var(--m-text);
+    font-family: var(--m-font-sans);
+  }
+
+  .statistics-settings.mobile-statistics.mobile-unified-statistics :is(.stats-shared-card, .m-unified-card, .statistics-kpi-card) {
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-card-radius) !important;
+    background: var(--m-card) !important;
+    box-shadow: var(--m-card-shadow) !important;
+    min-width: 0;
+  }
+
+  .statistics-settings.mobile-statistics.mobile-unified-statistics :is(.stats-shared-card:not(.stats-shared-card--flush), .m-unified-card, .statistics-kpi-card) {
+    padding: var(--m-card-padding) !important;
+  }
+
+  /* Full-width tables retain flush rows and their existing overflow viewport. */
+  .mobile-unified-statistics .stats-shared-card--flush > .stats-card-header {
+    padding: var(--m-card-padding);
+  }
+
+  .statistics-settings.mobile-statistics.mobile-unified-statistics .stats-card-title {
+    order: -1;
+    margin: 0;
+    color: var(--m-text-strong) !important;
+    font-size: var(--m-card-title-size);
+    font-weight: var(--m-card-title-weight);
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    text-align: left;
+    text-transform: none;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    -webkit-line-clamp: unset;
+  }
+
+  .mobile-unified-statistics .statistics-kpi-card > .stats-card-title { min-height: 2.6em; }
+
+  /* Explicit title hooks identify only card copy, never graph labels or values.
+     Eyebrows move below the title on phones without reordering desktop markup. */
+  .mobile-unified-statistics .stats-card-heading-copy,
+  .mobile-unified-statistics :is(div, header):has(> :is(h2, h3).stats-card-title):has(> p) {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .mobile-unified-statistics .stats-card-heading-copy > p:not(.stats-card-title),
+  .mobile-unified-statistics :is(div, header):has(> :is(h2, h3).stats-card-title) > p:not(.stats-card-title) {
+    margin-top: 5px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  /* Leading decorative icons become right-side metadata, leaving every title
+     on the same 16px content axis. Semantic icon colors remain unchanged. */
+  .mobile-unified-statistics .stats-card-heading-group { align-items: flex-start; flex: 1; }
+  .mobile-unified-statistics .stats-card-heading-group > .stats-card-heading-copy { flex: 1; }
+  .mobile-unified-statistics .stats-card-heading-icon { order: 1; }
+  .mobile-unified-statistics .stats-shared-card div:has(> div > .stats-card-title):has(> span > svg) > div:has(> .stats-card-title) {
+    order: -1;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .statistics-settings.mobile-statistics.mobile-unified-statistics [class*="text-white"] { color: var(--m-text) !important; }
+  .statistics-settings.mobile-statistics.mobile-unified-statistics :is(input, textarea)::placeholder { color: var(--m-muted) !important; }
+  .statistics-settings.mobile-statistics.mobile-unified-statistics .stats-section-tabs [aria-selected="true"] { color: var(--m-accent); }
+  .statistics-settings.mobile-statistics.mobile-unified-statistics :is(button, input, select, textarea, [tabindex]):focus-visible { outline-color: var(--m-accent); }
+
+  .mobile-staff-overview.mobile-unified-staff {
+    color: var(--m-text);
+    font-family: var(--m-font-sans);
+  }
+  .mobile-staff-overview.mobile-unified-staff :is(button, input, select) { font-family: inherit; }
+  .mobile-staff-overview.mobile-unified-staff:is(.is-light, .is-dark) .m-unified-card:is(.mobile-staff-panel, .mobile-staff-person-card, .mobile-staff-room-card) {
+    padding: var(--m-card-padding);
+    border: 1px solid var(--m-border) !important;
+    border-radius: var(--m-card-radius);
+    background: var(--m-card) !important;
+    box-shadow: var(--m-card-shadow) !important;
+    opacity: 1;
+  }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-room-card[aria-pressed="true"] { outline: 2px solid var(--m-accent); outline-offset: -2px; }
+  .mobile-staff-overview.mobile-unified-staff .m-unified-card-header { padding-inline: 0; align-items: flex-start; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-card-copy { order: -1; min-width: 0; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-avatar { order: 1; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-card-meta { order: 2; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-card-stripe { display: none; }
+  .mobile-staff-overview.mobile-unified-staff:is(.is-light, .is-dark) .m-unified-card-title {
+    margin: 0;
+    color: var(--m-text-strong) !important;
+    font-size: var(--m-card-title-size);
+    font-weight: var(--m-card-title-weight);
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    text-align: left;
+    text-transform: none;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+  }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-card-copy > span:last-child,
+  .mobile-staff-overview.mobile-unified-staff .m-unified-card-header p { font-size: 13px; line-height: 1.4; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-place { color: var(--m-muted) !important; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-assigned-name { color: var(--m-text) !important; font-size: 13px; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-assigned-name[title="Neobsazeno"] { color: #FB7185 !important; }
+  .mobile-staff-overview.mobile-unified-staff:is(.is-light, .is-dark) [class*="text-white"]:not(.m-unified-card-title) { color: var(--m-muted) !important; }
+  .mobile-staff-overview.mobile-unified-staff:is(.is-light, .is-dark) input::placeholder { color: var(--m-muted) !important; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-person-card { align-items: flex-start; min-height: 44px; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-card-grid { gap: 12px; }
+  .mobile-staff-overview.mobile-unified-staff .mobile-staff-filters { gap: 12px; }
+}

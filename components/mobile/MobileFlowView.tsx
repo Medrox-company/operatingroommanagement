@@ -121,7 +121,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
         style={{ zIndex: 1, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div
-          className="flex flex-col gap-4 px-4"
+          className="flex flex-col gap-3 px-5"
           style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 18px)' }}
         >
           <MobileModuleHeader kicker="Živý operační program" title="Tok pacienta">
@@ -146,7 +146,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
           </MobileModuleHeader>
 
           {/* Filtr pilulky — horizontální scroll */}
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 pb-1">
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-1">
             {[{ id: 'all', label: 'Všechny' }, ...flowRooms.map(r => ({ id: r.id, label: r.name }))].map(p => {
               const active = filter === p.id;
               return (
@@ -168,16 +168,16 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
           <div className="flex flex-col gap-3">
             {!statusesLoading && realStatuses.length === 0 && (
               <div
-                className="rounded-[18px] px-5 py-6 text-center"
-                style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', color: MUTED }}
+                className="m-unified-card p-4 text-center"
+                style={{ color: MUTED }}
               >
                 Pro toto zdravotnické zařízení nejsou nastavené žádné aktivní fáze toku.
               </div>
             )}
             {statusesLoading && realStatuses.length === 0 && (
               <div
-                className="rounded-[18px] px-5 py-6 text-center"
-                style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', color: MUTED }}
+                className="m-unified-card p-4 text-center"
+                style={{ color: MUTED }}
               >
                 Načítám skutečné fáze toku…
               </div>
@@ -193,30 +193,26 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
               return (
                 <div
                   key={room.id}
-                  className="rounded-[18px] overflow-hidden"
-                  style={{
-                    background: 'var(--m-card)',
-                    boxShadow: 'var(--m-card-shadow)',
-                    border: isOpen ? '1px solid var(--m-accent)' : '1px solid var(--m-border)',
-                  }}
+                  className="m-unified-card overflow-hidden"
                 >
                   {/* Hlavička karty */}
                   <button
                     onClick={() => setExpandedId(isOpen ? '' : room.id)}
-                    className="w-full flex items-center gap-3.5 px-4 py-3.5 text-left"
+                    className="m-unified-card-header w-full flex items-start justify-between gap-3 p-4 text-left"
+                    aria-expanded={isOpen}
                   >
-                    <span
-                      className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-[13px] font-extrabold tabular-nums"
-                      style={{ background: 'var(--m-accent-soft)', color: NAVY }}
-                    >
-                      {String(idx + 1).padStart(2, '0')}
-                    </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-[14px] font-extrabold leading-tight truncate" style={{ color: NAVY }}>
+                      <span className="m-unified-card-title room-name-nobreak block">
                         {room.currentProcedure?.name || `Pacient ${String(idx + 1).padStart(2, '0')}`}
                       </span>
-                      <span className="block text-[12px] font-medium mt-0.5 truncate" style={{ color: MUTED }}>
+                      <span className="block text-[13px] mt-1 break-words" style={{ color: MUTED }}>
                         {room.name}
+                      </span>
+                      <span
+                        className="mt-2 max-w-full px-2.5 py-1 rounded-full inline-flex text-[11px] font-semibold leading-tight"
+                        style={{ background: `${currentColor}20`, color: currentColor }}
+                      >
+                        {chip}
                       </span>
                       {/* Skutečné workflow fáze zařízení */}
                       <span className="mt-2 flex gap-1.5">
@@ -233,10 +229,10 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                     </span>
                     <span className="flex flex-col items-end gap-1.5 shrink-0">
                       <span
-                        className="px-2.5 h-6 rounded-full inline-flex items-center text-[9.5px] font-bold uppercase tracking-wide"
-                        style={{ background: `${currentColor}20`, color: currentColor }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold tabular-nums"
+                        style={{ background: 'var(--m-accent-soft)', color: NAVY }}
                       >
-                        {chip}
+                        {String(idx + 1).padStart(2, '0')}
                       </span>
                       <span className="text-[11px] font-medium tabular-nums" style={{ color: FAINT }}>
                         krok {Math.max(1, currentIdx + 1)} / {Math.max(1, steps.length)}
@@ -319,8 +315,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
 
             {visible.length === 0 && (
               <div
-                className="rounded-[18px] px-4 py-8 text-center"
-                style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
+                className="m-unified-card p-4 text-center"
               >
                 <p className="text-sm font-medium" style={{ color: MUTED }}>
                   Žádný aktivní tok pacienta.

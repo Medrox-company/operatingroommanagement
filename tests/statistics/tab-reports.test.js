@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import test from 'node:test';
 import React from 'react';
 import ts from 'typescript';
+import { roomScope } from './load-room-scope.js';
 
 // Data-registration tests with synchronous hooks. These do not exercise React
 // lifecycle, network requests, browser rendering, or PDF pagination.
@@ -39,6 +40,7 @@ function captureReport(name, props, stateOverrides = {}) {
   };
   const noFetch = () => assert.fail('Report registration must not fetch data');
   const imports = {
+    '../../lib/statistics-room-scope': roomScope,
     react: reactStub,
     'react-dom': { createPortal: () => assert.fail('No notification detail is selected') },
     'lucide-react': require('lucide-react'),
@@ -72,6 +74,12 @@ const notification = (id, room = `room-${id}`, overrides = {}) => ({
   id: String(id), notification_type: 'other', room_id: room, room_name: `Sál ${id}`,
   recipient_count: 2, custom_reason: null, created_at: '2026-09-14T09:00:00', ...overrides,
 });
+const scheduledRooms = notifications => [...new Set(notifications.map(row => row.room_id).filter(Boolean))].map(id => ({
+  id, name: id, currentStepIndex: 0,
+  weeklySchedule: Object.fromEntries(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => [day, {
+    enabled: true, startHour: 0, startMinute: 0, endHour: 23, endMinute: 59, breakMinutes: 0,
+  }])),
+}));
 const section = (report, title) => {
   const result = report.sections.find(item => item.title === title);
   assert.ok(result, `Missing report section: ${title}`);
@@ -86,7 +94,7 @@ const metric = (report, label) => {
 test('notification reports retain every filtered record and every room beyond UI ranking limits', () => {
   const notifications = Array.from({ length: 12 }, (_, index) => notification(index));
   notifications[0].custom_reason = '<b>Doslovný důvod</b>';
-  const { tab, report } = captureReport('NotificationsTab', { notifications, rooms: [], periodLabel: 'Celý měsíc' });
+  const { tab, report } = captureReport('NotificationsTab', { notifications, rooms: scheduledRooms(notifications), periodLabel: 'Celý měsíc' });
   assert.equal(tab, 'notifikace');
   assert.match(report.context, /Celý měsíc/);
   assert.equal(metric(report, 'Odeslané notifikace'), '12');
@@ -105,9 +113,9 @@ test('notification reports retain every filtered record and every room beyond UI
 
 test('notification reports use the selected day and never leak the global-period rows', () => {
   const globalRow = notification('global');
-  const selectedRow = notification('selected', null, { created_at: '2026-09-12T11:00:00', custom_reason: 'Pouze vybraný den' });
+  const selectedRow = notification('selected', 'selected-room', { created_at: '2026-09-12T11:00:00', custom_reason: 'Pouze vybraný den' });
   const dayState = { 0: new Date('2026-09-12T00:00:00'), 1: true, 2: [selectedRow], 7: '2026-09-12' };
-  const props = { notifications: [globalRow], rooms: [], periodLabel: 'Celý měsíc' };
+  const props = { notifications: [globalRow], rooms: scheduledRooms([globalRow, selectedRow]), periodLabel: 'Celý měsíc' };
   const { report } = captureReport('NotificationsTab', props, dayState);
   assert.match(report.context, /Vybraný den: 12\. září 2026/);
   assert.equal(metric(report, 'Odeslané notifikace'), '1');
@@ -168,14 +176,14 @@ test('selected-day report readiness requires both fetches to succeed, including 
 });
 
 test('notification impacts keep zero distinct from unavailable and label overlapping sums', () => {
-  const rooms = [600, 0].map((hourlyOperatingCost, index) => ({
+  const rooms = [600, 0, null].map((hourlyOperatingCost, index) => ({
     id: `room-${index}`, name: `Sál ${index}`, hourlyOperatingCost,
     weeklySchedule: { monday: { enabled: true, startHour: 0, startMinute: 0, endHour: 23, endMinute: 59 } },
   }));
   const notifications = [
     notification(0, 'room-0', { notification_type: 'emergency' }),
     notification(1, 'room-1', { notification_type: 'emergency' }),
-    notification(2, null),
+    notification(2, 'room-2'),
   ];
   const statusHistory = rooms.map(room => ({
     operating_room_id: room.id, timestamp: '2026-09-14T10:00:00', event_type: 'emergency_off',

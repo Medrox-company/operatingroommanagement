@@ -126,6 +126,12 @@
   opacity: 0.6;
 }
 
+/* Mobile module pages lead with the actual screen title, without a second
+   introductory label. Desktop headings retain their existing hierarchy. */
+@media (max-width: 767px) {
+  .app-module-kicker-row { display: none; }
+}
+
 .app-module-title {
   color: #f4f6fb;
   display: block;
@@ -1726,28 +1732,37 @@ html.capacitor-native select {
    Tmavý motiv se při prvním spuštění aktivuje v layoutu / mobilním entrypointu.
    Kořenové tokeny níže zůstávají světlou variantou pro ruční přepnutí. */
 :root {
-  --m-bg: #EDF1F8;
-  --m-page-bg: radial-gradient(120% 78% at 50% -8%, #FFFFFF 0%, #EDF1F8 58%, #E7EDF7 100%);
-  --m-card: #FFFFFF;                       /* karty (plocha) */
+  --m-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --m-card-radius: 20px;
+  --m-card-padding: 16px;
+  --m-card-title-size: 17px;
+  --m-card-title-weight: 600;
+  --m-page-title-size: 28px;
+  --m-page-gutter: 20px;
+  --m-separator: rgba(74, 101, 135, 0.16);
+  --m-control-surface: rgba(255, 255, 255, 0.96);
+  --m-bg: #F3F9FD;
+  --m-page-bg: linear-gradient(180deg, #F5FAFE 0%, #EEF6FC 100%);
+  --m-card: rgba(255, 255, 255, 0.86);      /* jemná mobilní plocha */
   --m-card-solid: #FFFFFF;                 /* neprůhledný podklad (disky, sheety) */
-  --m-card-2: #F2F5FA;                     /* sekundární plocha / ghost tlačítka */
+  --m-card-2: #EFF6FC;                     /* sekundární plocha / ghost tlačítka */
   --m-track: #E7ECF5;                      /* progress track, ztlumené plochy */
-  --m-border: #E1E8F3;
+  --m-border: #DFEBF6;
   --m-gridline: rgba(23, 43, 99, 0.07);
-  --m-text: #17233F;
-  --m-text-strong: #1E3560;
-  --m-muted: #7C8AA5;
+  --m-text: #172C4A;
+  --m-text-strong: #102448;
+  --m-muted: #5A7696;
   --m-faint: #9AA7BF;
-  --m-accent: #2952C8;
-  --m-accent-rgb: 41, 82, 200;
-  --m-accent-soft: #E7EEFB;
+  --m-accent: #147DED;
+  --m-accent-rgb: 20, 125, 237;
+  --m-accent-soft: #E3F0FD;
   --m-chip-track: #E3E9F4;                 /* drážka segmentových tabů */
-  --m-nav-bg: #1E3560;
-  --m-nav-fg: rgba(255, 255, 255, 0.45);
-  --m-nav-active: #FFFFFF;
+  --m-nav-bg: rgba(244, 250, 255, 0.88);
+  --m-nav-fg: #587293;
+  --m-nav-active: #087CF5;
   --m-on-accent: #FFFFFF;
-  --m-card-shadow: 0 8px 20px rgba(23, 43, 99, 0.07);
-  --m-card-shadow-strong: 0 16px 38px rgba(23, 43, 99, 0.12);
+  --m-card-shadow: 0 3px 10px rgba(35, 78, 115, 0.035);
+  --m-card-shadow-strong: 0 12px 28px rgba(35, 78, 115, 0.10);
   --m-card-highlight: rgba(255, 255, 255, 0.86);
   --m-purple-glow: rgba(139, 92, 246, 0.12);
   --m-teal-glow: rgba(20, 184, 166, 0.08);
@@ -1981,7 +1996,7 @@ html.capacitor-native select {
   }
 
   .statistics-settings.mobile-statistics .mobile-glass-card {
-    border-radius: 12px;
+    border-radius: var(--m-card-radius);
   }
 }
 
@@ -2009,28 +2024,30 @@ html.capacitor-native select {
 
 .m-dark {
   color-scheme: dark;
-  --m-bg: #050A15;
-  --m-page-bg: var(--app-spatial-background);
-  --m-card: linear-gradient(145deg, rgba(32, 42, 80, 0.94) 0%, rgba(10, 19, 38, 0.97) 100%);
-  --m-card-solid: #10182B;
-  --m-card-2: rgba(255, 255, 255, 0.055);
-  --m-track: rgba(255, 255, 255, 0.10);
-  --m-border: rgba(174, 153, 255, 0.28);
+  --m-bg: #050D2D;
+  --m-page-bg: linear-gradient(180deg, #0A153C 0%, #050D2D 54%, #030922 100%);
+  --m-card: #131F49;
+  --m-card-solid: #131F49;
+  --m-card-2: #192A56;
+  --m-track: #283964;
+  --m-border: rgba(137, 161, 226, 0.20);
   --m-gridline: rgba(210, 221, 255, 0.09);
   --m-text: #F2F4FA;
   --m-text-strong: #FFFFFF;
-  --m-muted: rgba(255, 255, 255, 0.62);
+  --m-muted: #AEBDE0;
   --m-faint: rgba(255, 255, 255, 0.44);
-  --m-accent: #A36EFF;
-  --m-accent-rgb: 163, 110, 255;
-  --m-accent-soft: rgba(163, 110, 255, 0.22);
-  --m-chip-track: rgba(255, 255, 255, 0.07);
-  --m-nav-bg: linear-gradient(180deg, rgba(15, 25, 42, 0.94), rgba(8, 18, 30, 0.98));
-  --m-nav-fg: rgba(255, 255, 255, 0.40);
-  --m-nav-active: #5EEAD4;
+  --m-accent: #88ADFF;
+  --m-accent-rgb: 136, 173, 255;
+  --m-accent-soft: rgba(136, 173, 255, 0.12);
+  --m-chip-track: #0E1A40;
+  --m-nav-bg: rgba(7, 16, 49, 0.92);
+  --m-separator: rgba(145, 167, 226, 0.18);
+  --m-control-surface: #263967;
+  --m-nav-fg: #AEBDE0;
+  --m-nav-active: #FFE12B;
   --m-on-accent: #090B15;
-  --m-card-shadow: 0 14px 34px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.055);
-  --m-card-shadow-strong: 0 22px 56px rgba(0, 0, 0, 0.46), 0 0 28px rgba(139, 92, 246, 0.08);
+  --m-card-shadow: 0 3px 12px rgba(0, 8, 19, 0.12);
+  --m-card-shadow-strong: 0 14px 30px rgba(0, 8, 19, 0.3);
   --m-card-highlight: rgba(255, 255, 255, 0.08);
   --m-purple-glow: rgba(154, 108, 255, 0.24);
   --m-teal-glow: rgba(45, 212, 191, 0.16);
@@ -2237,7 +2254,7 @@ html.capacitor-native select {
      platí plnou cenu při každém posunu seznamu. */
 
   .mobile-theme-surface:not(.mobile-timeline-room-detail) {
-    background: var(--app-spatial-background) !important;
+    background: var(--m-page-bg) !important;
     transition: background 240ms ease;
   }
 
@@ -2362,10 +2379,12 @@ html.capacitor-native select {
   /* Název fáze: plynulá velikost a zalomení i u jednoho dlouhého slova,
      aby nikdy nevytekl z karty. */
   .mobile-room-phase-content > p:first-child {
-    font-size: clamp(16px, min(5.6vw, 3.1vh), 24px) !important;
+    font-size: clamp(13px, min(5.2vw, 3.1vh), 24px) !important;
     line-height: 1.15;
-    overflow-wrap: anywhere;
-    hyphens: auto;
+    overflow-wrap: normal;
+    word-break: keep-all;
+    hyphens: none;
+    -webkit-hyphens: none;
   }
 
   .mobile-room-elapsed-icon {
@@ -4233,4 +4252,26 @@ html.capacitor-native select {
   .spatial-alert-card { gap: 4px; }
   .spatial-alert-card strong { margin-top: 0; }
   .spatial-alert-card i { padding-block: 6px; }
+}
+
+/* ── Názvy sálů se nikdy nelámou uvnitř slova ─────────────────────────────
+   Dokument má lang="cs", takže `hyphens: auto` dělilo názvy na slabiky
+   („trauma-tologie"). Zalomit se smí jen v mezeře; když se jediné slovo
+   nevejde, raději se zmenší, než aby se rozpadlo. */
+.room-name-nobreak {
+  /* Název sálu se NIKDY nedělí uvnitř slova — ani pomlčkou, ani bez ní.
+     Zalomit se smí výhradně v mezeře. Aby přitom nic nevyteklo z boxu,
+     se velikost písma řídí šířkou boxu (viz .room-name-fit níže). */
+  hyphens: none !important;
+  -webkit-hyphens: none !important;
+  overflow-wrap: normal !important;
+  word-break: keep-all !important;
+  text-wrap: balance;
+}
+
+/* Název, který se sám zmenší podle šířky svého boxu. Vyžaduje rodiče
+   s `container-type: inline-size`. Spodní mez je schválně nízká — radši
+   drobné písmo než text přes okraj. */
+.room-name-fit {
+  font-size: clamp(9px, var(--room-name-fit-scale, 8.2cqw), var(--room-name-fit-max, 17px)) !important;
 }

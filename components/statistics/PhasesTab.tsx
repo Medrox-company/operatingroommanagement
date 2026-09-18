@@ -16,6 +16,7 @@ import {
 } from './shared';
 import { GlassCalendar } from './AppCharts';
 import { useStatisticsReport } from './StatisticsReportContext';
+import { scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -33,6 +34,7 @@ interface WorkflowStep {
 export interface PhasesTabProps {
   rooms: OperatingRoom[];
   statusHistory: StatusHistoryRow[];
+  calendarHistory?: StatusHistoryRow[];
   periodLabel: Period;
   workflowSteps: WorkflowStep[];
   avgStepDurations: number[];
@@ -252,8 +254,9 @@ const TimelineGantt = ({
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 export function PhasesTab({
-  rooms,
-  statusHistory,
+  rooms: allRooms,
+  statusHistory: allStatusHistory,
+  calendarHistory,
   periodLabel,
   workflowSteps,
   avgStepDurations: periodAvgStepDurations,
@@ -266,6 +269,11 @@ export function PhasesTab({
     return day;
   });
   const [calendarSelectionActive, setCalendarSelectionActive] = useState(false);
+  const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? calendarHistory ?? allStatusHistory : allStatusHistory,
+    calendarSelectionActive ? statisticsDayWindow(calendarDay) : statisticsPeriodWindow(periodLabel)),
+  [allRooms, allStatusHistory, calendarHistory, calendarSelectionActive, calendarDay, periodLabel]);
+  const rooms = roomScope.rooms;
+  const statusHistory = roomScope.history;
 
   const selectedDayHistory = useMemo(() => {
     if (!calendarSelectionActive) return [];
@@ -399,7 +407,9 @@ export function PhasesTab({
     : periodLabel;
 
   useStatisticsReport('faze', {
+    requiredHistoryFrom: calendarSelectionActive ? statisticsDayWindow(calendarDay).start.toISOString() : undefined,
     context: [
+      STATISTICS_ROOM_SCOPE_NOTE,
       calendarSelectionActive
         ? `Provozní den ${activePeriodLabel}, od 07:00 do 07:00 následujícího dne. Denní filtr používá čas záznamu události v již načtené historii; délky fází nejsou oříznuté na hranici dne.`
         : `Vybrané období: ${periodLabel}.`,
@@ -461,7 +471,7 @@ export function PhasesTab({
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-[10px] font-medium" style={{ color: C.muted }}>Fáze</p>
-                <h2 className="mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>
+                <h2 className="stats-card-title mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>
                   Průběh operačního cyklu
                 </h2>
                 <p className="mt-1 text-[11px]" style={{ color: C.muted }}>
@@ -517,7 +527,7 @@ export function PhasesTab({
                   <Layers size={16} />
                 </span>
                 <div>
-                  <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Timeline operačního cyklu</h3>
+                  <h3 className="stats-card-title text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Timeline operačního cyklu</h3>
                   <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Průměrná návaznost a délka fází</p>
                 </div>
               </div>
@@ -530,7 +540,7 @@ export function PhasesTab({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-medium" style={{ color: C.muted }}>Evropská referenční praxe</p>
-                <h3 className="mt-1 text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Optimální timeline operačního cyklu</h3>
+                <h3 className="stats-card-title mt-1 text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Optimální timeline operačního cyklu</h3>
                 <p className="mt-1 text-[10px]" style={{ color: C.muted }}>Procesní benchmark pro elektivní provoz; délka samotného výkonu zůstává závislá na typu operace.</p>
               </div>
               <span className="rounded-md px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em]" style={{ color: C.green, background: `${C.green}0d`, border: `1px solid ${C.green}30` }}>NHS England 2025</span>
@@ -706,7 +716,7 @@ export function PhasesTab({
       <Card className={PHASE_CARD_CLASS}>
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Přehled jednotlivých fází</h3>
+            <h3 className="stats-card-title text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Přehled jednotlivých fází</h3>
             <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Délka, podíl cyklu a počet sálů v každé fázi</p>
           </div>
           <span className="rounded-md px-2.5 py-1 text-[10px] font-medium tabular-nums" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>{cyclePhaseIndices.length} fází</span>
@@ -733,7 +743,7 @@ export function PhasesTab({
         <div className="mb-4 flex items-center gap-2.5">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ color: C.blue, background: C.ghost, border: `1px solid ${C.border}` }}><Layers className="h-4 w-4" /></span>
           <div>
-            <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Podrobná evidence fází</h3>
+            <h3 className="stats-card-title text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Podrobná evidence fází</h3>
             <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Úplné pořadí, naměřené časy a aktuální stav sálů</p>
           </div>
         </div>

@@ -28,6 +28,8 @@ import { useHospital } from '../../contexts/HospitalContext';
 import { DashboardViewer } from '../../vendor/orms-spatial-editor/src/dashboard-viewer.js';
 import type { BuildingProject } from '../../lib/spatial-project';
 import SpatialLoadingBar from './SpatialLoadingBar';
+import { MobileHeader } from '../mobile/MobileShell';
+import './mobile-spatial-dashboard.css';
 
 type CameraMode = 'spatial' | 'plan';
 
@@ -340,7 +342,7 @@ function RoomDetailPanel({ room, phaseName, phaseColor, progress, now, onClose, 
     ? formatClock(new Date(new Date(room.estimatedEndTime).getTime() + 20 * 60_000))
     : '—';
   return (
-    <aside className="spatial-room-panel" aria-label={`Detail ${room.name}`}>
+    <aside className="spatial-room-panel" aria-label={`Detail ${room.name}`} style={{ '--spatial-phase-color': phaseColor } as React.CSSProperties}>
       <div className="spatial-room-panel-heading">
         <div>
           <h2>{room.name}</h2>
@@ -355,22 +357,22 @@ function RoomDetailPanel({ room, phaseName, phaseColor, progress, now, onClose, 
       </div>
 
       <div className="spatial-room-info-grid">
-        <div>
+        <div className="spatial-room-timing">
           <p><Timer />Uplynulý čas</p>
           <strong>{formatElapsed(elapsedStart, now)}</strong>
           <span>{elapsedStart ? `Od ${formatClock(elapsedStart)}` : 'Výkon nezahájen'}</span>
         </div>
-        <div>
+        <div className="spatial-room-timing">
           <p><Clock3 />Odhad konce</p>
           <strong>{formatClock(room.estimatedEndTime)}</strong>
           <span>{room.estimatedEndTime ? 'Dle aktuálního plánu' : 'Bez odhadu'}</span>
         </div>
-        <div>
+        <div className="spatial-room-secondary-info">
           <p><UsersRound />Tým na sále</p>
           <strong>{team} <small>/ 3</small></strong>
           <span>{team >= 3 ? 'Kompletní' : 'Čeká na doplnění'}</span>
         </div>
-        <div>
+        <div className="spatial-room-secondary-info">
           <p><CalendarDays />Další výkon</p>
           <strong>{room.queueCount > 0 ? nextTime : '—'}</strong>
           <span>{room.queueCount > 0 ? `${room.queueCount} v pořadí` : 'Program dokončen'}</span>
@@ -385,10 +387,20 @@ function RoomDetailPanel({ room, phaseName, phaseColor, progress, now, onClose, 
   );
 }
 
-export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCards }: {
+export default function SpatialDashboardView({
+  rooms,
+  onSelectRoom,
+  onSwitchToCards,
+  mobileViewControls,
+  cameraMode: controlledCameraMode,
+  onCameraModeChange,
+}: {
   rooms: OperatingRoom[];
   onSelectRoom: (roomId: string) => void;
   onSwitchToCards: () => void;
+  mobileViewControls?: React.ReactNode;
+  cameraMode?: CameraMode;
+  onCameraModeChange?: (mode: CameraMode) => void;
 }) {
   const { project, storedProject, isLoading, error } = useSpatialProject(rooms);
   const { activeHospital } = useHospital();
@@ -398,7 +410,12 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
   // minutovému odběru se celý 3D dashboard nepřekresluje každou sekundu.
   const nowMs = useNowMinuteMs();
   const [floorId, setFloorId] = useState(project.floors[0]?.id || '');
-  const [cameraMode, setCameraMode] = useState<CameraMode>('spatial');
+  const [localCameraMode, setLocalCameraMode] = useState<CameraMode>('spatial');
+  const cameraMode = controlledCameraMode ?? localCameraMode;
+  const setCameraMode = useCallback((mode: CameraMode) => {
+    setLocalCameraMode(mode);
+    onCameraModeChange?.(mode);
+  }, [onCameraModeChange]);
   const [fitSignal, setFitSignal] = useState(0);
   const [selectedSpatialRoomId, setSelectedSpatialRoomId] = useState<string | null>(null);
   const [selectionDismissed, setSelectionDismissed] = useState(false);
@@ -478,13 +495,41 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
   const alertText = alertRoom?.isEmergency ? 'Aktivní emergency režim'
     : alertRoom?.noticeMessage || (alertRoom?.isLocked ? 'Sál je dočasně uzamčen' : 'Provoz bez kritického omezení');
 
+  const changeFloor = (nextFloorId: string) => {
+    setFloorId(nextFloorId);
+    setSelectionDismissed(false);
+    setSelectedSpatialRoomId(null);
+  };
+  const mobileHeader = (
+    <div className="spatial-mobile-header hidden">
+      <MobileHeader kicker="Operační sály" title="Operační blok"
+        description={activeHospital?.hospital_short_name || activeHospital?.hospital_name || project.name} />
+      {project.floors.length > 1 && (
+        <label className="spatial-mobile-floor">
+          <Building2 aria-hidden="true" />
+          <select aria-label="Podlaží operačního bloku" value={floorId} onChange={(event) => changeFloor(event.target.value)}>
+            {project.floors.map((floor) => <option key={floor.id} value={floor.id}>{floor.name}</option>)}
+          </select>
+        </label>
+      )}
+      {mobileViewControls || (
+        <nav className="spatial-mobile-view-controls" aria-label="Zobrazení operačních sálů">
+          <button type="button" onClick={onSwitchToCards}><LayoutGrid aria-hidden="true" />Karty</button>
+          <button type="button" aria-pressed={cameraMode === 'spatial'} onClick={() => setCameraMode('spatial')}><Cuboid aria-hidden="true" />3D pohled</button>
+          <button type="button" aria-pressed={cameraMode === 'plan'} onClick={() => setCameraMode('plan')}><MapIcon aria-hidden="true" />Půdorys</button>
+        </nav>
+      )}
+    </div>
+  );
+
   if (isLoading) {
-    return <SpatialLoadingBar label="Načítám dispozici a živá data" initial={36} ceiling={68} />;
+    return <>{mobileHeader}<SpatialLoadingBar label="Načítám dispozici a živá data" initial={36} ceiling={68} /></>;
   }
 
   if (!storedProject && !error) {
     return (
-      <section className="spatial-control-shell is-empty">
+      <section className="spatial-control-shell spatial-mobile-dashboard is-empty">
+        {mobileHeader}
         <header className="spatial-control-header">
           <div className="spatial-control-title">
             <span className="spatial-control-mark"><BedDouble /></span>
@@ -508,7 +553,8 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
   }
 
   return (
-    <section className="spatial-control-shell">
+    <section className="spatial-control-shell spatial-mobile-dashboard">
+      {mobileHeader}
       <header className="spatial-control-header">
         <div className="spatial-control-title">
           <span className="spatial-control-mark"><BedDouble /></span>
@@ -521,11 +567,7 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
         <div className="spatial-view-controls">
           <label className="spatial-floor-control">
             <Building2 />
-            <select value={floorId} onChange={(event) => {
-              setFloorId(event.target.value);
-              setSelectionDismissed(false);
-              setSelectedSpatialRoomId(null);
-            }} aria-label="Podlaží">
+            <select value={floorId} onChange={(event) => changeFloor(event.target.value)} aria-label="Podlaží">
               {project.floors.map((floor) => <option key={floor.id} value={floor.id}>{floor.name}</option>)}
             </select>
           </label>
@@ -557,6 +599,15 @@ export default function SpatialDashboardView({ rooms, onSelectRoom, onSwitchToCa
             selectedSpatialRoomId={selectedSpatialRoomId}
             onSelect={selectSpatialRoom}
           />
+
+          <button
+            type="button"
+            className="spatial-mobile-fit hidden"
+            aria-label="Vycentrovat scénu"
+            onClick={() => setFitSignal((value) => value + 1)}
+          >
+            <Focus aria-hidden="true" />
+          </button>
 
           <p className="spatial-stage-caption">Koncepční vizualizace · kliknutím vyberte sál</p>
           {error && <p className="spatial-stage-error">Výchozí dispozice · {error.message}</p>}

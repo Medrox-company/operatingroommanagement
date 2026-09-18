@@ -21,6 +21,7 @@ import {
 } from './shared';
 import { GlassCalendar } from './AppCharts';
 import { useStatisticsReport, type StatisticsReport } from './StatisticsReportContext';
+import { scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 import {
   fetchNotificationsLog, fetchStatusHistory,
   type NotificationLogRow, type StatusHistoryRow,
@@ -30,6 +31,7 @@ import type { OperatingRoom } from '../../types';
 interface NotificationsTabProps {
   notifications: NotificationLogRow[] | null;
   statusHistory?: StatusHistoryRow[];
+  calendarHistory?: StatusHistoryRow[];
   rooms: OperatingRoom[];
   periodLabel: string;
 }
@@ -180,7 +182,7 @@ const CompactColumnChart: React.FC<{
 };
 
 export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
-  notifications, statusHistory = [], rooms, periodLabel,
+  notifications, statusHistory = [], calendarHistory, rooms: allRooms, periodLabel,
 }) => {
   const [calendarDay, setCalendarDay] = useState(() => {
     const day = new Date();
@@ -281,19 +283,32 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
     return () => { cancelled = true; };
   }, [calendarDay, calendarSelectionActive]);
 
-  const displayedNotifications = calendarSelectionActive ? selectedDayNotifications : notifications;
-  const displayedStatusHistory = calendarSelectionActive ? selectedDayStatusHistory : statusHistory;
+  const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? selectedDayStatusHistory : statusHistory,
+    calendarSelectionActive ? statisticsDayWindow(calendarDay, 0) : statisticsPeriodWindow(periodLabel)),
+  [allRooms, selectedDayStatusHistory, statusHistory, calendarSelectionActive, calendarDay, periodLabel]);
+  const rooms = roomScope.rooms;
+  const displayedNotifications = useMemo(() => (calendarSelectionActive ? selectedDayNotifications : notifications)
+    ?.filter(row => Boolean(row.room_id && roomScope.roomIds.has(row.room_id))) ?? null,
+  [calendarSelectionActive, selectedDayNotifications, notifications, roomScope]);
+  const displayedStatusHistory = roomScope.history;
 
   const calendarHeat = useMemo(() => {
     const counts = new Map<string, number>();
+    const dayRoomIds = new Map<string, Set<string>>();
     for (const notification of calendarNotifications) {
       const key = localDateKey(notification.created_at);
+      let eligible = dayRoomIds.get(key);
+      if (!eligible) {
+        eligible = scopeStatisticsRooms(allRooms, calendarHistory ?? statusHistory, statisticsDayWindow(new Date(notification.created_at), 0)).roomIds;
+        dayRoomIds.set(key, eligible);
+      }
+      if (!notification.room_id || !eligible.has(notification.room_id)) continue;
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     const maximum = Math.max(0, ...counts.values());
     if (maximum === 0) return {};
     return Object.fromEntries(Array.from(counts.entries()).map(([key, count]) => [key, count / maximum]));
-  }, [calendarNotifications]);
+  }, [calendarNotifications, allRooms, calendarHistory, statusHistory]);
 
   const notificationImpacts = useMemo(() => {
     const result = new Map<string, {
@@ -533,9 +548,9 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
     const lossDescription = 'Dopady vycházejí z uloženého konce události, průniku s pracovní dobou sálu a jeho hodinové sazby. Chybějící konec nebo sazba znamená nevyčíslitelný dopad. Součty zahrnují dopady jednotlivých notifikací; překrývající se intervaly mohou být započteny opakovaně, nejde o očištěnou celkovou ztrátu provozu.';
 
     return {
-      context: calendarSelectionActive
+      context: (calendarSelectionActive
         ? `Vybraný den: ${activePeriodLabel} (00:00–23:59 místního času). Report zahrnuje všechny načtené notifikace tohoto dne a jejich příjemce.`
-        : `Vybrané období: ${activePeriodLabel}. Report zahrnuje všechny načtené notifikace aktuálního filtru a jejich příjemce.`,
+        : `Vybrané období: ${activePeriodLabel}. Report zahrnuje všechny načtené notifikace aktuálního filtru a jejich příjemce.`) + ` ${STATISTICS_ROOM_SCOPE_NOTE}`,
       metrics: [
         { label: 'Odeslané notifikace', value: formatNumber(stats.total) },
         { label: 'Příjemci celkem', value: formatNumber(stats.totalRecipients), detail: 'Součet doručení, nikoli unikátní osoby' },
@@ -634,7 +649,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
 
   const evidencePanel = (
     <div
-      className="relative overflow-hidden rounded-xl p-4"
+      className="stats-shared-card relative overflow-hidden rounded-xl p-4"
       style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}
     >
       <div className="flex items-center gap-2">
@@ -642,7 +657,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
           <MessageSquare className="h-4 w-4" />
         </span>
         <div className="min-w-0">
-          <h3 className="text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>Evidence jednotlivých notifikací</h3>
+          <h3 className="stats-card-title text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>Evidence jednotlivých notifikací</h3>
           <p className="mt-1 text-[11px] leading-relaxed" style={{ color: C.muted }}>Kliknutím na řádek zobrazíte podrobnosti a finanční dopad</p>
         </div>
         <span className="ml-auto rounded-lg px-2.5 py-1 text-[10px] font-medium tabular-nums" style={{ color: C.text, background: C.surface2, border: `1px solid ${C.border}` }}>
@@ -710,7 +725,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>Počet notifikací</h3>
+          <h3 className="stats-card-title text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>Počet notifikací</h3>
           <p className="mt-1 text-[11px] leading-relaxed" style={{ color: C.muted }}>Kliknutím na den zobrazíte jeho statistiky</p>
         </div>
         <span className="rounded-lg px-2.5 py-1 text-[10px] font-medium tabular-nums" style={{ color: C.text, background: C.surface2, border: `1px solid ${C.border}` }}>{stats.total} celkem</span>
@@ -781,7 +796,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
           <div className="flex flex-wrap items-start justify-between gap-4 pr-11">
             <div className="min-w-0">
               <p className="text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ color: C.muted }}>Detail notifikace</p>
-              <h3 className="mt-1.5 text-lg font-semibold" style={{ color: C.textHi }}>{getNotificationLabel(selectedNotification.notification_type)}</h3>
+              <h3 className="stats-card-title mt-1.5 text-lg font-semibold" style={{ color: C.textHi }}>{getNotificationLabel(selectedNotification.notification_type)}</h3>
               <p className="mt-1 text-[10px]" style={{ color: C.muted }}>
                 {selectedNotification.room_name ?? selectedRoom?.name ?? 'Sál neuveden'} · {new Date(selectedNotification.created_at).toLocaleString('cs-CZ')}
               </p>
@@ -833,7 +848,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
                 <p className="text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ color: C.muted }}>
                   Notifikace
                 </p>
-                <h2 className="mt-1.5 text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>
+                <h2 className="stats-card-title mt-1.5 text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>
                   Přehled notifikací za {activePeriodLabel}
                 </h2>
                 <p className="mt-1 text-[11px]" style={{ color: C.muted }}>
@@ -1052,7 +1067,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
       {stats.byRoom.length > 0 && (
         <div
-          className="relative overflow-hidden rounded-xl p-4"
+          className="stats-shared-card relative overflow-hidden rounded-xl p-4"
           style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}
         >
           <div className="flex items-center gap-2">
@@ -1060,7 +1075,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
               <Calendar className="h-4 w-4" />
             </span>
             <div className="min-w-0">
-              <h3 className="text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>Podle operačního sálu</h3>
+              <h3 className="stats-card-title text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>Podle operačního sálu</h3>
               <p className="mt-1 text-[11px] leading-relaxed" style={{ color: C.muted }}>Sály s nejvyšším počtem odeslaných hlášení</p>
             </div>
             <span className="ml-auto rounded-lg px-2.5 py-1 text-[10px] font-medium tabular-nums" style={{ color: C.text, background: C.surface2, border: `1px solid ${C.border}` }}>
@@ -1100,7 +1115,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
 
       {stats.byDepartment.length > 0 && (
         <div
-          className="relative overflow-hidden rounded-xl p-4"
+          className="stats-shared-card relative overflow-hidden rounded-xl p-4"
           style={{ background: 'var(--stats-surface)', border: `1px solid ${C.border}` }}
         >
           <div className="flex items-center gap-2">
@@ -1108,7 +1123,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
               <Building2 className="h-4 w-4" />
             </span>
             <div className="min-w-0">
-              <h3 className="text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>Podle oborů</h3>
+              <h3 className="stats-card-title text-lg font-semibold leading-snug tracking-tight" style={{ color: C.textHi }}>Podle oborů</h3>
               <p className="mt-1 text-[11px] leading-relaxed" style={{ color: C.muted }}>Souhrn podle oboru přiřazeného operačnímu sálu</p>
             </div>
             <span className="ml-auto rounded-lg px-2.5 py-1 text-[10px] font-medium tabular-nums" style={{ color: C.text, background: C.surface2, border: `1px solid ${C.border}` }}>

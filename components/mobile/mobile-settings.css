@@ -1,0 +1,91 @@
+/* Settings landing only: the administration modules and desktop retain their own layout. */
+@media (max-width: 767px) {
+  .settings-page-root[data-settings-landing] {
+    background: var(--m-page-bg);
+    color: var(--m-text);
+    font-family: var(--m-font-sans);
+  }
+
+  .settings-page-root[data-settings-landing="grid"] > .settings-module-wrapper {
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .settings-landing-grid { padding-bottom: 0; font-family: var(--m-font-sans); }
+  .settings-mobile-heading { margin-bottom: 16px; }
+  .settings-view-toggle { gap: 2px; }
+  .settings-mobile-heading .settings-view-toggle button {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    color: var(--m-muted);
+    background: transparent;
+  }
+  .settings-mobile-heading .settings-view-toggle button[aria-pressed="true"] {
+    color: var(--m-text-strong);
+    background: var(--m-card-2);
+  }
+  .settings-mobile-heading .settings-view-toggle svg { width: 20px; height: 20px; stroke-width: 1.7; }
+
+  .settings-grid-commandbar,
+  .settings-grid-empty,
+  .settings-grid-card,
+  .settings-carousel-card {
+    border: 1px solid var(--m-border) !important;
+    border-radius: 20px;
+    padding: 16px;
+    background: var(--m-card) !important;
+    box-shadow: var(--m-card-shadow) !important;
+    color: var(--m-text) !important;
+  }
+
+  .settings-grid-commandbar { scrollbar-width: thin; }
+  .settings-grid-commandbar [class*="text-white"],
+  .settings-grid-empty [class*="text-white"] { color: var(--m-muted); }
+  .settings-grid-metric { background: var(--m-card-2); border-color: var(--m-border); border-radius: 12px; }
+  .settings-grid-metric span[class*="text-[22px]"] { color: var(--m-text-strong); }
+  .settings-grid-filters { background: var(--m-chip-track); border-color: var(--m-border); border-radius: 12px; }
+  .settings-grid-filters button { min-height: 44px; color: var(--m-muted); font-size: 11px; }
+  .settings-grid-filters button[aria-pressed="true"] { color: var(--m-text-strong); background: var(--m-control-surface); }
+  .settings-grid-search { height: 44px; background: var(--m-card-2); border-color: var(--m-border); border-radius: 12px; }
+  .settings-grid-search input { font-size: 16px; color: var(--m-text); }
+  .settings-grid-search input::placeholder { color: var(--m-muted); }
+
+  .settings-grid-card-stripe { display: none; }
+  .settings-grid-card-row { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: start; gap: 12px; }
+  .settings-grid-card-copy { grid-column: 1; grid-row: 1; }
+  .settings-grid-card-copy > p { color: var(--m-muted); font-size: 11px; letter-spacing: .03em; }
+  .settings-grid-card-icon { grid-column: 2; grid-row: 1; width: 44px; height: 44px; border-radius: 12px; }
+  .settings-grid-card-open { display: none; }
+  .settings-card-title {
+    margin: 0;
+    color: var(--m-text-strong);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -.025em;
+    text-align: left;
+    text-transform: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .settings-card-description { min-height: 0; color: var(--m-muted); font-size: 13px; line-height: 1.45; }
+
+  .settings-carousel-layout { display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .settings-carousel-heading { flex: 0 0 auto; padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 0; }
+  .settings-carousel-stage { flex: 1 1 auto; height: auto; min-height: 0; }
+  .settings-carousel-card-frame { width: min(62vw, 260px); height: min(390px, 84%); }
+  .settings-carousel-card .settings-card-title { order: -1; flex-shrink: 0; }
+  .settings-carousel-eyebrow { margin: 8px 0 0; color: var(--m-muted); font-size: 11px; letter-spacing: .05em; text-align: left; }
+  .settings-carousel-icon { width: 42px; height: 42px; flex-shrink: 0; margin: auto 0 16px; color: var(--m-muted) !important; }
+  .settings-carousel-card[aria-current="true"] { border-color: color-mix(in srgb, var(--settings-accent) 38%, var(--m-border)) !important; }
+  .settings-carousel-card[aria-current="true"] .settings-carousel-icon { color: var(--settings-accent) !important; }
+  .settings-carousel-arrow { width: 44px; height: 44px; border-color: var(--m-border); background: var(--m-card-solid); color: var(--m-text); }
+  .settings-carousel-arrow:hover { border-color: var(--m-border); background: var(--m-card-2); }
+
+  .settings-page-root[data-settings-landing] :is(button, input):focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+  .settings-page-root[data-settings-landing] button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .settings-page-root[data-settings-landing] button { transition: none !important; }
+}

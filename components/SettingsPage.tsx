@@ -8,6 +8,8 @@ import { OperatingRoom, WeeklySchedule } from '../types';
 import { useHospital } from '../contexts/HospitalContext';
 import ModulePageHeading from './ModulePageHeading';
 import { useAuth } from '../contexts/AuthContext';
+import { MobileHeader } from './mobile/MobileShell';
+import './mobile/mobile-settings.css';
 
 const OperatingRoomsManager = dynamic(() => import('./OperatingRoomsManager'), { ssr: false });
 const DepartmentsManager = dynamic(() => import('./DepartmentsManager'), { ssr: false });
@@ -58,7 +60,7 @@ const GROUP_LABELS: Record<Exclude<ModuleGroup, 'all'>, string> = {
 interface SettingsPageProps {
   rooms?: OperatingRoom[];
   onRoomsChange?: (rooms: OperatingRoom[]) => void;
-  onScheduleUpdate?: (roomId: string, schedule: WeeklySchedule) => void;
+  onScheduleUpdate?: (roomId: string, schedule: WeeklySchedule) => Promise<void>;
   /** Přiřazení personálu na sál — stejná cesta jako z detailu sálu. */
   onStaffChange?: (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
   resetTrigger?: number;
@@ -244,7 +246,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
 
   /** Přepínač zobrazení rozcestníku — karusel nebo mřížka modulů. */
   const viewToggle = (
-    <div className="flex items-center gap-1">
+    <div className="settings-view-toggle flex items-center gap-1" role="group" aria-label="Zobrazení modulů nastavení">
       {([
         ['carousel', 'Karusel', GalleryHorizontalEnd],
         ['grid', 'Mřížka', LayoutGrid],
@@ -272,7 +274,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
 
   // Module wrapper with error boundary
   const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+    <div className="settings-module-wrapper w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
       <ErrorBoundary
         fallback={
           <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -288,7 +290,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
   return (
     // Rozcestník vždy přesně vyplní dostupný viewport bez stránkového scrollu.
     // Delší obsah vybraných administračních modulů roluje pouze uvnitř této plochy.
-    <div className={`relative h-full min-h-0 w-full ${selectedModule || landingView === 'grid' ? 'hide-scrollbar overflow-y-auto' : 'overflow-hidden'}`}>
+    <div className={`settings-page-root relative h-full min-h-0 w-full ${selectedModule || landingView === 'grid' ? 'hide-scrollbar overflow-y-auto' : 'overflow-hidden'}`} data-settings-landing={selectedModule ? undefined : landingView}>
       {selectedModule === 'rooms' ? (
         <ModuleWrapper>
           <OperatingRoomsManager 
@@ -355,8 +357,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         <ModuleWrapper>
           {/* Alternativa ke karuselu — stejná skladba jako Rozpis sálů nebo
               Operační obory: nadpis, vodorovná lišta, mřížka karet. */}
-          <div className="statistics-module min-h-full w-full pb-10 font-sans">
-            <header className="mb-7">
+          <div className="settings-landing-grid statistics-module min-h-full w-full pb-10 font-sans">
+            <div className="settings-mobile-heading md:hidden">
+              <MobileHeader kicker="Konfigurace systému" title="Nastavení" right={viewToggle} />
+            </div>
+            <header className="mb-7 hidden md:block">
               <ModulePageHeading
                 icon={SettingsIcon}
                 kicker="SYSTEM CONFIGURATION"
@@ -366,7 +371,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
               />
             </header>
 
-            <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+            <section className="settings-grid-commandbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
               <div className="flex min-w-max items-center gap-2.5">
                 {([
                   { label: 'Moduly celkem', value: settings.length, suffix: 'modulů', icon: LayoutGrid, color: '#38BDF8' },
@@ -374,7 +379,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                   { label: 'Personál', value: groupCounts.personal, suffix: 'modulů', icon: Users, color: '#34D399' },
                   { label: 'Systém', value: groupCounts.system, suffix: 'modulů', icon: SlidersHorizontal, color: '#FBBF24' },
                 ] as const).map(({ label, value, suffix, icon: Icon, color }) => (
-                  <div key={label} className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
+                  <div key={label} className="settings-grid-metric relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]">
                     <div className="flex w-full items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
@@ -395,7 +400,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                   <p className="mt-1 text-[8px] leading-tight text-white/38">Moduly nastavení</p>
                 </div>
 
-                <div className="grid shrink-0 grid-cols-4 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
+                <div className="settings-grid-filters grid shrink-0 grid-cols-4 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
                   {(['all', 'provoz', 'personal', 'system'] as ModuleGroup[]).map(value => (
                     <button
                       key={value}
@@ -409,7 +414,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                   ))}
                 </div>
 
-                <label className="flex h-10 w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/[0.055] bg-black/10 px-3">
+                <label className="settings-grid-search flex h-10 w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/[0.055] bg-black/10 px-3">
                   <Search className="h-4 w-4 shrink-0 text-white/30" />
                   <input
                     value={query}
@@ -423,7 +428,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             </section>
 
             {visibleModules.length === 0 ? (
-              <section className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
+              <section className="settings-grid-empty flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
                 <LayoutGrid className="h-9 w-9 text-white/20" strokeWidth={1.4} />
                 <p className="mt-4 text-sm font-semibold text-white/65">Žádný modul neodpovídá filtru.</p>
               </section>
@@ -437,33 +442,33 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                       key={setting.id}
                       type="button"
                       onClick={() => setSelectedModule(setting.id)}
-                      className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4 text-left transition-colors hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300/60"
+                      className="settings-grid-card group relative flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] py-3.5 pl-5 pr-4 text-left transition-colors hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300/60"
                       style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)' }}
                     >
-                      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${color}88` }} />
+                      <span className="settings-grid-card-stripe absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${color}88` }} />
 
-                      <div className="flex items-center gap-3.5">
+                      <div className="settings-grid-card-row flex items-center gap-3.5">
                         <span
-                          className="flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border"
+                          className="settings-grid-card-icon flex h-11 w-14 shrink-0 items-center justify-center rounded-lg border"
                           style={{ borderColor: `${color}58`, backgroundColor: `${color}1f`, color }}
                         >
                           <Icon className="h-5 w-5" strokeWidth={1.5} />
                         </span>
 
-                        <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-[15px] font-bold leading-tight text-white/90">{setting.title}</h3>
+                        <div className="settings-grid-card-copy min-w-0 flex-1">
+                          <h3 className="settings-card-title truncate text-[15px] font-bold leading-tight text-white/90">{setting.title}</h3>
                           <p className="mt-1 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/30">
                             <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
                             {GROUP_LABELS[setting.group]}
                           </p>
                         </div>
 
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/[0.065] text-white/34 transition-colors group-hover:bg-white/[0.06] group-hover:text-white/80">
+                        <span className="settings-grid-card-open grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/[0.065] text-white/34 transition-colors group-hover:bg-white/[0.06] group-hover:text-white/80">
                           <ArrowRight className="h-3.5 w-3.5" />
                         </span>
                       </div>
 
-                      <p className="mt-auto min-h-[30px] pt-3 text-[11.5px] leading-[15px] text-white/42">
+                      <p className="settings-card-description mt-auto min-h-[30px] pt-3 text-[11.5px] leading-[15px] text-white/42">
                         {setting.description}
                       </p>
                     </button>
@@ -475,8 +480,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         </ModuleWrapper>
       ) : (
         <div className="relative h-full min-h-0 w-full overflow-hidden">
-          <div className="relative z-10 h-full min-h-0 overflow-hidden">
-            <header className="absolute inset-x-0 top-0 z-40 select-none px-4 py-[clamp(1rem,3.4dvh,2.5rem)] sm:px-6 md:pl-32 md:pr-10">
+          <div className="settings-carousel-layout relative z-10 h-full min-h-0 overflow-hidden">
+            <div className="settings-mobile-heading settings-carousel-heading md:hidden">
+              <MobileHeader kicker="Konfigurace systému" title="Nastavení" right={viewToggle} />
+            </div>
+            <header className="absolute inset-x-0 top-0 z-40 hidden select-none px-4 py-[clamp(1rem,3.4dvh,2.5rem)] sm:px-6 md:block md:pl-32 md:pr-10">
               <ModulePageHeading
                 icon={SettingsIcon}
                 kicker="SYSTEM CONFIGURATION"
@@ -488,7 +496,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
 
             <section
               data-settings-carousel
-              className="relative grid h-full min-h-0 place-items-center overflow-hidden [perspective:1500px] md:ml-[5.5rem]"
+              className="settings-carousel-stage relative grid h-full min-h-0 place-items-center overflow-hidden [perspective:1500px] md:ml-[5.5rem]"
               aria-label="Moduly nastavení"
               onMouseEnter={() => setCarouselPaused(true)}
               onMouseLeave={() => setCarouselPaused(false)}
@@ -525,13 +533,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                 type="button"
                 aria-label="Předchozí modul"
                 onClick={() => goToModule(activeModuleIndex - 1)}
-                className="absolute left-4 z-30 grid h-11 w-11 place-items-center rounded-full border border-[#93A1BD]/30 bg-[#0B1224]/70 text-[#D7DEEA] transition-colors hover:border-[#ABB8D3]/60 hover:bg-[#131F3B]/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF] sm:left-8 sm:h-13 sm:w-13 md:left-[clamp(2rem,4vw,4rem)]"
+                className="settings-carousel-arrow absolute left-4 z-30 grid h-11 w-11 place-items-center rounded-full border border-[#93A1BD]/30 bg-[#0B1224]/70 text-[#D7DEEA] transition-colors hover:border-[#ABB8D3]/60 hover:bg-[#131F3B]/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF] sm:left-8 sm:h-13 sm:w-13 md:left-[clamp(2rem,4vw,4rem)]"
               >
                 <ArrowLeft className="h-5 w-5" strokeWidth={1.4} />
               </button>
 
               <div className="absolute inset-0 grid place-items-center [perspective:1300px] [transform-style:preserve-3d]">
-                <div className="relative h-[clamp(16.25rem,48dvh,31.25rem)] w-[clamp(13rem,21vw,21.25rem)] [transform-style:preserve-3d]">
+                <div className="settings-carousel-card-frame relative h-[clamp(16.25rem,48dvh,31.25rem)] w-[clamp(13rem,21vw,21.25rem)] [transform-style:preserve-3d]">
                   {settings.map((setting, index) => {
                     const Icon = setting.icon;
                     const distance = signedModuleDistance(index);
@@ -549,8 +557,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                         aria-hidden={!isVisible}
                         tabIndex={isActive ? 0 : -1}
                         onClick={() => isActive ? setSelectedModule(setting.id) : goToModule(index)}
-                        className="group absolute inset-0 flex cursor-pointer flex-col overflow-hidden rounded-[24px] border p-[clamp(1.5rem,3vw,2.375rem)] text-left transition-[transform,opacity,filter,border-color,background-color] duration-700 ease-[cubic-bezier(0.2,0.72,0.22,1)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF]"
+                        className="settings-carousel-card group absolute inset-0 flex cursor-pointer flex-col overflow-hidden rounded-[24px] border p-[clamp(1.5rem,3vw,2.375rem)] text-left transition-[transform,opacity,filter,border-color,background-color] duration-700 ease-[cubic-bezier(0.2,0.72,0.22,1)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF]"
                         style={{
+                          '--settings-accent': setting.accentColor,
                           transform: `translate3d(${distance * carouselStep}px, ${absoluteDistance * 9}px, ${-absoluteDistance * 118}px) rotateY(${distance * -11}deg) scale(${scale})`,
                           opacity: isVisible ? Math.max(0.18, 1 - absoluteDistance * 0.18) : 0,
                           filter: `brightness(${Math.max(0.42, 1 - absoluteDistance * 0.13)})`,
@@ -564,20 +573,20 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                           boxShadow: isActive
                             ? `0 24px 70px rgba(4,10,34,0.3), 0 0 34px ${setting.accentColor}14, inset 0 1px 0 rgba(190,205,255,0.08)`
                             : '0 18px 52px rgba(4,10,34,0.2), inset 0 1px 0 rgba(190,205,255,0.045)',
-                        }}
+                        } as React.CSSProperties}
                       >
-                        <span className="mb-auto text-center text-[9px] font-semibold uppercase tracking-[0.38em] text-[#9EABC2]">
+                        <span className="settings-carousel-eyebrow mb-auto text-center text-[9px] font-semibold uppercase tracking-[0.38em] text-[#9EABC2]">
                           MODUL
                         </span>
                         <Icon
-                          className="mb-7 h-[clamp(3.25rem,5vw,4rem)] w-[clamp(3.25rem,5vw,4rem)]"
+                          className="settings-carousel-icon mb-7 h-[clamp(3.25rem,5vw,4rem)] w-[clamp(3.25rem,5vw,4rem)]"
                           style={{ color: isActive ? setting.accentColor : '#B3BFD3' }}
                           strokeWidth={1.25}
                         />
-                        <span className="mb-2.5 text-[clamp(1.25rem,2vw,1.875rem)] font-normal uppercase leading-[1.05] tracking-[-0.035em] text-[#F1F4FA]">
+                        <span className="settings-card-title mb-2.5 text-[clamp(1.25rem,2vw,1.875rem)] font-normal uppercase leading-[1.05] tracking-[-0.035em] text-[#F1F4FA]">
                           {setting.title}
                         </span>
-                        <span className="min-h-[42px] text-xs leading-[1.55] text-[#919DB2]">
+                        <span className="settings-card-description min-h-[42px] text-xs leading-[1.55] text-[#919DB2]">
                           {setting.description}
                         </span>
                       </button>
@@ -590,7 +599,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                 type="button"
                 aria-label="Následující modul"
                 onClick={() => goToModule(activeModuleIndex + 1)}
-                className="absolute right-4 z-30 grid h-11 w-11 place-items-center rounded-full border border-[#93A1BD]/30 bg-[#0B1224]/70 text-[#D7DEEA] transition-colors hover:border-[#ABB8D3]/60 hover:bg-[#131F3B]/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF] sm:right-8 sm:h-13 sm:w-13 md:right-[clamp(2rem,4vw,4rem)]"
+                className="settings-carousel-arrow absolute right-4 z-30 grid h-11 w-11 place-items-center rounded-full border border-[#93A1BD]/30 bg-[#0B1224]/70 text-[#D7DEEA] transition-colors hover:border-[#ABB8D3]/60 hover:bg-[#131F3B]/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#848BFF] sm:right-8 sm:h-13 sm:w-13 md:right-[clamp(2rem,4vw,4rem)]"
               >
                 <ArrowRight className="h-5 w-5" strokeWidth={1.4} />
               </button>

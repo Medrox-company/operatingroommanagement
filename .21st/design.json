@@ -95,23 +95,23 @@
         "source": "app/globals.css"
       },
       "--m-border": {
-        "value": "rgba(158, 137, 255, 0.22)",
+        "value": "rgba(137, 161, 226, 0.20)",
         "source": "app/globals.css"
       },
       "--m-muted": {
-        "value": "rgba(255, 255, 255, 0.55)",
+        "value": "#AEBDE0",
         "source": "app/globals.css"
       },
       "--m-accent": {
-        "value": "#925CFF",
+        "value": "#88ADFF",
         "source": "app/globals.css"
       },
       "--m-accent-rgb": {
-        "value": "146, 92, 255",
+        "value": "136, 173, 255",
         "source": "app/globals.css"
       },
       "--m-accent-soft": {
-        "value": "rgba(146, 92, 255, 0.18)",
+        "value": "rgba(136, 173, 255, 0.12)",
         "source": "app/globals.css"
       },
       "--m-on-accent": {
@@ -185,15 +185,20 @@
         "source": "app/globals.css"
       }
     },
-    "spacing": {},
-    "radius": {},
+    "spacing": {
+      "--m-card-padding": { "value": "16px", "source": "app/globals.css" },
+      "--m-page-gutter": { "value": "20px", "source": "app/globals.css" }
+    },
+    "radius": {
+      "--m-card-radius": { "value": "20px", "source": "app/globals.css" }
+    },
     "shadows": {
       "--m-card-shadow": {
-        "value": "0 14px 34px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.055)",
+        "value": "0 3px 12px rgba(0, 8, 19, 0.12)",
         "source": "app/globals.css"
       },
       "--m-card-shadow-strong": {
-        "value": "0 22px 56px rgba(0, 0, 0, 0.46), 0 0 28px rgba(139, 92, 246, 0.08)",
+        "value": "0 14px 30px rgba(0, 8, 19, 0.3)",
         "source": "app/globals.css"
       },
       "--login-button-shadow": {
@@ -228,6 +233,13 @@
     ]
   },
   "decisions": [
+    "Mobile room detail adapts to available height with container queries: compact toolbar, inline 44px estimate controls, side-by-side personnel and four actions in one row. Short landscape uses two columns and a normal-flow next-phase action, avoiding content overlays. Existing navy/light surfaces and configured status colors remain. Secondary captions compact before essential controls; exceptional content and accessibility enlargement retain an overflow fallback. Desktop and clinical handlers are unchanged.",
+    "The mobile Rozpis module is a viewport-fitted iOS-style timeline rather than a vertically scrolling room-card list. It reuses the shared navy/light surfaces and segmented controls, offers 2-hour, 4-hour and operational-day windows plus a Now action, and paginates rooms according to measured available height. Actual recorded phases use solid semantic colors, future estimates are dashed, pauses are striped, and empty windows explicitly say no record rather than implying room availability. Short screens reduce supplementary summary/header content while preserving 44px navigation controls and room-detail access. Desktop scheduling, backend reads/writes and clinical workflow handlers remain unchanged.",
+    "The 2026-09-17 mobile room overview uses two equal-width iOS-inspired tiles per row, replacing the previous full-width room rows. It retains shared navy/light surfaces, 20px corner radius, 16px title inset and 17px semibold headings. Full room names wrap without truncation; semantic phase text/dots sit beneath them, two labelled times follow, and a separate 44px footer keeps detail navigation and contextual actions accessible. Search, filters, live status data, permissions and the desktop layout remain unchanged.",
+    "Phone cards follow one surface contract across room overview/detail, patient flow, timeline, spatial selection, statistics, personnel and the Settings landing: 20px radius, 16px internal inset, sentence-case 17px/600 title first and left-aligned. Shared page headings are 28px/700 directly in the top 44px-minimum toolbar beside actions, with 20px page gutters; introductory kickers are omitted and optional hospital/date metadata stays below. This supersedes the older mobile-specific card geometry; desktop and print stay unchanged. Dark phone surfaces use the Alerts navy-blue family (#050D2D background, #131F49 cards, #192A56 secondary surface, #88ADFF controls), with no teal structural cast. Clinical phase colors and yellow primary actions keep their existing meaning; decorative per-card fills are removed.",
+    "The 2026-09-18 mobile room-detail current phase is the semantic exception to neutral cards: use its configured live color for a vivid feathered gradient, fine outline, restrained glow, elapsed-time accent and completed/current markers. Dark mode deepens the navy center; light mode uses a pale colored surface with dark readable text. The top row holds the current-phase label and actual enabled-workflow position/count. Ready stays neutral; pause, emergency and lock retain existing priority colors. Preserve shared card geometry, the real workflow rail, confirmations and all clinical handlers. No hardcoded surgery pink or reference-specific step count.",
+    "The 2026-09-17 iOS refinement follows Apple Design Resources and HIG patterns while retaining the approved apka.jpg palette: system-first phone typography, large sentence-case titles, grouped inset room/personnel lists, neutral raised segmented controls, restrained separators, and a translucent bottom tab bar with an accessible More sheet. Yellow remains reserved for primary actions and dark active navigation; configured phase colors retain their operational meaning. The detail keeps all four clinical actions and its 15-minute estimate stepper with at least 44px targets. Styles are phone-only through 767px; desktop, actual spatial geometry/materials, permissions, workflow handlers, confirmations, and data access remain unchanged. This is an iOS-inspired React/Capacitor interface, not a SwiftUI rewrite or a claim of pixel fidelity to the supplied empty Figma canvas.",
+    "The 2026-09-15 apka.jpg reference supersedes the earlier mobile canvas choices for the phone dashboard and room detail only: delicate ice-blue/white light surfaces and restrained deep-navy dark surfaces, hairline borders, compact typography, semantic phase dots, and yellow primary actions. Phone room cards are compact searchable rows without logos; the 3D/plan view preserves the actual architectural model and uses a two-metric selected-room sheet. The detail uses a rectangular current-phase panel with the actual horizontally scrollable workflow, two ARO personnel roles, persistent Pause/Hygiene/Call/Arrival actions, and estimated-end minus/plus controls in 15-minute increments. Existing handlers, confirmations, permissions, configured phase colors, desktop layouts, and real-time data remain authoritative. Bottom navigation and the detail CTA respect safe areas and small dynamic viewport heights.",
     "Statistics navigation uses a restrained icon-and-label glow menu with a 3D hover transition, persistent active state, horizontal mobile scrolling, and the original Czech tab names.",
     "Individual statistics tab buttons have no visible outline; selection is communicated by color, background tint, icon, and a short bottom indicator.",
     "Distribution cards in Finance, Rooms, Phases, Notifications, and Devices share the Finance card pattern: cyan eyebrow and top rule, 24px semibold title, 11px subtitle, compact uppercase badge, 132px segmented ring, and a compact legend.",

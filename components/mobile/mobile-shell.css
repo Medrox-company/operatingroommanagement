@@ -1,0 +1,31 @@
+/* Native-feeling type and controls, only on the phone layout. */
+@media (max-width: 767px) {
+  .mobile-ios-screen, .mobile-ios-header, .mobile-ios-segments { font-family: var(--m-font-sans); }
+  .mobile-ios-header, .mobile-ios-header.mobile-module-header { width: 100%; margin: 0 0 20px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .mobile-heading-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; }
+  .mobile-heading-toolbar > h1 { flex: 1; min-width: 0; }
+  .mobile-heading-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .mobile-heading-copy { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; margin-top: 8px; }
+  .mobile-ios-header h1 { margin: 0; color: var(--m-text-strong); text-transform: none; font-size: var(--m-page-title-size); line-height: 1.15; font-weight: 700; letter-spacing: -.035em; overflow-wrap: anywhere; }
+  .mobile-heading-description { flex: 1; min-width: 0; margin: 0; color: var(--m-muted); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+  .timeline-mobile-hero.mobile-module-hero { overflow: visible; background: transparent; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
+  .mobile-module-hero .mobile-ios-header { margin-bottom: 0; }
+  .m-unified-card { border: 1px solid var(--m-border); border-radius: var(--m-card-radius); background: var(--m-card); box-shadow: var(--m-card-shadow); color: var(--m-text); font-family: var(--m-font-sans); }
+  .mobile-heading-actions .timeline-mobile-clock { padding-block: 0; }
+  .m-unified-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; }
+  .m-unified-card-title { margin: 0; color: var(--m-text-strong); font-size: var(--m-card-title-size); font-weight: var(--m-card-title-weight); line-height: 1.3; letter-spacing: -.015em; text-transform: none; overflow-wrap: anywhere; }
+  .mobile-header-metric .m-unified-card-title { min-height: 2.6em; }
+  .m-unified-card.timeline-mobile-room-card,
+  .m-unified-card.timeline-mobile-axis { border: 1px solid var(--m-border) !important; border-radius: var(--m-card-radius) !important; background: var(--m-card) !important; box-shadow: var(--m-card-shadow) !important; }
+  .mobile-module-container.mobile-safe-top { padding: calc(18px + env(safe-area-inset-top, 0px)) var(--m-page-gutter) calc(6rem + env(safe-area-inset-bottom, 0px)) !important; }
+  .mobile-theme-toggle { flex-shrink: 0; touch-action: manipulation; }
+  .mobile-theme-toggle:focus-visible, .mobile-ios-segments button:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+  .mobile-ios-segments { border-radius: 12px; gap: 0; padding: 3px; }
+  .mobile-ios-segments button { min-height: 44px; border-radius: 9px; }
+  .mobile-ios-segments button > span:last-child { font-size: 13px; }
+  .mobile-ios-segments button[aria-pressed=true] { color: var(--m-text-strong) !important; }
+  .mobile-ios-segments button > span:first-child:not(:last-child) { border-radius: 9px; background: var(--m-control-surface) !important; box-shadow: 0 1px 4px rgba(0, 0, 0, .10) !important; }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .mobile-theme-toggle, .mobile-ios-segments button { transition: none; transform: none; }
+}

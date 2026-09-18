@@ -24,6 +24,7 @@ import {
 import { GlassCalendar, InsightPanel } from './AppCharts';
 import type { InsightItem } from './AppCharts';
 import { useStatisticsReport } from './StatisticsReportContext';
+import { hasStatisticsRoomCapacity, scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & Props
@@ -85,7 +86,7 @@ function roomWorkingOverlapSeconds(room: OperatingRoom, start: Date, end: Date):
 
   while (cursor <= lastDay) {
     const schedule = room.weeklySchedule?.[DAY_KEYS[cursor.getDay()]];
-    if (schedule?.enabled) {
+    if (schedule?.enabled && hasStatisticsRoomCapacity(room, statisticsDayWindow(cursor, 0))) {
       const workStart = new Date(cursor);
       workStart.setHours(schedule.startHour, schedule.startMinute, 0, 0);
       const workEnd = new Date(cursor);
@@ -93,6 +94,12 @@ function roomWorkingOverlapSeconds(room: OperatingRoom, start: Date, end: Date):
       const overlapStart = Math.max(startMs, workStart.getTime());
       const overlapEnd = Math.min(endMs, workEnd.getTime());
       if (overlapEnd > overlapStart) seconds += (overlapEnd - overlapStart) / 1_000;
+    } else {
+      const nextDay = new Date(cursor);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const overlapStart = Math.max(startMs, cursor.getTime());
+      const overlapEnd = Math.min(endMs, nextDay.getTime());
+      if (overlapEnd > overlapStart) seconds += (overlapEnd - overlapStart) / 1000;
     }
     cursor.setDate(cursor.getDate() + 1);
   }
@@ -122,12 +129,14 @@ const RoomCard = memo(({
   utilization,
   opsCount,
   avgOpTime,
+  hasCapacity,
   onClick,
 }: {
   room: OperatingRoom;
   utilization: number;
   opsCount: number;
   avgOpTime: number | null;
+  hasCapacity: boolean;
   onClick: () => void;
 }) => {
   const statusMap: Record<string, { label: string; color: string }> = {
@@ -147,7 +156,7 @@ const RoomCard = memo(({
         <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[9px] font-semibold uppercase tracking-[0.13em]" style={{ color: C.muted }}>Operační sál</p>
-            <h3 className="mt-1 text-[13px] font-semibold leading-tight" style={{ color: C.textHi }}>{room.name}</h3>
+            <h3 className="stats-card-title mt-1 text-[13px] font-semibold leading-tight" style={{ color: C.textHi }}>{room.name}</h3>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <StatusBadge status={st.label} color={st.color} />
               {room.isSeptic && (
@@ -160,7 +169,7 @@ const RoomCard = memo(({
           </div>
 
           <div className="shrink-0 text-right">
-            <p className="text-[24px] font-semibold leading-none tabular-nums" style={{ color: C.textHi }}>{Math.round(utilization)}<span className="ml-0.5 text-[11px]" style={{ color: utilColor }}>%</span></p>
+            <p className="text-[24px] font-semibold leading-none tabular-nums" style={{ color: C.textHi }}>{hasCapacity ? Math.round(utilization) : '—'}{hasCapacity && <span className="ml-0.5 text-[11px]" style={{ color: utilColor }}>%</span>}</p>
             <p className="mt-1 text-[8px] uppercase tracking-[0.1em]" style={{ color: C.faint }}>využití</p>
           </div>
         </div>
@@ -227,7 +236,7 @@ const SortChip: React.FC<{
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 export const RoomsTab: React.FC<RoomsTabProps> = memo(({
-  rooms,
+  rooms: allRooms,
   statusHistory,
   calendarHistory,
   periodLabel,
@@ -248,7 +257,11 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
     day: 'numeric', month: 'long', year: 'numeric',
   }), [calendarDay]);
   const activePeriodLabel = calendarSelectionActive ? selectedDayLabel : periodLabel;
-  const analysisHistory = calendarSelectionActive ? calendarHistory : statusHistory;
+  const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? calendarHistory : statusHistory,
+    calendarSelectionActive ? statisticsDayWindow(calendarDay) : statisticsPeriodWindow(periodLabel)),
+  [allRooms, calendarHistory, statusHistory, calendarSelectionActive, calendarDay, periodLabel]);
+  const rooms = roomScope.rooms;
+  const analysisHistory = roomScope.history;
   const calendarMinDate = useMemo(() => {
     const day = operationalToday();
     day.setDate(day.getDate() - 30);
@@ -307,7 +320,8 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
         ? (opDurations.reduce((a, b) => a + b, 0) / opDurations.length) / 60
         : null;
 
-      return { room: r, utilization: util, operations: ops, avgOpTime };
+      const hasCapacity = hasStatisticsRoomCapacity(r, calendarSelectionActive ? statisticsDayWindow(calendarDay) : statisticsPeriodWindow(periodLabel));
+      return { room: r, utilization: util, operations: ops, avgOpTime, hasCapacity };
     });
   }, [
     rooms, statusHistory, calendarHistory, analysisHistory, periodLabel,
@@ -327,8 +341,9 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
 
   // ── Aggregate stats ──
   const avgUtilization = useMemo(() => {
-    if (roomsData.length === 0) return 0;
-    return roomsData.reduce((acc, r) => acc + r.utilization, 0) / roomsData.length;
+    const knownCapacity = roomsData.filter(room => room.hasCapacity);
+    if (knownCapacity.length === 0) return 0;
+    return knownCapacity.reduce((acc, r) => acc + r.utilization, 0) / knownCapacity.length;
   }, [roomsData]);
 
   const totalOps = useMemo(() => roomsData.reduce((acc, r) => acc + r.operations, 0), [roomsData]);
@@ -337,6 +352,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
   const insights = useMemo<InsightItem[]>(() => {
     const out: InsightItem[] = [];
     if (roomsData.length === 0) return out;
+    if (!roomsData.some(room => room.hasCapacity)) return [{ tone: 'info', title: 'Kapacita není určena', text: 'Skutečné výkony jsou zachovány. Bez provozní doby nelze vyhodnotit vytížení ani doporučovat přesuny výkonů.' }];
 
     // 1) Celkové vytížení
     if (avgUtilization >= 80) {
@@ -361,6 +377,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
 
     // 2) Nejslabší sál
     const weakest = [...roomsData]
+      .filter(r => r.hasCapacity)
       .filter(r => (r.room.status as string | undefined)?.toLowerCase() !== 'udrzba')
       .sort((a, b) => a.utilization - b.utilization)[0];
     if (weakest && weakest.utilization < 50) {
@@ -510,6 +527,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
   useStatisticsReport('saly', {
     requiredHistoryFrom: calendarSelectionActive ? selectedDayBounds.start.toISOString() : undefined,
     context: [
+      STATISTICS_ROOM_SCOPE_NOTE,
       calendarSelectionActive
         ? `Provozní den ${selectedDayLabel}, od 07:00 do 07:00 následujícího dne.`
         : `Vybrané období: ${periodLabel}.`,
@@ -519,7 +537,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
     ].join(' '),
     metrics: [
       { label: 'Operační sály', value: rooms.length },
-      { label: 'Průměrné vytížení', value: formatPercent(avgUtilization, 0) },
+      { label: 'Průměrné vytížení', value: sortedRooms.some(room => room.hasCapacity !== false) ? formatPercent(avgUtilization, 0) : '—' },
       { label: 'Výkonů celkem', value: totalOps },
       { label: 'Sálů v provozu', value: roomsInOperation, detail: calendarSelectionActive ? 'Sály s výkonem nebo využitím ve vybraném dni' : 'Aktuálně obsazené sály včetně přípravy' },
       { label: 'Aktuálně volno', value: freeCount },
@@ -537,9 +555,9 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
           { label: 'Průměrný čas', align: 'right' },
           { label: 'Hodinová sazba', align: 'right' },
         ],
-        rows: sortedRooms.map(({ room, utilization, operations, avgOpTime }) => [
+        rows: sortedRooms.map(({ room, utilization, operations, avgOpTime, hasCapacity }) => [
           room.name,
-          formatPercent(utilization, 0),
+          hasCapacity === false ? '—' : formatPercent(utilization, 0),
           operations,
           avgOpTime === null ? '—' : formatMinutes(avgOpTime),
           room.hourlyOperatingCost ? `${formatNumber(room.hourlyOperatingCost, 0)} Kč/h` : '—',
@@ -581,6 +599,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
 
   return (
     <div className="flex flex-col gap-4">
+      <p className="text-xs leading-relaxed" style={{ color: C.muted }}>{STATISTICS_ROOM_SCOPE_NOTE}</p>
       <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
         <main className="flex h-full flex-col gap-4 xl:order-2">
           <InsightPanel
@@ -665,7 +684,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
                     type="button"
                     key={r.room.id}
                     onClick={() => onRoomSelect?.(r.room)}
-                    aria-label={`${r.room.name}, využití ${Math.round(r.utilization)} procent`}
+                    aria-label={`${r.room.name}, využití ${r.hasCapacity ? `${Math.round(r.utilization)} procent` : 'nelze určit bez kapacity'}`}
                     className="group relative min-h-[88px] min-w-0 overflow-hidden rounded-lg p-2.5 text-center transition-colors hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2"
                     style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}`, color }}
                   >
@@ -675,8 +694,8 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
                         <span className="truncate text-[9px] font-medium" style={{ color: C.muted }} title={r.room.name}>{r.room.name}</span>
                       </span>
                       <span className="flex items-baseline justify-center">
-                        <span className="text-[22px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: C.textHi }}>{Math.round(r.utilization)}</span>
-                        <span className="ml-0.5 text-[10px] font-semibold" style={{ color }}>%</span>
+                        <span className="text-[22px] font-semibold leading-none tracking-tight tabular-nums" style={{ color: C.textHi }}>{r.hasCapacity ? Math.round(r.utilization) : '—'}</span>
+                        {r.hasCapacity && <span className="ml-0.5 text-[10px] font-semibold" style={{ color }}>%</span>}
                       </span>
                       <span className="text-[9px] tabular-nums" style={{ color: C.faint }}>{r.operations} výkonů</span>
                     </span>
@@ -719,7 +738,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
             </div>
             <div className="relative mt-5 space-y-2.5 border-t pt-4" style={{ borderColor: C.border }}>
               {[
-                ['Průměrné vytížení', `${Math.round(avgUtilization)} %`],
+                ['Průměrné vytížení', roomsData.some(room => room.hasCapacity) ? `${Math.round(avgUtilization)} %` : '—'],
                 ['Výkonů celkem', String(totalOps)],
                 ['Sálů v provozu', String(roomsInOperation)],
                 ['Mimo provoz', String(maintCount)],
@@ -760,7 +779,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
       <Card className={ROOM_CARD_CLASS}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Operační sály</h3>
+            <h3 className="stats-card-title text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Operační sály</h3>
             <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Kliknutím na kartu zobrazíte podrobné statistiky</p>
           </div>
           <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: C.ghost, border: `1px solid ${C.border}` }}>
@@ -786,6 +805,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               key={data.room.id}
               room={data.room}
               utilization={data.utilization}
+              hasCapacity={data.hasCapacity}
               opsCount={data.operations}
               avgOpTime={data.avgOpTime}
               onClick={() => onRoomSelect?.(data.room)}
@@ -797,7 +817,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
       {/* ── Performance comparison table ── */}
       <Card noPadding className={`overflow-hidden ${ROOM_CARD_CLASS}`}>
         <div className="p-4 pb-3" style={{ borderBottom: `1px solid ${C.ghost}` }}>
-          <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Srovnávací tabulka výkonnosti</h3>
+          <h3 className="stats-card-title text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Srovnávací tabulka výkonnosti</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Souhrnné porovnání využití, výkonů, času a sazeb</p>
         </div>
         <div className="overflow-x-auto">
@@ -836,7 +856,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
                     <td className="px-4 py-3 font-bold" style={{ color: C.textHi }}>{data.room.name}</td>
                     <td className="px-4 py-3 text-right">
                       <span className="font-semibold tabular-nums" style={{ color: utilColor }}>
-                        {formatPercent(data.utilization, 0)}
+                        {data.hasCapacity ? formatPercent(data.utilization, 0) : '—'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-semibold" style={{ color: C.text }}>{data.operations}</td>

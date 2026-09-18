@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import ts from 'typescript';
+import { roomScope } from './load-room-scope.js';
 
 // Exercise the real module callbacks with explicit dependencies. These tests
 // cover report selection and value forwarding, not React scheduling or PDF layout.
@@ -190,7 +191,8 @@ function overviewFixture(overrides = {}) {
     return value + room.index;
   };
   const scope = {
-    metricsDay, period: 'týden', periodLabelMap, rooms, dayHistory, statusHistory,
+    metricsDay, period: 'týden', periodLabelMap, rooms, dayRooms: rooms, dayHistory, statusHistory,
+    STATISTICS_ROOM_SCOPE_NOTE: roomScope.STATISTICS_ROOM_SCOPE_NOTE,
     dayBounds: day => {
       assert.equal(day, metricsDay);
       const start = new Date(day);
@@ -208,6 +210,7 @@ function overviewFixture(overrides = {}) {
     countOperationsForDay: daily(0),
     calculateActiveMinutesForDay: daily(90.4),
     getRoomWorkingMinutesForDate: (_room, day) => { assert.equal(day, metricsDay); return 480; },
+    getRoomTotalWorkingMinutes: () => 480,
     calculatePausedMinutesForDay: daily(3.6),
     calculateOvertimeMinutesForDay: daily(0),
     countOperationsInWorkingHours: periodValue(12),

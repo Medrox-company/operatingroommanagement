@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
 import ts from 'typescript';
+import { roomScope } from './load-room-scope.js';
 
 // Execute the production registration expressions against precomputed tab data.
 // This covers the report contract and readiness gates, not React effects,
@@ -45,7 +46,7 @@ const reportPrograms = Object.fromEntries(['FinanceTab', 'RoomsTab', 'PhasesTab'
 }));
 
 function capture(name, data) {
-  return JSON.parse(JSON.stringify(vm.runInNewContext(reportPrograms[name], data)));
+  return JSON.parse(JSON.stringify(vm.runInNewContext(reportPrograms[name], { ...roomScope, ...data })));
 }
 function section(report, title) {
   const found = report.sections.find(item => item.title === title);
@@ -65,6 +66,41 @@ function validateTables(report) {
     }
   }
 }
+
+function actualFinanceMetrics(rooms, history, calendarDay) {
+  const source = sourceFile('FinanceTab');
+  const names = ['DAY_KEYS', 'PERIOD_DAYS', 'localDateKey', 'isIdlePhaseName', 'roomCapacityHours', 'roomWorkingOverlapByDay', 'roomWorkingOverlapSeconds', 'isInsideRoomWorkingHours', 'roomBusyHours', 'roomScheduledBusyHours', 'roomFinance', 'workingAvgUtilization'];
+  const code = `${names.map(name => declaration(source, name)).join('\n')}\n({ roomFinance, workingAvgUtilization, actual: roomWorkingOverlapSeconds(rooms[0], new Date(2026,8,14,8),new Date(2026,8,14,9),true), downtime: roomWorkingOverlapSeconds(rooms[0], new Date(2026,8,14,8),new Date(2026,8,14,9)) });`;
+  const scope = { rooms, calculationHistory: history, calculationPeriod: 'den', calculationAnchorDate: calendarDay, roomOperationalMetrics: new Map(), getRate: room => room.hourlyOperatingCost, useMemo: factory => factory() };
+  return vm.runInNewContext(ts.transpileModule(code, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, scope);
+}
+
+test('actual Finance calculations retain measured time and starts for disabled rooms without inventing capacity or downtime', () => {
+  const room = { id: 'historic', name: 'Historic', hourlyOperatingCost: 600, weeklySchedule: {} };
+  const history = [
+    { operating_room_id: room.id, event_type: 'operation_start', timestamp: new Date(2026,8,14,8).toISOString() },
+    { operating_room_id: room.id, event_type: 'step_change', step_name: 'Chirurgický výkon', duration_seconds: 3600, timestamp: new Date(2026,8,14,9).toISOString() },
+    { operating_room_id: room.id, event_type: 'step_change', step_name: 'Sál připraven', duration_seconds: 7200, timestamp: new Date(2026,8,14,12).toISOString() },
+  ];
+  const computed = actualFinanceMetrics([room], history, new Date(2026,8,14));
+  assert.equal(computed.roomFinance[0].hours, 1);
+  assert.equal(computed.roomFinance[0].opsCount, 1);
+  assert.equal(computed.roomFinance[0].cost, 600);
+  assert.equal(computed.roomFinance[0].capacityHours, 0);
+  assert.equal(computed.downtime, 0);
+  assert.equal(computed.actual, 3600);
+  const data = financeData({ rooms: [room], roomFinance: computed.roomFinance, allRoomsByCost: computed.roomFinance, workingAvgUtilization: computed.workingAvgUtilization });
+  const report = capture('FinanceTab', data).report;
+  assert.equal(metric(report, 'Průměrné využití'), '—');
+  assert.deepEqual(section(report, 'Kapacita a výkonnost sálů').rows[0].slice(1), ['1,0 h', '—', '—', 1]);
+});
+
+test('unknown-capacity rooms do not dilute known-capacity Finance utilization or produce an invalid empty average', () => {
+  const schedule = { monday: { enabled: true, startHour: 7, startMinute: 0, endHour: 9, endMinute: 0, breakMinutes: 0 } };
+  const rooms = [{ id: 'open', weeklySchedule: schedule, hourlyOperatingCost: 100 }, { id: 'closed', weeklySchedule: {}, hourlyOperatingCost: 100 }];
+  const history = rooms.map(room => ({ operating_room_id: room.id, event_type: 'step_change', step_name: 'Výkon', duration_seconds: 3600, timestamp: new Date(2026,8,14,9).toISOString() }));
+  assert.equal(actualFinanceMetrics(rooms, history, new Date(2026,8,14)).workingAvgUtilization, 50);
+});
 
 const rooms = Array.from({ length: 8 }, (_, index) => ({
   id: `room-${index}`, name: `Sál ${index + 1}`, department: 'Chirurgie',

@@ -20,6 +20,55 @@ function sortRooms(rooms: OperatingRoom[]) {
   );
 }
 
+/**
+ * Jak dlouho po lokální změně ještě nedůvěřujeme odpovědi, která mohla
+ * odejít z databáze dřív, než tam náš zápis dorazil.
+ *
+ * SWR neruší běžící dotazy. Když personál přepne status ve chvíli, kdy je na
+ * cestě pravidelné nebo focus obnovení, dorazí odpověď se starým stavem až po
+ * optimistické změně a přepíše ji — status na displeji „skočí zpátky“.
+ */
+const LOCAL_UPDATE_GRACE_MS = 15_000;
+
+/**
+ * Sloučí čerstvě načtená data s lokálním stavem. Sál, u kterého jsme právě
+ * zapisovali a databáze ho ještě nepotvrdila vyšší revizí, zůstane v lokální
+ * podobě; jakmile revize stoupne, bere se verze z databáze.
+ */
+function mergeFetchedRooms(
+  current: OperatingRoom[],
+  incoming: OperatingRoom[],
+  pendingLocalWrites: Map<string, number>,
+) {
+  if (pendingLocalWrites.size === 0) return incoming;
+  const now = Date.now();
+  const currentById = new Map(current.map((room) => [room.id, room]));
+
+  return incoming.map((room) => {
+    const markedAt = pendingLocalWrites.get(room.id);
+    if (markedAt === undefined) return room;
+
+    if (now - markedAt > LOCAL_UPDATE_GRACE_MS) {
+      pendingLocalWrites.delete(room.id);
+      return room;
+    }
+
+    const local = currentById.get(room.id);
+    if (!local) return room;
+
+    const incomingRevision = typeof room.stateRevision === 'number' ? room.stateRevision : null;
+    const localRevision = typeof local.stateRevision === 'number' ? local.stateRevision : null;
+
+    // Databáze už náš zápis vidí — od té chvíle je autoritou ona.
+    if (incomingRevision !== null && localRevision !== null && incomingRevision > localRevision) {
+      pendingLocalWrites.delete(room.id);
+      return room;
+    }
+
+    return local;
+  });
+}
+
 function upsertRoom(rooms: OperatingRoom[], nextRoom: OperatingRoom) {
   const index = rooms.findIndex((room) => room.id === nextRoom.id);
   if (index === -1) return sortRooms([...rooms, nextRoom]);
@@ -42,16 +91,15 @@ export function useOperatingRoomsData({
   const loadedRoomDetailsRef = useRef(new Set<string>());
   const recentLocalUpdatesRef = useRef(new Map<string, number>());
   const wasRealtimeConnectedRef = useRef(false);
+  const roomsRef = useRef<OperatingRoom[]>([]);
 
   const { data, error, isLoading, mutate } = useSWR<OperatingRoom[]>(
     hospitalId ? ['operating-rooms', hospitalId] : null,
     async () => {
-      if (loadAllDetails || upgradedHospitalRef.current === hospitalId) {
-        return (await fetchOperatingRooms(hospitalId!)) ?? [];
-      }
-      const lightRooms = await fetchOperatingRoomsLight(hospitalId!);
-      if (lightRooms) return lightRooms;
-      return (await fetchOperatingRooms(hospitalId!)) ?? [];
+      const fetched = (loadAllDetails || upgradedHospitalRef.current === hospitalId)
+        ? (await fetchOperatingRooms(hospitalId!)) ?? []
+        : (await fetchOperatingRoomsLight(hospitalId!)) ?? (await fetchOperatingRooms(hospitalId!)) ?? [];
+      return mergeFetchedRooms(roomsRef.current, fetched, recentLocalUpdatesRef.current);
     },
     {
       keepPreviousData: false,
@@ -64,6 +112,10 @@ export function useOperatingRoomsData({
       errorRetryCount: 4,
     },
   );
+
+  useEffect(() => {
+    roomsRef.current = data ?? [];
+  }, [data]);
 
   useEffect(() => {
     upgradedHospitalRef.current = null;
@@ -115,7 +167,10 @@ export function useOperatingRoomsData({
     const fullRooms = await fetchOperatingRooms(hospitalId);
     if (fullRooms) {
       upgradedHospitalRef.current = hospitalId;
-      await mutate(fullRooms, { revalidate: false });
+      await mutate(
+        (current = []) => mergeFetchedRooms(current, fullRooms, recentLocalUpdatesRef.current),
+        { revalidate: false },
+      );
     }
   }, [hospitalId, mutate]);
 
@@ -129,7 +184,10 @@ export function useOperatingRoomsData({
         upgradedHospitalRef.current = null;
         return;
       }
-      void mutate(fullRooms, { revalidate: false });
+      void mutate(
+        (current = []) => mergeFetchedRooms(current, fullRooms, recentLocalUpdatesRef.current),
+        { revalidate: false },
+      );
     });
   }, [hospitalId, loadAllDetails, mutate]);
 
@@ -164,11 +222,8 @@ export function useOperatingRoomsData({
     const roomId = raw?.id;
     if (!roomId) return;
 
-    // I vlastní potvrzenou událost vždy sloučíme. Databáze je zdroj pravdy a
-    // zároveň tím nepřijdeme o téměř současnou změnu z jiného pracoviště.
-    recentLocalUpdatesRef.current.delete(roomId);
-
     if (payload.eventType === 'DELETE') {
+      recentLocalUpdatesRef.current.delete(roomId);
       void mutate((current = []) => current.filter((room) => room.id !== roomId), { revalidate: false });
       return;
     }
@@ -185,8 +240,13 @@ export function useOperatingRoomsData({
       && typeof currentRoom?.stateRevision === 'number'
       && incomingRevision < currentRoom.stateRevision
     ) {
+      // Zastaralá událost. Značku nemažeme — pořád čekáme na potvrzení
+      // vlastního zápisu.
       return;
     }
+
+    // Od téhle chvíle je databáze napřed, lokální ochrana může skončit.
+    recentLocalUpdatesRef.current.delete(roomId);
     const staffAssignmentChanged = Boolean(currentRoom) && (
       (raw.doctor_id !== undefined && raw.doctor_id !== (currentRoom?.staff.doctor.id ?? null))
       || (raw.nurse_id !== undefined && raw.nurse_id !== (currentRoom?.staff.nurse.id ?? null))

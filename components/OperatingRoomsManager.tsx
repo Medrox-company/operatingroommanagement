@@ -9,7 +9,7 @@ import ModulePageHeading from './ModulePageHeading';
 import {
   Plus, Trash2, Edit2, X, Check, AlertCircle, Calendar,
   Building2, ChevronDown, ChevronUp, Power, GripVertical, Search,
-  DoorOpen, Activity, LockKeyhole, CalendarDays, SlidersHorizontal,
+  DoorOpen, Activity, LockKeyhole, CalendarDays, SlidersHorizontal, Loader2,
 } from 'lucide-react';
 import {
   DndContext,
@@ -32,7 +32,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface OperatingRoomsManagerProps {
   rooms?: OperatingRoom[];
   onRoomsChange?: (rooms: OperatingRoom[]) => void;
-  onScheduleUpdate?: (roomId: string, schedule: WeeklySchedule) => void;
+  onScheduleUpdate?: (roomId: string, schedule: WeeklySchedule) => Promise<void>;
 }
 
 type RoomFilter = 'all' | 'today' | 'locked';
@@ -397,12 +397,14 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
   onScheduleUpdate,
 }) => {
   const { activeHospitalId } = useHospital();
-  // Use ref to track if we've done initial load - prevents re-sync from polling
-  const hasInitialized = useRef(false);
+  const scheduleSaveInFlight = useRef(false);
   const [roomsList, setRoomsList] = useState<OperatingRoom[]>([]);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingRoom, setEditingRoom] = useState<OperatingRoom | null>(null);
   const [scheduleEditRoom, setScheduleEditRoom] = useState<OperatingRoom | null>(null);
+  const [isScheduleSaving, setIsScheduleSaving] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [scheduleSuccess, setScheduleSuccess] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -413,10 +415,10 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     department: '',
   });
 
-  // Initialize roomsList only once on mount, ignore subsequent prop changes from polling
+  // Keep saved rows in sync with the server. The open editor has its own
+  // draft, so background refreshes cannot erase what the user is entering.
   useEffect(() => {
-    if (!hasInitialized.current && initialRooms) {
-      hasInitialized.current = true;
+    if (initialRooms) {
       const sorted = initialRooms.map(room => ({
         ...room,
         weeklySchedule: room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE
@@ -599,14 +601,28 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handleUpdateSchedule = (roomId: string, newSchedule: WeeklySchedule) => {
-    const updatedRooms = roomsList.map(r =>
-      r.id === roomId ? { ...r, weeklySchedule: newSchedule } : r
-    );
-    setRoomsList(updatedRooms);
-    onRoomsChange?.(updatedRooms);
-    // Notify parent of schedule update for database persistence
-    onScheduleUpdate?.(roomId, newSchedule);
+  const handleUpdateSchedule = async (roomId: string, newSchedule: WeeklySchedule) => {
+    if (scheduleSaveInFlight.current) return;
+    scheduleSaveInFlight.current = true;
+    setIsScheduleSaving(true);
+    setScheduleError(null);
+    setScheduleSuccess(null);
+    try {
+      if (!onScheduleUpdate) throw new Error('Ukládání provozní doby není dostupné. Obnovte stránku.');
+      await onScheduleUpdate(roomId, newSchedule);
+      setRoomsList(current => current.map(room =>
+        room.id === roomId ? { ...room, weeklySchedule: newSchedule } : room
+      ));
+      setScheduleEditRoom(null);
+      setScheduleSuccess('Provozní doba sálu byla uložena.');
+    } catch (cause) {
+      setScheduleError(cause instanceof TypeError
+        ? 'Provozní dobu se nepodařilo uložit. Zkontrolujte připojení a zkuste to znovu.'
+        : cause instanceof Error ? cause.message : 'Provozní dobu se nepodařilo uložit. Zkuste to znovu.');
+    } finally {
+      scheduleSaveInFlight.current = false;
+      setIsScheduleSaving(false);
+    }
   };
 
   const stats = useMemo(() => {
@@ -749,6 +765,16 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         </div>
       )}
 
+      {scheduleSuccess && (
+        <div role="status" className="mb-4 flex items-center gap-3 rounded-xl border border-emerald-300/20 bg-emerald-300/[0.06] p-3 text-emerald-200">
+          <Check className="h-4 w-4 shrink-0" />
+          <p className="text-xs font-medium">{scheduleSuccess}</p>
+          <button type="button" aria-label="Zavřít potvrzení uložení" onClick={() => setScheduleSuccess(null)} className="ml-auto p-1">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {filteredRooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] py-16 text-center">
           <DoorOpen className="mb-3 h-9 w-9 text-white/32" />
@@ -786,7 +812,11 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                         total={roomsList.length}
                         onEdit={() => setEditingRoom(room)}
                         onDelete={() => setDeleteConfirm(room.id)}
-                        onScheduleEdit={() => setScheduleEditRoom(room)}
+                        onScheduleEdit={() => {
+                          setScheduleError(null);
+                          setScheduleSuccess(null);
+                          setScheduleEditRoom(room);
+                        }}
                         onMoveUp={() => moveRoom(room.id, 'up')}
                         onMoveDown={() => moveRoom(room.id, 'down')}
                         reorderEnabled={reorderEnabled}
@@ -890,13 +920,17 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="staff-picker-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-5"
-            onClick={() => setScheduleEditRoom(null)}
+            onClick={() => { if (!isScheduleSaving) setScheduleEditRoom(null); }}
           >
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="room-schedule-title"
+              aria-busy={isScheduleSaving}
               className="staff-picker-dialog relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl"
             >
               {/* Modal Header */}
@@ -911,11 +945,13 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   </div>
                   <div className="min-w-0">
                     <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-300/65">Týdenní rozvrh</p>
-                    <h2 className="truncate text-lg font-semibold tracking-tight text-white sm:text-xl">{scheduleEditRoom.name}</h2>
+                    <h2 id="room-schedule-title" className="truncate text-lg font-semibold tracking-tight text-white sm:text-xl">{scheduleEditRoom.name}</h2>
                     <p className="mt-1 text-[11px] text-white/40">Provozní hodiny a přestávky</p>
                   </div>
                 </div>
                 <button
+                  type="button"
+                  disabled={isScheduleSaving}
                   onClick={() => setScheduleEditRoom(null)}
                   aria-label="Zavřít"
                   className="staff-picker-icon-button flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
@@ -925,7 +961,9 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
               </div>
               
               {/* Modal Content */}
-              <div className="flex flex-col gap-2 px-6 py-4">
+              <p className="px-6 pt-4 text-xs leading-relaxed text-white/55">Provoz pro jednotlivé dny zapněte tlačítkem vpravo. Změny se použijí až po úspěšném uložení.</p>
+              <fieldset disabled={isScheduleSaving} className="flex min-w-0 flex-col gap-2 border-0 px-6 py-4 disabled:opacity-60">
+                <legend className="sr-only">Provozní doba jednotlivých dnů</legend>
                 {DAYS.map(day => {
                   const schedule = scheduleEditRoom.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
                   const daySchedule = schedule[day.key as keyof WeeklySchedule];
@@ -947,11 +985,20 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                     />
                   );
                 })}
-              </div>
+              </fieldset>
+
+              {scheduleError && (
+                <div role="alert" className="mx-6 mb-4 flex items-start gap-2 rounded-lg border border-red-300/20 bg-red-300/[0.06] p-3 text-sm text-red-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>{scheduleError} Zadaný rozvrh zůstal zachován.</p>
+                </div>
+              )}
               
               {/* Modal Footer */}
               <div className="staff-picker-footer sticky bottom-0 flex justify-end gap-2.5 border-t border-white/[0.07] px-5 py-4 sm:px-6">
                 <button
+                  type="button"
+                  disabled={isScheduleSaving}
                   onClick={() => setScheduleEditRoom(null)}
                   className="h-11 rounded-lg border border-white/[0.09] bg-white/[0.04] px-5 text-[13px] font-semibold text-white/60 transition-colors hover:text-white"
                   style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
@@ -959,15 +1006,16 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                   Zrušit
                 </button>
                 <button
+                  type="button"
+                  disabled={isScheduleSaving}
                   onClick={() => {
-                    handleUpdateSchedule(scheduleEditRoom.id, scheduleEditRoom.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
-                    setScheduleEditRoom(null);
+                    void handleUpdateSchedule(scheduleEditRoom.id, scheduleEditRoom.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE);
                   }}
                   className="flex h-11 items-center gap-2 rounded-lg px-6 text-[13px] font-semibold text-[#061725] transition-colors"
                   style={{ background: '#67E8F9' }}
                 >
-                  <Check className="h-4 w-4" />
-                  Uložit změny
+                  {isScheduleSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  {isScheduleSaving ? 'Ukládání…' : 'Uložit změny'}
                 </button>
               </div>
             </motion.div>

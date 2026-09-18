@@ -7,7 +7,11 @@ interface DynamicOptions { loading?: ComponentType; ssr?: boolean }
 export default function dynamic<TProps extends object>(loader: Loader<TProps>, options: DynamicOptions = {}) {
   const LazyComponent = lazy(async () => {
     const loaded = await loader();
-    return typeof loaded === 'function' ? { default: loaded } : loaded;
+    // Named exports can be memo/forwardRef objects, not only functions. React.lazy
+    // always needs a module-shaped result, even for these exotic components.
+    return loaded !== null && typeof loaded === 'object' && 'default' in loaded
+      ? loaded
+      : { default: loaded as ComponentType<TProps> };
   });
   const Loading = options.loading;
   return function DynamicComponent(props: TProps): ReactNode {

@@ -29,6 +29,7 @@ import { useIsMobileDark } from '../hooks/useIsMobileDark';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import ModulePageHeading from './ModulePageHeading';
 import StaffPickerModal from './StaffPickerModal';
+import './mobile/mobile-statistics.css';
 
 interface RoomWithStaff {
   id: string;
@@ -169,7 +170,7 @@ const PersonTile: React.FC<{
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className={`relative flex w-full items-center gap-2.5 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left font-sans transition-colors ${onClick ? 'hover:bg-white/[0.045]' : 'cursor-default'} focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60`}
+      className={`m-unified-card mobile-staff-person-card relative flex w-full items-center gap-2.5 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left font-sans transition-colors ${onClick ? 'hover:bg-white/[0.045]' : 'cursor-default'} focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60`}
       style={{
         background: isGap ? `${COLORS.red}0B` : 'rgba(255,255,255,0.025)',
         borderColor: isGap ? `${COLORS.red}2E` : 'rgba(255,255,255,0.06)',
@@ -177,10 +178,10 @@ const PersonTile: React.FC<{
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
       }}
     >
-      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}${isGap ? 'AA' : '88'}` }} />
+      <span className="mobile-staff-card-stripe absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}${isGap ? 'AA' : '88'}` }} />
 
       <span
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-full border text-[9px] font-black"
+        className="mobile-staff-avatar grid h-8 w-8 shrink-0 place-items-center rounded-full border text-[9px] font-black"
         style={{
           color: isGap ? COLORS.red : meta.color,
           background: isGap ? `${COLORS.red}12` : `${meta.color}16`,
@@ -190,9 +191,9 @@ const PersonTile: React.FC<{
         {isGap ? '—' : initials(name)}
       </span>
 
-      <span className="min-w-0 flex-1">
+      <span className="mobile-staff-card-copy min-w-0 flex-1">
         <span
-          className="block truncate text-[12.5px] font-semibold leading-tight"
+          className="m-unified-card-title block truncate text-[12.5px] font-semibold leading-tight"
           style={{ color: isGap ? COLORS.red : 'rgba(255,255,255,0.9)' }}
         >
           {name}
@@ -200,7 +201,7 @@ const PersonTile: React.FC<{
         <span className="mt-0.5 flex items-center gap-1.5 text-[9.5px] leading-tight">
           <span className="shrink-0 font-semibold" style={{ color: `${meta.color}B0` }}>{meta.shortLabel}</span>
           <span className="text-white/16">·</span>
-          <span className="truncate" style={{ color: tone === 'working' ? `${accent}D0` : 'rgba(255,255,255,0.42)' }}>
+          <span className="mobile-staff-place truncate" style={{ color: tone === 'working' ? `${accent}D0` : 'rgba(255,255,255,0.42)' }}>
             {place}
           </span>
         </span>
@@ -208,7 +209,7 @@ const PersonTile: React.FC<{
 
       {badge && (
         <span
-          className="shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold tabular-nums"
+          className="mobile-staff-card-meta shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-bold tabular-nums"
           style={{
             borderColor: `${accent}30`,
             background: `${accent}12`,
@@ -263,27 +264,27 @@ const RoomNetworkCard: React.FC<{
       onClick={onSelect}
       aria-pressed={isSelected}
       aria-label={`${room.name} — ${state.running ? 'v provozu' : 'mimo provoz'}, ${state.label}, obsazeno ${filled} z ${roles.length}`}
-      className={`mobile-staff-room-card relative flex h-full w-full flex-col overflow-hidden rounded-xl border py-3 pl-4 pr-3 text-left font-sans transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 ${state.running ? '' : 'opacity-[0.72] hover:opacity-95'}`}
+      className={`m-unified-card mobile-staff-room-card relative flex h-full w-full flex-col overflow-hidden rounded-xl border py-3 pl-4 pr-3 text-left font-sans transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 ${state.running ? '' : 'opacity-[0.72] hover:opacity-95'}`}
       style={{
         background: isSelected ? `${accent}10` : 'rgba(255,255,255,0.025)',
         borderColor: isSelected ? `${accent}45` : 'rgba(255,255,255,0.06)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.025)',
       }}
     >
-      <span className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}88` }} />
+      <span className="mobile-staff-card-stripe absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: `${accent}88` }} />
 
-      <div className="flex items-center gap-2.5">
+      <div className="m-unified-card-header flex items-center gap-2.5">
         {/* Pevná velikost dlaždice — jednomístné i víceznakové číslo sálu
             zabírá stejné místo, takže sloupec drží linku. */}
         <span
-          className="flex h-9 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border px-1 text-[11px] font-black leading-none"
+          className="mobile-staff-avatar flex h-9 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border px-1 text-[11px] font-black leading-none"
           style={{ borderColor: `${accent}58`, backgroundColor: `${accent}1f`, color: accent }}
         >
           <span className="truncate">{roomNumber(room.name)}</span>
         </span>
 
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[13.5px] font-bold leading-tight text-white/90">{room.name}</h3>
+        <div className="mobile-staff-card-copy min-w-0 flex-1">
+          <h3 className="m-unified-card-title truncate text-[13.5px] font-bold leading-tight text-white/90">{room.name}</h3>
           {/* Ve třech sloupcích se nevejde dlouhý řetěz metadat, proto zůstal
               jen provoz a název statusu; oddělení je o řádek níž. */}
           <p className="mt-0.5 flex items-center gap-1.5 text-[9.5px] leading-tight">
@@ -299,7 +300,7 @@ const RoomNetworkCard: React.FC<{
         </div>
 
         <span
-          className="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-bold tabular-nums"
+          className="mobile-staff-card-meta inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-bold tabular-nums"
           style={{
             borderColor: missing > 0 ? `${COLORS.red}30` : `${accent}30`,
             backgroundColor: missing > 0 ? `${COLORS.red}12` : `${accent}12`,
@@ -322,7 +323,7 @@ const RoomNetworkCard: React.FC<{
               {roleMeta[role].shortLabel}
             </span>
             <span
-              className="min-w-0 flex-1 truncate text-[11.5px] font-semibold leading-[15px]"
+              className="mobile-staff-assigned-name min-w-0 flex-1 truncate text-[11.5px] font-semibold leading-[15px]"
               style={{ color: staff ? 'rgba(255,255,255,0.88)' : COLORS.red }}
               title={staff ? staff.name : 'Neobsazeno'}
             >
@@ -541,7 +542,7 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
 
   return (
     <div
-      className={`mobile-staff-overview ${isMobileDark ? 'is-dark' : 'is-light'} relative w-full min-h-full pb-10 font-sans`}
+      className={`mobile-staff-overview mobile-unified-staff ${isMobileDark ? 'is-dark' : 'is-light'} relative w-full min-h-full pb-10 font-sans`}
       style={{ zIndex: 1 }}
     >
       <div
@@ -549,7 +550,7 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
         className="mobile-theme-surface fixed inset-0 md:hidden pointer-events-none"
         style={{ zIndex: -1 }}
       />
-      <div className="md:hidden mb-5">
+      <div className="md:hidden mb-3">
         <MobileModuleHeader kicker="Živý operační program" title="Přehled personálu">
           <MobileHeaderMetrics
             items={[
@@ -660,9 +661,14 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
       </section>
 
       <section
-        className="mobile-staff-panel rounded-[22px] p-2 mb-5 flex flex-col gap-2 md:hidden"
-        style={{ background: 'rgba(255,255,255,0.018)', border: '1px solid rgba(125,165,185,0.14)' }}
+        className="m-unified-card mobile-staff-panel mobile-staff-filters p-4 mb-3 flex flex-col gap-3 md:hidden"
       >
+        <div className="m-unified-card-header">
+          <h2 className="m-unified-card-title">Personální síť</h2>
+          <span className="text-[13px] tabular-nums" style={{ color: 'var(--m-muted)' }}>
+            {filteredRooms.length} / {rooms.length} sálů
+          </span>
+        </div>
         <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
           {([
             ['all', 'Všechny sály', Building2],
@@ -675,10 +681,11 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
                 key={id}
                 type="button"
                 onClick={() => setFilter(id)}
-                className="h-9 px-3 rounded-xl flex items-center gap-2 text-xs font-semibold whitespace-nowrap transition-colors"
+                aria-pressed={active}
+                className="h-11 px-3 rounded-xl flex items-center gap-2 text-[13px] font-semibold whitespace-nowrap transition-colors"
                 style={active
-                  ? { background: 'rgba(54,217,236,0.12)', color: COLORS.cyan, border: '1px solid rgba(54,217,236,0.22)' }
-                  : { color: isMobileDark ? 'rgba(255,255,255,0.42)' : 'var(--m-muted)', border: '1px solid transparent' }}
+                  ? { background: 'var(--m-accent-soft)', color: 'var(--m-accent)', border: '1px solid var(--m-border)' }
+                  : { color: 'var(--m-muted)', border: '1px solid transparent' }}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {label}
@@ -695,12 +702,12 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
               value={department}
               onChange={event => setDepartment(event.target.value)}
               aria-label="Filtrovat podle oddělení"
-              className="h-9 min-w-[160px] px-3 rounded-xl bg-white/[0.025] border border-white/[0.07] text-xs font-semibold text-white/60 focus:outline-none focus:border-cyan-300/35"
-              style={!isMobileDark ? { background: 'var(--m-card-2)', borderColor: 'var(--m-border)', color: 'var(--m-text)' } : undefined}
+              className="h-11 min-w-0 px-3 rounded-xl border text-[16px] focus:outline-none focus:border-cyan-300/35"
+              style={{ background: 'var(--m-card-2)', borderColor: 'var(--m-border)', color: 'var(--m-text)' }}
             >
-              <option value="all" className="bg-slate-950">Všechna oddělení</option>
+              <option value="all" style={{ background: 'var(--m-card-solid)' }}>Všechna oddělení</option>
               {departments.map(item => (
-                <option key={item} value={item} className="bg-slate-950">{item}</option>
+                <option key={item} value={item} style={{ background: 'var(--m-card-solid)' }}>{item}</option>
               ))}
             </select>
           )}
@@ -711,15 +718,16 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
               value={search}
               onChange={event => setSearch(event.target.value)}
               placeholder="Hledat sál nebo člena týmu…"
-              className="w-full h-9 pl-10 pr-10 rounded-xl bg-white/[0.025] border border-white/[0.07] text-xs font-semibold text-white/85 placeholder:text-white/24 focus:outline-none focus:border-cyan-300/35"
-              style={!isMobileDark ? { background: 'var(--m-card-2)', borderColor: 'var(--m-border)', color: 'var(--m-text)' } : undefined}
+              aria-label="Hledat sál nebo člena týmu"
+              className="w-full h-11 pl-10 pr-12 rounded-xl border text-[16px] placeholder:text-white/24 focus:outline-none focus:border-cyan-300/35"
+              style={{ background: 'var(--m-card-2)', borderColor: 'var(--m-border)', color: 'var(--m-text)' }}
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
                 aria-label="Vymazat hledání"
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5"
+                className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -727,20 +735,17 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
           </label>
         </div>
 
-        <span className="px-3 text-[9px] font-semibold text-white/28 whitespace-nowrap">
-          {filteredRooms.length} / {rooms.length} SÁLŮ
-        </span>
       </section>
 
       {loading ? (
-        <section className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025]">
+        <section className="m-unified-card mobile-staff-panel flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025]">
           <Loader2 className="h-7 w-7 animate-spin text-cyan-300/70" />
           <p className="text-[10px] font-bold tracking-[0.2em] text-white/28">SYNCHRONIZUJI TÝMY</p>
         </section>
       ) : rooms.length === 0 ? (
-        <section className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
+        <section className="m-unified-card mobile-staff-panel flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] px-6 text-center">
           <Users className="mb-4 h-9 w-9 text-white/20" strokeWidth={1.4} />
-          <h2 className="text-sm font-semibold text-white/65">Personální data nejsou dostupná</h2>
+          <h2 className="m-unified-card-title text-sm font-semibold text-white/65">Personální data nejsou dostupná</h2>
           <p className="mt-2 max-w-md text-xs text-white/35">
             Jakmile se připojí databáze a načtou sály, živá personální síť se zobrazí zde.
           </p>
@@ -748,10 +753,10 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
       ) : (
         <div className="grid grid-cols-1 gap-5 items-start">
           {/* Panel v jazyce modulu Nastavení — bez přechodů a rastru na pozadí. */}
-          <section className="mobile-staff-panel relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 sm:p-4">
-            <div className="relative mb-4 flex items-center justify-between gap-3 px-1">
+          <section className="m-unified-card mobile-staff-panel relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 sm:p-4">
+            <div className="m-unified-card-header relative mb-4 flex items-center justify-between gap-3 px-1">
               <div>
-                <h2 className="text-[11px] font-semibold leading-tight text-white/92">Kdo pracuje a kdo je volný</h2>
+                <h2 className="m-unified-card-title text-[11px] font-semibold leading-tight text-white/92">Kdo pracuje a kdo je volný</h2>
                 <p className="mt-1 text-[8px] leading-tight text-white/38">Vlevo volný personál · vpravo obsazení sálů</p>
               </div>
               <div className="hidden items-center gap-3 text-[8px] font-semibold uppercase tracking-[0.08em] text-white/28 sm:flex">
@@ -778,7 +783,7 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
                           color={COLORS.red}
                           hint="kliknutím přiřadíte personál"
                         />
-                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                        <div className="mobile-staff-card-grid grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                           {board.gaps.map(item => (
                             <PersonTile
                               key={`${item.roomId}-${item.role}`}
@@ -807,7 +812,7 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
                           Na žádném sále není přiřazený personál.
                         </p>
                       ) : (
-                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                        <div className="mobile-staff-card-grid grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                           {board.working.map(item => (
                             <PersonTile
                               key={item.id}
@@ -836,7 +841,7 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
                           Nikdo není volný — celý aktivní personál je nasazený.
                         </p>
                       ) : (
-                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                        <div className="mobile-staff-card-grid grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                           {board.free.map(item => (
                             <PersonTile
                               key={item.id}
@@ -852,7 +857,7 @@ const StaffOverviewModule: React.FC<StaffOverviewModuleProps> = ({ rooms: operat
                     </section>
                   </motion.div>
                 ) : (
-                  <motion.div layout className="relative grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
+                  <motion.div layout className="mobile-staff-card-grid relative grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
                     {filteredRooms.map(room => (
                       <RoomNetworkCard
                         key={room.id}

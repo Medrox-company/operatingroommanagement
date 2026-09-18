@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useId } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Moon, Sun, X } from 'lucide-react';
 import { useMobileTheme } from '../../hooks/useIsMobileDark';
+import './mobile-shell.css';
 
 /* =============================================================================
    Mobile Shell — sdílené primitivy pro mobilní redesign modulů
    Používá se POUZE v `md:hidden` blocích. Desktop zůstává beze změny.
-   Vizuální jazyk je sjednocený s RoomDetail a NotificationOverlay:
-   rounded-3xl karty, bílé glass okraje, text-balance/pretty, mild tracking.
+   Karty sdílejí geometrii 20/16px a nadpis 17px/600.
+   Významové barvy patří do obsahu; neutrální povrch určuje mobilní téma.
    ========================================================================== */
 
 /**
@@ -23,7 +24,7 @@ export const MobileScreen: React.FC<{ children: React.ReactNode; className?: str
   className = '',
 }) => (
   <div
-    className={`md:hidden h-full w-full overflow-y-auto hide-scrollbar ${className}`}
+    className={`mobile-ios-screen md:hidden h-full w-full overflow-y-auto hide-scrollbar ${className}`}
     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
   >
     <div
@@ -37,29 +38,33 @@ export const MobileScreen: React.FC<{ children: React.ReactNode; className?: str
 
 /**
  * MobileHeader
- * Levá dvojřádková typografie (kicker + title) v duchu detailu sálu.
- * Napravo volitelný akční slot (např. filtr, refresh).
+ * Název obrazovky přímo v horním řádku, napravo volitelné akce.
+ * Doplňující kontext zůstává pod názvem; nadpis se neopakuje.
  */
 export const MobileHeader: React.FC<{
-  kicker: string;
+  /** Zpětná kompatibilita starších volání; mobilní hlavička kicker nezobrazuje. */
+  kicker?: string;
   title: string;
   right?: React.ReactNode;
+  description?: React.ReactNode;
+  secondary?: React.ReactNode;
   embedded?: boolean;
   showThemeToggle?: boolean;
-}> = ({ kicker, title, right, embedded = false, showThemeToggle = true }) => (
-  <header className={`${embedded ? '' : 'mobile-module-header mobile-glass-card rounded-[24px] px-5 py-4'} flex items-center justify-between gap-4`}>
-    <div className="min-w-0">
-      <p className="text-[10px] font-bold uppercase tracking-[0.22em] leading-none" style={{ color: 'var(--m-muted)' }}>
-        {kicker}
-      </p>
-      <h1 className="text-[clamp(19px,5.8vw,24px)] font-extrabold uppercase tracking-tight mt-2 leading-[1.05] text-balance" style={{ color: 'var(--m-text-strong)' }}>
-        {title}
-      </h1>
+}> = ({ title, right, description, secondary, embedded = false, showThemeToggle = true }) => (
+  <header className={`mobile-ios-header ${embedded ? '' : 'mobile-module-header'}`}>
+    <div className="mobile-heading-toolbar">
+      <h1>{title}</h1>
+      {(right || showThemeToggle) && (
+        <div className="mobile-heading-actions">
+          {right}
+          {showThemeToggle && <MobileThemeToggle />}
+        </div>
+      )}
     </div>
-    {(right || showThemeToggle) && (
-      <div className="shrink-0 flex items-center gap-2">
-        {right}
-        {showThemeToggle && <MobileThemeToggle />}
+    {(description || secondary) && (
+      <div className="mobile-heading-copy">
+        {description && <p className="mobile-heading-description">{description}</p>}
+        {secondary}
       </div>
     )}
   </header>
@@ -74,7 +79,7 @@ export const MobileThemeToggle: React.FC<{ className?: string }> = ({ className 
       onClick={toggle}
       aria-label={isDark ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'}
       aria-pressed={isDark}
-      className={`w-10 h-10 rounded-[14px] flex items-center justify-center active:scale-95 transition-transform ${className}`}
+      className={`mobile-theme-toggle w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform ${className}`}
       style={{
         color: 'var(--m-text)',
         background: 'var(--m-card-2)',
@@ -83,20 +88,21 @@ export const MobileThemeToggle: React.FC<{ className?: string }> = ({ className 
       }}
     >
       {isDark
-        ? <Sun className="w-[18px] h-[18px]" strokeWidth={2.1} />
-        : <Moon className="w-[18px] h-[18px]" strokeWidth={2.1} />}
+        ? <Sun className="w-[19px] h-[19px]" strokeWidth={1.7} />
+        : <Moon className="w-[19px] h-[19px]" strokeWidth={1.7} />}
     </button>
   );
 };
 
 export const MobileModuleHeader: React.FC<{
-  kicker: string;
+  /** Zpětná kompatibilita starších volání; mobilní hlavička kicker nezobrazuje. */
+  kicker?: string;
   title: string;
   right?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
 }> = ({ kicker, title, right, children, className = '' }) => (
-  <section className={`timeline-mobile-hero mobile-glass-card rounded-[28px] p-4 ${className}`}>
+  <section className={`timeline-mobile-hero mobile-module-hero ${className}`}>
     <MobileHeader embedded kicker={kicker} title={title} right={right} />
     {children && <div className="mt-4">{children}</div>}
   </section>
@@ -113,28 +119,17 @@ export interface MobileHeaderMetric {
 export const MobileHeaderMetrics: React.FC<{
   items: MobileHeaderMetric[];
 }> = ({ items }) => (
-  <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2.5">
+  <div className="grid grid-cols-2 gap-3">
     {items.map(item => (
       <div
         key={item.label}
-        className="rounded-[18px] px-3.5 py-3.5 flex items-center gap-3 min-w-0"
-        style={{
-          background: `linear-gradient(135deg, ${item.color}12 0%, var(--m-card-solid) 100%)`,
-          border: `1px solid ${item.color}24`,
-          boxShadow: 'inset 0 1px 0 var(--m-card-highlight)',
-        }}
+        className="m-unified-card mobile-header-metric min-w-0 p-4"
       >
-        <span
-          className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0"
-          style={{ background: `${item.color}18`, border: `1px solid ${item.color}30`, color: item.color }}
-        >
-          {item.icon}
-        </span>
         <div className="min-w-0">
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em] truncate" style={{ color: 'var(--m-faint)' }}>
+          <p className="m-unified-card-title">
             {item.label}
           </p>
-          <p className="mt-0.5 leading-none whitespace-nowrap">
+          <p className="mt-3 leading-none whitespace-nowrap">
             <span className="text-[22px] font-extrabold tabular-nums" style={{ color: item.color }}>{item.value}</span>
             {item.suffix && <span className="ml-1.5 text-[12px] font-medium" style={{ color: 'var(--m-muted)' }}>{item.suffix}</span>}
           </p>
@@ -146,7 +141,7 @@ export const MobileHeaderMetrics: React.FC<{
 
 /**
  * MobileCard
- * Základní rounded-3xl "glass" karta. accent (hex) přidá jemné barevné tónování.
+ * Společná karta. Starší accent prop je kompatibilní, ale nemění její povrch.
  */
 export const MobileCard: React.FC<{
   children: React.ReactNode;
@@ -154,21 +149,19 @@ export const MobileCard: React.FC<{
   accent?: string;
   onClick?: () => void;
   as?: 'div' | 'button';
-}> = ({ children, className = '', accent, onClick, as = 'div' }) => {
+}> = ({ children, className = '', onClick, as = 'div' }) => {
   const style: React.CSSProperties = {
-    // Světlý medicínský styl — bílá karta, jemný stín, volitelný barevný tint
-    background: accent
-      ? `linear-gradient(135deg, ${accent}18 0%, var(--m-card-solid) 58%)`
-      : 'var(--m-card)',
-    border: `1px solid ${accent ? `${accent}44` : 'var(--m-border)'}`,
+    background: 'var(--m-card)',
+    border: '1px solid var(--m-border)',
     boxShadow: 'var(--m-card-shadow)',
   };
 
   if (as === 'button' || onClick) {
     return (
       <button
+        type="button"
         onClick={onClick}
-        className={`mobile-glass-card w-full text-left rounded-3xl p-5 outline-none select-none active:scale-[0.99] transition-transform ${className}`}
+        className={`m-unified-card mobile-glass-card w-full text-left p-4 outline-none select-none active:scale-[0.99] transition-transform ${className}`}
         style={style}
       >
         {children}
@@ -176,7 +169,7 @@ export const MobileCard: React.FC<{
     );
   }
   return (
-    <div className={`mobile-glass-card rounded-3xl p-5 ${className}`} style={style}>
+    <div className={`m-unified-card mobile-glass-card p-4 ${className}`} style={style}>
       {children}
     </div>
   );
@@ -202,9 +195,12 @@ export function MobilePillTabs<T extends string>({
   onChange: (v: T) => void;
   className?: string;
 }) {
+  const indicatorId = useId();
+  const reduceMotion = useReducedMotion();
   return (
     <div
-      className={`grid rounded-2xl p-1 gap-1 ${className}`}
+      role="group"
+      className={`mobile-ios-segments grid rounded-2xl p-1 gap-1 ${className}`}
       style={{
         gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
         background: 'var(--m-chip-track)',
@@ -215,19 +211,21 @@ export function MobilePillTabs<T extends string>({
         return (
           <button
             key={tab.id}
+            type="button"
+            aria-pressed={active}
             onClick={() => onChange(tab.id)}
             className="relative rounded-xl text-xs font-semibold py-2.5 px-1.5 transition-colors outline-none truncate"
             style={{ color: active ? 'var(--m-accent)' : 'var(--m-muted)' }}
           >
             {active && (
               <motion.span
-                layoutId="mobile-pill-active"
+                layoutId={`mobile-pill-active-${indicatorId}`}
                 className="absolute inset-0 rounded-xl"
                 style={{
                   background: 'var(--m-card)',
                   boxShadow: '0 4px 12px rgba(23,43,99,0.10)',
                 }}
-                transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 36 }}
               />
             )}
             <span className="relative truncate text-[11px]">{tab.label}</span>

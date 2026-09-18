@@ -8,7 +8,7 @@ import {
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone,
-  Utensils,
+  Utensils, Check,
 } from 'lucide-react';
 import { recordStatusEvent } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
@@ -19,6 +19,7 @@ import { MobileThemeToggle } from './mobile/MobileShell';
 import { RapidSurgeryWarning } from './room/RapidSurgeryWarning';
 import { useNowMs } from '../hooks/useSharedClock';
 import ModulePageHeading from './ModulePageHeading';
+import './mobile/mobile-room-detail.css';
 
 // Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
 const formatElapsed = (totalSeconds: number): string => {
@@ -118,6 +119,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
   const [phaseStartTime, setPhaseStartTime] = useState(() => resolvePhaseStartTime(room));
   const [elapsedTime, setElapsedTime] = useState('00:00');
+  const mobilePhaseStepsRef = useRef<HTMLOListElement>(null);
   const [liveNowMs, setLiveNowMs] = useState(() => Date.now());
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
   const [pauseStartedAt, setPauseStartedAt] = useState<Date | null>(() => {
@@ -238,6 +240,12 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
 
   const currentStepIndex = room.currentStepIndex;
+  useEffect(() => {
+    const list = mobilePhaseStepsRef.current;
+    const current = list?.querySelector<HTMLElement>('.is-current');
+    if (!list || !current || list.clientWidth === 0) return;
+    list.scrollLeft = Math.max(0, current.offsetLeft - list.offsetLeft - (list.clientWidth - current.clientWidth) / 2);
+  }, [currentStepIndex]);
   const prevStepIndex = usePrevious(currentStepIndex);
   const latestStatusStartedAt = room.statusHistory?.[room.statusHistory.length - 1]?.startedAt;
 
@@ -625,488 +633,261 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         )}
       </AnimatePresence>
 
-      {/* ========== MOBILE LAYOUT (md:hidden) — světlý design dle předlohy ========== */}
+      {/* ========== MOBILE LAYOUT — operating-room reference, real controls ========== */}
       <div
-        className="mobile-room-detail flex md:hidden w-full h-full flex-col relative overflow-hidden"
-        style={{ background: 'var(--m-page-bg)' }}
+        className="mobile-room-detail mobile-room-reference flex md:hidden w-full h-full flex-col relative overflow-hidden"
+        style={{ '--room-phase-color': activeColor, '--room-phase-on-color': contrastText(activeColor) } as React.CSSProperties}
+        data-testid="mobile-room-detail"
       >
-
-        {/* Content */}
-        <div
-          className="relative z-10 flex flex-col h-full px-5 overflow-y-auto hide-scrollbar"
-          style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)',
-            paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))',
-          }}
-        >
-          {/* Header — zpět · název + podtitul · zvonek s badge */}
-          <div className="mobile-room-detail-header flex items-center gap-3.5 mb-6">
-            <button
-              onClick={onClose}
-              className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-              style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
-            >
-              <ArrowLeft className="w-[19px] h-[19px]" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
+        <header className="mrd-header">
+          <div className="mrd-header-tools">
+            <button type="button" className="mrd-back" onClick={onClose} aria-label="Zpět na přehled sálů">
+              <ArrowLeft aria-hidden="true" />
+              <span>Operační sály</span>
             </button>
-            <div className="mobile-room-detail-title flex flex-col flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] leading-none" style={{ color: 'var(--m-muted)' }}>
-                Operační sál
-              </p>
-              <h1 className="text-[17px] font-extrabold truncate leading-none mt-1.5" style={{ color: 'var(--m-text)' }}>
-                {room.name}
-              </h1>
+            <div className="mrd-header-actions">
+              <MobileThemeToggle />
+              <button type="button" className="mrd-icon-button" onClick={() => setNotificationOverlayOpen(true)} aria-label="Otevřít notifikace">
+                <Bell aria-hidden="true" />
+              </button>
             </div>
-            <MobileThemeToggle className="shrink-0" />
-            <button
-              onClick={() => setNotificationOverlayOpen(true)}
-              className="relative shrink-0 w-11 h-11 rounded-full flex items-center justify-center active:scale-95 outline-none select-none transition-all"
-              style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
-            >
-              <Bell className="w-[19px] h-[19px]" style={{ color: 'var(--m-text)' }} strokeWidth={2} />
-              <span
-                className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2"
-                style={{ background: '#E5484D', borderColor: 'var(--m-card-solid)' }}
-              />
-            </button>
           </div>
+          <div className="mrd-room-name">
+            <h1>{room.name}</h1>
+            {room.department && <p>{room.department}</p>}
+          </div>
+        </header>
 
-          <RapidSurgeryWarning
-            room={room}
-            statuses={activeDbStatuses}
-            className="mb-5"
-          />
+        <div className="mrd-scroll-content">
+          <RapidSurgeryWarning room={room} statuses={activeDbStatuses} />
 
-          {/* Hero „karta" — plná barva fáze, tmavý text (jako VISA karta) */}
-          <motion.div
-            key={currentStep?.name}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mobile-room-phase-card rounded-[24px] p-6 mb-5 relative overflow-hidden"
-            style={{
-              '--room-phase-color': activeColor,
-              // Pastelový tint v barvě AKTUÁLNÍ FÁZE nad bílým podkladem
-              background: `linear-gradient(135deg, ${activeColor}40 0%, ${activeColor}20 100%), var(--m-card-solid)`,
-              border: `1px solid ${activeColor}4A`,
-              boxShadow: `0 14px 34px ${activeColor}24, var(--m-card-shadow)`,
-            } as React.CSSProperties}
+          {/* Celý box aktuální fáze je aktivní plocha — personál v rukavicích
+              nemusí trefit malé kolečko se šipkou. Kolečko zůstává jako
+              vizuální vodítko a zastavuje probublání, aby se fáze neposunula
+              dvakrát. */}
+          <section
+            className="mrd-phase-card"
+            aria-label="Aktuální fáze"
+            data-emphasized={activeDbStatuses.length > 0 && (!isReadyStatus || room.isEmergency || room.isLocked || isPauseActive) ? 'true' : undefined}
+            data-advanceable={isInteractionBlocked ? undefined : 'true'}
+            role={isInteractionBlocked ? undefined : 'button'}
+            tabIndex={isInteractionBlocked ? undefined : 0}
+            onClick={isInteractionBlocked ? undefined : handleNextStep}
+            onKeyDown={isInteractionBlocked ? undefined : (event) => {
+              if (event.key !== 'Enter' && event.key !== ' ') return;
+              if (event.target !== event.currentTarget) return;
+              event.preventDefault();
+              handleNextStep();
+            }}
           >
-            <div className="mobile-room-phase-meta relative flex items-center justify-between mb-4">
-              <h2 className="text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--m-muted)' }}>Aktuální fáze</h2>
-              <span className="text-[12px] font-semibold tabular-nums" style={{ color: 'var(--m-muted)' }}>
-                <i className="inline-block w-2 h-2 rounded-full mr-2 not-italic" style={{ background: activeColor }} />
-                {safeStepIndex + 1}/{validStepCount}
-              </span>
+            <div className="mrd-phase-meta">
+              <p className="mrd-eyebrow">Aktuální fáze</p>
+              {activeDbStatuses.length > 0 && <span className="mrd-phase-count" aria-label={`Fáze ${safeStepIndex + 1} z ${activeDbStatuses.length}`}>
+                <span aria-hidden="true" />{safeStepIndex + 1}/{activeDbStatuses.length}
+              </span>}
             </div>
-            <div className="mobile-room-phase-body relative">
-              {/* Levá polovina — název fáze + uplynulý čas */}
-              <div className="mobile-room-phase-content min-w-0 flex flex-col justify-center py-1">
-                <p className="text-[24px] font-extrabold leading-tight tracking-tight" style={{ color: 'var(--m-text)' }}>
-                  {room.isEmergency
-                    ? 'Stav nouze'
-                    : room.isLocked
-                    ? 'Uzamčen'
-                    : currentStep?.name || 'Status'}
-                  {isPaused && <span className="text-[20px] font-extrabold uppercase tracking-[-0.01em]" style={{ color: '#22D3EE' }}> · PAUZA</span>}
+            <div className="mrd-phase-top">
+              <div className="mrd-phase-copy">
+                <h2>{currentStep?.title || currentStep?.name || 'Status'}</h2>
+                <p className="mrd-phase-runtime">
+                  Uplynulo <strong>{elapsedTime}</strong>
+                  {isPaused && <span> · Pauza {pauseElapsedTime}</span>}
                 </p>
-
-                <div className="flex items-center gap-1.5 mt-3">
-                  <Clock className="mobile-room-elapsed-icon w-4 h-4" style={{ color: 'var(--m-text)' }} strokeWidth={2.25} />
-                  <span className="mobile-room-elapsed-label hidden text-[13px] font-medium" style={{ color: 'var(--m-muted)' }}>Uplynulo:</span>
-                  <span className="text-[16px] font-bold tabular-nums" style={{ color: 'var(--m-text)' }}>
-                    {elapsedTime}
-                  </span>
-                </div>
-                {isPauseActive && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mobile-room-pause-runtime mt-3 inline-flex self-start items-center gap-2 rounded-[12px] px-2.5 py-2"
-                    style={{
-                      background: 'rgba(6,182,212,0.13)',
-                      border: '1px solid rgba(34,211,238,0.34)',
-                      color: '#22D3EE',
-                    }}
-                  >
-                    <span className="text-[13px] font-extrabold uppercase tracking-[0.11em] leading-none">
-                      {isPauseWorkflowStatus ? (currentStep?.title || currentStep?.name || 'Pauza') : 'Pauza'}
-                    </span>
-                    <span className="text-[12px] font-extrabold tabular-nums leading-none">
-                      {isPaused ? pauseElapsedTime : elapsedTime}
-                    </span>
-                  </motion.div>
-                )}
               </div>
-
-              {/* Pravá polovina boxu — velké tlačítko „Další fáze" se šipkou */}
-              {(!isInteractionBlocked || isPauseActive) && (() => {
-                const nextIdx = validStepCount > 0 ? (safeStepIndex + 1) % validStepCount : 0;
-                const nextName = nextIdx === 0
-                  ? 'Nový cyklus'
-                  : (activeDbStatuses[nextIdx]?.name || 'Další krok');
-                const ctaText = contrastText(activeColor);
-                return (
-                  <motion.button
-                    onClick={isPaused ? undefined : handleNextStep}
-                    disabled={isPaused}
-                    aria-label={isPauseActive ? 'Probíhá pauza' : 'Přejít na další fázi'}
-                    whileTap={{ scale: 0.97 }}
-                    className="mobile-room-next-button w-1/2 shrink-0 min-h-[128px] rounded-[18px] flex flex-col items-center justify-center gap-2 px-3 py-4 outline-none select-none relative overflow-hidden disabled:cursor-default"
-                    style={{
-                      background: `linear-gradient(150deg, ${activeColor} 0%, ${activeColor}D9 100%)`,
-                      boxShadow: `0 14px 30px -8px ${activeColor}80, inset 0 1px 0 rgba(255,255,255,0.28)`,
-                    }}
-                  >
-                    {/* Jemný diagonální lesk */}
-                    <div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.18) 0%, transparent 42%)' }}
-                    />
-                    {/* Šipka v bílém kroužku — jemně se posouvá směrem k dalšímu kroku */}
-                    <motion.span
-                      className={`mobile-room-next-icon relative w-12 h-12 rounded-full flex items-center justify-center${isPauseActive ? ' mobile-room-pause-icon' : ''}`}
-                      animate={isPauseActive
-                        ? { y: [0, -4, 0], rotate: [-6, 6, -6], scale: [1, 1.08, 1] }
-                        : { x: [0, 5, 0] }}
-                      transition={{ duration: isPauseActive ? 1.25 : 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{
-                        // Na světlých barvách fáze tmavý kroužek s bílou šipkou, jinak naopak
-                        background: ctaText === '#17233F' ? '#17233F' : '#FFFFFF',
-                        boxShadow: '0 4px 14px rgba(23,43,99,0.20)',
-                      }}
-                    >
-                      {isPauseActive ? (
-                        <>
-                          <Utensils className="w-8 h-8" strokeWidth={2.35} />
-                          <motion.i
-                            aria-hidden
-                            className="absolute top-3 left-1/2 w-1.5 h-1.5 rounded-full bg-current not-italic"
-                            animate={{ y: [2, -10], opacity: [0, 0.8, 0], scale: [0.7, 1, 0.7] }}
-                            transition={{ duration: 1.15, repeat: Infinity, ease: 'easeOut' }}
-                          />
-                        </>
-                      ) : (
-                        <Play
-                          className="w-6 h-6"
-                          style={{ color: ctaText === '#17233F' ? '#FFFFFF' : activeColor }}
-                          strokeWidth={2.5}
-                        />
-                      )}
-                    </motion.span>
-                    <span className="mobile-room-next-label relative text-[14px] font-bold leading-none mt-1" style={{ color: ctaText }}>
-                      Další fáze
-                    </span>
-                    <span
-                      className="mobile-room-next-label relative text-[10.5px] font-medium truncate max-w-full px-1 leading-none"
-                      style={{ color: ctaText, opacity: 0.82 }}
-                    >
-                      {nextName}
-                    </span>
-                  </motion.button>
-                );
-              })()}
+              <button
+                type="button"
+                className="mrd-phase-advance"
+                style={{ color: contrastText(activeColor) }}
+                onClick={(event) => { event.stopPropagation(); handleNextStep(); }}
+                disabled={isInteractionBlocked}
+                aria-label={isFinalStep ? 'Potvrdit nový cyklus' : 'Přejít na další fázi'}
+              >
+                {room.isLocked && isFinalStep ? <Lock aria-hidden="true" /> : isPaused ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+              </button>
             </div>
-          </motion.div>
 
-          {/* Reálný podíl jednotlivých fází aktuálního cyklu */}
-          <section className="mobile-room-phase-shares mb-5">
-            <div className="flex items-center justify-between mb-2.5 px-0.5">
-              <h2 className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--m-muted)' }}>
-                Zastoupení fází
-              </h2>
-              <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: '#10B981' }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Živě
-              </span>
-            </div>
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-              {livePhaseShares.map((phase, index) => (
-                <motion.div
-                  key={`${phase.name}-${index}`}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.035 }}
-                  className="mobile-room-phase-share min-w-[68px] flex-1 rounded-[14px] px-2 py-2.5 text-center overflow-hidden relative"
-                  style={{
-                    background: phase.isActive ? `${phase.color}1A` : 'var(--m-card)',
-                    border: `1px solid ${phase.isActive ? `${phase.color}55` : 'var(--m-border)'}`,
-                    boxShadow: phase.isActive ? `0 8px 20px ${phase.color}18` : 'var(--m-card-shadow)',
-                  }}
+            {(room.isEmergency || room.isLocked || room.isEnhancedHygiene || isPauseActive) && (
+              <div className="mrd-state-flags" role="status">
+                {room.isEmergency && <span><AlertTriangle aria-hidden="true" />Stav nouze</span>}
+                {room.isLocked && <span><Lock aria-hidden="true" />Uzamčeno</span>}
+                {room.isEnhancedHygiene && <span><ShieldAlert aria-hidden="true" />Zvýšený hygienický režim</span>}
+                {isPauseActive && <span><Pause aria-hidden="true" />{isPaused ? 'Pauza' : currentStep?.name}</span>}
+              </div>
+            )}
+
+            <ol ref={mobilePhaseStepsRef} className="mrd-phase-steps" aria-label="Pořadí fází">
+              {activeDbStatuses.map((step, index) => (
+                <li
+                  key={step.id || index}
+                  className={index < safeStepIndex ? 'is-complete' : index === safeStepIndex ? 'is-current' : ''}
+                  aria-current={index === safeStepIndex ? 'step' : undefined}
                 >
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-3 top-0 h-[2px] rounded-full"
-                    style={{ background: phase.color, opacity: phase.isActive ? 1 : 0.45 }}
-                  />
-                  <p className="text-[16px] font-extrabold tabular-nums leading-none" style={{ color: phase.isActive ? phase.color : 'var(--m-text-strong)' }}>
-                    {phase.percentage}<span className="text-[9px] ml-0.5">%</span>
-                  </p>
-                  <p className="mt-1.5 text-[7px] font-bold uppercase tracking-[0.08em] truncate" style={{ color: 'var(--m-muted)' }} title={phase.name}>
-                    {phase.name}
-                  </p>
-                </motion.div>
+                  <span className="mrd-step-marker" aria-hidden="true">
+                    {index < safeStepIndex ? <Check /> : <span />}
+                  </span>
+                  <span className="mrd-step-name">{step.title || step.name}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {showCleaningWarning && (
+            <p className="mrd-notice" role="alert"><AlertTriangle aria-hidden="true" />Úklid sálu přesahuje 30 minut. Tento krok bude automaticky ukončen.</p>
+          )}
+
+          <section className="mrd-timing" aria-label="Časy sálu">
+            <div className="mrd-time-card mrd-time-card--elapsed">
+              <p className="mrd-time-label">Uplynulý čas</p>
+              <strong className="mrd-time-value">{elapsedTime}</strong>
+              <p className="mrd-time-caption">Aktuální fáze · {liveNowMs - phaseStartTime.getTime() >= 3_600_000 ? 'h : min' : 'min : s'}</p>
+              {isPaused && <p className="mrd-pause-runtime">Pauza {pauseElapsedTime}</p>}
+            </div>
+            <div className="mrd-time-card mrd-time-card--estimate">
+              <p className="mrd-time-label">Odhad konce</p>
+              <strong className="mrd-time-value">
+                {estimatedEndTime && shouldShowTime
+                  ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
+                  : '—'}
+              </strong>
+              <div className="mrd-time-adjustments">
+                <button type="button" onClick={handleDecreaseTime} disabled={isInteractionBlocked || !estimatedEndTime} aria-label="Zkrátit odhadovaný čas o 15 minut">
+                  <Minus aria-hidden="true" /><span>15 min</span>
+                </button>
+                <button type="button" onClick={handleIncreaseTime} disabled={isInteractionBlocked} aria-label="Prodloužit odhadovaný čas o 15 minut">
+                  <Plus aria-hidden="true" /><span>15 min</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="mrd-staff" aria-labelledby="mrd-staff-title">
+            <div className="mrd-section-heading">
+              <h2 id="mrd-staff-title">Personál</h2>
+              <span aria-label="Počet obsazených rolí">{[room.staff?.doctor?.name, room.staff?.nurse?.name].filter(Boolean).length} / 2</span>
+            </div>
+            <div className="mrd-staff-list">
+              {([
+                { role: 'doctor' as const, label: 'ARO lékař', name: room.staff?.doctor?.name, fallback: 'Vybrat lékaře' },
+                { role: 'nurse' as const, label: 'ARO sestra', name: room.staff?.nurse?.name, fallback: 'Vybrat sestru' },
+              ]).map(({ role, label, name, fallback }) => (
+                <button
+                  type="button"
+                  key={role}
+                  className="mrd-staff-row"
+                  onClick={() => { setStaffPickerRole(role); setStaffPickerOpen(true); }}
+                  aria-label={`${label}: ${name || fallback}`}
+                >
+                  {role === 'doctor' ? <Stethoscope className="mrd-staff-icon" aria-hidden="true" /> : <User className="mrd-staff-icon" aria-hidden="true" />}
+                  <span><strong>{label}</strong><span>{name || fallback}</span></span>
+                  <ChevronRight aria-hidden="true" />
+                </button>
               ))}
             </div>
           </section>
 
-          {/* Odhadovaný konec — bílá karta, modrý čas, kruhová ± */}
-          <div
-            className="mobile-room-estimate-card rounded-[24px] px-5 py-4 mb-6 flex items-center justify-between gap-3"
-            style={{ background: 'var(--m-card)', boxShadow: '0 10px 26px rgba(23,43,99,0.07)' }}
-          >
-            <div className="min-w-0">
-              <p className="text-[13px] font-medium leading-none" style={{ color: 'var(--m-muted)' }}>
-                Odhadovaný konec
-              </p>
-              <p className="text-[30px] font-extrabold tabular-nums mt-2 leading-none tracking-tight" style={{ color: 'var(--m-accent)' }}>
-                {estimatedEndTime && shouldShowTime
-                  ? estimatedEndTime.toLocaleTimeString('cs-CZ', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : '--:--'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <motion.button
-                onClick={handleDecreaseTime}
-                disabled={isInteractionBlocked || !estimatedEndTime}
-                whileTap={{ scale: 0.94 }}
-                className="mobile-room-time-button w-11 h-11 rounded-[14px] flex items-center justify-center disabled:opacity-30 outline-none select-none"
-                style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
-              >
-                <Minus className="w-5 h-5" strokeWidth={2.25} style={{ color: 'var(--m-text)' }} />
-              </motion.button>
-              <motion.button
-                onClick={handleIncreaseTime}
-                disabled={isInteractionBlocked}
-                whileTap={{ scale: 0.94 }}
-                className="mobile-room-time-button mobile-room-time-button-primary w-11 h-11 rounded-[14px] flex items-center justify-center disabled:opacity-30 outline-none select-none"
-                style={{ background: 'var(--m-card)', border: '1px solid var(--m-border)', boxShadow: '0 4px 12px rgba(23,43,99,0.07)' }}
-              >
-                <Plus className="w-5 h-5" strokeWidth={2.25} style={{ color: 'var(--m-text)' }} />
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Categories — action tiles section */}
-          <div className="mb-6">
-            <h2 className="text-[15px] font-bold mb-3.5 px-0.5" style={{ color: 'var(--m-text)' }}>Akce</h2>
-            <div className="grid grid-cols-2 min-[360px]:grid-cols-4 gap-3">
-              {/* Pause */}
-              <motion.button
-                onClick={async () => {
-                  const newPaused = !isPaused;
-                  const pausedAt = newPaused ? new Date() : null;
-                  const pausedAtIso = pausedAt?.toISOString() || null;
-                  setIsPaused(newPaused);
-                  setPauseStartedAt(pausedAt);
-                  onPauseChange?.(newPaused, pausedAtIso);
+          <section className="mrd-actions" aria-label="Akce sálu">
+            <button
+              type="button"
+              className={`mrd-action${isPaused ? ' is-active' : ''}`}
+              disabled={Boolean(room.isLocked && isFinalStep)}
+              aria-label={isPaused ? 'Pokračovat ve fázi' : 'Pozastavit fázi'}
+              aria-pressed={isPaused}
+              onClick={async () => {
+                if (room.isLocked && isFinalStep) return;
+                const newPaused = !isPaused;
+                const pausedAt = newPaused ? new Date() : null;
+                setIsPaused(newPaused);
+                setPauseStartedAt(pausedAt);
+                onPauseChange?.(newPaused, pausedAt?.toISOString() || null);
+                await recordStatusEvent({
+                  operating_room_id: room.id,
+                  event_type: newPaused ? 'pause' : 'resume',
+                  step_index: currentStepIndex,
+                  step_name: currentStep?.name || 'Status',
+                });
+              }}
+            >
+              {isPaused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
+              <span>{isPaused ? 'Pokračovat' : 'Pauza'}</span>
+            </button>
+            <button
+              type="button"
+              className={`mrd-action${room.isEnhancedHygiene ? ' is-active' : ''}`}
+              aria-label={room.isEnhancedHygiene ? 'Vypnout hygienický režim' : 'Zapnout hygienický režim'}
+              aria-pressed={Boolean(room.isEnhancedHygiene)}
+              onClick={async () => {
+                const newH = !room.isEnhancedHygiene;
+                onEnhancedHygieneToggle?.(newH);
+                await recordStatusEvent({
+                  operating_room_id: room.id,
+                  event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+                  step_index: currentStepIndex,
+                  step_name: currentStep?.name || 'Status',
+                });
+              }}
+            >
+              <ShieldAlert aria-hidden="true" /><span>Hygiena</span>
+            </button>
+            <button
+              type="button"
+              className={`mrd-action${patientCalledTime ? ' is-active' : ''}`}
+              disabled={Boolean(patientCalledTime)}
+              aria-label="Volat pacienta"
+              onClick={async () => {
+                if (!patientCalledTime) {
+                  const now = new Date();
+                  setPatientCalledTime(now);
+                  setShowPatientCalledText(true);
+                  setTimeout(() => setShowPatientCalledText(false), 5000);
+                  onPatientStatusChange?.(now.toISOString(), null);
                   await recordStatusEvent({
                     operating_room_id: room.id,
-                    event_type: newPaused ? 'pause' : 'resume',
+                    event_type: 'patient_call',
                     step_index: currentStepIndex,
                     step_name: currentStep?.name || 'Status',
                   });
-                }}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className={`mobile-room-action mobile-room-action-pause${isPaused ? ' is-active' : ''} relative overflow-hidden aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all`}
-                style={{
-                  background: isPaused ? 'var(--m-accent-soft)' : 'var(--m-card)',
-                  border: isPaused ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
-                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
-                }}
-              >
-                <div
-                  className="mobile-room-action-icon w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
-                >
-                  {isPaused ? (
-                    <Play className="w-6 h-6" strokeWidth={2} style={{ color: 'var(--m-accent)' }} />
-                  ) : (
-                    <Pause className="w-6 h-6" strokeWidth={2} style={{ color: 'var(--m-accent)' }} />
-                  )}
-                </div>
-                <span
-                  className="mobile-room-action-label text-[12px] font-semibold tracking-tight leading-tight"
-                  style={{ color: isPaused ? 'var(--m-accent)' : 'var(--m-text)' }}
-                >
-                  {isPaused ? 'Pokračovat' : 'Pauza'}
-                </span>
-              </motion.button>
-
-              {/* Hygiene */}
-              <motion.button
-                onClick={async () => {
-                  const newH = !room.isEnhancedHygiene;
-                  onEnhancedHygieneToggle?.(newH);
+                }
+              }}
+            >
+              <Phone aria-hidden="true" />
+              <span>Volat{patientCalledTime && <small>{patientCallElapsedTime}</small>}</span>
+            </button>
+            <button
+              type="button"
+              className={`mrd-action${patientArrivedTime ? ' is-active' : ''}`}
+              disabled={!patientCalledTime || Boolean(patientArrivedTime)}
+              aria-label="Potvrdit příjezd pacienta"
+              onClick={async () => {
+                if (patientCalledTime && !patientArrivedTime) {
+                  const now = new Date();
+                  setPatientArrivedTime(now);
+                  setShowPatientArrivedText(true);
+                  onPatientStatusChange?.(patientCalledTime.toISOString(), now.toISOString());
                   await recordStatusEvent({
                     operating_room_id: room.id,
-                    event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+                    event_type: 'patient_arrived',
                     step_index: currentStepIndex,
                     step_name: currentStep?.name || 'Status',
                   });
-                }}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className={`mobile-room-action mobile-room-action-hygiene${room.isEnhancedHygiene ? ' is-active' : ''} relative overflow-hidden aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all`}
-                style={{
-                  background: room.isEnhancedHygiene ? 'var(--m-accent-soft)' : 'var(--m-card)',
-                  border: room.isEnhancedHygiene ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
-                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
-                }}
-              >
-                <div
-                  className="mobile-room-action-icon w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
-                >
-                  <ShieldAlert className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
-                </div>
-                <span
-                  className="mobile-room-action-label text-[12px] font-semibold tracking-tight leading-tight"
-                  style={{ color: room.isEnhancedHygiene ? 'var(--m-accent)' : 'var(--m-text)' }}
-                >
-                  Hygiena
-                </span>
-              </motion.button>
-
-              {/* Call patient */}
-              <motion.button
-                onClick={async () => {
-                  if (!patientCalledTime) {
-                    const now = new Date();
-                    setPatientCalledTime(now);
-                    setShowPatientCalledText(true);
-                    setTimeout(() => setShowPatientCalledText(false), 5000);
-                    onPatientStatusChange?.(now.toISOString(), null);
-                    await recordStatusEvent({
-                      operating_room_id: room.id,
-                      event_type: 'patient_call',
-                      step_index: currentStepIndex,
-                      step_name: currentStep?.name || 'Status',
-                    });
-                  }
-                }}
-                disabled={!!patientCalledTime}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className={`mobile-room-action mobile-room-action-call${patientCalledTime ? ' is-active' : ''} relative overflow-hidden aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed`}
-                style={{
-                  background: patientCalledTime ? 'var(--m-accent-soft)' : 'var(--m-card)',
-                  border: patientCalledTime ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
-                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
-                }}
-              >
-                <div
-                  className="mobile-room-action-icon w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
-                >
-                  <Phone className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
-                </div>
-                <span
-                  className="mobile-room-action-label text-[12px] font-semibold tracking-tight tabular-nums leading-tight"
-                  style={{ color: patientCalledTime ? 'var(--m-accent)' : 'var(--m-text)' }}
-                >
-                  {patientCalledTime ? patientCallElapsedTime : 'Volat'}
-                </span>
-              </motion.button>
-
-              {/* Patient arrived */}
-              <motion.button
-                onClick={async () => {
-                  if (patientCalledTime && !patientArrivedTime) {
-                    const now = new Date();
-                    setPatientArrivedTime(now);
-                    setShowPatientArrivedText(true);
-                    onPatientStatusChange?.(
-                      patientCalledTime.toISOString(),
-                      now.toISOString(),
-                    );
-                    await recordStatusEvent({
-                      operating_room_id: room.id,
-                      event_type: 'patient_arrived',
-                      step_index: currentStepIndex,
-                      step_name: currentStep?.name || 'Status',
-                    });
-                    setTimeout(() => {
-                      setShowPatientArrivedText(false);
-                    }, 5000);
-                  }
-                }}
-                disabled={!patientCalledTime || !!patientArrivedTime}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className={`mobile-room-action mobile-room-action-arrival${patientArrivedTime ? ' is-active' : ''} relative overflow-hidden aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 outline-none select-none transition-all disabled:cursor-not-allowed`}
-                style={{
-                  background: patientArrivedTime ? 'var(--m-accent-soft)' : 'var(--m-card)',
-                  border: patientArrivedTime ? '1px solid rgba(var(--m-accent-rgb),0.45)' : '1px solid transparent',
-                  boxShadow: '0 8px 20px rgba(23,43,99,0.06)',
-                  opacity: !patientCalledTime ? 0.55 : 1,
-                }}
-              >
-                <div
-                  className="mobile-room-action-icon w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--m-accent-soft)', border: '1.5px solid rgba(var(--m-accent-rgb),0.35)' }}
-                >
-                  <BedDouble className="w-6 h-6" style={{ color: 'var(--m-accent)' }} strokeWidth={2} />
-                </div>
-                <span
-                  className="mobile-room-action-label text-[12px] font-semibold tracking-tight leading-tight"
-                  style={{ color: patientArrivedTime ? 'var(--m-accent)' : 'var(--m-text)' }}
-                >
-                  Příjezd
-                </span>
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Staff — bílé řádky se jménem a rolí */}
-          <div className="mb-4">
-            <h2 className="text-[15px] font-bold mb-3 px-0.5" style={{ color: 'var(--m-text)' }}>Tým</h2>
-            <div className="mobile-room-team-grid flex flex-col gap-2.5">
-              {([
-                {
-                  role: 'doctor' as const,
-                  label: 'Lékař',
-                  name: room?.staff?.doctor?.name,
-                  fallback: 'Nepřiřazen',
-                },
-                {
-                  role: 'nurse' as const,
-                  label: 'Sestra',
-                  name: room?.staff?.nurse?.name,
-                  fallback: 'Nepřiřazena',
-                },
-              ]).map(({ role, label, name, fallback }) => (
-                <button
-                  key={role}
-                  onClick={() => {
-                    setStaffPickerRole(role);
-                    setStaffPickerOpen(true);
-                  }}
-                  className={`mobile-room-team-card mobile-room-team-${role} flex items-center gap-3.5 px-4 py-3.5 rounded-[18px] active:scale-[0.99] text-left w-full outline-none select-none transition-all`}
-                  style={{ background: 'var(--m-card)', boxShadow: '0 8px 20px rgba(23,43,99,0.06)' }}
-                >
-                  <span className="mobile-room-team-icon w-10 h-10 rounded-[13px] flex items-center justify-center shrink-0">
-                    {role === 'doctor'
-                      ? <Stethoscope className="w-5 h-5" strokeWidth={2} />
-                      : <Heart className="w-5 h-5" strokeWidth={2} />}
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[8px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: 'var(--m-muted)' }}>
-                      {label}
-                    </span>
-                    <span className="block mt-1.5 text-[13px] font-bold truncate leading-none" style={{ color: 'var(--m-text)' }}>
-                      {name || fallback}
-                    </span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 shrink-0" style={{ color: 'var(--m-faint)' }} strokeWidth={2.25} />
-                </button>
-              ))}
-            </div>
-          </div>
+                  setTimeout(() => setShowPatientArrivedText(false), 5000);
+                }
+              }}
+            >
+              <BedDouble aria-hidden="true" /><span>Příjezd{patientArrivedTime && <small>Potvrzeno</small>}</span>
+            </button>
+          </section>
+          {(showPatientCalledText || showPatientArrivedText) && (
+            <p className="mrd-action-feedback" role="status">{showPatientArrivedText ? 'Příjezd pacienta potvrzen' : 'Volání pacienta zaznamenáno'}</p>
+          )}
         </div>
+
+        <footer className="mrd-footer">
+          <button type="button" className="mrd-next-button" onClick={handleNextStep} disabled={isInteractionBlocked} aria-describedby="mrd-next-phase">
+            <span>{room.isLocked && isFinalStep ? 'Sál uzamčen' : isPaused ? 'Nejprve pokračujte ve fázi' : isFinalStep ? 'Nový cyklus' : 'Další fáze'}</span>
+            <ArrowRight aria-hidden="true" />
+          </button>
+          <p id="mrd-next-phase" className="mrd-next-description">{isFinalStep ? 'Návrat na začátek po potvrzení' : nextStep?.title || nextStep?.name}</p>
+        </footer>
       </div>
 
       {/* ========== DESKTOP LAYOUT (hidden on mobile) ========== */}

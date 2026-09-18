@@ -540,6 +540,8 @@ function useMounted(): boolean {
 export const GaugeRing: React.FC<{
   /** Zobrazená hodnota; obvod se při přesahu vizuálně zastaví na 100 %. */
   value: number;
+  /** Explicit no-data label; keeps an unknown capacity distinct from zero. */
+  valueLabel?: string;
   size?: number;
   stroke?: number;
   color?: string;
@@ -551,7 +553,7 @@ export const GaugeRing: React.FC<{
   unit?: string;
   /** Tečkované kroužky kolem prstence */
   dotted?: boolean;
-}> = ({ value, size = 340, stroke, color = C.accent, kicker, sublabel, unit = '%', dotted = true }) => {
+}> = ({ value, valueLabel, size = 340, stroke, color = C.accent, kicker, sublabel, unit = '%', dotted = true }) => {
   const on = useMounted();
   const displayValue = Math.max(0, value);
   const visualPercent = Math.min(100, displayValue);
@@ -611,8 +613,8 @@ export const GaugeRing: React.FC<{
           className="font-semibold tabular-nums leading-none"
           style={{ color: C.textHi, fontSize: size * 0.185 }}
         >
-          {Math.round(shown)}
-          <span className="align-top" style={{ fontSize: size * 0.07, color: C.text }}>{unit}</span>
+          {valueLabel ?? Math.round(shown)}
+          {valueLabel === undefined && <span className="align-top" style={{ fontSize: size * 0.07, color: C.text }}>{unit}</span>}
         </span>
       </div>
     </div>
@@ -764,7 +766,7 @@ export interface OrbitItem {
 
 export const OrbitRings: React.FC<{
   /** Obsah centrálního prstence */
-  center: { value: number; color?: string; kicker?: string; sublabel?: string };
+  center: { value: number; valueLabel?: string; color?: string; kicker?: string; sublabel?: string };
   items: OrbitItem[];
   onSelect?: (id: string) => void;
   /** Trvale zvýrazněná položka (vybraný výkon) */
@@ -975,6 +977,7 @@ export const OrbitRings: React.FC<{
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ zIndex: 3 }}>
           <GaugeRing
             value={center.value}
+            valueLabel={center.valueLabel}
             size={centerSize}
             color={center.color}
             kicker={center.kicker}

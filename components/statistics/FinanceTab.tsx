@@ -21,6 +21,7 @@ import {
 } from '../../lib/db';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 import { useStatisticsReport } from './StatisticsReportContext';
+import { scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
 
@@ -145,7 +146,9 @@ const roomCapacityHours = (room: OperatingRoom, period: Period, anchorDate = new
 
 /**
  * Vrátí průnik intervalu s nastavenou pracovní dobou sálu po jednotlivých
- * lokálních dnech. Časy mimo povolené okno se nikdy nezapočítají.
+ * lokálních dnech. Kde je kladná kapacita známá, čas se omezí na toto okno.
+ * Volitelně zachová skutečně měřenou aktivitu ve dnech bez aktuálního rozvrhu;
+ * tento režim není určen pro výpočet kapacity, prostojů či využití.
  * `breakMinutes` zde nelze odečíst z konkrétního místa intervalu, protože
  * databáze ukládá jen délku pauzy, ne její začátek a konec.
  */
@@ -153,6 +156,7 @@ const roomWorkingOverlapByDay = (
   room: OperatingRoom,
   rawStart: Date,
   rawEnd: Date,
+  includeUnscheduledActivity = false,
 ): Array<{ date: string; seconds: number }> => {
   const startMs = rawStart.getTime();
   const endMs = rawEnd.getTime();
@@ -166,7 +170,9 @@ const roomWorkingOverlapByDay = (
 
   while (cursor <= finalDay) {
     const schedule = room.weeklySchedule?.[DAY_KEYS[cursor.getDay()]];
-    if (schedule?.enabled) {
+    const gross = schedule ? (schedule.endHour * 60 + schedule.endMinute) - (schedule.startHour * 60 + schedule.startMinute) : 0;
+    const hasCapacity = Boolean(schedule?.enabled && gross > Math.max(0, schedule.breakMinutes ?? 0));
+    if (schedule && hasCapacity) {
       const workStart = new Date(cursor);
       workStart.setHours(schedule.startHour, schedule.startMinute, 0, 0);
       const workEnd = new Date(cursor);
@@ -176,6 +182,14 @@ const roomWorkingOverlapByDay = (
       if (overlapEnd > overlapStart) {
         overlaps.push({ date: localDateKey(cursor), seconds: (overlapEnd - overlapStart) / 1_000 });
       }
+    } else if (includeUnscheduledActivity) {
+      // A measured operation survives later disabling of its schedule. This is
+      // actual time, not invented capacity or a fabricated downtime interval.
+      const nextDay = new Date(cursor);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const overlapStart = Math.max(startMs, cursor.getTime());
+      const overlapEnd = Math.min(endMs, nextDay.getTime());
+      if (overlapEnd > overlapStart) overlaps.push({ date: localDateKey(cursor), seconds: (overlapEnd - overlapStart) / 1000 });
     }
     cursor.setDate(cursor.getDate() + 1);
   }
@@ -183,8 +197,8 @@ const roomWorkingOverlapByDay = (
   return overlaps;
 };
 
-const roomWorkingOverlapSeconds = (room: OperatingRoom, start: Date, end: Date) =>
-  roomWorkingOverlapByDay(room, start, end).reduce((sum, item) => sum + item.seconds, 0);
+const roomWorkingOverlapSeconds = (room: OperatingRoom, start: Date, end: Date, includeUnscheduledActivity = false) =>
+  roomWorkingOverlapByDay(room, start, end, includeUnscheduledActivity).reduce((sum, item) => sum + item.seconds, 0);
 
 const isInsideRoomWorkingHours = (room: OperatingRoom, at: Date) => {
   if (!Number.isFinite(at.getTime())) return false;
@@ -221,7 +235,7 @@ const YieldCard: React.FC<{
   rows: Array<{ label: string; value: string }>;
 }> = ({ value, unit, sub, caption, color, rows, onClick, costLabel = 'Náklady za období' }) => (
   <div
-    className="group relative rounded-lg p-3 flex flex-col overflow-hidden w-full text-left transition-colors duration-200"
+    className="stats-shared-card group relative rounded-lg p-3 flex flex-col overflow-hidden w-full text-left transition-colors duration-200"
     style={{
       background: 'var(--stats-surface-2)',
       border: `1px solid ${C.border}`,
@@ -239,12 +253,12 @@ const YieldCard: React.FC<{
       </button>
     )}
     <div className="relative flex items-start min-h-[50px]">
-      <div className="min-w-0 flex-1">
+      <div className="stats-card-heading-copy min-w-0 flex-1">
         <p className="text-[9px] uppercase font-semibold tracking-[0.1em]" style={{ color: C.muted }}>
           Operační sál
         </p>
         <p
-          className="text-[15px] sm:text-[16px] font-semibold leading-[1.15] mt-0.5 line-clamp-2"
+          className="stats-card-title text-[15px] sm:text-[16px] font-semibold leading-[1.15] mt-0.5 line-clamp-2"
           style={{ color: C.textHi }}
           title={sub}
         >
@@ -307,7 +321,7 @@ const PanelCard: React.FC<{
       </span>
       <div className="min-w-0">
         <p className="text-[9px] uppercase font-semibold tracking-[0.1em]" style={{ color: C.muted }}>Finance</p>
-        <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>{title}</h3>
+        <h3 className="stats-card-title text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>{title}</h3>
       </div>
       {badge && (
         <span
@@ -421,7 +435,7 @@ const PillMetric: React.FC<{
 // FinanceTab — vše počítáno z reálných DB dat
 // ─────────────────────────────────────────────────────────────────────────────
 export function FinanceTab({
-  rooms,
+  rooms: allRooms,
   periodLabel,
   view = 'finance',
   statusHistory: providedHistory,
@@ -552,8 +566,15 @@ export function FinanceTab({
     return () => { cancelled = true; };
   }, [calendarDay, calendarSelectionActive]);
 
-  const calculationHistory = calendarSelectionActive ? selectedDayHistory : history;
-  const calculationNotifications = calendarSelectionActive ? selectedDayNotifications : notificationRows;
+  const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? selectedDayHistory : history,
+    calendarSelectionActive ? statisticsDayWindow(calendarDay, 0) : statisticsPeriodWindow(periodLabel)),
+  [allRooms, selectedDayHistory, history, calendarSelectionActive, calendarDay, periodLabel]);
+  // Rates are configuration, including rooms that have not opened yet.
+  const rooms = view === 'rates' ? allRooms : roomScope.rooms;
+  const calculationHistory = roomScope.history;
+  const calculationNotifications = useMemo(() => (calendarSelectionActive ? selectedDayNotifications : notificationRows)
+    .filter(row => Boolean(row.room_id && roomScope.roomIds.has(row.room_id))),
+  [calendarSelectionActive, selectedDayNotifications, notificationRows, roomScope]);
   const calculationPeriod: Period = calendarSelectionActive ? 'den' : periodLabel;
   const calculationAnchorDate = calendarSelectionActive ? calendarDay : undefined;
   const selectedDayStartMs = useMemo(() => {
@@ -632,12 +653,27 @@ export function FinanceTab({
       if (!room) continue;
       const end = new Date(row.timestamp);
       const start = new Date(end.getTime() - seconds * 1_000);
-      const workingSeconds = roomWorkingOverlapSeconds(room, start, end);
+      const workingSeconds = roomWorkingOverlapSeconds(room, start, end, true);
       if (workingSeconds <= 0) continue;
       const prev = map.get(row.operating_room_id) ?? 0;
       map.set(row.operating_room_id, prev + workingSeconds / 3600);
     }
     return map;
+  }, [calculationHistory, rooms]);
+
+  const roomScheduledBusyHours = useMemo(() => {
+    const result = new Map<string, number>();
+    const roomById = new Map(rooms.map(room => [room.id, room]));
+    for (const event of calculationHistory) {
+      if (event.event_type !== 'step_change' || isIdlePhaseName(event.step_name)) continue;
+      const seconds = event.duration_seconds ?? 0;
+      const room = roomById.get(event.operating_room_id);
+      if (!room || !Number.isFinite(seconds) || seconds <= 0) continue;
+      const end = new Date(event.timestamp);
+      const start = new Date(end.getTime() - seconds * 1000);
+      result.set(room.id, (result.get(room.id) ?? 0) + roomWorkingOverlapSeconds(room, start, end) / 3600);
+    }
+    return result;
   }, [calculationHistory, rooms]);
 
   // ── Sazba per sál (s lokálním override pro instant feedback) ─────────
@@ -799,7 +835,7 @@ export function FinanceTab({
       // Vytížení se poměřuje proti pracovní době sálu, ne proti kalendáři.
       const capacityHours = roomCapacityHours(r, calculationPeriod, calculationAnchorDate);
       const utilizationPct = capacityHours > 0
-        ? Math.min(100, (hours / capacityHours) * 100)
+        ? Math.min(100, ((roomScheduledBusyHours.get(r.id) ?? 0) / capacityHours) * 100)
         : 0;
       const operational = roomOperationalMetrics.get(r.id);
       const downtimeMinutes = operational?.downtimeMinutes ?? 0;
@@ -816,7 +852,7 @@ export function FinanceTab({
         opsCount: calculationHistory.filter(row =>
           row.operating_room_id === r.id
           && row.event_type === 'operation_start'
-          && isInsideRoomWorkingHours(r, new Date(row.timestamp))
+          && (roomCapacityHours(r, 'den', new Date(row.timestamp)) === 0 || isInsideRoomWorkingHours(r, new Date(row.timestamp)))
         ).length,
         configured: rate !== null && rate >= 0,
         downtimeMinutes,
@@ -834,23 +870,24 @@ export function FinanceTab({
           .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'cs')),
       };
     });
-  }, [rooms, getRate, roomBusyHours, calculationPeriod, calculationAnchorDate, calculationHistory, roomOperationalMetrics]);
+  }, [rooms, getRate, roomBusyHours, roomScheduledBusyHours, calculationPeriod, calculationAnchorDate, calculationHistory, roomOperationalMetrics]);
 
   const workingOpsCount = useMemo(
     () => roomFinance.reduce((sum, room) => sum + room.opsCount, 0),
     [roomFinance],
   );
   const workingAvgUtilization = useMemo(
-    () => roomFinance.length > 0
-      ? roomFinance.reduce((sum, room) => sum + room.utilizationPct, 0) / roomFinance.length
-      : 0,
+    () => {
+      const knownCapacity = roomFinance.filter(room => room.capacityHours > 0);
+      return knownCapacity.length > 0 ? knownCapacity.reduce((sum, room) => sum + room.utilizationPct, 0) / knownCapacity.length : 0;
+    },
     [roomFinance],
   );
 
   /** Intenzita dnů v kalendáři = skutečný náklad uvnitř pracovní doby. */
   const financeCalendarHeat = useMemo(() => {
     const source = calendarHistory ?? history;
-    const roomById = new Map(rooms.map(room => [room.id, room]));
+    const roomById = new Map(allRooms.map(room => [room.id, room]));
     const costsByDay = new Map<string, number>();
 
     for (const row of source) {
@@ -864,7 +901,7 @@ export function FinanceTab({
 
       const end = new Date(row.timestamp);
       const start = new Date(end.getTime() - seconds * 1_000);
-      for (const overlap of roomWorkingOverlapByDay(room, start, end)) {
+      for (const overlap of roomWorkingOverlapByDay(room, start, end, true)) {
         const cost = (overlap.seconds / 3600) * rate;
         costsByDay.set(overlap.date, (costsByDay.get(overlap.date) ?? 0) + cost);
       }
@@ -875,7 +912,7 @@ export function FinanceTab({
     return Object.fromEntries(
       Array.from(costsByDay.entries()).map(([date, cost]) => [date, cost / maximum]),
     );
-  }, [calendarHistory, getRate, history, rooms]);
+  }, [calendarHistory, getRate, history, allRooms]);
 
   // ── Souhrnné metriky ─────────────────────────────────────────────────
   const summary = useMemo(() => {
@@ -975,7 +1012,7 @@ export function FinanceTab({
       const end = new Date(row.timestamp);
       const start = new Date(end.getTime() - seconds * 1_000);
       const rate = ratesByRoom.get(row.operating_room_id) ?? null;
-      for (const overlap of roomWorkingOverlapByDay(room, start, end)) {
+      for (const overlap of roomWorkingOverlapByDay(room, start, end, true)) {
         const idx = bucketMap.get(overlap.date);
         if (idx === undefined) continue;
         const hours = overlap.seconds / 3600;
@@ -1049,7 +1086,7 @@ export function FinanceTab({
       if (!sourceRoom) continue;
       const end = new Date(row.timestamp);
       const start = new Date(end.getTime() - seconds * 1_000);
-      const workingSeconds = roomWorkingOverlapSeconds(sourceRoom, start, end);
+      const workingSeconds = roomWorkingOverlapSeconds(sourceRoom, start, end, true);
       if (workingSeconds <= 0) continue;
 
       const phase = (row.step_name ?? '').trim() || 'Neurčeno';
@@ -1166,7 +1203,7 @@ export function FinanceTab({
           <DollarSign className="h-4 w-4" />
         </span>
         <div className="min-w-0">
-          <h3 className="truncate text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Hodinové sazby operačních sálů</h3>
+          <h3 className="stats-card-title truncate text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Hodinové sazby operačních sálů</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>{historyLoading ? 'Načítám historii statusů…' : 'Kliknutím na hodnotu sazbu upravíte'}</p>
         </div>
         <span className="ml-auto rounded-md px-2.5 py-1 text-[10px] font-medium tabular-nums" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>{summary.configuredCount}/{rooms.length}</span>
@@ -1313,7 +1350,8 @@ export function FinanceTab({
   } : !financeReportReady ? null : {
     context: [
       reportScope,
-      'Náklady vycházejí z naměřeného času provozních fází v pracovní době a aktuální hodinové sazby; klidový stav Sál připraven se nezapočítává.',
+      STATISTICS_ROOM_SCOPE_NOTE,
+      'Náklady vycházejí z naměřeného času provozních fází a aktuální hodinové sazby. Při známé kapacitě se čas omezuje na pracovní dobu; pro dny bez současné kapacity zůstává zachován skutečně naměřený čas. Klidový stav Sál připraven se nezapočítává.',
       `${summary.unconfiguredCount} sálů bez sazby není zahrnuto do součtů nákladů a provozních hodin s nastavenou sazbou.`,
       !providedHistory && !calendarSelectionActive ? 'Samostatné načtení historie v této záložce je omezeno na 5 000 záznamů.' : '',
     ].filter(Boolean).join(' '),
@@ -1321,7 +1359,7 @@ export function FinanceTab({
       { label: 'Celkové náklady provozu', value: reportMoney(summary.totalCost) },
       { label: 'Provozní hodiny', value: reportHours(summary.totalHours), detail: 'Sály s nastavenou sazbou' },
       { label: 'Výkony v pracovní době', value: workingOpsCount, detail: 'Všechny evidované sály' },
-      { label: 'Průměrné využití', value: `${formatNumber(workingAvgUtilization, 0)} %` },
+      { label: 'Průměrné využití', value: roomFinance.some(room => room.capacityHours > 0) ? `${formatNumber(workingAvgUtilization, 0)} %` : '—' },
       { label: 'Náklad na hodinu', value: `${formatNumber(summary.costPerHour, 0)} Kč/h` },
       { label: 'Náklad na výkon', value: reportMoney(summary.costPerOperation), detail: 'Sály s nastavenou sazbou' },
       { label: 'Průměrná sazba', value: `${formatNumber(summary.avgRate, 0)} Kč/h` },
@@ -1345,7 +1383,7 @@ export function FinanceTab({
         title: 'Kapacita a výkonnost sálů',
         description: 'Kapacita odpovídá nastavené pracovní době po odečtení přestávek. Využití se poměřuje s touto kapacitou, nikoli s kalendářním časem.',
         columns: [{ label: 'Sál' }, { label: 'Provoz', align: 'right' }, { label: 'Kapacita', align: 'right' }, { label: 'Využití', align: 'right' }, { label: 'Výkony', align: 'right' }],
-        rows: allRoomsByCost.map(room => [room.name, reportHours(room.hours), reportHours(room.capacityHours), `${formatNumber(room.utilizationPct, 0)} %`, room.opsCount]),
+        rows: allRoomsByCost.map(room => [room.name, reportHours(room.hours), room.capacityHours > 0 ? reportHours(room.capacityHours) : '—', room.capacityHours > 0 ? `${formatNumber(room.utilizationPct, 0)} %` : '—', room.opsCount]),
         emptyMessage: 'Žádné operační sály k zobrazení.',
       },
       {
@@ -1427,7 +1465,7 @@ export function FinanceTab({
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[10px] font-medium" style={{ color: C.muted }}>Sazby</p>
-                  <h2 className="mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>Hodinové sazby operačních sálů</h2>
+                  <h2 className="stats-card-title mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>Hodinové sazby operačních sálů</h2>
                   <p className="mt-1 text-[11px]" style={{ color: C.muted }}>Hodnoty používané ve všech finančních výpočtech aplikace</p>
                 </div>
                 <span className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-[11px] font-medium tabular-nums" style={{ color: C.text, background: C.ghost, border: `1px solid ${C.border}` }}>
@@ -1490,7 +1528,7 @@ export function FinanceTab({
                   {summary.unconfiguredCount > 0 ? <AlertTriangle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
                 </span>
                 <div>
-                  <h3 className="text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Stav konfigurace</h3>
+                  <h3 className="stats-card-title text-[15px] font-semibold tracking-tight" style={{ color: C.textHi }}>Stav konfigurace</h3>
                   <p className="mt-0.5 text-[10px]" style={{ color: C.muted }}>Kontrola připravenosti výpočtů</p>
                 </div>
               </div>
@@ -1510,6 +1548,7 @@ export function FinanceTab({
   // ─────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-4">
+      <p className="text-xs leading-relaxed" style={{ color: C.muted }}>{STATISTICS_ROOM_SCOPE_NOTE}</p>
       {/* Souhrn a kalendář vlevo, náklady jednotlivých sálů v hlavním sloupci. */}
       <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
         <div className="flex flex-col gap-4 xl:order-2">
@@ -1520,7 +1559,7 @@ export function FinanceTab({
                 <p className="text-[9px] uppercase font-medium tracking-[0.1em]" style={{ color: C.muted }}>
                   Finance
                 </p>
-                <h2 className="mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>
+                <h2 className="stats-card-title mt-1 text-[16px] font-semibold tracking-tight" style={{ color: C.textHi }}>
                   {calendarSelectionActive
                     ? `Náklady provozu · ${calendarDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}`
                     : `Náklady provozu za ${periodLabel}`}
@@ -1878,7 +1917,7 @@ export function FinanceTab({
           />
           <PillMetric
             label="Vytížení"
-            value={`${workingAvgUtilization.toFixed(0)}%`}
+            value={roomFinance.some(room => room.capacityHours > 0) ? `${workingAvgUtilization.toFixed(0)}%` : '—'}
             icon={TrendingUp}
             color={C.purple}
           />
@@ -1918,7 +1957,7 @@ export function FinanceTab({
               <p className="text-[9px] uppercase font-semibold tracking-[0.1em]" style={{ color: C.muted }}>
                 Podíl na nákladech
               </p>
-              <h3 id="finance-room-detail-title" className="text-[18px] font-semibold mt-1" style={{ color: C.textHi }}>
+              <h3 id="finance-room-detail-title" className="stats-card-title text-[18px] font-semibold mt-1" style={{ color: C.textHi }}>
                 {selectedCostRoom.name}
               </h3>
               <p className="text-[12px] font-medium mt-1" style={{ color: C.muted }}>{selectedCostRoom.department}</p>

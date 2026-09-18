@@ -153,8 +153,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         >
           {mobileRoomNumber}
         </span>
-        <div className="min-w-0 flex-1 pt-0.5">
-          <h3 className="text-[14px] font-black uppercase whitespace-normal break-words leading-tight tracking-[-0.02em]" style={{ color: 'var(--m-text-strong)' }}>
+        <div className="min-w-0 flex-1 pt-0.5" style={{ containerType: 'inline-size' }}>
+          <h3 className="room-name-nobreak room-name-fit font-black uppercase whitespace-normal leading-tight tracking-[-0.02em]" style={{ color: 'var(--m-text-strong)', '--room-name-fit-max': '14px' } as React.CSSProperties}>
             {room.name}
           </h3>
           <p className="text-[9px] font-bold uppercase tracking-[0.13em] truncate mt-1" style={{ color: 'var(--m-muted)' }}>
@@ -314,7 +314,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Horní ovládací kruhy byly přesunuty do spodní vlny; název má celou šířku. */}
         <div className="dashboard-workspace-card-header flex min-w-0 items-center pr-2">
           <div className="min-w-0 w-full">
-            <h3 className={`dashboard-room-name max-w-full whitespace-normal break-words font-semibold uppercase leading-[1.15] tracking-tight [overflow-wrap:anywhere]
+            <h3 className={`dashboard-room-name room-name-nobreak max-w-full whitespace-normal font-semibold uppercase leading-[1.15] tracking-tight
               ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/92 group-hover:text-white'}
             `}>
               {room.name}
