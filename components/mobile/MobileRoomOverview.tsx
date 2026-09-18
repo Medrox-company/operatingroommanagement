@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useId, useMemo, useState } from 'react';
-import { AlertCircle, Bell, CalendarDays, ChevronRight, Lock, MoreHorizontal, Search, X } from 'lucide-react';
+import { AlertCircle, Bell, CalendarDays, Lock, Search, X } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 import { useHospital } from '../../contexts/HospitalContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 import { useNowMinuteMs } from '../../hooks/useSharedClock';
 import { filterMobileRooms, mobileElapsed, mobileEndTime, mobileRoomPhase, type MobileRoomFilter } from '../../lib/mobile-room-display';
-import { DropdownItem, DropdownMenu } from '../ui/DropdownMenu';
 import { MobileHeader } from './MobileShell';
 import './mobile-overview.css';
 
@@ -98,7 +97,51 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
                   <button type="button" className="mro-room-open" onClick={() => onSelectRoom(room.id)} aria-label={`Otevřít detail sálu ${room.name}, ${phase.title}`}>
                     <span className="mro-room-identity">
                       <strong className="m-unified-card-title">{room.name}</strong>
-                      <span className="mro-phase-label" style={{ color: `color-mix(in srgb, ${phase.color} 65%, var(--m-text) 35%)` }}><i className="mro-status-dot" style={{ background: phase.color }} aria-hidden />{phase.title}</span>
+                      {/* Řádek fáze nese i obě akce — patička s „Detail" a tečkami
+                          zmizela, karta je díky tomu o dvě řady nižší. */}
+                      <span className="mro-phase-row">
+                        <span className="mro-phase-label" style={{ color: `color-mix(in srgb, ${phase.color} 65%, var(--m-text) 35%)` }}>
+                          <i className="mro-status-dot" style={{ background: phase.color }} aria-hidden />{phase.title}
+                        </span>
+                        <span className="mro-room-actions">
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            aria-pressed={room.isEmergency}
+                            aria-label={room.isEmergency ? `Zrušit stav nouze na sále ${room.name}` : `Vyhlásit stav nouze na sále ${room.name}`}
+                            className="mro-room-action"
+                            data-active={room.isEmergency || undefined}
+                            data-tone="emergency"
+                            onClick={event => { event.stopPropagation(); onEmergency(room.id); }}
+                            onKeyDown={event => {
+                              if (event.key !== 'Enter' && event.key !== ' ') return;
+                              event.preventDefault();
+                              event.stopPropagation();
+                              onEmergency(room.id);
+                            }}
+                          >
+                            <AlertCircle size={16} strokeWidth={2} aria-hidden />
+                          </span>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            aria-pressed={room.isLocked}
+                            aria-label={room.isLocked ? `Odemknout sál ${room.name}` : `Uzamknout sál ${room.name}`}
+                            className="mro-room-action"
+                            data-active={room.isLocked || undefined}
+                            data-tone="lock"
+                            onClick={event => { event.stopPropagation(); onLock(room.id); }}
+                            onKeyDown={event => {
+                              if (event.key !== 'Enter' && event.key !== ' ') return;
+                              event.preventDefault();
+                              event.stopPropagation();
+                              onLock(room.id);
+                            }}
+                          >
+                            <Lock size={16} strokeWidth={2} aria-hidden />
+                          </span>
+                        </span>
+                      </span>
                       {room.isEnhancedHygiene && <small>Hygienický režim</small>}
                       {room.patientCalledAt && !room.patientArrivedAt && <small>Pacient přivolán</small>}
                       {room.patientArrivedAt && <small>Pacient na sále</small>}
@@ -108,17 +151,6 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
                       <span className="mro-room-metric"><span>Odhad konce</span><strong>{phase.active ? mobileEndTime(room.estimatedEndTime) : '—'}</strong></span>
                     </span>
                   </button>
-                  <div className="mro-room-footer">
-                    <button type="button" className="mro-room-detail-link" onClick={() => onSelectRoom(room.id)} aria-label={`Detail sálu ${room.name}`}>
-                      Detail <ChevronRight size={14} strokeWidth={1.7} aria-hidden />
-                    </button>
-                    <DropdownMenu className="mobile-reference-menu" trigger={(
-                      <button className="mro-room-options" type="button" aria-label={`Další akce sálu ${room.name}`}><MoreHorizontal size={20} aria-hidden /></button>
-                    )}>
-                      <DropdownItem danger onSelect={() => onEmergency(room.id)} icon={<AlertCircle size={17} />}>{room.isEmergency ? 'Zrušit stav nouze' : 'Vyhlásit stav nouze'}</DropdownItem>
-                      <DropdownItem onSelect={() => onLock(room.id)} icon={<Lock size={17} />}>{room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}</DropdownItem>
-                    </DropdownMenu>
-                  </div>
                 </li>
               );
             })}
