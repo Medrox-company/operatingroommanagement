@@ -86,9 +86,8 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
               const phase = mobileRoomPhase(room, workflowStatuses);
               const elapsed = phase.active ? mobileElapsed(room.operationStartedAt || room.phaseStartedAt, now) : '—';
               return (
-                // Karta se barví podle aktuální fáze stejně jako box fáze
-                // v detailu sálu. Zvýrazněná je tehdy, když sál není
-                // v „Sál připraven" — nouze, zámek i pauza sem spadají.
+                // Karta se barví podle aktuální fáze. Připravený sál zůstává
+                // neutrální, aby v přehledu vynikly sály, kde se něco děje.
                 <li
                   key={room.id}
                   className="mro-room m-unified-card"

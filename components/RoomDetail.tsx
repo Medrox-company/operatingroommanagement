@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { 
-  Plus, Minus, X, QrCode, User, Video, Cast, ArrowLeft, ArrowRight, Clock,
+  Plus, Minus, X, QrCode, User, Video, Cast, ArrowLeft, Clock,
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone,
@@ -668,7 +668,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           <section
             className="mrd-phase-card"
             aria-label="Aktuální fáze"
-            data-emphasized={activeDbStatuses.length > 0 && (!isReadyStatus || room.isEmergency || room.isLocked || isPauseActive) ? 'true' : undefined}
+            data-emphasized={activeDbStatuses.length > 0 ? 'true' : undefined}
             data-advanceable={isInteractionBlocked ? undefined : 'true'}
             role={isInteractionBlocked ? undefined : 'button'}
             tabIndex={isInteractionBlocked ? undefined : 0}
@@ -692,6 +692,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 <p className="mrd-phase-runtime">
                   Uplynulo <strong>{elapsedTime}</strong>
                   {isPaused && <span> · Pauza {pauseElapsedTime}</span>}
+                </p>
+                <p className="mrd-phase-next">
+                  {isInteractionBlocked
+                    ? (room.isLocked && isFinalStep ? 'Sál uzamčen' : 'Nejprve pokračujte ve fázi')
+                    : <>Klepnutím na kartu → <strong>{isFinalStep ? 'Nový cyklus' : (nextStep?.title || nextStep?.name || 'další fáze')}</strong></>}
                 </p>
               </div>
               <button
@@ -881,13 +886,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           )}
         </div>
 
-        <footer className="mrd-footer">
-          <button type="button" className="mrd-next-button" onClick={handleNextStep} disabled={isInteractionBlocked} aria-describedby="mrd-next-phase">
-            <span>{room.isLocked && isFinalStep ? 'Sál uzamčen' : isPaused ? 'Nejprve pokračujte ve fázi' : isFinalStep ? 'Nový cyklus' : 'Další fáze'}</span>
-            <ArrowRight aria-hidden="true" />
-          </button>
-          <p id="mrd-next-phase" className="mrd-next-description">{isFinalStep ? 'Návrat na začátek po potvrzení' : nextStep?.title || nextStep?.name}</p>
-        </footer>
       </div>
 
       {/* ========== DESKTOP LAYOUT (hidden on mobile) ========== */}
