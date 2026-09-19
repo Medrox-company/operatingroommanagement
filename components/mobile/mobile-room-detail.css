@@ -486,8 +486,29 @@
     box-shadow: 0 10px 26px -8px var(--msc-color), inset 0 1px 0 rgba(255, 255, 255, .28);
   }
   .msc-box-icon svg { width: 32px; height: 32px; stroke-width: 2.4; }
-  .msc-box-label { color: #FFFFFF; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  /* Popisek nesmí být bílý — ve světlé variantě by na světlém boxu zmizel.
+     Ladí se proto z barvy akce: ve světlé do tmava, v tmavé do světla. */
+  .msc-box-label {
+    color: var(--msc-ink);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
 
-  .msc-box--cancel { --msc-color: #E5484D; border-color: rgba(229, 72, 77, .5); background: rgba(229, 72, 77, .1); }
-  .msc-box--confirm { --msc-color: #10B981; border-color: rgba(16, 185, 129, .5); background: rgba(16, 185, 129, .1); }
+  .msc-box--cancel {
+    --msc-color: #E5484D;
+    --msc-ink: color-mix(in srgb, #E5484D 62%, #0B1220 38%);
+    border-color: rgba(229, 72, 77, .5);
+    background: rgba(229, 72, 77, .1);
+  }
+  .msc-box--confirm {
+    --msc-color: #10B981;
+    --msc-ink: color-mix(in srgb, #0F9F74 62%, #0B1220 38%);
+    border-color: rgba(16, 185, 129, .5);
+    background: rgba(16, 185, 129, .1);
+  }
+
+  .m-dark .msc-box--cancel { --msc-ink: color-mix(in srgb, #E5484D 45%, #FFFFFF 55%); }
+  .m-dark .msc-box--confirm { --msc-ink: color-mix(in srgb, #10B981 45%, #FFFFFF 55%); }
 }

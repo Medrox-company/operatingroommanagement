@@ -4,6 +4,7 @@
 
 import React from 'react';
 import StepConfirmationOverlay from '../../components/StepConfirmationOverlay';
+import '../../components/mobile/mobile-room-detail.css';
 
 const statuses = [
   { id: '1', name: 'Sál připraven', color: '#3b82f6', order_index: 0, default_duration_minutes: 10 },
@@ -13,8 +14,15 @@ const statuses = [
 ];
 
 export default function Nahled() {
+  // ?svetla=1 přepne náhled do světlého motivu (kontrola čitelnosti popisků).
+  React.useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('svetla')) {
+      document.documentElement.classList.remove('m-dark');
+    }
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black">
+    <div className="mobile-room-detail mobile-room-reference fixed inset-0 overflow-hidden">
       <StepConfirmationOverlay
         pendingStepIndex={3}
         activeDbStatuses={statuses}
