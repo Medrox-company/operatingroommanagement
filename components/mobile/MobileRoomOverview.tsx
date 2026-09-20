@@ -84,6 +84,10 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
             {visibleRooms.map(room => {
               const phase = mobileRoomPhase(room, workflowStatuses);
               const elapsed = phase.active ? mobileElapsed(room.operationStartedAt || room.phaseStartedAt, now) : '—';
+              // Závoj = opak inkoustu. Přechod se tak odklání od barvy písma,
+              // takže stínování kontrast nesnižuje, ale zvyšuje.
+              const phaseInk = readableInk(phase.color);
+              const phaseVeil = phaseInk === '#FFFFFF' ? '#05070F' : '#FFFFFF';
               return (
                 // Barvu aktuálního statusu nese patka karty — plný barevný pruh
                 // je v mřížce čitelný na první pohled i přes celý displej.
@@ -96,7 +100,8 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
                   data-emphasized={!phase.ready ? 'true' : undefined}
                   style={{
                     '--room-phase-color': phase.color,
-                    '--room-phase-ink': readableInk(phase.color),
+                    '--room-phase-ink': phaseInk,
+                    '--room-phase-veil': phaseVeil,
                   } as React.CSSProperties}
                 >
                   <button type="button" className="mro-room-open" onClick={() => onSelectRoom(room.id)} aria-label={`Otevřít detail sálu ${room.name}, ${phase.title}`}>

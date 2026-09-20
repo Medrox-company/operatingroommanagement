@@ -99,7 +99,18 @@
     margin: auto calc(-1 * var(--m-card-padding)) calc(-1 * var(--m-card-padding));
     padding: 9px var(--m-card-padding) 11px;
     border-top: none;
-    background: var(--room-phase-color, var(--m-card-2));
+    /* Stejný recept přechodu jako box aktuální fáze v detailu sálu
+       (.mrd-phase-card): radiální nádech v pravém horním rohu, diagonální
+       přechod 135° se zeslabením kolem 62 % a vnitřní světlo na horní hraně.
+       Tam se barva mísí do plochy karty, tady do sytého podkladu — proto se
+       místo karty přimíchává závoj (--room-phase-veil), tedy opak inkoustu. */
+    background:
+      radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--room-phase-veil, #FFFFFF) 24%, transparent), transparent 70%),
+      linear-gradient(135deg,
+        var(--room-phase-color, var(--m-card-2)),
+        color-mix(in srgb, var(--room-phase-color, var(--m-card-2)) 87%, var(--room-phase-veil, #FFFFFF)) 62%,
+        var(--room-phase-color, var(--m-card-2)));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--room-phase-veil, #FFFFFF) 30%, transparent);
     color: var(--room-phase-ink, var(--m-text-strong));
     font-variant-numeric: tabular-nums;
     min-width: 0;
