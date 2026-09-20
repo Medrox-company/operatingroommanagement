@@ -7,7 +7,7 @@ import { useHospital } from '../../contexts/HospitalContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 import { useNowMinuteMs } from '../../hooks/useSharedClock';
-import { filterMobileRooms, mobileElapsed, mobileEndTime, mobileRoomPhase, type MobileRoomFilter } from '../../lib/mobile-room-display';
+import { filterMobileRooms, mobileElapsed, mobileEndTime, mobileRoomPhase, readableInk, type MobileRoomFilter } from '../../lib/mobile-room-display';
 import { MobileHeader } from './MobileShell';
 import './mobile-overview.css';
 
@@ -85,14 +85,19 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
               const phase = mobileRoomPhase(room, workflowStatuses);
               const elapsed = phase.active ? mobileElapsed(room.operationStartedAt || room.phaseStartedAt, now) : '—';
               return (
-                // Karta se barví podle aktuální fáze. Připravený sál zůstává
-                // neutrální, aby v přehledu vynikly sály, kde se něco děje.
+                // Barvu aktuálního statusu nese patka karty — plný barevný pruh
+                // je v mřížce čitelný na první pohled i přes celý displej.
+                // Tělo karty se navíc jemně tónuje, ale jen když se na sále něco
+                // děje; připravený sál zůstává klidný a barvu má jen v pruhu.
                 <li
                   key={room.id}
                   className="mro-room m-unified-card"
                   data-emergency={room.isEmergency || undefined}
                   data-emphasized={!phase.ready ? 'true' : undefined}
-                  style={{ '--room-phase-color': phase.color } as React.CSSProperties}
+                  style={{
+                    '--room-phase-color': phase.color,
+                    '--room-phase-ink': readableInk(phase.color),
+                  } as React.CSSProperties}
                 >
                   <button type="button" className="mro-room-open" onClick={() => onSelectRoom(room.id)} aria-label={`Otevřít detail sálu ${room.name}, ${phase.title}`}>
                     <span className="mro-room-identity">
@@ -101,7 +106,8 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
                           zmizela, karta je díky tomu o dvě řady nižší. */}
                       <span className="mro-phase-row">
                         <span className="mro-phase-label" style={{ color: `color-mix(in srgb, ${phase.color} 65%, var(--m-text) 35%)` }}>
-                          <i className="mro-status-dot" style={{ background: phase.color }} aria-hidden />{phase.title}
+                          <i className="mro-status-dot" style={{ background: phase.color }} aria-hidden />
+                          <span className="mro-phase-name">{phase.title}</span>
                         </span>
                         <span className="mro-room-actions">
                           <span

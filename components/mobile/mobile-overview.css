@@ -46,20 +46,22 @@
   /* Zbarvení karty přebírá recept z boxu aktuální fáze v detailu sálu
      (.mrd-phase-card) — stejný radiální nádech v rohu, stejný diagonální
      přechod i vnitřní světlo, jen na menší ploše. */
+  /* Barvu teď nese sytá patka, tělo karty se proto jen lehce nadechne —
+     jinak by dvě plné plochy nad sebou přebily název sálu. */
   .mro-room[data-emphasized=true] {
-    border-color: color-mix(in srgb, var(--room-phase-color) 65%, var(--m-border));
+    border-color: color-mix(in srgb, var(--room-phase-color) 38%, var(--m-border));
     background:
-      radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--room-phase-color) 34%, transparent), transparent 70%),
-      linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 18%, var(--m-card-solid)), color-mix(in srgb, var(--room-phase-color) 5%, var(--m-card-solid)) 62%, color-mix(in srgb, var(--room-phase-color) 20%, var(--m-card-solid)));
+      radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--room-phase-color) 12%, transparent), transparent 70%),
+      linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 7%, var(--m-card-solid)), var(--m-card-solid) 62%, color-mix(in srgb, var(--room-phase-color) 8%, var(--m-card-solid)));
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--room-phase-color) 22%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--room-phase-color) 14%, transparent),
       0 5px 22px color-mix(in srgb, var(--room-phase-color) 10%, transparent);
   }
 
   .m-dark .mro-room[data-emphasized=true] {
     background:
-      radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--room-phase-color) 38%, transparent), transparent 70%),
-      linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 25%, #080D23), #0D142D 62%, color-mix(in srgb, var(--room-phase-color) 24%, #080D23));
+      radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--room-phase-color) 18%, transparent), transparent 70%),
+      linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 13%, #080D23), #0D142D 62%, color-mix(in srgb, var(--room-phase-color) 12%, #080D23));
   }
 
   /* Nouzový sál si drží červený proužek na hraně i po obarvení fází. */
@@ -76,6 +78,9 @@
   .mro-phase-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
   .mro-phase-label { display: flex; align-items: center; gap: 5px; flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
   .mro-phase-label > span, .mro-phase-label { line-height: 1.25; }
+  /* Název fáze musí být vlastní prvek — holý text by se jako anonymní flex
+     položka nesmrštil pod svou min-content šířku a přetekl by přes ikony. */
+  .mro-phase-name { min-width: 0; overflow-wrap: break-word; }
   .mro-room-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .mro-room-action { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 10px; background: transparent; border: 1px solid var(--m-border); color: var(--m-muted); cursor: pointer; transition: transform .12s ease; }
   .mro-room-action:active { transform: scale(.92); }
@@ -84,11 +89,40 @@
   .mro-room-action:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 2px; }
   .mro-room-identity > span { font-size: 12px; line-height: 1.35; }
   .mro-room-identity small { font-size: 10px; color: var(--m-muted); }
-  .mro-room-time { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--m-separator); font-variant-numeric: tabular-nums; width: 100%; min-width: 0; }
-  .mro-room-metric { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-  .mro-room-metric > span { min-height: 0; font-size: 10px; line-height: 1.3; color: var(--m-muted); overflow-wrap: break-word; }
-  .mro-room-time strong { color: var(--m-text-strong); font-size: 18px; line-height: 1.2; letter-spacing: -.025em; font-weight: 600; white-space: nowrap; }
+  /* Patka karty = barevný pruh aktuálního statusu. Vytéká do okrajů karty,
+     spodní rohy ořízne overflow:hidden na .mro-room. Barva písma se dopočítá
+     z jasu podkladu (--room-phase-ink), aby byla čitelná i na #00FFEE. */
+  .mro-room-time {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: auto calc(-1 * var(--m-card-padding)) calc(-1 * var(--m-card-padding));
+    padding: 9px var(--m-card-padding) 11px;
+    border-top: none;
+    background: var(--room-phase-color, var(--m-card-2));
+    color: var(--room-phase-ink, var(--m-text-strong));
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+  }
+  .mro-room-metric { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  /* Popisek má plnou sytost inkoustu — ztlumený 10px text na středních tónech
+     padal pod čitelnou hranici. Hierarchii nese velikost a řez písma. */
+  .mro-room-metric > span { min-height: 0; font-size: 10px; line-height: 1.3; letter-spacing: .01em; color: var(--room-phase-ink, var(--m-muted)); overflow-wrap: break-word; }
+  .mro-room-time strong { color: var(--room-phase-ink, var(--m-text-strong)); font-size: 18px; line-height: 1.2; letter-spacing: -.025em; font-weight: 600; white-space: nowrap; }
   .mro-room-open:active { background: var(--m-accent-soft); }
+
+  /* Úzké telefony (320–360 px): karta má sotva 145 px. Ikony jdou pod název
+     fáze a písmo v barevné patce se zmenší, aby se „Odhad konce" vešel na
+     jeden řádek a nic nepřeteklo přes okraj. */
+  @container (max-width: 168px) {
+    .mro-phase-row { flex-wrap: wrap; row-gap: 8px; }
+    .mro-phase-label { flex: 1 1 100%; }
+    .mro-room-actions { margin-left: auto; }
+    .mro-room-action { width: 26px; height: 26px; }
+    .mro-room-time { padding-inline: 11px; gap: 6px; }
+    .mro-room-metric > span { font-size: 8.5px; letter-spacing: -.01em; white-space: nowrap; }
+    .mro-room-time strong { font-size: 15px; }
+  }
   .mobile-reference-menu { background: var(--m-card-solid) !important; color: var(--m-text); border-color: var(--m-border) !important; box-shadow: var(--m-card-shadow-strong) !important; z-index: 220; }
   .mobile-reference-menu [role=menuitem] { color: var(--m-text); min-height: 44px; }
   .mobile-reference-menu [role=menuitem].text-red-400 { color: #E5484D; }
