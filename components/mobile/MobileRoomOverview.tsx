@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useId, useMemo, useState } from 'react';
-import { AlertCircle, Bell, CalendarDays, Lock, Search, X } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { AlertCircle, Bell, CalendarDays, Lock } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 import { useHospital } from '../../contexts/HospitalContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,10 +26,9 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
   const { hasModuleAccess } = useAuth();
   const { workflowStatuses } = useWorkflowStatusesContext();
   const now = useNowMinuteMs();
-  const searchId = useId();
-  const [search, setSearch] = useState('');
+  // Hledání sálů se na telefonu neujalo — seznam je krátký a filtry stačí.
   const [filter, setFilter] = useState<MobileRoomFilter>('all');
-  const visibleRooms = useMemo(() => filterMobileRooms(rooms, workflowStatuses, filter, search), [rooms, workflowStatuses, filter, search]);
+  const visibleRooms = useMemo(() => filterMobileRooms(rooms, workflowStatuses, filter, ''), [rooms, workflowStatuses, filter]);
   const readyCount = rooms.filter(room => mobileRoomPhase(room, workflowStatuses).ready).length;
   const activeCount = rooms.filter(room => mobileRoomPhase(room, workflowStatuses).active).length;
   const hasNotice = rooms.some(room => room.noticeMessage || room.isEmergency);
@@ -64,12 +63,6 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
         <div><strong>{roomsLoaded ? readyCount : '—'}</strong><span>připravených</span></div>
       </div>
 
-      <div className="mro-search">
-        <Search size={18} strokeWidth={1.7} aria-hidden />
-        <label className="sr-only" htmlFor={searchId}>Najít sál</label>
-        <input id={searchId} type="search" placeholder="Najít sál…" value={search} onChange={event => setSearch(event.target.value)} autoComplete="off" />
-        {search && <button type="button" onClick={() => setSearch('')} aria-label="Vymazat hledání"><X size={16} /></button>}
-      </div>
       <div className="mro-filters" role="group" aria-label="Filtrovat sály">
         {([['all', 'Všechny'], ['active', 'Aktivní'], ['ready', 'Připravené']] as const).map(([value, label]) => (
           <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>
@@ -166,7 +159,7 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
               );
             })}
           </ul>
-          {visibleRooms.length === 0 && <div className="mro-empty"><strong>{rooms.length === 0 ? 'Zatím nejsou k dispozici žádné sály' : 'Žádný sál neodpovídá filtru'}</strong><p>{rooms.length === 0 ? 'Sály se zobrazí po přiřazení k vašemu zařízení.' : 'Zkuste jiný název nebo zobrazte všechny sály.'}</p>{rooms.length > 0 && <button type="button" onClick={() => { setSearch(''); setFilter('all'); }}>Zobrazit všechny</button>}</div>}
+          {visibleRooms.length === 0 && <div className="mro-empty"><strong>{rooms.length === 0 ? 'Zatím nejsou k dispozici žádné sály' : 'Žádný sál neodpovídá filtru'}</strong><p>{rooms.length === 0 ? 'Sály se zobrazí po přiřazení k vašemu zařízení.' : 'Zkuste jiný filtr nebo zobrazte všechny sály.'}</p>{rooms.length > 0 && <button type="button" onClick={() => setFilter('all')}>Zobrazit všechny</button>}</div>}
         </>
       )}
     </section>
