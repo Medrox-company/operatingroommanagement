@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { AlertCircle, Bell, CalendarDays, Lock } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Bell, CalendarDays } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 import { useHospital } from '../../contexts/HospitalContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,7 +9,13 @@ import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesConte
 import { useNowMinuteMs } from '../../hooks/useSharedClock';
 import { filterMobileRooms, mobileElapsed, mobileEndTime, mobileRoomPhase, readableInk, type MobileRoomFilter } from '../../lib/mobile-room-display';
 import { MobileHeader } from './MobileShell';
+import MobileRoomQuickActions from './MobileRoomQuickActions';
 import './mobile-overview.css';
+
+/** Kolik musí stisk vydržet, než se otevře nabídka akcí. */
+const LONG_PRESS_MS = 500;
+/** Posun prstu, po kterém už jde o scrollování, ne o podržení. */
+const LONG_PRESS_TOLERANCE_PX = 10;
 
 interface MobileRoomOverviewProps {
   rooms: OperatingRoom[];
@@ -33,6 +39,54 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
   const activeCount = rooms.filter(room => mobileRoomPhase(room, workflowStatuses).active).length;
   const hasNotice = rooms.some(room => room.noticeMessage || room.isEmergency);
   const date = new Date(now);
+
+  // Nabídka akcí po dlouhém stisku. Drží se jen id — objekt sálu se při
+  // každém refreshi nahrazuje novým, takže by nabídka ukazovala stará data.
+  const [quickActionsId, setQuickActionsId] = useState<string | null>(null);
+  const quickActionsRoom = quickActionsId ? rooms.find(room => room.id === quickActionsId) ?? null : null;
+  const pressRef = useRef<{ timer: number | null; x: number; y: number; opened: boolean }>({ timer: null, x: 0, y: 0, opened: false });
+
+  const cancelPress = useCallback(() => {
+    if (pressRef.current.timer === null) return;
+    window.clearTimeout(pressRef.current.timer);
+    pressRef.current.timer = null;
+  }, []);
+
+  useEffect(() => cancelPress, [cancelPress]);
+
+  const openQuickActions = useCallback((roomId: string) => {
+    pressRef.current.opened = true;
+    // Krátká vibrace potvrdí, že se stisk počítá — jinak uživatel drží naslepo.
+    navigator.vibrate?.(18);
+    setQuickActionsId(roomId);
+  }, []);
+
+  const startPress = useCallback((roomId: string, event: React.PointerEvent) => {
+    cancelPress();
+    pressRef.current.opened = false;
+    pressRef.current.x = event.clientX;
+    pressRef.current.y = event.clientY;
+    pressRef.current.timer = window.setTimeout(() => {
+      pressRef.current.timer = null;
+      openQuickActions(roomId);
+    }, LONG_PRESS_MS);
+  }, [cancelPress, openQuickActions]);
+
+  const movePress = useCallback((event: React.PointerEvent) => {
+    if (pressRef.current.timer === null) return;
+    const dx = Math.abs(event.clientX - pressRef.current.x);
+    const dy = Math.abs(event.clientY - pressRef.current.y);
+    if (dx > LONG_PRESS_TOLERANCE_PX || dy > LONG_PRESS_TOLERANCE_PX) cancelPress();
+  }, [cancelPress]);
+
+  // Po dlouhém stisku přijde ještě klik — ten už nesmí otevřít detail sálu.
+  const handleRoomClick = useCallback((roomId: string) => {
+    if (pressRef.current.opened) {
+      pressRef.current.opened = false;
+      return;
+    }
+    onSelectRoom(roomId);
+  }, [onSelectRoom]);
 
   return (
     <section className="mobile-room-overview md:hidden" lang="cs" aria-label="Přehled operačních sálů">
@@ -97,53 +151,26 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
                     '--room-phase-veil': phaseVeil,
                   } as React.CSSProperties}
                 >
-                  <button type="button" className="mro-room-open" onClick={() => onSelectRoom(room.id)} aria-label={`Otevřít detail sálu ${room.name}, ${phase.title}`}>
+                  {/* Ťuknutí otevře detail, podržení nabídku akcí. Kontextové menu
+                      systému se potlačuje, jinak by iOS nad kartou vyskočilo vlastní. */}
+                  <button
+                    type="button"
+                    className="mro-room-open"
+                    onClick={() => handleRoomClick(room.id)}
+                    onPointerDown={event => startPress(room.id, event)}
+                    onPointerMove={movePress}
+                    onPointerUp={cancelPress}
+                    onPointerCancel={cancelPress}
+                    onPointerLeave={cancelPress}
+                    onContextMenu={event => { event.preventDefault(); cancelPress(); openQuickActions(room.id); }}
+                    aria-label={`Sál ${room.name}, ${phase.title}. Ťuknutím otevřete detail, podržením nabídku akcí.`}
+                  >
                     <span className="mro-room-identity">
                       <strong className="m-unified-card-title">{room.name}</strong>
-                      {/* Řádek fáze nese i obě akce — patička s „Detail" a tečkami
-                          zmizela, karta je díky tomu o dvě řady nižší. */}
                       <span className="mro-phase-row">
                         <span className="mro-phase-label" style={{ color: `color-mix(in srgb, ${phase.color} 65%, var(--m-text) 35%)` }}>
                           <i className="mro-status-dot" style={{ background: phase.color }} aria-hidden />
                           <span className="mro-phase-name">{phase.title}</span>
-                        </span>
-                        <span className="mro-room-actions">
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            aria-pressed={room.isEmergency}
-                            aria-label={room.isEmergency ? `Zrušit stav nouze na sále ${room.name}` : `Vyhlásit stav nouze na sále ${room.name}`}
-                            className="mro-room-action"
-                            data-active={room.isEmergency || undefined}
-                            data-tone="emergency"
-                            onClick={event => { event.stopPropagation(); onEmergency(room.id); }}
-                            onKeyDown={event => {
-                              if (event.key !== 'Enter' && event.key !== ' ') return;
-                              event.preventDefault();
-                              event.stopPropagation();
-                              onEmergency(room.id);
-                            }}
-                          >
-                            <AlertCircle size={16} strokeWidth={2} aria-hidden />
-                          </span>
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            aria-pressed={room.isLocked}
-                            aria-label={room.isLocked ? `Odemknout sál ${room.name}` : `Uzamknout sál ${room.name}`}
-                            className="mro-room-action"
-                            data-active={room.isLocked || undefined}
-                            data-tone="lock"
-                            onClick={event => { event.stopPropagation(); onLock(room.id); }}
-                            onKeyDown={event => {
-                              if (event.key !== 'Enter' && event.key !== ' ') return;
-                              event.preventDefault();
-                              event.stopPropagation();
-                              onLock(room.id);
-                            }}
-                          >
-                            <Lock size={16} strokeWidth={2} aria-hidden />
-                          </span>
                         </span>
                       </span>
                       {room.isEnhancedHygiene && <small>Hygienický režim</small>}
@@ -161,6 +188,18 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
           </ul>
           {visibleRooms.length === 0 && <div className="mro-empty"><strong>{rooms.length === 0 ? 'Zatím nejsou k dispozici žádné sály' : 'Žádný sál neodpovídá filtru'}</strong><p>{rooms.length === 0 ? 'Sály se zobrazí po přiřazení k vašemu zařízení.' : 'Zkuste jiný filtr nebo zobrazte všechny sály.'}</p>{rooms.length > 0 && <button type="button" onClick={() => setFilter('all')}>Zobrazit všechny</button>}</div>}
         </>
+      )}
+
+      {quickActionsRoom && (
+        <MobileRoomQuickActions
+          room={quickActionsRoom}
+          phaseTitle={mobileRoomPhase(quickActionsRoom, workflowStatuses).title}
+          phaseColor={mobileRoomPhase(quickActionsRoom, workflowStatuses).color}
+          onEmergency={() => onEmergency(quickActionsRoom.id)}
+          onLock={() => onLock(quickActionsRoom.id)}
+          onOpenDetail={() => onSelectRoom(quickActionsRoom.id)}
+          onClose={() => setQuickActionsId(null)}
+        />
       )}
     </section>
   );
