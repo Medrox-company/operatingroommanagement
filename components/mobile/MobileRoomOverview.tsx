@@ -8,9 +8,18 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 import { useNowMinuteMs } from '../../hooks/useSharedClock';
 import { filterMobileRooms, mobileElapsed, mobileEndTime, mobileRoomPhase, readableInk, type MobileRoomFilter } from '../../lib/mobile-room-display';
+import { useIsMobileDark } from '../../hooks/useIsMobileDark';
 import { MobileHeader } from './MobileShell';
 import MobileRoomQuickActions from './MobileRoomQuickActions';
 import './mobile-overview.css';
+
+/* Krytí barevného pruhu a plocha karty pod ním. Musí odpovídat --mro-band-alpha
+   v mobile-overview.css — z těchto hodnot se počítá, jak pruh doopravdy vypadá,
+   a podle toho se volí barva písma. */
+const BAND = {
+  light: { alpha: 0.65, surface: '#FDFEFF' },
+  dark: { alpha: 0.72, surface: '#131F49' },
+};
 
 /** Kolik musí stisk vydržet, než se otevře nabídka akcí. */
 const LONG_PRESS_MS = 500;
@@ -31,6 +40,8 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
   const { activeHospital } = useHospital();
   const { hasModuleAccess } = useAuth();
   const { workflowStatuses } = useWorkflowStatusesContext();
+  const isDark = useIsMobileDark();
+  const band = isDark ? BAND.dark : BAND.light;
   const now = useNowMinuteMs();
   // Hledání sálů se na telefonu neujalo — seznam je krátký a filtry stačí.
   const [filter, setFilter] = useState<MobileRoomFilter>('all');
@@ -133,7 +144,7 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
               const elapsed = phase.active ? mobileElapsed(room.operationStartedAt || room.phaseStartedAt, now) : '—';
               // Závoj = opak inkoustu. Přechod se tak odklání od barvy písma,
               // takže stínování kontrast nesnižuje, ale zvyšuje.
-              const phaseInk = readableInk(phase.color);
+              const phaseInk = readableInk(phase.color, band.alpha, band.surface);
               const phaseVeil = phaseInk === '#FFFFFF' ? '#05070F' : '#FFFFFF';
               return (
                 // Barvu aktuálního statusu nese patka karty — plný barevný pruh

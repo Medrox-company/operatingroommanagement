@@ -93,13 +93,13 @@
        přechod 135° se zeslabením kolem 62 % a vnitřní světlo na horní hraně.
        Tam se barva mísí do plochy karty, tady do sytého podkladu — proto se
        místo karty přimíchává závoj (--room-phase-veil), tedy opak inkoustu. */
-    /* Pruh je lehce průsvitný, takže pod ním prosvítá plocha karty. Průsvit
-       ale míchá barvu směrem k podkladu — ve světlém motivu k bílé, v tmavém
-       k tmavé — a tím ubírá kontrast. Hodnoty níž jsou proto dopočítané tak,
-       aby ani nejhorší z barev statusů v databázi neklesla pod 4,5 : 1. */
-    --mro-band-alpha: 85%;
-    --mro-band-edge: 8%;
-    --mro-band-mid: 18%;
+    /* Pruh je průsvitný, aby syté barvy statusů (#00FFEE, #C8FF00) nesvítily.
+       Krytí musí souhlasit s konstantou BAND v MobileRoomOverview.tsx — podle
+       něj se dopočítává barva písma z výsledné, už smíchané barvy pruhu.
+       Ověřeno na všech barvách statusů v databázi: nejhorší kontrast 4,88 : 1. */
+    --mro-band-alpha: 65%;
+    --mro-band-edge: 6%;
+    --mro-band-mid: 14%;
     background:
       radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--room-phase-veil, #FFFFFF) 22%, transparent), transparent 70%),
       linear-gradient(135deg,
@@ -112,7 +112,7 @@
     min-width: 0;
   }
   /* V tmavém motivu míchá průsvit barvu do tmavé karty, proto je o něco sytější. */
-  .m-dark .mro-room-time { --mro-band-alpha: 90%; }
+  .m-dark .mro-room-time { --mro-band-alpha: 72%; }
   .mro-room-metric { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   /* Popisek má plnou sytost inkoustu — ztlumený 10px text na středních tónech
      padal pod čitelnou hranici. Hierarchii nese velikost a řez písma. */

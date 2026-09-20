@@ -18,13 +18,24 @@ export function mobileRoomPhase(room: OperatingRoom, statuses: readonly DisplayS
   return { title, color: status?.accent_color || status?.color || '#7890A8', ready, active: !ready && !!status };
 }
 
-/* Barvy statusů si nastavuje nemocnice sama — od skoro bílé (#00FFEE) po tmavě
-   modrou (#0049F5). Písmo na barevném pruhu se proto nedá zvolit napevno;
-   počítá se z jasu podkladu, aby zůstalo čitelné u každé barvy. */
-export function readableInk(color: string | undefined) {
+/**
+ * Barva písma pro barevný pruh statusu.
+ *
+ * Barvy statusů si nastavuje nemocnice sama — od skoro bílé (#00FFEE) po tmavě
+ * modrou (#0049F5) — takže písmo nejde zvolit napevno. Navíc je pruh průsvitný,
+ * takže se barva mísí s podkladem karty; kdyby se inkoust vybíral ze syté barvy
+ * statusu, u středních tónů by výsledek neseděl. Proto se nejdřív spočítá, jak
+ * pruh doopravdy vypadá po smíchání, a teprve z toho se vybere písmo.
+ *
+ * @param alpha krytí pruhu (0–1); 1 = neprůhledný
+ * @param surface barva pod pruhem, tedy plocha karty
+ */
+export function readableInk(color: string | undefined, alpha = 1, surface = '#FFFFFF') {
   const channels = parseColorChannels(color);
   if (!channels) return '#05070F';
-  const background = relativeLuminance(channels);
+  const behind = parseColorChannels(surface) ?? [255, 255, 255];
+  const composited = channels.map((value, i) => value * alpha + behind[i] * (1 - alpha)) as [number, number, number];
+  const background = relativeLuminance(composited);
   // Pevná mez u poloviny jasu selhává na středních tónech (#ff791a, #06B6D4),
   // kde bílá dává sotva 2,5:1. Vybírá se proto ta z dvojice, která má vyšší
   // kontrast — u oranžové vyhraje tmavá, u vínové bílá.
