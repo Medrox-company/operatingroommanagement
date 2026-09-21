@@ -182,6 +182,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
             <button
               onClick={onCancel}
               aria-label="Zrušit změnu fáze"
+              data-tour="confirm-cancel"
               className="group flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300/80 focus-visible:ring-offset-4 focus-visible:ring-offset-transparent cursor-pointer"
             >
               <span
@@ -208,6 +209,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
             <button
               onClick={onConfirm}
               aria-label="Potvrdit změnu fáze"
+              data-tour="confirm-ok"
               className="group flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/80 focus-visible:ring-offset-4 focus-visible:ring-offset-transparent cursor-pointer"
             >
               <span

@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Cuboid, LayoutGrid, Shield } from 'lucide-react';
+import { Cuboid, HelpCircle, LayoutGrid, Shield } from 'lucide-react';
 import type { OperatingRoom } from '../types';
 import LiveClock from './LiveClock';
 import RoomCard from './RoomCard';
@@ -17,8 +17,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { preloadSpatialProject } from '../hooks/useSpatialProject';
 import SpatialLoadingBar from './spatial/SpatialLoadingBar';
 import { useDashboardGridLayout } from '../hooks/useDashboardGridLayout';
+import './tutorial/tutorial.css';
 
 const loadSpatialDashboard = () => import('./spatial/SpatialDashboardView');
+
+// Nápověda se načítá až při spuštění — nese s sebou celý detail sálu.
+const TutorialOverlay = dynamic(() => import('./tutorial/TutorialOverlay'), { ssr: false });
 
 const SpatialDashboardView = dynamic(loadSpatialDashboard, {
   ssr: false,
@@ -53,6 +57,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   const [dashboardView, setDashboardView] = useState<DashboardView>('cards');
   const [spatialMounted, setSpatialMounted] = useState(false);
   const [cameraMode, setCameraMode] = useState<'spatial' | 'plan'>('spatial');
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const { currentByRoom } = useCurrentRoomSpecialties();
 
   const warmSpatialView = React.useCallback(() => {
@@ -179,6 +184,17 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
             mutedTitle="SÁLY"
             titleClassName="truncate"
             actions={viewToggle}
+            titleAfter={(
+              <button
+                type="button"
+                className="dashboard-help-button"
+                onClick={() => setTutorialOpen(true)}
+                aria-label="Spustit interaktivní nápovědu"
+                title="Interaktivní nápověda"
+              >
+                <HelpCircle strokeWidth={2} aria-hidden />
+              </button>
+            )}
           />
           <LiveClock />
         </header>
@@ -233,6 +249,8 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
           )}
         </div>
       </div>
+
+      {tutorialOpen && <TutorialOverlay onClose={() => setTutorialOpen(false)} />}
     </div>
   );
 };

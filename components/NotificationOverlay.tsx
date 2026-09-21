@@ -241,6 +241,7 @@ export default function NotificationOverlay({
           <div
             key="notif-desktop"
             className="hidden md:flex fixed inset-0 z-[200] items-center justify-center overflow-hidden"
+            data-tour="notification-panel"
           >
             {/* Background - same style as main app */}
             <div className="absolute inset-0 bg-black" />

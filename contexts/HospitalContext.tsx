@@ -304,3 +304,6 @@ export function useHospital() {
   if (!context) throw new Error('useHospital must be used within HospitalProvider');
   return context;
 }
+
+/** Export kontextu umožňuje testovacím a náhledovým stránkám dodat vlastní hodnotu. */
+export default HospitalContext;

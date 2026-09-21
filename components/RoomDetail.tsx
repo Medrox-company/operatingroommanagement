@@ -15,6 +15,7 @@ import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
 import { useHospital } from '../contexts/HospitalContext';
+import { useTutorial } from '../contexts/TutorialContext';
 import { MobileThemeToggle } from './mobile/MobileShell';
 import { RapidSurgeryWarning } from './room/RapidSurgeryWarning';
 import { useNowMs } from '../hooks/useSharedClock';
@@ -110,6 +111,15 @@ const usePrevious = (value: number) => {
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onPauseChange, onStaffChange, onPatientStatusChange, onClearNotice }) => {
   const { activeHospitalId } = useHospital();
+  // Interaktivní nápověda běží nad vymyšleným sálem — události ani notifikace
+  // se z ní nesmí zapsat do databáze.
+  const { isTutorial } = useTutorial();
+  const recordEvent = useCallback(
+    (payload: Parameters<typeof recordStatusEvent>[0]) => (
+      isTutorial ? Promise.resolve(undefined) : recordStatusEvent(payload)
+    ),
+    [isTutorial],
+  );
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
   
@@ -797,6 +807,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               disabled={Boolean(room.isLocked && isFinalStep)}
               aria-label={isPaused ? 'Pokračovat ve fázi' : 'Pozastavit fázi'}
               aria-pressed={isPaused}
+              data-tour="pause"
               onClick={async () => {
                 if (room.isLocked && isFinalStep) return;
                 const newPaused = !isPaused;
@@ -804,7 +815,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 setIsPaused(newPaused);
                 setPauseStartedAt(pausedAt);
                 onPauseChange?.(newPaused, pausedAt?.toISOString() || null);
-                await recordStatusEvent({
+                await recordEvent({
                   operating_room_id: room.id,
                   event_type: newPaused ? 'pause' : 'resume',
                   step_index: currentStepIndex,
@@ -823,7 +834,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               onClick={async () => {
                 const newH = !room.isEnhancedHygiene;
                 onEnhancedHygieneToggle?.(newH);
-                await recordStatusEvent({
+                await recordEvent({
                   operating_room_id: room.id,
                   event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
                   step_index: currentStepIndex,
@@ -845,7 +856,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   setShowPatientCalledText(true);
                   setTimeout(() => setShowPatientCalledText(false), 5000);
                   onPatientStatusChange?.(now.toISOString(), null);
-                  await recordStatusEvent({
+                  await recordEvent({
                     operating_room_id: room.id,
                     event_type: 'patient_call',
                     step_index: currentStepIndex,
@@ -868,7 +879,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   setPatientArrivedTime(now);
                   setShowPatientArrivedText(true);
                   onPatientStatusChange?.(patientCalledTime.toISOString(), now.toISOString());
-                  await recordStatusEvent({
+                  await recordEvent({
                     operating_room_id: room.id,
                     event_type: 'patient_arrived',
                     step_index: currentStepIndex,
@@ -1003,6 +1014,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         <motion.button 
           onClick={() => setNotificationOverlayOpen(true)}
           aria-label="Otevřít notifikace"
+          data-tour="notifications"
           className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-2 opacity-70 backdrop-blur-md transition-all hover:border-orange-500/40 hover:bg-orange-500/20 hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           style={{ width: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)', height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)' }}
           whileHover={{ scale: 1.05 }}
@@ -1062,6 +1074,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         <button
           onClick={() => { setStaffPickerRole('doctor'); setStaffPickerOpen(true); }}
           aria-label={room?.staff?.doctor?.name ? `Lékař: ${room.staff.doctor.name}` : 'Lékař'}
+          data-tour="staff-doctor"
           className="flex aspect-square h-full flex-col items-center justify-center gap-1 rounded-2xl border border-white/10 bg-white/5 px-1 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-95"
         >
           <Stethoscope className="h-[clamp(1.25rem,min(2.5vw,5vh),2rem)] w-[clamp(1.25rem,min(2.5vw,5vh),2rem)] text-white/70" strokeWidth={2} />
@@ -1073,6 +1086,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         <button
           onClick={() => { setStaffPickerRole('nurse'); setStaffPickerOpen(true); }}
           aria-label={room?.staff?.nurse?.name ? `Sestra: ${room.staff.nurse.name}` : 'Sestra'}
+          data-tour="staff-nurse"
           className="flex aspect-square h-full flex-col items-center justify-center gap-1 rounded-2xl border border-white/10 bg-white/5 px-1 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-95"
         >
           <Syringe className="h-[clamp(1.25rem,min(2.5vw,5vh),2rem)] w-[clamp(1.25rem,min(2.5vw,5vh),2rem)] text-white/70" strokeWidth={2} />
@@ -1096,7 +1110,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 setShowPatientCalledText(true);
                 setTimeout(() => setShowPatientCalledText(false), 5000);
                 onPatientStatusChange?.(now.toISOString(), null);
-                await recordStatusEvent({
+                await recordEvent({
                   operating_room_id: room.id,
                   event_type: 'patient_call',
                   step_index: currentStepIndex,
@@ -1106,6 +1120,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             }}
             disabled={!!patientCalledTime}
             aria-label="Volat pacienta"
+            data-tour="patient-call"
             className={`flex flex-col items-center justify-center gap-1 rounded-2xl border backdrop-blur-md transition-all disabled:cursor-not-allowed focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
               patientCalledTime && !patientArrivedTime
                 ? 'bg-green-500/20 border-green-500/40 opacity-100 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
@@ -1155,7 +1170,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 setPatientArrivedTime(arrivalTime);
                 setShowPatientArrivedText(true);
                 onPatientStatusChange?.(patientCalledTime.toISOString(), arrivalTime.toISOString());
-                await recordStatusEvent({
+                await recordEvent({
                   operating_room_id: room.id,
                   event_type: 'patient_arrival',
                   step_index: currentStepIndex,
@@ -1172,6 +1187,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             }}
             disabled={!patientCalledTime || !!patientArrivedTime}
             aria-label="Potvrdit příjezd pacienta"
+            data-tour="patient-arrived"
             className={`flex flex-col items-center justify-center gap-2 rounded-2xl border backdrop-blur-md transition-all disabled:cursor-not-allowed focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
               patientArrivedTime
                 ? 'bg-blue-500/20 border-blue-500/40 opacity-100 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
@@ -1195,7 +1211,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             onClick={async () => {
               const newHygieneState = !room.isEnhancedHygiene;
               onEnhancedHygieneToggle?.(newHygieneState);
-              await recordStatusEvent({
+              await recordEvent({
                 operating_room_id: room.id,
                 event_type: newHygieneState ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
                 step_index: currentStepIndex,
@@ -1204,6 +1220,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             }}
             aria-label={room.isEnhancedHygiene ? 'Vypnout hygienický režim' : 'Zapnout hygienický režim'}
             aria-pressed={room.isEnhancedHygiene}
+            data-tour="hygiene"
             className={`flex flex-col items-center justify-center gap-2 rounded-2xl border backdrop-blur-md transition-all focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
               room.isEnhancedHygiene
                 ? 'bg-orange-500/20 border-orange-500/40 opacity-100 shadow-[0_0_20px_rgba(255,107,53,0.5)]'
@@ -1229,7 +1246,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                 setIsPaused(newPaused);
                 setPauseStartedAt(pausedAt);
                 onPauseChange?.(newPaused, pausedAtIso);
-                await recordStatusEvent({
+                await recordEvent({
                   operating_room_id: room.id,
                   event_type: newPaused ? 'pause' : 'resume',
                   step_index: currentStepIndex,
@@ -1319,6 +1336,7 @@ const prevStep = activeDbStatuses.length > 0
           <motion.button
             onClick={handleNextStep}
             disabled={isInteractionBlocked}
+            data-tour="phase"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
@@ -1605,6 +1623,7 @@ const prevStep = activeDbStatuses.length > 0
                 height: 'clamp(4rem, min(7vw, 12vh), 7rem)',
               }}
               aria-label="Zkrátit odhadovaný čas"
+              data-tour="time-minus"
             >
               <Minus className="room-detail-time-control-icon w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
             </button>
@@ -1620,6 +1639,7 @@ const prevStep = activeDbStatuses.length > 0
                 height: 'clamp(4rem, min(7vw, 12vh), 7rem)',
               }}
               aria-label="Prodloužit odhadovaný čas"
+              data-tour="time-plus"
             >
               <Plus className="room-detail-time-control-icon w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-20 lg:h-20 text-white" strokeWidth={2} />
             </button>
@@ -1631,6 +1651,7 @@ const prevStep = activeDbStatuses.length > 0
       {/* Bottom Center - Phase Duration & Navigation */}
       <div
         data-testid="room-detail-phase-indicator"
+        data-tour="cycle"
         className="absolute inset-x-0 bottom-8 z-50 flex flex-col items-center gap-4 px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]"
       >
         {/* Průběh cyklu: stejně široké úseky s názvem fáze pod nimi.
@@ -1702,6 +1723,12 @@ const prevStep = activeDbStatuses.length > 0
         isOpen={notificationOverlayOpen}
         onClose={() => setNotificationOverlayOpen(false)}
         onSendNotification={async (type, customReason) => {
+          // V nápovědě se notifikace neodesílá; jen se počká, aby uživatel
+          // viděl stejnou odezvu jako v ostrém provozu.
+          if (isTutorial) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return;
+          }
           try {
             const response = await fetch('/api/send-notification', {
               method: 'POST',
