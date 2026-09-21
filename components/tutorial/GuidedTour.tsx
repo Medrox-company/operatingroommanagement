@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, MousePointerClick, Play, X } from 'lucide-react';
 
 export interface TourStep {
@@ -34,8 +34,11 @@ interface GuidedTourProps {
 }
 
 const CARD_W = 420;
-const CARD_MIN_H = 210;
+/** Odhad výšky karty, než se změří ta skutečná. */
+const CARD_FALLBACK_H = 240;
 const GAP = 26;
+/** Místo u spodní hrany pro lištu kapitol. */
+const RAIL_H = 74;
 
 /** Sleduje pozici cíle — cíl se může hýbat (animace, otevření překryvu). */
 function useTargetRect(selector: string | undefined, padding: number): Rect | null {
@@ -92,56 +95,63 @@ function useTargetRect(selector: string | undefined, padding: number): Rect | nu
   return rect;
 }
 
-/** Karta se umístí tam, kde nezakryje cíl a vejde se do okna. */
-function placeCard(rect: Rect | null, preferred?: TourStep['placement']) {
+/** Karta se umístí tam, kde nezakryje cíl a celá se vejde do okna. */
+function placeCard(rect: Rect | null, cardH: number, preferred?: TourStep['placement']) {
   if (typeof window === 'undefined') return { top: 0, left: 0 };
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  if (!rect) {
-    return { top: Math.max(GAP, vh / 2 - CARD_MIN_H / 2), left: Math.max(GAP, vw / 2 - CARD_W / 2) };
-  }
+  // Karta se nesmí dostat pod spodní hranu ani pod lištu kapitol.
+  const minTop = GAP;
+  const maxTop = Math.max(minTop, vh - cardH - GAP - RAIL_H);
+  const clamp = (top: number, left: number) => ({
+    top: Math.min(Math.max(minTop, top), maxTop),
+    left: Math.min(Math.max(GAP, left), Math.max(GAP, vw - CARD_W - GAP)),
+  });
+
+  if (!rect) return clamp(vh / 2 - cardH / 2, vw / 2 - CARD_W / 2);
 
   const space = {
     right: vw - (rect.left + rect.width),
     left: rect.left,
-    bottom: vh - (rect.top + rect.height),
+    bottom: vh - (rect.top + rect.height) - RAIL_H,
     top: rect.top,
   };
   const order: Array<'right' | 'left' | 'bottom' | 'top'> = preferred
-    ? [preferred, 'right', 'left', 'bottom', 'top'].filter((value, i, all) => all.indexOf(value) === i) as never
+    ? ([preferred, 'right', 'left', 'bottom', 'top'] as const)
+      .filter((value, i, all) => all.indexOf(value) === i) as never
     : (['right', 'left', 'bottom', 'top'] as const)
       .slice()
       .sort((a, b) => space[b] - space[a]);
 
   const side = order.find(candidate => (
-    (candidate === 'right' || candidate === 'left') ? space[candidate] >= CARD_W + GAP : space[candidate] >= CARD_MIN_H + GAP
+    (candidate === 'right' || candidate === 'left')
+      ? space[candidate] >= CARD_W + GAP
+      : space[candidate] >= cardH + GAP
   )) ?? order[0];
 
-  let top: number;
-  let left: number;
-  if (side === 'right') {
-    left = rect.left + rect.width + GAP;
-    top = rect.top + rect.height / 2 - CARD_MIN_H / 2;
-  } else if (side === 'left') {
-    left = rect.left - CARD_W - GAP;
-    top = rect.top + rect.height / 2 - CARD_MIN_H / 2;
-  } else if (side === 'bottom') {
-    left = rect.left + rect.width / 2 - CARD_W / 2;
-    top = rect.top + rect.height + GAP;
-  } else {
-    left = rect.left + rect.width / 2 - CARD_W / 2;
-    top = rect.top - CARD_MIN_H - GAP;
-  }
-
-  return {
-    top: Math.min(Math.max(GAP, top), vh - CARD_MIN_H - GAP),
-    left: Math.min(Math.max(GAP, left), vw - CARD_W - GAP),
-  };
+  if (side === 'right') return clamp(rect.top + rect.height / 2 - cardH / 2, rect.left + rect.width + GAP);
+  if (side === 'left') return clamp(rect.top + rect.height / 2 - cardH / 2, rect.left - CARD_W - GAP);
+  if (side === 'bottom') return clamp(rect.top + rect.height + GAP, rect.left + rect.width / 2 - CARD_W / 2);
+  return clamp(rect.top - cardH - GAP, rect.left + rect.width / 2 - CARD_W / 2);
 }
 
 export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTourProps) {
   const step = steps[index];
   const rect = useTargetRect(step?.target, step?.padding ?? 10);
+  // Karta se měří, ne odhaduje — text má proměnlivou délku a při odhadu
+  // vyšší karta přetekla přes spodní hranu obrazovky.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardH, setCardH] = useState(CARD_FALLBACK_H);
+
+  useLayoutEffect(() => {
+    const el = cardRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const update = () => setCardH(el.getBoundingClientRect().height || CARD_FALLBACK_H);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [index]);
   const isLast = index === steps.length - 1;
 
   // Čekání na akci: krok se posune sám, ale jen když podmínka v okamžiku
@@ -173,6 +183,16 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
     return () => window.clearTimeout(timer);
   }, [satisfied, goNext]);
 
+  // Cíl, který v daném rozložení neexistuje (prvek schovaný na úzké obrazovce,
+  // vypnutý modul), se přeskočí — místo karty uprostřed prázdné obrazovky.
+  useEffect(() => {
+    if (!step?.target || rect) return;
+    const timer = window.setTimeout(() => {
+      if (!document.querySelector(step.target as string)) goNext();
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [step, rect, goNext]);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { onClose(); return; }
@@ -185,7 +205,7 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
 
   if (!step) return null;
 
-  const position = placeCard(rect, step.placement);
+  const position = placeCard(rect, cardH, step.placement);
   const chapters = steps.reduce<string[]>((list, item) => (
     list.includes(item.chapter) ? list : [...list, item.chapter]
   ), []);
@@ -227,6 +247,7 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
       </button>
 
       <div
+        ref={cardRef}
         className={rect ? 'tut-card' : 'tut-card tut-card--center'}
         style={rect ? { top: position.top, left: position.left } : undefined}
         role="dialog"

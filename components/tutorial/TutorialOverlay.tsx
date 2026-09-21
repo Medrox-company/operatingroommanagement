@@ -9,6 +9,7 @@ import { RoomStatus, type OperatingRoom } from '../../types';
 import { TutorialProvider } from '../../contexts/TutorialContext';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 import RoomDetail from '../RoomDetail';
+import TimelineModule from '../TimelineModule';
 import GuidedTour, { type TourStep } from './GuidedTour';
 import './tutorial.css';
 
@@ -48,88 +49,203 @@ function createDemoRoom(): OperatingRoom {
   };
 }
 
-const TIMELINE_CARDS = [
+/**
+ * Kapitola Timeline běží nad SKUTEČNÝM modulem časové osy, ne nad náhradou.
+ * Modul je jen zobrazovací (dostane sály a volitelné obnovení), takže se z něj
+ * nedá nic zapsat — do nápovědy se pouští s ukázkovými sály.
+ */
+const TIMELINE_STEPS: Array<{
+  id: string;
+  target?: string;
+  title: string;
+  body: string | string[];
+  action?: string;
+  awaits?: 'tools-open' | 'tools-closed';
+  padding?: number;
+}> = [
   {
-    id: 'osa',
-    icon: LineChart,
+    id: 'canvas',
+    target: '[data-tour="tl-canvas"]',
     title: 'Osa dne po sálech',
-    text: 'Každý sál má vlastní dráhu, na které jsou barevně vynesené odpracované fáze. '
-      + 'Délka úseku odpovídá skutečně naměřenému času, ne plánu. Svislá linka ukazuje '
-      + 'aktuální čas, takže hned vidíte, co je za vámi a co teprve přijde.',
-    tip: 'Praktické čtení: mezery mezi úseky jsou prostoje. Když se opakují na stejném sále ve stejnou denní dobu, nejde o náhodu, ale o systémovou chybu v návaznosti.'
+    body: [
+      'Každý sál má vlastní dráhu, na které jsou barevně vynesené odpracované fáze.',
+      'Délka úseku odpovídá skutečně naměřenému času, ne plánu — vzniká z fází, které personál posouvá na sálech.',
+      'Mezery mezi úseky jsou prostoje. Když se opakují na stejném sále ve stejnou denní dobu, nejde o náhodu.',
+    ],
+    padding: 4,
   },
   {
-    id: 'prognoza',
-    icon: TrendingUp,
-    title: 'Prognóza kapacity',
-    text: 'Z běžících výkonů spočítá vlnu vytížení do konce dne. Plná část je realita, '
-      + 'navazující projekce je předpověď. Ukáže, kdy se který sál uvolní, a upozorní na '
-      + 'úzká hrdla — okamžiky, kdy se v krátkém okně uvolní víc sálů naráz a nastane nápor '
-      + 'na úklid a ARO.',
-    tip: 'Kdy se hodí: kolem poledne, když se rozhoduje o zařazení dalšího výkonu. Prognóza odpoví, jestli se stihne do konce pracovní doby, nebo spadne do ÚPS.'
+    id: 'minimap',
+    target: '[data-tour="tl-minimap"]',
+    title: 'Minimapa dne',
+    body: 'Zmenšený náhled celého dne nad osou. Slouží k rychlému přesunu — klepnutím nebo tažením '
+      + 'se osa posune na zvolenou hodinu, aniž byste museli rolovat.',
+    padding: 4,
   },
   {
-    id: 'simulator',
-    icon: SlidersHorizontal,
-    title: 'Simulátor zpoždění',
-    text: 'Model „co kdyby". Posuvníkem přidáte zpoždění běžícím operacím a okamžitě vidíte '
-      + 'kaskádu: které sály spadnou do přesahu, o kolik naroste přesah ARO a kdy skončí '
-      + 'poslední výkon. Nic se nikam nezapisuje — je to čistě rozhodovací pomůcka.',
-    tip: 'Kdy se hodí: než zavoláte na oddělení, že se výkon protáhne. Uvidíte předem, koho všeho to zasáhne, a můžete volat rovnou s návrhem řešení.'
+    id: 'refresh',
+    target: '[data-tour="tl-refresh"]',
+    title: 'Živá data',
+    body: 'Zelená tečka a čas ukazují, že data tečou průběžně. Osa se překresluje sama, jak personál '
+      + 'posouvá fáze; tlačítko slouží jen k vynucenému obnovení.',
   },
   {
-    id: 'optimalizace',
-    icon: Activity,
-    title: 'Optimalizace fází',
-    text: 'Rozpad dnešních fází po sálech a porovnání s obvyklou dobou z nastavení statusů. '
-      + 'U fází, které trvaly výrazně déle, navrhne, kde lze zrychlit. Chirurgický výkon '
-      + 'se záměrně nezkracuje — zrychlovat se dá jen režie kolem něj.',
-    tip: 'Na co si dát pozor: nástroj měří, ne hodnotí. Delší fáze může mít dobrý důvod — bere se jako otázka k prověření, ne jako výtka.'
-  },
-  {
-    id: 'otisk',
-    icon: Radar,
-    title: 'Fázový otisk',
-    text: 'Radarový graf časového profilu sálu proti mediánu celého traktu. Polygon sálu, '
-      + 'který je v některé ose „nafouklý", je v dané fázi pomalejší než ostatní. Sály lze '
-      + 'zapínat a vypínat a porovnávat mezi sebou.',
-    tip: 'Praktické čtení: srovnávejte sály se stejnou skladbou výkonů. Radar dvou různých oborů proti sobě ukáže rozdíl oborů, ne rozdíl v organizaci.'
-  },
-  {
-    id: 'triaz',
-    icon: Siren,
-    title: 'Triáž pozornosti',
-    text: 'Jeden panel se vším, co právě vyžaduje reakci: stav nouze, přesah za směnu, '
-      + 'dlouhá pauza, dlouho volaný pacient, infekční režim, uzamčený sál. Položky jsou '
-      + 'seřazené podle naléhavosti, kritické pulzují.',
-    tip: 'Kdy se hodí: první pohled po příchodu na velín a pak kdykoli během dne. Nahrazuje obcházení sálů a telefonáty „jak jste na tom".'
-  },
-  {
-    id: 'aro',
-    icon: AlertTriangle,
-    title: 'ARO přesah',
-    text: 'Časová osa přesahů za konec směny. Pro každý sál jedna dráha, červená lišta roste '
-      + 'od konce směny k odhadovanému konci výkonu. Plná část je už uplynulý přesah, '
-      + 'šrafovaná očekávaný zbytek.',
-    tip: 'Na co si dát pozor: přesah roste z odhadu konce výkonu. Pokud ho personál na sále neupraví, hlásí se pozdě — proto je + a − v detailu sálu důležité.'
-  },
-  {
-    id: 'statistiky',
-    icon: BarChart3,
-    title: 'Statistiky dne',
-    text: 'Počet operací, průměrná délka výkonu a vytíženost traktu v probíhajícím dni. '
-      + 'Čísla se přepočítávají průběžně, jak personál posouvá fáze.',
-    tip: 'Praktické čtení: průměrná délka výkonu se během dne mění. Ustálí se až po několika výkonech, dřív je spíš orientační.'
-  },
-  {
-    id: 'historie',
-    icon: History,
+    id: 'history',
+    target: '[data-tour="tl-history"]',
     title: 'Historie',
-    text: 'Zpětný pohled na uzavřené dny se stejným rozpadem fází. Slouží k rozborům — '
-      + 'proč se konkrétní den nestihl program a kde se čas ztratil.',
-    tip: 'Kdy se hodí: podklad na provozní schůzi. Místo dohadů, kde se ztratil čas, ukážete konkrétní den a konkrétní fázi.'
+    body: 'Listování po dnech dozadu. Hodí se jako podklad na provozní schůzi — místo dohadů, kde se '
+      + 'ztratil čas, ukážete konkrétní den a konkrétní fázi.',
+  },
+  {
+    id: 'summary',
+    target: '[data-tour="tl-summary"]',
+    title: 'Živý provoz / denní souhrn',
+    body: 'Přepínač mezi průběžným děním a souhrnem celého dne. Souhrn používá stejnou osu a zachovává '
+      + 'pořadí sálů, takže se pohled nemění pod rukama.',
+  },
+  {
+    id: 'density',
+    target: '[data-tour="tl-density"]',
+    title: 'Hustota řádků',
+    body: 'Auto → Kompakt → Komfort. Na velkém velínském panelu se hodí Komfort, při dvaceti sálech '
+      + 'naopak Kompakt, aby se všechny vešly bez rolování.',
+  },
+  {
+    id: 'attention',
+    target: '[data-tour="tl-attention"]',
+    title: 'Triáž pozornosti',
+    body: 'Jeden panel se vším, co právě vyžaduje reakci: stav nouze, přesah za směnu, dlouhá pauza, '
+      + 'dlouho volaný pacient, infekční režim, uzamčený sál. Číslo na ikoně říká, kolik položek čeká. '
+      + 'Tohle je první pohled po příchodu na velín.',
+  },
+  {
+    id: 'tools-open',
+    target: '[data-tour="tl-tools"]',
+    title: 'Pokročilé nástroje',
+    body: 'Pod tímto tlačítkem je pět analytických nástrojů. Všechny počítají z týchž dat jako osa — '
+      + 'nic se nezadává ručně.',
+    action: 'Otevřete nabídku Nástroje.',
+    awaits: 'tools-open',
+  },
+  {
+    id: 'tool-simulator',
+    target: '[data-tour="tl-tool-simulator"]',
+    title: 'Simulátor zpoždění',
+    body: 'Model „co kdyby". Posuvníkem přidáte zpoždění běžícím operacím a okamžitě vidíte kaskádu: '
+      + 'které sály spadnou do přesahu, o kolik naroste přesah ARO a kdy skončí poslední výkon. '
+      + 'Hodí se dřív, než zavoláte na oddělení — voláte rovnou s návrhem řešení.',
+    padding: 4,
+  },
+  {
+    id: 'tool-forecast',
+    target: '[data-tour="tl-tool-forecast"]',
+    title: 'Prognóza kapacity',
+    body: 'Z běžících výkonů spočítá vlnu vytížení do konce dne a předpoví, kdy se který sál uvolní. '
+      + 'Upozorní na úzká hrdla — okamžiky, kdy se naráz uvolní víc sálů a nastane nápor na úklid a ARO. '
+      + 'Odpoví na otázku, jestli se další výkon stihne do konce pracovní doby.',
+    padding: 4,
+  },
+  {
+    id: 'tool-optimizer',
+    target: '[data-tour="tl-tool-optimizer"]',
+    title: 'Optimalizace fází',
+    body: 'Rozpad dnešních fází po sálech a porovnání s obvyklou dobou z nastavení statusů. U fází, '
+      + 'které trvaly výrazně déle, navrhne, kde lze zrychlit — chirurgický výkon se záměrně nezkracuje. '
+      + 'Nástroj měří, nehodnotí: delší fáze je otázka k prověření, ne výtka.',
+    padding: 4,
+  },
+  {
+    id: 'tool-fingerprint',
+    target: '[data-tour="tl-tool-fingerprint"]',
+    title: 'Fázový otisk',
+    body: 'Radarový graf časového profilu sálu proti mediánu celého traktu. Sál „nafouklý" v některé ose '
+      + 'je v dané fázi pomalejší než ostatní. Srovnávejte sály s podobnou skladbou výkonů, jinak uvidíte '
+      + 'rozdíl oborů, ne rozdíl v organizaci.',
+    padding: 4,
+  },
+  {
+    id: 'tool-stats',
+    target: '[data-tour="tl-tool-stats"]',
+    title: 'Statistiky dne',
+    body: 'Počet operací, průměrná délka výkonu a vytíženost traktu v probíhajícím dni. Průměr se během '
+      + 'dne mění a ustálí se až po několika výkonech — dřív je spíš orientační.',
+    padding: 4,
+  },
+  {
+    id: 'tools-close',
+    title: 'Zavření nabídky',
+    body: 'Nabídku zavřete klepnutím mimo ni. Každý nástroj se otevírá jako samostatný panel nad osou '
+      + 'a zavírá se křížkem.',
+    action: 'Zavřete nabídku nástrojů.',
+    awaits: 'tools-closed',
+  },
+  {
+    id: 'legend',
+    target: '[data-tour="tl-legend"]',
+    title: 'Legenda',
+    body: 'Vysvětlivky barev na ose: aktuální čas, pauza, sál vyžadující pozornost a nouzový stav. '
+      + 'Barvy jednotlivých fází se řídí nastavením statusů, takže si je nemocnice určuje sama.',
   },
 ];
+
+
+/**
+ * Ukázkové sály pro kapitolu Timeline. Aby osa nebyla prázdná, dostane každý sál
+ * odpracovanou historii fází od rána do teď. Jde o vymyšlená data — do databáze
+ * se nezapisují a s reálnými sály nemají společné id.
+ */
+function createTimelineRooms(statuses: ReadonlyArray<{ id: string; name?: string; accent_color?: string }>): OperatingRoom[] {
+  if (statuses.length === 0) return [];
+  const now = Date.now();
+  const startOfWork = new Date();
+  startOfWork.setHours(7, 30, 0, 0);
+
+  const plan = [
+    { name: 'SÁL Č. 1', department: 'Ortopedie', minutes: [35, 20, 95, 15, 10, 20], step: 2 },
+    { name: 'SÁL Č. 2', department: 'Chirurgie', minutes: [20, 15, 70, 12, 8, 18], step: 4, emergency: false },
+    { name: 'TRAUMATOLOGIE - 1', department: 'Traumatologie', minutes: [45, 25, 120], step: 2, emergency: true },
+    { name: 'ZÁKROKOVÝ SÁLEK', department: 'Jednodenní chirurgie', minutes: [25, 18, 40, 10], step: 3 },
+  ];
+
+  return plan.map((item, roomIndex) => {
+    let cursor = startOfWork.getTime() + roomIndex * 6 * 60_000;
+    const statusHistory = item.minutes.map((minutes, i) => {
+      const index = Math.min(i, statuses.length - 1);
+      const startedAt = new Date(cursor).toISOString();
+      cursor += minutes * 60_000;
+      return {
+        stepIndex: index,
+        startedAt,
+        color: statuses[index]?.accent_color,
+        stepName: statuses[index]?.name,
+      };
+    });
+    const step = Math.min(item.step, statuses.length - 1);
+
+    return {
+      id: `tutorial-timeline-${roomIndex}`,
+      name: item.name,
+      department: item.department,
+      status: RoomStatus.BUSY,
+      queueCount: 0,
+      operations24h: 1,
+      currentStepIndex: step,
+      staff: {
+        doctor: { name: 'MUDr. Nováková', role: 'DOCTOR' as const },
+        nurse: { name: 'Bc. Horáková', role: 'NURSE' as const },
+      },
+      isEmergency: Boolean(item.emergency),
+      isLocked: false,
+      isEnhancedHygiene: false,
+      isPaused: false,
+      phaseStartedAt: statusHistory[statusHistory.length - 1]?.startedAt,
+      operationStartedAt: statusHistory[1]?.startedAt ?? statusHistory[0]?.startedAt,
+      estimatedEndTime: new Date(now + (40 + roomIndex * 25) * 60_000).toISOString(),
+      statusHistory,
+      completedOperations: [],
+    } satisfies OperatingRoom;
+  });
+}
 
 interface TutorialOverlayProps {
   onClose: () => void;
@@ -144,6 +260,8 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
   const [room, setRoom] = useState<OperatingRoom>(createDemoRoom);
   const [detailOpen, setDetailOpen] = useState(initialStep > 1);
   const [index, setIndex] = useState(initialStep);
+
+  const demoTimelineRooms = useMemo(() => createTimelineRooms(statuses), [statuses]);
 
   const patch = useCallback((changes: Partial<OperatingRoom>) => {
     setRoom(previous => ({ ...previous, ...changes }));
@@ -181,6 +299,8 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
     && Boolean(document.querySelector('[data-tour="confirm-ok"]'));
   const notificationsOpen = () => typeof document !== 'undefined'
     && Boolean(document.querySelector('[data-tour="notification-panel"]'));
+  const toolsMenuOpen = () => typeof document !== 'undefined'
+    && Boolean(document.querySelector('[data-tour="tl-tool-simulator"]'));
 
   // ── Scénář ──────────────────────────────────────────────────────────
   const steps = useMemo<Step[]>(() => {
@@ -445,15 +565,21 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
         + 'jeho části.',
     });
 
-    TIMELINE_CARDS.forEach(card => {
+    TIMELINE_STEPS.forEach(item => {
       list.push({
-        id: `tl-${card.id}`,
+        id: `tl-${item.id}`,
         scene: 'timeline',
         chapter: CHAPTER.timeline,
-        target: `#tut-tl-${card.id}`,
-        title: card.title,
-        body: card.tip,
-        padding: 8,
+        target: item.target,
+        title: item.title,
+        body: item.body,
+        action: item.action,
+        awaits: item.awaits === 'tools-open'
+          ? toolsMenuOpen
+          : item.awaits === 'tools-closed'
+            ? () => !toolsMenuOpen()
+            : undefined,
+        padding: item.padding ?? 8,
       });
     });
 
@@ -473,12 +599,15 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
   const step = steps[Math.min(index, steps.length - 1)];
   const scene = step?.scene ?? 'stage';
 
-  // Kapitola Timeline posouvá na svou kartu, aby na ni byla vidět záře.
+  // Když cíl kroku není vidět, osa se na něj posune.
   React.useEffect(() => {
-    if (scene !== 'timeline' || !step?.target) return;
+    if (!step?.target) return;
     const element = document.querySelector(step.target);
-    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [scene, step]);
+    if (!element) return;
+    const box = element.getBoundingClientRect();
+    const visible = box.top >= 0 && box.bottom <= window.innerHeight;
+    if (!visible) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [step]);
 
   return (
     <TutorialProvider value={{ isTutorial: true }}>
@@ -517,28 +646,8 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
       )}
 
       {scene === 'timeline' && (
-        <div className="tut-timeline">
-          <div className="tut-timeline-head">
-            <p className="kicker">Modul</p>
-            <h2>Timeline</h2>
-            <p className="lead">
-              Průběh celého dne na jedné obrazovce a nad ním nástroje, které z týchž dat
-              počítají, co bude dál. Nic z toho se nezadává ručně — všechno vzniká z fází,
-              které personál posouvá na sálech.
-            </p>
-          </div>
-          <div className="tut-tl-grid">
-            {TIMELINE_CARDS.map(card => {
-              const Icon = card.icon;
-              return (
-                <article key={card.id} id={`tut-tl-${card.id}`} className="tut-tl-card">
-                  <span className="tut-tl-icon" aria-hidden><Icon /></span>
-                  <h3>{card.title}</h3>
-                  <p>{card.text}</p>
-                </article>
-              );
-            })}
-          </div>
+        <div className="tut-timeline-stage">
+          <TimelineModule rooms={demoTimelineRooms} />
         </div>
       )}
 

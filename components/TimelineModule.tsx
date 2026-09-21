@@ -154,6 +154,7 @@ const TimelineMinimap: React.FC<TimelineMinimapProps> = ({ lanes, nowPct, contai
       onMouseMove={(e) => { if (e.buttons === 1) navigate(e.clientX); }}
       role="scrollbar"
       aria-label="Minimapa dne — navigace po časové ose"
+      data-tour="tl-minimap"
       aria-valuenow={Math.round(viewport.left * 100)}
     >
       {/* Lanes s operacemi */}
@@ -1491,6 +1492,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 onClick={handleRefresh}
                 disabled={!onRefresh || isRefreshing}
                 aria-label="Obnovit data"
+                data-tour="tl-refresh"
                 title={`Živě · aktualizováno ${lastUpdated.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
                 className="flex items-center justify-center gap-1 xl:gap-2 h-8 w-8 xl:w-auto px-0 xl:px-2 rounded-xl transition-colors hover:bg-white/5 disabled:cursor-default"
               >
@@ -1512,6 +1514,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               <button
                 onClick={() => setShowHistory(true)}
                 aria-label="Historie"
+                data-tour="tl-history"
                 title="Historie — listování po dnech a zpětné zobrazení časové osy"
                 className="w-7 xl:w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
               >
@@ -1522,6 +1525,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               <button
                 onClick={() => setShowSummary((value) => !value)}
                 aria-label={showSummary ? 'Zobrazit živý provoz' : 'Zobrazit denní souhrn'}
+                data-tour="tl-summary"
                 aria-pressed={showSummary}
                 title={showSummary ? 'Zpět na živý provoz' : 'Denní souhrn — všechny dnešní výkony a využití sálů'}
                 className="h-8 w-7 xl:w-auto px-0 xl:px-2 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 transition-colors hover:bg-white/5"
@@ -1539,6 +1543,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               <button
                 onClick={() => setDensity((d) => (d === 'auto' ? 'compact' : d === 'compact' ? 'comfort' : 'auto'))}
                 aria-label="Hustota řádků"
+                data-tour="tl-density"
                 title={density === 'auto' ? 'Hustota: Auto (vejít vše) — klikni pro Kompakt' : density === 'compact' ? 'Hustota: Kompakt (víc sálů) — klikni pro Komfort' : 'Hustota: Komfort (víc detailu) — klikni pro Auto'}
                 className="h-8 w-7 xl:w-auto px-0 xl:px-2 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 transition-colors hover:bg-white/5"
                 style={density !== 'auto'
@@ -1555,6 +1560,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               <button
                 onClick={() => setShowAttention(true)}
                 aria-label="Triáž pozornosti"
+                data-tour="tl-attention"
                 title="Triáž pozornosti — vše, co teď vyžaduje pozornost na sálech"
                 className="relative w-7 xl:w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
               >
@@ -1574,6 +1580,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 <button
                   onClick={() => setShowLegend((value) => !value)}
                   aria-label="Legenda časové osy"
+                  data-tour="tl-legend"
                   aria-haspopup="dialog"
                   aria-expanded={showLegend}
                   title="Legenda fází a provozních značek"
@@ -1650,6 +1657,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 <button
                   onClick={() => setShowToolsMenu((value) => !value)}
                   aria-label="Pokročilé nástroje"
+                  data-tour="tl-tools"
                   aria-haspopup="menu"
                   aria-expanded={showToolsMenu}
                   className="h-8 w-8 xl:w-auto px-0 xl:px-2.5 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
@@ -1678,17 +1686,18 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                         }}
                       >
                         {[
-                          { label: 'Simulátor zpoždění', detail: 'Dopad skluzu na provoz', icon: SlidersHorizontal, color: C.orange, action: () => setShowSimulator(true) },
-                          { label: 'Prognóza kapacity', detail: 'Vytížení a úzká hrdla', icon: TrendingUp, color: C.blue, action: () => setShowForecast(true) },
-                          { label: 'Optimalizace fází', detail: 'Doporučení ke zrychlení', icon: Zap, color: C.yellow, action: () => setShowPhaseOptimizer(true) },
-                          { label: 'Fázový otisk', detail: 'Porovnání profilů sálů', icon: Fingerprint, color: C.purple, action: () => setShowFingerprint(true) },
-                          { label: 'Statistiky dne', detail: 'Výkon a rozpad času', icon: BarChart3, color: C.green, action: () => setShowStats(true) },
+                          { tour: 'simulator', label: 'Simulátor zpoždění', detail: 'Dopad skluzu na provoz', icon: SlidersHorizontal, color: C.orange, action: () => setShowSimulator(true) },
+                          { tour: 'forecast', label: 'Prognóza kapacity', detail: 'Vytížení a úzká hrdla', icon: TrendingUp, color: C.blue, action: () => setShowForecast(true) },
+                          { tour: 'optimizer', label: 'Optimalizace fází', detail: 'Doporučení ke zrychlení', icon: Zap, color: C.yellow, action: () => setShowPhaseOptimizer(true) },
+                          { tour: 'fingerprint', label: 'Fázový otisk', detail: 'Porovnání profilů sálů', icon: Fingerprint, color: C.purple, action: () => setShowFingerprint(true) },
+                          { tour: 'stats', label: 'Statistiky dne', detail: 'Výkon a rozpad času', icon: BarChart3, color: C.green, action: () => setShowStats(true) },
                         ].map((tool) => {
                           const ToolIcon = tool.icon;
                           return (
                             <button
                               key={tool.label}
                               role="menuitem"
+                              data-tour={`tl-tool-${tool.tour}`}
                               onClick={() => { tool.action(); setShowToolsMenu(false); }}
                               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/[0.055] transition-colors"
                             >
@@ -2072,6 +2081,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
         {/* Room Rows Container */}
         <div
           className="flex-1 min-h-0 overflow-x-auto overflow-y-auto timeline-scroll"
+          data-tour="tl-canvas"
           style={{
             // Podklad řádků nese shell (tmavý gradient) — zde jen průhledná plocha
             // bez vlastního rámečku, aby se hrany nezdvojovaly.

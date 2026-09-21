@@ -13,6 +13,10 @@
   position: fixed;
   inset: 0;
   z-index: 880;
+  /* Vrstva nápovědy leží nad aplikací, ale nesmí polykat kliknutí — jinak by
+     se nedalo na nic v aplikaci klepnout a zbylo by jen tlačítko Přeskočit.
+     Ukazatel si zpátky bere jen to, co je samo ovládací prvek nápovědy. */
+  pointer-events: none;
   color: #F4F8FF;
   font-family: var(--m-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
 }
@@ -89,6 +93,7 @@
 
 /* ── Vysvětlující karta ────────────────────────────────────────────── */
 .tut-card {
+  pointer-events: auto;
   position: fixed;
   z-index: 902;
   width: min(420px, calc(100vw - 32px));
@@ -193,6 +198,7 @@
 
 /* ── Lišta kapitol dole ────────────────────────────────────────────── */
 .tut-rail {
+  pointer-events: auto;
   position: fixed;
   z-index: 902;
   left: 50%;
@@ -225,6 +231,7 @@
 
 /* ── Ukončení ──────────────────────────────────────────────────────── */
 .tut-close {
+  pointer-events: auto;
   position: fixed;
   z-index: 902;
   top: 16px;
@@ -272,49 +279,16 @@
 .tut-demo-grid span { display: block; color: rgba(226, 238, 255, .42); font-size: 10px; letter-spacing: .04em; }
 .tut-demo-grid strong { display: block; margin-top: 3px; color: #FFFFFF; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* ── Kapitola Timeline ─────────────────────────────────────────────── */
-.tut-timeline {
+/* ── Kapitola Timeline — skutečný modul časové osy ─────────────────── */
+.tut-timeline-stage {
   position: fixed;
   inset: 0;
   z-index: 40;
-  overflow-y: auto;
-  padding: 90px clamp(16px, 5vw, 72px) 120px;
-  background: radial-gradient(ellipse 80% 60% at 70% 0%, #101E48 0%, #070E28 55%, #03060F 100%);
+  display: flex;
+  overflow: hidden;
+  background: var(--app-spatial-background, #03060F);
 }
-.tut-timeline-head { max-width: 760px; margin: 0 auto 26px; }
-.tut-timeline-head p.kicker {
-  margin: 0 0 6px; color: #FBBF24;
-  font-size: 10px; font-weight: 800; letter-spacing: .24em; text-transform: uppercase;
-}
-.tut-timeline-head h2 { margin: 0; color: #FFFFFF; font-size: clamp(28px, 4vw, 42px); font-weight: 800; letter-spacing: -.03em; }
-.tut-timeline-head p.lead { margin: 12px 0 0; color: rgba(214, 228, 248, .72); font-size: 15px; line-height: 1.6; }
-
-.tut-tl-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-  max-width: 1180px;
-  margin: 0 auto;
-}
-.tut-tl-card {
-  display: flex; flex-direction: column; gap: 9px;
-  padding: 18px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, .09);
-  background: linear-gradient(155deg, rgba(19, 31, 66, .9), rgba(9, 16, 38, .95));
-  scroll-margin: 120px;
-}
-.tut-tl-icon {
-  display: grid; place-items: center;
-  width: 40px; height: 40px;
-  border-radius: 13px;
-  background: rgba(251, 191, 36, .13);
-  border: 1px solid rgba(251, 191, 36, .3);
-  color: #FBBF24;
-}
-.tut-tl-icon svg { width: 20px; height: 20px; }
-.tut-tl-card h3 { margin: 0; color: #FFFFFF; font-size: 15.5px; font-weight: 750; letter-spacing: -.01em; }
-.tut-tl-card p { margin: 0; color: rgba(214, 228, 248, .74); font-size: 12.8px; line-height: 1.55; }
+.tut-timeline-stage > * { flex: 1; min-width: 0; }
 
 /* ── Tlačítko nápovědy v hlavičce dashboardu ───────────────────────── */
 .dashboard-help-button {
