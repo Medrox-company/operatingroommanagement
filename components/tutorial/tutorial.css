@@ -257,27 +257,13 @@
   place-items: center;
   background: radial-gradient(ellipse 70% 60% at 50% 40%, #0E1B41 0%, #060C24 55%, #03060F 100%);
 }
-.tut-demo-card {
-  width: min(360px, 82vw);
-  padding: 22px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, .1);
-  background: linear-gradient(150deg, rgba(20, 32, 68, .96), rgba(9, 16, 38, .98));
-  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .9);
-  text-align: left;
-  transition: transform .2s ease, border-color .2s ease;
+/* Buňka dashboardové mřížky v ukázkové velikosti. Výšku si karta drží sama
+   (.dashboard-workspace-card--sized) — je to pevná hodnota, bez které by se
+   vnitřní mřížka s počítadlem cyklů rozsypala. */
+.tut-stage-card {
+  width: clamp(380px, 34vw, 500px);
+  cursor: pointer;
 }
-.tut-demo-card:hover { transform: translateY(-2px); border-color: rgba(251, 191, 36, .45); }
-.tut-demo-kicker {
-  margin: 0 0 6px; color: rgba(226, 238, 255, .4);
-  font-size: 9px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
-}
-.tut-demo-name { margin: 0; color: #FFFFFF; font-size: 23px; font-weight: 800; letter-spacing: -.02em; }
-.tut-demo-phase { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13.5px; font-weight: 650; }
-.tut-demo-phase i { width: 9px; height: 9px; border-radius: 50%; }
-.tut-demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); }
-.tut-demo-grid span { display: block; color: rgba(226, 238, 255, .42); font-size: 10px; letter-spacing: .04em; }
-.tut-demo-grid strong { display: block; margin-top: 3px; color: #FFFFFF; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ── Kapitola Timeline — skutečný modul časové osy ─────────────────── */
 .tut-timeline-stage {

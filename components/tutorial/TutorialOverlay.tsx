@@ -8,6 +8,7 @@ import {
 import { RoomStatus, type OperatingRoom } from '../../types';
 import { TutorialProvider } from '../../contexts/TutorialContext';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
+import RoomCard from '../RoomCard';
 import RoomDetail from '../RoomDetail';
 import TimelineModule from '../TimelineModule';
 import GuidedTour, { type TourStep } from './GuidedTour';
@@ -327,7 +328,8 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
       action: 'Klepněte na kartu ukázkového sálu.',
       awaits: () => detailOpen,
       demo: () => setDetailOpen(true),
-      padding: 6,
+      // Karta má dekorativní obrys přesahující vlastní box — zář ho musí obejmout.
+      padding: 30,
     });
 
     list.push({
@@ -337,9 +339,10 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
       target: '[data-tour="phase"]',
       title: 'Střed obrazovky: aktuální fáze',
       body: [
-        'Velký kruh uprostřed je aktuální fáze sálu a zároveň tlačítko pro přechod do další.',
+        'Velký kruh uprostřed ukazuje aktuální fázi sálu a uplynulý čas v ní.',
         'Vlevo je dokončená fáze, vpravo ta následující — obsluha vidí kontext bez hledání.',
         'Barva celé obrazovky se řídí barvou fáze z nastavení statusů, takže je stav čitelný i z dálky.',
+        'Přechod do další fáze si vyzkoušíme za chvíli v kapitole Fáze výkonu.',
       ],
       padding: 14,
     });
@@ -599,6 +602,18 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
   const step = steps[Math.min(index, steps.length - 1)];
   const scene = step?.scene ?? 'stage';
 
+  // Potvrzení přechodu otevřené mimo svůj krok (uživatel klepl na kruh dřív,
+  // než na něj přišla řada) se zruší. Jinak zůstane viset přes obrazovku,
+  // překryje cíl dalšího kroku a záře pak svítí na prázdné místo.
+  React.useEffect(() => {
+    if (!step || step.id.startsWith('confirm-')) return;
+    const timer = window.setTimeout(() => {
+      const cancel = document.querySelector('[data-tour="confirm-cancel"]') as HTMLElement | null;
+      cancel?.click();
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [step]);
+
   // Když cíl kroku není vidět, osa se na něj posune.
   React.useEffect(() => {
     if (!step?.target) return;
@@ -613,18 +628,11 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
     <TutorialProvider value={{ isTutorial: true }}>
       {scene === 'stage' && (
         <div className="tut-stage">
-          <button type="button" className="tut-demo-card" data-tour="demo-card" onClick={() => setDetailOpen(true)}>
-            <p className="tut-demo-kicker">Přehled sálů · ukázka</p>
-            <p className="tut-demo-name">{room.name}</p>
-            <p className="tut-demo-phase" style={{ color: statuses[0]?.accent_color || '#22D3EE' }}>
-              <i style={{ background: statuses[0]?.accent_color || '#22D3EE' }} aria-hidden />
-              {statuses[0]?.name || 'Sál připraven'}
-            </p>
-            <div className="tut-demo-grid">
-              <div><span>Uplynulo</span><strong>—</strong></div>
-              <div><span>Odhad konce</span><strong>—</strong></div>
-            </div>
-          </button>
+          {/* Skutečná karta sálu z dashboardu, ne její napodobenina — uživatel
+              má poznat přesně ten prvek, na který bude klikat v ostrém provozu. */}
+          <div className="tut-stage-card" data-tour="demo-card" onClick={() => setDetailOpen(true)}>
+            <RoomCard room={room} onClick={() => setDetailOpen(true)} />
+          </div>
         </div>
       )}
 
