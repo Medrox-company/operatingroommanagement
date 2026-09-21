@@ -192,7 +192,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
                 aria-label="Spustit interaktivní nápovědu"
                 title="Interaktivní nápověda"
               >
-                <HelpCircle strokeWidth={2} aria-hidden />
+                <HelpCircle strokeWidth={1.7} aria-hidden />
               </button>
             )}
           />
