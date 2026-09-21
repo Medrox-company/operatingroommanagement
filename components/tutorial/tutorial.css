@@ -283,7 +283,13 @@
    (.dashboard-workspace-card--sized) — je to pevná hodnota, bez které by se
    vnitřní mřížka s počítadlem cyklů rozsypala. */
 .tut-stage-card {
-  width: clamp(380px, 34vw, 500px);
+  /* Plocha karty je vystřižená polygonem odvozeným z předlohy 980 × 750 —
+     včetně výřezu vpravo dole pro kruhy nouze a zámku. Aby výřez seděl přesně
+     pod nimi, musí mít karta stejný poměr stran; při jiné výšce se patka
+     s personálem o kruhy otírala. 480 × 367 ≈ 980 × 750. */
+  --dashboard-card-height: 367px;
+  width: 480px;
+  max-width: calc(100vw - 48px);
   cursor: pointer;
 }
 
