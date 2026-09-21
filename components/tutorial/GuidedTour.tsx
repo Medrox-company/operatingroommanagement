@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, MousePointerClick, Play, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Lock, MousePointerClick, X } from 'lucide-react';
 
 export interface TourStep {
   id: string;
@@ -16,8 +16,6 @@ export interface TourStep {
   action?: string;
   /** Splněno? Krok se posune sám, jakmile podmínka nastane. */
   awaits?: () => boolean;
-  /** Provede akci za uživatele — tlačítko „Předvést". */
-  demo?: () => void;
   /** Odsazení záře od cíle. */
   padding?: number;
   /** Přednostní strana karty vůči cíli. */
@@ -141,6 +139,7 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
   // Karta se měří, ne odhaduje — text má proměnlivou délku a při odhadu
   // vyšší karta přetekla přes spodní hranu obrazovky.
   const cardRef = useRef<HTMLDivElement>(null);
+  const furthestRef = useRef(0);
   const [cardH, setCardH] = useState(CARD_FALLBACK_H);
 
   useLayoutEffect(() => {
@@ -172,6 +171,10 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
     return () => window.clearInterval(timer);
   }, [step, armed, satisfied]);
 
+  // Klávesnice i lišta kapitol musí znát, jestli krok čeká na akci. Ref proto,
+  // že efekt s posluchačem kláves se kvůli tomu nemá znovu navazovat.
+  const blockedRef = useRef(false);
+
   const goNext = useCallback(() => {
     if (isLast) onClose();
     else onIndex(index + 1);
@@ -196,7 +199,7 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { onClose(); return; }
-      if (event.key === 'ArrowRight') { event.preventDefault(); goNext(); }
+      if (event.key === 'ArrowRight') { event.preventDefault(); if (!blockedRef.current) goNext(); }
       if (event.key === 'ArrowLeft' && index > 0) { event.preventDefault(); onIndex(index - 1); }
     };
     document.addEventListener('keydown', onKey);
@@ -205,34 +208,47 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
 
   if (!step) return null;
 
-  const position = placeCard(rect, cardH, step.placement);
+  const waiting = Boolean(step.awaits) && armed && !satisfied;
+  blockedRef.current = waiting;
+  // Cíl přes celou obrazovku (otevřený adresář personálu, panel notifikací)
+  // se nezvýrazňuje — ztmavení by ho překrylo a rámeček by lemoval celé okno.
+  // Zůstane jen vysvětlující karta a panel je plně čitelný.
+  const fullScreenTarget = Boolean(rect)
+    && rect.width >= window.innerWidth * 0.92
+    && rect.height >= window.innerHeight * 0.92;
+  const spot = fullScreenTarget ? null : rect;
+  const position = placeCard(spot, cardH, step.placement);
   const chapters = steps.reduce<string[]>((list, item) => (
     list.includes(item.chapter) ? list : [...list, item.chapter]
   ), []);
-  const waiting = Boolean(step.awaits) && armed && !satisfied;
+  // Nejdál dosažený krok — dopředu se v liště kapitol skákat nedá.
+  const reached = Math.max(index, furthestRef.current);
+  furthestRef.current = reached;
 
   return (
     <div className="tut-root" role="region" aria-label="Interaktivní nápověda">
-      <div
-        className="tut-veil"
-        data-full={rect ? undefined : 'true'}
-        style={rect
-          ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height, ['--tut-radius' as string]: `${rect.radius}px` }
-          : { top: '50%', left: '50%', width: 0, height: 0 }}
-      />
+      {!fullScreenTarget && (
+        <div
+          className="tut-veil"
+          data-full={spot ? undefined : 'true'}
+          style={spot
+            ? { top: spot.top, left: spot.left, width: spot.width, height: spot.height, ['--tut-radius' as string]: `${spot.radius}px` }
+            : { top: '50%', left: '50%', width: 0, height: 0 }}
+        />
+      )}
 
-      {rect && (
+      {spot && (
         <>
           <div
             className="tut-halo"
-            style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height, ['--tut-radius' as string]: `${rect.radius}px` }}
+            style={{ top: spot.top, left: spot.left, width: spot.width, height: spot.height, ['--tut-radius' as string]: `${spot.radius}px` }}
           />
           {waiting && (
             <div
               className="tut-tap"
               style={{
-                top: rect.top + rect.height - 14,
-                left: rect.left + rect.width - 14,
+                top: spot.top + spot.height - 14,
+                left: spot.left + spot.width - 14,
               }}
               aria-hidden
             >
@@ -248,8 +264,8 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
 
       <div
         ref={cardRef}
-        className={rect ? 'tut-card' : 'tut-card tut-card--center'}
-        style={rect ? { top: position.top, left: position.left } : undefined}
+        className={spot ? 'tut-card' : 'tut-card tut-card--corner'}
+        style={spot ? { top: position.top, left: position.left } : undefined}
         role="dialog"
         aria-live="polite"
         aria-label={step.title}
@@ -282,29 +298,39 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
             <ArrowLeft aria-hidden /> Zpět
           </button>
           <span className="tut-spacer" />
-          {waiting && step.demo && (
-            <button type="button" className="tut-btn" onClick={step.demo}>
-              <Play aria-hidden /> Předvést
-            </button>
-          )}
-          <button type="button" className="tut-btn tut-btn--primary" onClick={goNext}>
-            {isLast ? 'Dokončit' : waiting ? 'Přeskočit' : 'Další'}
-            {isLast ? <Check aria-hidden /> : <ArrowRight aria-hidden />}
+          {/* Krok s úkolem se nedá obejít — nápověda se posune, až ho uživatel
+              opravdu provede. Tlačítko proto zůstává zamčené. */}
+          <button
+            type="button"
+            className="tut-btn tut-btn--primary"
+            onClick={goNext}
+            disabled={waiting}
+            title={waiting ? 'Nejdřív proveďte úkol z nápovědy' : undefined}
+          >
+            {waiting ? 'Čekám na vás' : isLast ? 'Dokončit' : 'Další'}
+            {waiting ? <Lock aria-hidden /> : isLast ? <Check aria-hidden /> : <ArrowRight aria-hidden />}
           </button>
         </div>
       </div>
 
       <nav className="tut-rail" aria-label="Kapitoly nápovědy">
-        {chapters.map(chapter => (
-          <button
-            key={chapter}
-            type="button"
-            data-active={chapter === step.chapter ? 'true' : undefined}
-            onClick={() => onIndex(steps.findIndex(item => item.chapter === chapter))}
-          >
-            {chapter}
-          </button>
-        ))}
+        {chapters.map(chapter => {
+          const first = steps.findIndex(item => item.chapter === chapter);
+          const unlocked = first <= reached;
+          return (
+            <button
+              key={chapter}
+              type="button"
+              data-active={chapter === step.chapter ? 'true' : undefined}
+              data-locked={unlocked ? undefined : 'true'}
+              disabled={!unlocked}
+              title={unlocked ? undefined : 'Kapitola se odemkne, až sem nápověda dojde'}
+              onClick={() => onIndex(first)}
+            >
+              {chapter}
+            </button>
+          );
+        })}
         <span className="tut-rail-progress">{index + 1}/{steps.length}</span>
       </nav>
     </div>

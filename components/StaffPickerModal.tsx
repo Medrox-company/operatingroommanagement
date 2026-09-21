@@ -199,6 +199,7 @@ export default function StaffPickerModal({
     <AnimatePresence>
       <motion.div
         className="staff-picker-overlay fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-5"
+        data-tour="staff-picker"
         initial={reduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

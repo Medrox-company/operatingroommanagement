@@ -302,6 +302,8 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
     && Boolean(document.querySelector('[data-tour="notification-panel"]'));
   const toolsMenuOpen = () => typeof document !== 'undefined'
     && Boolean(document.querySelector('[data-tour="tl-tool-simulator"]'));
+  const staffPickerOpen = () => typeof document !== 'undefined'
+    && Boolean(document.querySelector('[data-tour="staff-picker"]'));
 
   // ── Scénář ──────────────────────────────────────────────────────────
   const steps = useMemo<Step[]>(() => {
@@ -327,7 +329,6 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
         + 'pracovní obrazovku, ze které personál sál celou dobu ovládá.',
       action: 'Klepněte na kartu ukázkového sálu.',
       awaits: () => detailOpen,
-      demo: () => setDetailOpen(true),
       // Karta má dekorativní obrys přesahující vlastní box — zář ho musí obejmout.
       padding: 30,
     });
@@ -353,12 +354,25 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
       chapter: CHAPTER.detail,
       target: '[data-tour="staff-doctor"]',
       title: 'Přihlášení lékaře',
-      body: 'Personál se k sálu přihlašuje přímo tady. Klepnutím se otevře adresář, ve kterém '
-        + 'je vidět dostupnost i to, jestli už někdo slouží na jiném sále. Přihlášený lékař '
-        + 'se pak propisuje do přehledu personálu i do statistik.',
-      action: 'Klepněte na dlaždici Lékař a vyberte anesteziologa.',
+      body: 'Personál se k sálu přihlašuje přímo tady. Klepnutím se otevře personální adresář.',
+      action: 'Klepněte na dlaždici Lékař.',
+      awaits: staffPickerOpen,
+    });
+
+    list.push({
+      id: 'staff-doctor-pick',
+      scene: 'detail',
+      chapter: CHAPTER.detail,
+      target: '[data-tour="staff-picker"]',
+      title: 'Výběr z adresáře',
+      body: [
+        'U každého jména je vidět dostupnost i to, jestli pracovník už slouží na jiném sále.',
+        'Seznam jde filtrovat hledáním; přednostně se nabízejí doporučení pracovníci.',
+        'Přihlášený lékař se propíše do přehledu personálu i do statistik.',
+      ],
+      action: 'Vyberte ze seznamu anesteziologa.',
       awaits: () => Boolean(room.staff.doctor?.name),
-      demo: () => handleStaffChange('doctor', 'tutorial-doctor', 'MUDr. Nováková'),
+      padding: 0,
     });
 
     list.push({
@@ -369,9 +383,21 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
       title: 'Přihlášení sestry',
       body: 'Totéž pro sestru. Dvojice lékař + sestra tvoří obsazení sálu; dokud některá '
         + 'role chybí, hlásí přehled personálu sál jako neobsazený.',
-      action: 'Klepněte na dlaždici Sestra a vyberte pracovnici.',
+      action: 'Klepněte na dlaždici Sestra.',
+      awaits: staffPickerOpen,
+    });
+
+    list.push({
+      id: 'staff-nurse-pick',
+      scene: 'detail',
+      chapter: CHAPTER.detail,
+      target: '[data-tour="staff-picker"]',
+      title: 'Výběr sestry',
+      body: 'Stejný adresář, jen filtrovaný na sestry. Výběrem se sál obsadí a v hlavičce '
+        + 'detailu se objeví jméno.',
+      action: 'Vyberte ze seznamu sestru.',
       awaits: () => Boolean(room.staff.nurse?.name),
-      demo: () => handleStaffChange('nurse', 'tutorial-nurse', 'Bc. Horáková'),
+      padding: 0,
     });
 
     list.push({
@@ -421,7 +447,6 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
         + 'stopky — je vidět, jak dlouho se na pacienta čeká, a ten čas se dá později doložit.',
       action: 'Klepněte na Volat.',
       awaits: () => Boolean(room.patientCalledAt),
-      demo: () => patch({ patientCalledAt: new Date().toISOString() }),
     });
 
     list.push({
@@ -434,7 +459,6 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
         + 'z těchto intervalů se ve statistikách skládá obrázek o prostojích mezi výkony.',
       action: 'Potvrďte příjezd pacienta.',
       awaits: () => Boolean(room.patientArrivedAt),
-      demo: () => patch({ patientArrivedAt: new Date().toISOString() }),
     });
 
     list.push({
@@ -448,7 +472,6 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
         + 'zůstává i na časové ose, takže je po výkonu dohledatelná.',
       action: 'Zapněte hygienický režim.',
       awaits: () => Boolean(room.isEnhancedHygiene),
-      demo: () => patch({ isEnhancedHygiene: true, enhancedHygieneAt: new Date().toISOString() }),
     });
 
     list.push({
@@ -460,7 +483,6 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
       body: 'Stejným tlačítkem se režim vypíná. Doba, po kterou byl zapnutý, zůstává v evidenci.',
       action: 'Vypněte hygienický režim.',
       awaits: () => !room.isEnhancedHygiene,
-      demo: () => patch({ isEnhancedHygiene: false }),
     });
 
     list.push({
@@ -473,7 +495,6 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
         + 'zkresloval statistiku. Na tlačítku běží vlastní stopky délky pauzy.',
       action: 'Zapněte pauzu.',
       awaits: () => Boolean(room.isPaused),
-      demo: () => patch({ isPaused: true, pausedAt: new Date().toISOString() }),
     });
 
     list.push({
@@ -486,7 +507,6 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
         + 'pauzy zůstane vyznačený na časové ose.',
       action: 'Ukončete pauzu.',
       awaits: () => !room.isPaused,
-      demo: () => patch({ isPaused: false, pausedAt: null }),
     });
 
     // ── Průchod všemi zapnutými statusy ───────────────────────────────

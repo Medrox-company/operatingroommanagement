@@ -109,6 +109,16 @@
   transition: top .42s cubic-bezier(.22,1,.36,1), left .42s cubic-bezier(.22,1,.36,1);
 }
 
+.tut-card--corner {
+  /* Krok nad celoobrazovkovým panelem — karta se odsune do rohu, aby panel
+     zůstal celý vidět a čitelný. */
+  position: fixed;
+  top: auto;
+  bottom: 96px;
+  right: 22px;
+  left: auto;
+}
+
 .tut-card--center {
   position: fixed;
   top: 50%;
@@ -192,6 +202,16 @@
   box-shadow: 0 10px 24px -12px rgba(251, 191, 36, .9);
 }
 .tut-btn--primary:hover { background: linear-gradient(150deg, #FCD34D, #F0A80B); color: #1C1200; }
+/* Zamčený stav — krok čeká, až úkol provede uživatel. Není to „vypnuté
+   tlačítko", ale srozumitelná informace, proto neutrální plocha místo
+   vybledlé žluté. */
+.tut-btn--primary:disabled {
+  opacity: 1;
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .12);
+  color: rgba(226, 238, 255, .5);
+  box-shadow: none;
+}
 
 .tut-btn--ghost { border-color: transparent; background: transparent; color: rgba(226, 238, 255, .5); }
 .tut-btn--ghost:hover { background: rgba(255, 255, 255, .06); }
@@ -223,6 +243,8 @@
 }
 .tut-rail button:hover { color: #FFFFFF; background: rgba(255, 255, 255, .07); }
 .tut-rail button[data-active='true'] { color: #1C1200; background: #FBBF24; }
+.tut-rail button[data-locked='true'] { color: rgba(226, 238, 255, .22); cursor: not-allowed; }
+.tut-rail button[data-locked='true']:hover { background: transparent; color: rgba(226, 238, 255, .22); }
 .tut-rail-progress {
   margin-left: 4px; padding-left: 10px;
   border-left: 1px solid rgba(255, 255, 255, .12);
