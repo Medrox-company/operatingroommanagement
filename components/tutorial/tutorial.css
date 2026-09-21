@@ -21,74 +21,40 @@
   font-family: var(--m-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
 }
 
-/* ── Ztmavení s dírou ──────────────────────────────────────────────── */
+/* ── Ztmavení celé plochy ──────────────────────────────────────────── */
 .tut-veil {
   position: fixed;
+  inset: 0;
   z-index: 900;
   pointer-events: none;
-  border-radius: var(--tut-radius, 18px);
-  box-shadow: 0 0 0 100vmax rgba(3, 7, 20, 0.74);
-  transition: top .42s cubic-bezier(.22,1,.36,1), left .42s cubic-bezier(.22,1,.36,1),
-              width .42s cubic-bezier(.22,1,.36,1), height .42s cubic-bezier(.22,1,.36,1),
-              border-radius .42s ease;
+  background: rgba(3, 7, 20, 0.72);
 }
 
-.tut-veil[data-full='true'] {
-  box-shadow: 0 0 0 100vmax rgba(3, 7, 20, 0.82);
-}
-
-/* ── Žlutá záře ────────────────────────────────────────────────────── */
-.tut-halo {
-  position: fixed;
-  z-index: 901;
-  pointer-events: none;
-  border-radius: var(--tut-radius, 18px);
-  border: 2px solid #FBBF24;
+/* ── Žlutá záře přímo na cílovém prvku ─────────────────────────────── */
+.tut-target {
+  position: relative;
+  /* Nad ztmavením, ale pod vysvětlující kartou. */
+  z-index: 901 !important;
+  outline: 2px solid #FBBF24 !important;
+  outline-offset: 4px;
   box-shadow:
-    0 0 0 4px rgba(251, 191, 36, .20),
-    0 0 28px 6px rgba(251, 191, 36, .45),
-    inset 0 0 22px rgba(251, 191, 36, .22);
-  transition: top .42s cubic-bezier(.22,1,.36,1), left .42s cubic-bezier(.22,1,.36,1),
-              width .42s cubic-bezier(.22,1,.36,1), height .42s cubic-bezier(.22,1,.36,1),
-              border-radius .42s ease;
+    0 0 0 8px rgba(251, 191, 36, .16),
+    0 0 30px 8px rgba(251, 191, 36, .45) !important;
+  animation: tut-target-pulse 2.1s ease-in-out infinite;
 }
 
-.tut-halo::after {
-  content: '';
-  position: absolute;
-  inset: -7px;
-  border-radius: inherit;
-  border: 1.5px solid rgba(251, 191, 36, .55);
-  animation: tut-pulse 2.1s cubic-bezier(.22,1,.36,1) infinite;
+/* Překryvy přes celou obrazovku (adresář personálu, panel notifikací) se
+   nelemují — jen se vyzvednou nad ztmavení, aby zůstaly čitelné. */
+.tut-target[data-tour='staff-picker'],
+.tut-target[data-tour='notification-panel'] {
+  outline: none !important;
+  box-shadow: none !important;
+  animation: none;
 }
 
-@keyframes tut-pulse {
-  0%   { transform: scale(1);    opacity: .75; }
-  70%  { transform: scale(1.07); opacity: 0; }
-  100% { transform: scale(1.07); opacity: 0; }
-}
-
-/* Ukazatel „klepněte sem" u interaktivních kroků. */
-.tut-tap {
-  position: fixed;
-  z-index: 901;
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  pointer-events: none;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 42%, rgba(251,191,36,.95), rgba(217,119,6,.92));
-  color: #221500;
-  box-shadow: 0 10px 26px -8px rgba(251,191,36,.9);
-  animation: tut-tap 1.5s ease-in-out infinite;
-  transition: top .42s cubic-bezier(.22,1,.36,1), left .42s cubic-bezier(.22,1,.36,1);
-}
-.tut-tap svg { width: 22px; height: 22px; }
-
-@keyframes tut-tap {
-  0%, 100% { transform: translateY(0)    scale(1); }
-  50%      { transform: translateY(-6px) scale(1.06); }
+@keyframes tut-target-pulse {
+  0%, 100% { outline-color: #FBBF24; }
+  50%      { outline-color: rgba(251, 191, 36, .45); }
 }
 
 /* ── Vysvětlující karta ────────────────────────────────────────────── */

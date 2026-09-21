@@ -38,18 +38,72 @@ const GAP = 26;
 /** Místo u spodní hrany pro lištu kapitol. */
 const RAIL_H = 74;
 
-/** Sleduje pozici cíle — cíl se může hýbat (animace, otevření překryvu). */
+/**
+ * Označí cílový prvek třídou, která na něm vykreslí žlutý prstenec a vyzvedne
+ * ho nad ztmavení. Dřív se prstenec kreslil na vlastní vrstvě podle
+ * `getBoundingClientRect`, jenže detail sálu si svoje ovládání pozicuje tak,
+ * že vypočtené souřadnice seděly na sousední tlačítko — zář pak svítila na
+ * hygienický režim, i když karta mluvila o pauze. Prstenec přímo na prvku
+ * nemůže minout.
+ */
+function useHighlightTarget(selector: string | undefined) {
+  useEffect(() => {
+    if (!selector) return;
+    let current: HTMLElement | null = null;
+    let frame = 0;
+    let stop = false;
+
+    const tick = () => {
+      if (stop) return;
+      // Stejný selektor může sedět na mobilní i desktopové variantě téhož
+      // ovládání; bere se ta skutečně vykreslená.
+      const found = (Array.from(document.querySelectorAll(selector)) as HTMLElement[])
+        .find(node => {
+          const box = node.getBoundingClientRect();
+          return box.width > 0 && box.height > 0;
+        }) ?? null;
+
+      if (found !== current) {
+        current?.classList.remove('tut-target');
+        found?.classList.add('tut-target');
+        current = found;
+      }
+      frame = window.requestAnimationFrame(tick);
+    };
+
+    tick();
+    return () => {
+      stop = true;
+      window.cancelAnimationFrame(frame);
+      current?.classList.remove('tut-target');
+    };
+  }, [selector]);
+}
+
+/** Sleduje pozici cíle — používá se jen pro umístění vysvětlující karty. */
 function useTargetRect(selector: string | undefined, padding: number): Rect | null {
   const [rect, setRect] = useState<Rect | null>(null);
 
   useLayoutEffect(() => {
-    if (!selector) { setRect(null); return; }
+    // Při změně cíle se zář okamžitě zhasne. Bez toho by při přechodu na cíl,
+    // který se ještě nevykreslil, zůstala svítit na prvku z minulého kroku —
+    // karta pak mluvila o jednom tlačítku a zář ukazovala na jiné.
+    setRect(null);
+    if (!selector) return;
     let frame = 0;
     let stop = false;
 
     const measure = () => {
       if (stop) return;
-      const el = document.querySelector(selector) as HTMLElement | null;
+      // Stejný selektor může sedět na mobilní i desktopové variantě téhož
+      // ovládání. Skrytá varianta má nulovou plochu, proto se bere první
+      // skutečně vykreslená.
+      const candidates = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
+      const el = candidates.find(node => {
+        const box = node.getBoundingClientRect();
+        return box.width > 0 && box.height > 0;
+      });
+
       if (el) {
         const box = el.getBoundingClientRect();
         // Záře kopíruje zaoblení cíle — kruhové tlačítko zůstane kruhem,
@@ -61,25 +115,23 @@ function useTargetRect(selector: string | undefined, padding: number): Rect | nu
         const radius = own > Math.min(box.width, box.height) / 2 - 1
           ? Math.min(box.width, box.height) / 2 + padding
           : own + padding;
-        // Zabalené prvky (motion.button během animace) mají chvíli nulovou plochu.
-        if (box.width > 0 && box.height > 0) {
-          setRect(previous => {
-            const next = {
-              top: box.top - padding,
-              left: box.left - padding,
-              width: box.width + padding * 2,
-              height: box.height + padding * 2,
-              radius,
-            };
-            if (previous
-              && Math.abs(previous.radius - next.radius) < 0.5
-              && Math.abs(previous.top - next.top) < 0.5
-              && Math.abs(previous.left - next.left) < 0.5
-              && Math.abs(previous.width - next.width) < 0.5
-              && Math.abs(previous.height - next.height) < 0.5) return previous;
-            return next;
-          });
-        }
+
+        setRect(previous => {
+          const next = {
+            top: box.top - padding,
+            left: box.left - padding,
+            width: box.width + padding * 2,
+            height: box.height + padding * 2,
+            radius,
+          };
+          if (previous
+            && Math.abs(previous.radius - next.radius) < 0.5
+            && Math.abs(previous.top - next.top) < 0.5
+            && Math.abs(previous.left - next.left) < 0.5
+            && Math.abs(previous.width - next.width) < 0.5
+            && Math.abs(previous.height - next.height) < 0.5) return previous;
+          return next;
+        });
       } else {
         setRect(null);
       }
@@ -136,6 +188,7 @@ function placeCard(rect: Rect | null, cardH: number, preferred?: TourStep['place
 export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTourProps) {
   const step = steps[index];
   const rect = useTargetRect(step?.target, step?.padding ?? 10);
+  useHighlightTarget(step?.target);
   // Karta se měří, ne odhaduje — text má proměnlivou délku a při odhadu
   // vyšší karta přetekla přes spodní hranu obrazovky.
   const cardRef = useRef<HTMLDivElement>(null);
@@ -191,8 +244,13 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
   useEffect(() => {
     if (!step?.target || rect) return;
     const timer = window.setTimeout(() => {
-      if (!document.querySelector(step.target as string)) goNext();
-    }, 1200);
+      const visible = Array.from(document.querySelectorAll(step.target as string))
+        .some(node => {
+          const box = (node as HTMLElement).getBoundingClientRect();
+          return box.width > 0 && box.height > 0;
+        });
+      if (!visible) goNext();
+    }, 1400);
     return () => window.clearTimeout(timer);
   }, [step, rect, goNext]);
 
@@ -227,36 +285,7 @@ export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTou
 
   return (
     <div className="tut-root" role="region" aria-label="Interaktivní nápověda">
-      {!fullScreenTarget && (
-        <div
-          className="tut-veil"
-          data-full={spot ? undefined : 'true'}
-          style={spot
-            ? { top: spot.top, left: spot.left, width: spot.width, height: spot.height, ['--tut-radius' as string]: `${spot.radius}px` }
-            : { top: '50%', left: '50%', width: 0, height: 0 }}
-        />
-      )}
-
-      {spot && (
-        <>
-          <div
-            className="tut-halo"
-            style={{ top: spot.top, left: spot.left, width: spot.width, height: spot.height, ['--tut-radius' as string]: `${spot.radius}px` }}
-          />
-          {waiting && (
-            <div
-              className="tut-tap"
-              style={{
-                top: spot.top + spot.height - 14,
-                left: spot.left + spot.width - 14,
-              }}
-              aria-hidden
-            >
-              <MousePointerClick />
-            </div>
-          )}
-        </>
-      )}
+      {!fullScreenTarget && <div className="tut-veil" />}
 
       <button type="button" className="tut-close" onClick={onClose}>
         <X aria-hidden /> Ukončit nápovědu

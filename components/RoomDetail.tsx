@@ -1255,6 +1255,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               }}
               aria-label={isPaused ? 'Pokračovat ve fázi' : 'Pozastavit fázi'}
               aria-pressed={isPaused}
+              data-tour="pause"
               className={`flex flex-col items-center justify-center gap-2 rounded-2xl border backdrop-blur-md transition-all focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                 isPaused
                   ? 'bg-cyan-500/20 border-cyan-500/40 opacity-100 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
