@@ -91,6 +91,11 @@
   50%      { transform: translateY(-6px) scale(1.06); }
 }
 
+/* Výkladový krok: cíl je vidět, ale nedá se na něj kliknout. */
+.tut-locked {
+  pointer-events: none !important;
+}
+
 /* ── Vysvětlující karta ────────────────────────────────────────────── */
 .tut-card {
   pointer-events: auto;

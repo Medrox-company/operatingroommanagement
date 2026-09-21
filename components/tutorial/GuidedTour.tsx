@@ -38,6 +38,46 @@ const GAP = 26;
 /** Místo u spodní hrany pro lištu kapitol. */
 const RAIL_H = 74;
 
+/** Prvky, které se nesmí zamykat — celoobrazovkové panely musí zůstat ovladatelné. */
+const NEVER_LOCKED = ['staff-picker', 'notification-panel'];
+
+/**
+ * Na výkladovém kroku (bez úkolu) se cíl jen ukazuje, ale nejde na něj kliknout.
+ * Bez toho by uživatel u výkladu o středovém kruhu mohl omylem odbavit přechod
+ * do další fáze dřív, než na něj v nápovědě přijde řada.
+ */
+function useLockTarget(selector: string | undefined, locked: boolean) {
+  useEffect(() => {
+    if (!selector || !locked) return;
+    if (NEVER_LOCKED.some(name => selector.includes(name))) return;
+    let current: HTMLElement | null = null;
+    let frame = 0;
+    let stop = false;
+
+    const tick = () => {
+      if (stop) return;
+      const found = (Array.from(document.querySelectorAll(selector)) as HTMLElement[])
+        .find(node => {
+          const box = node.getBoundingClientRect();
+          return box.width > 0 && box.height > 0;
+        }) ?? null;
+      if (found !== current) {
+        current?.classList.remove('tut-locked');
+        found?.classList.add('tut-locked');
+        current = found;
+      }
+      frame = window.requestAnimationFrame(tick);
+    };
+
+    tick();
+    return () => {
+      stop = true;
+      window.cancelAnimationFrame(frame);
+      current?.classList.remove('tut-locked');
+    };
+  }, [selector, locked]);
+}
+
 /** Sleduje pozici cíle — cíl se může hýbat (animace, otevření překryvu). */
 function useTargetRect(selector: string | undefined, padding: number): Rect | null {
   const [rect, setRect] = useState<Rect | null>(null);
@@ -145,6 +185,7 @@ function placeCard(rect: Rect | null, cardH: number, preferred?: TourStep['place
 export default function GuidedTour({ steps, index, onIndex, onClose }: GuidedTourProps) {
   const step = steps[index];
   const rect = useTargetRect(step?.target, step?.padding ?? 10);
+  useLockTarget(step?.target, Boolean(step && !step.action));
   // Karta se měří, ne odhaduje — text má proměnlivou délku a při odhadu
   // vyšší karta přetekla přes spodní hranu obrazovky.
   const cardRef = useRef<HTMLDivElement>(null);
