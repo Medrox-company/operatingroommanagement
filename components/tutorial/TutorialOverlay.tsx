@@ -61,7 +61,7 @@ const TIMELINE_STEPS: Array<{
   title: string;
   body: string | string[];
   action?: string;
-  awaits?: 'tools-open' | 'tools-closed';
+  awaits?: 'tools-open';
   padding?: number;
 }> = [
   {
@@ -169,16 +169,9 @@ const TIMELINE_STEPS: Array<{
     target: '[data-tour="tl-tool-stats"]',
     title: 'Statistiky dne',
     body: 'Počet operací, průměrná délka výkonu a vytíženost traktu v probíhajícím dni. Průměr se během '
-      + 'dne mění a ustálí se až po několika výkonech — dřív je spíš orientační.',
+      + 'dne mění a ustálí se až po několika výkonech — dřív je spíš orientační. Každý z nástrojů '
+      + 'se otevírá jako samostatný panel nad osou a zavírá se křížkem.',
     padding: 4,
-  },
-  {
-    id: 'tools-close',
-    title: 'Zavření nabídky',
-    body: 'Nabídku zavřete klepnutím mimo ni. Každý nástroj se otevírá jako samostatný panel nad osou '
-      + 'a zavírá se křížkem.',
-    action: 'Zavřete nabídku nástrojů.',
-    awaits: 'tools-closed',
   },
   {
     id: 'legend',
@@ -597,11 +590,7 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
         title: item.title,
         body: item.body,
         action: item.action,
-        awaits: item.awaits === 'tools-open'
-          ? toolsMenuOpen
-          : item.awaits === 'tools-closed'
-            ? () => !toolsMenuOpen()
-            : undefined,
+        awaits: item.awaits === 'tools-open' ? toolsMenuOpen : undefined,
         padding: item.padding ?? 8,
       });
     });
@@ -621,6 +610,18 @@ export default function TutorialOverlay({ onClose, initialStep = 0 }: TutorialOv
 
   const step = steps[Math.min(index, steps.length - 1)];
   const scene = step?.scene ?? 'stage';
+
+  // Nabídka nástrojů se zavírá sama. Uživatel ji otevřel kvůli výkladu pěti
+  // nástrojů; jakmile výklad pokračuje jinam, nemá smysl po něm chtít, aby ji
+  // zavíral ručně — jen by zakrývala cíl dalšího kroku.
+  React.useEffect(() => {
+    if (!step || step.id === 'tl-tools-open' || step.id.startsWith('tl-tool-')) return;
+    const timer = window.setTimeout(() => {
+      const dismiss = document.querySelector('[data-tour="tl-tools-dismiss"]') as HTMLElement | null;
+      dismiss?.click();
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [step]);
 
   // Potvrzení přechodu otevřené mimo svůj krok (uživatel klepl na kruh dřív,
   // než na něj přišla řada) se zruší. Jinak zůstane viset přes obrazovku,

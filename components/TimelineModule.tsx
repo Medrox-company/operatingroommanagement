@@ -1670,7 +1670,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 <AnimatePresence>
                   {showToolsMenu && (
                     <>
-                      <button type="button" aria-label="Zavřít nabídku nástrojů" className="fixed inset-0 z-40 cursor-default" onClick={() => setShowToolsMenu(false)} />
+                      <button type="button" aria-label="Zavřít nabídku nástrojů" data-tour="tl-tools-dismiss" className="fixed inset-0 z-40 cursor-default" onClick={() => setShowToolsMenu(false)} />
                       <motion.div
                         initial={{ opacity: 0, y: -6, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
