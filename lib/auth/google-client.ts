@@ -45,7 +45,10 @@ export function getGoogleAuthClient(): SupabaseClient | null {
  */
 export async function clearGoogleAuthSession(): Promise<void> {
   try {
-    await instance?.auth.signOut();
+    // This Supabase session only bridges OAuth/MFA into the application's
+    // HttpOnly cookie. The default `global` scope would sign the user out of
+    // every other device whenever this one completes or cancels login.
+    await instance?.auth.signOut({ scope: 'local' });
   } catch {
     // Odhlášení u Supabase může selhat offline; lokální úklid stačí.
   }

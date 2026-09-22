@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import NativeGoogleAuthOverlay from './NativeGoogleAuthOverlay';
+import {
+  hasPendingNativeGoogleCallback,
+  isNativeGoogleAuthPlatform,
+  NATIVE_GOOGLE_CALLBACK_EVENT,
+  resolveNativeGoogleHospitalId,
+} from '../lib/auth/native-google-client';
 import {
   Activity,
   AlertCircle,
@@ -76,11 +83,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hospitals, setHospitals] = useState<LoginHospital[]>([]);
+  // The server and the browser must start with the same value. Reading
+  // localStorage here leaves the server-rendered role buttons disabled while
+  // the first browser render expects them to be enabled, so React cannot
+  // safely hydrate their `disabled` attribute. The hospital-loading effect
+  // below restores the persisted value after mount.
   const [selectedHospitalId, setSelectedHospitalId] = useState('');
   const [hospitalsLoading, setHospitalsLoading] = useState(true);
   const [mobileDarkMode, setMobileDarkMode] = useState(true);
   const [googleEnabled, setGoogleEnabled] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [nativeGoogleOpen, setNativeGoogleOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<QuickRoleId | null>(null);
 
   /** Údaje právě vybrané role — používá je rozbalený řádek s heslem. */
@@ -88,6 +101,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   useEffect(() => {
     setMobileDarkMode(document.documentElement.classList.contains('m-dark'));
+
+    // A system-browser callback can cold-start the WebView. In that case the
+    // callback was persisted by mobile/main.tsx before React mounted.
+    if (!isNativeGoogleAuthPlatform()) return;
+
+    const resumeNativeGoogle = () => setNativeGoogleOpen(true);
+    window.addEventListener(NATIVE_GOOGLE_CALLBACK_EVENT, resumeNativeGoogle);
+    // Subscribe before checking storage so a callback arriving between these
+    // two operations cannot be missed during an iOS cold start.
+    if (hasPendingNativeGoogleCallback()) resumeNativeGoogle();
+    return () => window.removeEventListener(NATIVE_GOOGLE_CALLBACK_EVENT, resumeNativeGoogle);
   }, []);
 
   useEffect(() => {
@@ -112,6 +136,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setError(null);
     if (!selectedHospitalId) {
       setError('Vyberte zdravotnické zařízení');
+      return;
+    }
+
+    // Keep the existing web redirect flow exactly as-is. Only Capacitor iOS
+    // opens the provider in the system browser and finishes in the overlay.
+    if (isNativeGoogleAuthPlatform()) {
+      setNativeGoogleOpen(true);
       return;
     }
 
@@ -160,14 +191,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         if (cancelled) return;
 
         setHospitals(next);
-        const stored = localStorage.getItem('orm-active-hospital');
+        // Storage access can be blocked by browser privacy settings. The
+        // resolver handles that case and keeps the successfully loaded
+        // hospital list usable instead of turning it into a login error.
+        const stored = resolveNativeGoogleHospitalId('');
         const primaryHospital = next.find(item =>
           item.hospital_short_name?.trim().toLocaleLowerCase('cs-CZ') === 'knl'
           || item.hospital_name.toLocaleLowerCase('cs-CZ').includes('krajská nemocnice liberec')
         );
         setSelectedHospitalId(
-          primaryHospital?.id
-          || (next.some(item => item.id === stored) ? stored! : (next[0]?.id || ''))
+          (next.some(item => item.id === stored) ? stored! : '')
+          || primaryHospital?.id
+          || next[0]?.id
+          || ''
         );
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'Nemocnice nelze načíst');
@@ -277,6 +313,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <>
+    <NativeGoogleAuthOverlay
+      open={nativeGoogleOpen}
+      hospitalId={selectedHospitalId}
+      onClose={() => setNativeGoogleOpen(false)}
+      onAuthenticated={() => {
+        setGoogleLoading(true);
+        // /api/auth/google issued the HttpOnly application cookie. Reloading
+        // lets AuthProvider bootstrap from /api/auth/me without exposing it.
+        window.location.reload();
+      }}
+    />
     <div className="mobile-login-page relative min-h-[100dvh] w-full overflow-x-hidden md:hidden">
       <div aria-hidden className="login-aurora-flow mobile-login-aurora pointer-events-none fixed" />
       <div aria-hidden className="login-aurora-vignette mobile-login-vignette pointer-events-none fixed inset-0" />

@@ -2,8 +2,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
+  // The existing Android package and OAuth callback scheme use this ID.
+  // The iOS target intentionally overrides PRODUCT_BUNDLE_IDENTIFIER with
+  // `operatingroom.eu` to match the pre-existing App Store Connect record.
   appId: 'com.operatingroom.app',
-  appName: 'Operating Room Management',
+  appName: 'Operatingroom Manager',
   // Complete local application bundle; this must never point at a hosted URL.
   webDir: 'mobile-dist',
   server: {
@@ -16,10 +19,10 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
-    backgroundColor: '#000000',
+    backgroundColor: '#07183F',
   },
   android: {
-    backgroundColor: '#000000',
+    backgroundColor: '#07183F',
     // Ladění WebView jen ve vývoji — v release buildu zůstává vypnuté.
     webContentsDebuggingEnabled: process.env.NODE_ENV !== 'production',
     // Aplikace nesmí zpracovávat externí odkazy jako vlastní obsah.
@@ -38,12 +41,13 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,
-      backgroundColor: '#000000',
+      backgroundColor: '#07183F',
       showSpinner: false,
     },
     StatusBar: {
-      style: 'LIGHT',
-      backgroundColor: '#000000',
+      // Capacitor uses DARK for light foreground content on a dark background.
+      style: 'DARK',
+      backgroundColor: '#07183F',
       // Android: obsah kreslíme až pod stavový řádek (safe-area řeší CSS)
       overlaysWebView: true,
     },
