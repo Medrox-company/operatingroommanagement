@@ -34,7 +34,7 @@ const ModulePageHeading: React.FC<ModulePageHeadingProps> = ({
         </div>
         {titleAfter ? (
           <div className="flex items-center gap-3">
-            <h1 className={`app-module-title ${titleClassName}`}>
+            <h1 className={`app-module-title self-start ${titleClassName}`}>
               {title}{mutedTitle ? <> <span className="app-module-title-muted">{mutedTitle}</span></> : null}
             </h1>
             {titleAfter}

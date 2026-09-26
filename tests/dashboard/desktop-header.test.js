@@ -61,16 +61,34 @@ function ancestorOpenings(node) {
 
 const hasAncestorClass = (node, className) => ancestorOpenings(node).some(parent => staticClasses(parent).includes(className));
 
-test('all desktop titles and kickers use the dashboard reference scale, not local container widths', () => {
+test('all desktop titles use the reduced shared dashboard scale, not local container widths', () => {
   const title = declarations('.app-module-title', '(min-width: 768px)');
   const kicker = declarations('.app-module-kicker', '(min-width: 768px)');
-  assert.equal(compact(title['font-size'].value), 'clamp(28px,calc((100vw-168px)*0.045),80px)');
+  assert.equal(compact(title['font-size'].value), 'clamp(25px,calc((100vw-168px)*0.04),72px)');
   assert.equal(compact(kicker['font-size'].value), 'clamp(8px,calc((100vw-168px)*0.007),11px)');
   assert.equal(kicker['letter-spacing'].value, '0.22em');
   assert.equal(declarations('.app-module-kicker-row', '(min-width: 768px)').gap.value, '8px');
   globals.walkRules(rule => {
     assert.ok(!rule.selectors.some(selector => /dashboard/.test(selector) && /\.app-module-(?:title|kicker)(?:\b|-)/.test(selector)), `Dashboard-only heading override: ${rule.selector}`);
   });
+});
+
+test('desktop headings shrink gently on tablet, laptop and wide screens without moving copy or changing the mobile base scale', () => {
+  const title = declarations('.app-module-title', '(min-width: 768px)');
+  const formula = compact(title['font-size'].value).match(/^clamp\(([\d.]+)px,calc\(\(100vw-([\d.]+)px\)\*([\d.]+)\),([\d.]+)px\)$/);
+  assert.ok(formula, 'Desktop type must remain one fluid viewport-based clamp');
+  const [minimum, gutters, factor, maximum] = formula.slice(1).map(Number);
+  for (const width of [768, 1280, 1920, 3840]) {
+    const size = Math.min(maximum, Math.max(minimum, (width - gutters) * factor));
+    const originalSize = Math.min(80, Math.max(28, (width - 168) * 0.045));
+    const ratio = size / originalSize;
+    assert.ok(ratio >= 0.88 && ratio <= 0.91, `${width}px headings should be approximately 10% smaller, not compressed`);
+  }
+  assert.deepEqual(Object.keys(title), ['font-size'], 'The desktop adjustment must not move the title with margins, padding or offsets');
+  const base = declarations('.app-module-title');
+  assert.equal(compact(base['font-size'].value), 'clamp(2.25rem,4.35vw,4.5rem)', 'Phone/base title typography must remain unchanged');
+  assert.equal(base['letter-spacing'].value, '-0.055em');
+  assert.equal(base['line-height'].value, '0.96');
 });
 
 test('shared desktop shell keeps the dashboard 128px / 40px gutters and 40px top inset', () => {
@@ -189,6 +207,21 @@ test('shared heading pins copy to the row top even when actions are taller than 
   const [copy, actions] = React.Children.toArray(row.props.children);
   assert.equal(copy.props.className, 'min-w-0');
   assert.equal(React.Children.toArray(actions.props.children)[0].props.style.height, 120);
+  const [, plainTitle] = React.Children.toArray(copy.props.children);
+  assert.equal(plainTitle.type, 'h1');
+  assert.ok(!plainTitle.props.className.split(/\s+/).includes('self-start'), 'Plain titles keep their existing structure');
+
+  const withTitleAfter = module.exports.default({
+    icon: 'Icon', kicker: 'APLIKACE PRO ŘÍZENÍ OPERAČNÍCH SÁLŮ', title: 'OPERAČNÍ', mutedTitle: 'SÁLY',
+    titleAfter: React.createElement('button', { style: { height: 36 }, 'aria-label': 'Nápověda' }),
+  });
+  const afterRow = React.Children.toArray(withTitleAfter.props.children)[0];
+  const [afterCopy] = React.Children.toArray(afterRow.props.children);
+  const [, titleRow] = React.Children.toArray(afterCopy.props.children);
+  const [title, help] = React.Children.toArray(titleRow.props.children);
+  assert.equal(title.type, 'h1');
+  assert.ok(title.props.className.split(/\s+/).includes('self-start'), 'A taller inline help button must not vertically center and shift the title');
+  assert.equal(help.props.style.height, 36);
 });
 
 test('desktop unification preserves the phone-only hidden kicker rule', () => {
