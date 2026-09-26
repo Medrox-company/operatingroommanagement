@@ -10,6 +10,7 @@ import {
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileFlowView from './mobile/MobileFlowView';
+import ModulePageHeading from './ModulePageHeading';
 import { useNowMs } from '../hooks/useSharedClock';
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -257,11 +258,14 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
         statusesLoading={statusesLoading}
       />
 
-      <div className="relative w-full h-full overflow-hidden hidden md:block" style={{ background: 'transparent' }}>
+      <div className="app-module-content relative hidden h-full min-h-0 w-full overflow-hidden md:flex md:flex-col" style={{ background: 'transparent' }}>
 
-        <div className="relative h-full flex flex-col">
+        <div className="relative flex h-full min-h-0 flex-col">
+          <header className="app-module-page-header shrink-0">
+            <ModulePageHeading icon={Activity} kicker="ŽIVÝ OPERAČNÍ PROGRAM" title="TOK" mutedTitle="PACIENTA" />
+          </header>
           {/* ── Horní lišta ── */}
-          <div className="flex items-center gap-3 px-5 pt-1 pb-2 flex-wrap">
+          <div className="flex shrink-0 items-center gap-3 pt-1 pb-2 flex-wrap">
             {/* Interval — informační cluster (glass styl jako toolbar v Timeline) */}
             <div className="hidden md:flex items-center h-14 rounded-2xl px-4 gap-3" style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}` }}>
               <div className="leading-tight">
@@ -312,7 +316,7 @@ const FlowMonitorModule: React.FC<Props> = ({ rooms }) => {
           </div>
 
           {/* ── Časová osa ── */}
-          <div className="px-5 pb-3 flex items-center gap-3">
+          <div className="shrink-0 pb-3 flex items-center gap-3">
             <div
               className="flex h-12 rounded-2xl overflow-hidden"
               style={{ background: TB_GLASS, border: `1px solid ${TB_BORDER}`, boxShadow: 'none' }}

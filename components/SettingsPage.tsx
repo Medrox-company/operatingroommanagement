@@ -274,7 +274,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
 
   // Module wrapper with error boundary
   const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="settings-module-wrapper w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+    <div className="app-module-shell settings-module-wrapper w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
       <ErrorBoundary
         fallback={
           <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -282,7 +282,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
           </div>
         }
       >
-        {children}
+        <div className="app-module-content">{children}</div>
       </ErrorBoundary>
     </div>
   );
@@ -484,14 +484,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             <div className="settings-mobile-heading settings-carousel-heading md:hidden">
               <MobileHeader kicker="Konfigurace systému" title="Nastavení" right={viewToggle} />
             </div>
-            <header className="absolute inset-x-0 top-0 z-40 hidden select-none px-4 py-[clamp(1rem,3.4dvh,2.5rem)] sm:px-6 md:block md:pl-32 md:pr-10">
-              <ModulePageHeading
-                icon={SettingsIcon}
-                kicker="SYSTEM CONFIGURATION"
-                title="NASTAVENÍ"
-                mutedTitle="SYSTÉMU"
-                actions={viewToggle}
-              />
+            <header className="app-module-shell absolute inset-x-0 top-0 z-40 hidden select-none px-4 py-10 sm:px-6 md:block md:pl-32 md:pr-10">
+              <div className="app-module-content">
+                <ModulePageHeading
+                  icon={SettingsIcon}
+                  kicker="SYSTEM CONFIGURATION"
+                  title="NASTAVENÍ"
+                  mutedTitle="SYSTÉMU"
+                  actions={viewToggle}
+                />
+              </div>
             </header>
 
             <section

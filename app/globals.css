@@ -153,6 +153,41 @@
   color: #707da3;
 }
 
+/* Desktop page headings share the dashboard's geometry and fluid type scale.
+   Use the viewport minus the shared gutters, not a local card/container width:
+   a grid, carousel or narrow action rail must never change the page title. */
+.app-module-content {
+  width: 100%;
+  min-width: 0;
+  max-width: 2400px;
+  margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+  .app-module-shell {
+    padding-left: 128px;
+    padding-right: 40px;
+    padding-top: 40px !important;
+  }
+
+  .app-module-title {
+    font-size: clamp(28px, calc((100vw - 168px) * 0.045), 80px);
+  }
+
+  .app-module-kicker {
+    font-size: clamp(8px, calc((100vw - 168px) * 0.007), 11px);
+    letter-spacing: 0.22em;
+  }
+
+  .app-module-kicker-row { gap: 8px; }
+  .app-module-page-header { margin-bottom: clamp(18px, 2.4vh, 32px); }
+
+  .app-module-detail-heading {
+    top: 40px;
+    left: calc(32px + max(0px, (100vw - 2568px) / 2));
+  }
+}
+
 :root {
   --font-sans: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -1428,7 +1463,7 @@ html.capacitor-native select {
 }
 .dashboard-view-option:focus-visible { outline: 2px solid #a5def3; outline-offset: 2px; }
 
-.dashboard-cards-layout { container-type: inline-size; max-width: 3300px; }
+.dashboard-cards-layout { container-type: inline-size; }
 .dashboard-card-content { padding-bottom: 8px; }
 .dashboard-room-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
 .dashboard-empty-state {
@@ -1456,9 +1491,6 @@ html.capacitor-native select {
     padding-bottom: clamp(16px, 2vh, 28px);
   }
   .dashboard-cards-layout .dashboard-page-header { margin-bottom: clamp(18px, 2.4vh, 32px); gap: clamp(16px, 2.5cqw, 48px); }
-  .dashboard-cards-layout .app-module-title { font-size: clamp(28px, 4.5cqw, 80px); }
-  .dashboard-cards-layout .app-module-kicker { font-size: clamp(8px, .7cqw, 11px); letter-spacing: .22em; }
-  .dashboard-cards-layout .app-module-kicker-row { gap: 8px; }
   .dashboard-cards-layout .dashboard-room-grid {
     grid-template-columns: repeat(var(--dashboard-columns, 2), minmax(0, 1fr));
     gap: var(--dashboard-grid-gap, 16px);
@@ -4206,7 +4238,6 @@ html.capacitor-native select {
 @media (min-width: 768px) {
   .spatial-dashboard-module {
     overflow: hidden !important;
-    padding-top: clamp(1.25rem, 3.2vh, 2.5rem) !important;
     padding-bottom: clamp(1rem, 2.2vh, 2.5rem) !important;
   }
 

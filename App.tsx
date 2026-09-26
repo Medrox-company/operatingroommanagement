@@ -641,7 +641,7 @@ const AppContent: React.FC = () => {
 
             {/* Tok pacienta — živý monitorovací modul */}
             {currentView === 'flow' && (
-              <div className="w-full h-full overflow-hidden p-0 md:pl-28 md:pr-6 md:pt-2 md:pb-6">
+              <div className="app-module-shell w-full h-full overflow-hidden p-0 md:pb-6">
                 <FlowMonitorModule rooms={rooms} />
               </div>
             )}
@@ -652,7 +652,7 @@ const AppContent: React.FC = () => {
                 okraj obrazovky. Mobilní odsazení řeší `pb-20` na <main> + interní
                 spodní padding v MobileTimelineView. */}
             {currentView === 'timeline' && (
-              <div className="w-full h-full overflow-hidden p-0 md:pl-28 md:pr-6 md:pt-2 md:pb-6">
+              <div className="app-module-shell w-full h-full overflow-hidden p-0 md:pb-6">
                 <TimelineModule rooms={rooms} onRefresh={refreshRooms} />
               </div>
             )}
@@ -660,8 +660,10 @@ const AppContent: React.FC = () => {
             {/* Statistics */}
             {currentView === 'statistics' && (
               <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="mobile-module-container w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
-                  <StatisticsModule rooms={rooms} />
+                <div className="mobile-module-container app-module-shell w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
+                  <div className="app-module-content">
+                    <StatisticsModule rooms={rooms} />
+                  </div>
                 </div>
               </div>
             )}
@@ -669,8 +671,10 @@ const AppContent: React.FC = () => {
   {/* Staff */}
   {currentView === 'staff' && (
   <div className="w-full h-full overflow-y-auto hide-scrollbar">
-  <div className="mobile-module-container w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
+  <div className="mobile-module-container app-module-shell w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
+  <div className="app-module-content">
   <StaffOverviewModule rooms={rooms} />
+  </div>
   </div>
   </div>
   )}

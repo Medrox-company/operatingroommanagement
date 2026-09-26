@@ -943,7 +943,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       <div className="content-safe">
 
       {/* Stejná pozice a typografická hierarchie jako hlavičky ostatních modulů. */}
-      <header className="absolute left-8 right-[clamp(7rem,14vw,10rem)] top-10 z-50 flex items-start justify-between pointer-events-none">
+      <header className="app-module-detail-heading absolute left-8 right-[clamp(7rem,14vw,10rem)] top-10 z-50 flex items-start justify-between pointer-events-none">
         <div className="flex min-w-0 flex-col">
           <AnimatePresence mode="wait">
             <motion.div 

@@ -170,9 +170,9 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   ) : null;
 
   return (
-    <div className={`dashboard-module statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top ${spatialMode ? 'spatial-dashboard-module' : ''}`}>
+    <div className={`app-module-shell dashboard-module statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top ${spatialMode ? 'spatial-dashboard-module' : ''}`}>
       <div aria-hidden className="mobile-theme-surface fixed inset-0 -z-10 md:hidden" />
-      <div className={`mx-auto w-full max-w-[2400px] ${spatialMode ? 'flex h-full min-h-0 flex-col' : 'dashboard-cards-layout'}`}>
+      <div className={`app-module-content ${spatialMode ? 'flex h-full min-h-0 flex-col' : 'dashboard-cards-layout'}`}>
         {!spatialMode && <MobileRoomOverview rooms={rooms} roomsLoaded={roomsLoaded} viewControls={mobileViewControls} onSelectRoom={onSelectRoom} onEmergency={onEmergency} onLock={onLock} onNavigate={onNavigate} />}
 
         {/* Hlavička karet se přizpůsobuje dostupné šířce; 3D má vlastní layout. */}

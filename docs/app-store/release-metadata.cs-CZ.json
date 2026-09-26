@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "status": "draft-not-approved",
+  "locale": "cs-CZ",
+  "app": {
+    "name": "Operatingroom Manager",
+    "subtitle": "Řízení operačních sálů",
+    "bundleId": "operatingroom.eu",
+    "version": "1.0",
+    "minimumOSVersion": "15.0",
+    "primaryCategoryProposed": "MEDICAL",
+    "secondaryCategoryProposed": "BUSINESS"
+  },
+  "build": {
+    "number": "1",
+    "uploadedAt": "2026-09-22T15:11:56+02:00",
+    "appStoreConnectBuildId": "8dd94da6-31cf-4751-8906-b476038a5aab",
+    "uploadState": "READY_TO_SUBMIT",
+    "submittedForReview": false
+  },
+  "productPage": {
+    "promotionalText": "Živý přehled operačních sálů, časová osa, personál a provozní statistiky v jedné bezpečně řízené aplikaci pro oprávněné nemocniční týmy.",
+    "description": "Operatingroom Manager soustřeďuje provozní řízení operačních sálů do jednoho přehledného místa. Oprávnění pracovníci zdravotnického zařízení vidí aktuální stav sálů, průběh pracovního cyklu a navazující provozní informace bez nutnosti ručního obnovování obrazovky.\n\nŽivý přehled sálů\n• stav jednotlivých operačních sálů v reálném čase\n• barevné rozlišení aktuální fáze a provozních režimů\n• informace o uplynulém čase, odhadu konce a obsazení sálu\n• rychlý přechod do detailu a posun do další nastavené fáze\n\nKoordinace provozu\n• denní časová osa napříč operačními sály\n• přehled toku pacienta a plánovaného programu\n• přiřazení oprávněného personálu k sálu\n• provozní zprávy, upozornění a záznam důležitých změn\n• 3D a půdorysné zobrazení operačního bloku podle konfigurace zařízení\n\nPřehledy a vyhodnocení\n• statistiky využití sálů a délek jednotlivých fází\n• porovnání provozu za zvolené období\n• provozní a finanční pohledy podle nastavení zařízení\n• tisk a export vybraných přehledů do PDF\n\nPřístup podle role\nKaždý uživatel vidí jen moduly a zdravotnické zařízení, ke kterým mu byl udělen přístup. Podporovány jsou provozní, anesteziologické, manažerské a administrátorské role. Aplikace nabízí světlý i tmavý režim a je přizpůsobena iPhonu i iPadu.\n\nAplikace je určena pouze oprávněným pracovníkům zapojených zdravotnických zařízení. Přístupové údaje poskytuje správce příslušného zařízení. V naléhavé situaci je nutné vždy postupovat podle interních klinických a krizových pravidel pracoviště; aplikace nenahrazuje urgentní komunikaci.",
+    "keywords": "operacni,saly,nemocnice,workflow,rozpis,personal,koordinace,statistiky,provoz,kapacita",
+    "supportUrl": "https://www.operatingroom.eu/support",
+    "privacyPolicyUrl": "https://www.operatingroom.eu/privacy",
+    "marketingUrl": "https://www.operatingroom.eu/"
+  },
+  "review": {
+    "environment": "[SYNTHETIC REVIEW HOSPITAL]",
+    "hospital": "[REVIEW HOSPITAL]",
+    "role": "[REVIEW ROLE]",
+    "username": "[REVIEW USERNAME]",
+    "password": "[REVIEW PASSWORD]",
+    "contactName": "[REVIEW CONTACT NAME]",
+    "contactEmail": "[REVIEW CONTACT EMAIL]",
+    "contactPhone": "[REVIEW CONTACT PHONE WITH COUNTRY CODE]",
+    "regulatoryStatus": "[OWNER DOCUMENTED DECISION REQUIRED]",
+    "notes": "Operatingroom Manager is a login-only hospital operations application used by authorized staff to view and coordinate operating-room status, workflow phases, schedules, staffing and operational analytics. All records in the review environment are synthetic. Launch the app, select [REVIEW HOSPITAL], choose [REVIEW ROLE], enter [REVIEW USERNAME] and [REVIEW PASSWORD], then tap Sign In. The account must remain active for the entire review period and must not require an expiring code. Suggested path: Rooms overview → room detail → Timeline → Statistics → light/dark appearance. The app does not use HealthKit and requests no camera, microphone, contacts, location or App Tracking Transparency permissions. It contains no advertising and does not track users across apps or websites. Regulatory wording must be added only after the owner's documented decision."
+  },
+  "privacy": {
+    "collectsData": true,
+    "tracking": false,
+    "advertising": false,
+    "dataTypes": [
+      "NAME",
+      "EMAIL_ADDRESS",
+      "PHONE_NUMBER",
+      "HEALTH",
+      "USER_ID",
+      "DEVICE_ID",
+      "OTHER_USER_CONTENT",
+      "OTHER_USAGE_DATA"
+    ],
+    "defaultPurpose": "APP_FUNCTIONALITY",
+    "linkedToUser": true,
+    "ownerAndDpoVerificationRequired": true
+  },
+  "screenshots": {
+    "iphone65PortraitAccepted": [
+      "1242x2688",
+      "1284x2778"
+    ],
+    "plannedIphoneCapture": "1242x2688",
+    "ipad13PortraitAccepted": [
+      "2064x2752",
+      "2048x2732"
+    ],
+    "plannedScenes": [
+      "rooms-overview",
+      "room-detail",
+      "3d-layout",
+      "timeline",
+      "statistics",
+      "light-mode-schedule"
+    ]
+  },
+  "ownerDecisionsRequired": [
+    "regulatory-status-and-supporting-documents",
+    "apple-developer-organization-legal-holder",
+    "public-unlisted-or-custom-distribution",
+    "review-environment-and-credentials",
+    "availability-regions-and-price",
+    "review-contact",
+    "explicit-authorization-before-submit-for-review"
+  ]
+}

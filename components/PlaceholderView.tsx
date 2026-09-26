@@ -2,6 +2,7 @@ import React from 'react';
 import { LucideIcon, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MobileCard, MobileHeader, MobileScreen } from './mobile/MobileShell';
+import ModulePageHeading from './ModulePageHeading';
 
 interface PlaceholderViewProps {
   icon?: LucideIcon;
@@ -21,14 +22,20 @@ const PlaceholderView: React.FC<PlaceholderViewProps> = ({ icon: Icon = AlertCir
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    className="w-full h-full hidden md:flex items-center justify-center px-8 md:pl-32 md:pr-10 py-8"
+    className="app-module-shell w-full h-full hidden md:flex flex-col px-8 md:pl-32 md:pr-10 py-8"
   >
-    <div className="max-w-sm w-full text-center">
-      <div className="inline-flex p-6 rounded-3xl bg-white/5 border border-white/10 mb-8">
-        <Icon className="w-16 h-16 text-white/30" strokeWidth={1.5} />
+    <div className="app-module-content flex h-full min-h-0 flex-col">
+      <header className="app-module-page-header shrink-0">
+        <ModulePageHeading icon={Icon} kicker="OPERAČNÍ PROGRAM" title={title} />
+      </header>
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <div className="max-w-sm w-full text-center">
+          <div className="inline-flex p-6 rounded-3xl bg-white/5 border border-white/10 mb-8">
+            <Icon className="w-16 h-16 text-white/30" strokeWidth={1.5} />
+          </div>
+          <p className="text-white/50 text-sm leading-relaxed">{description}</p>
+        </div>
       </div>
-      <h2 className="text-2xl font-bold uppercase tracking-tight text-white/90 mb-3">{title}</h2>
-      <p className="text-white/50 text-sm leading-relaxed">{description}</p>
     </div>
   </motion.div>
   </>

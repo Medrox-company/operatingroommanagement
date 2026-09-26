@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>destination</key>
+	<string>export</string>
+	<key>distributionBundleIdentifier</key>
+	<string>operatingroom.eu</string>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>operatingroom.eu</key>
+		<string>8e536cb6-a71b-4222-b749-5cc8e148c0fd</string>
+	</dict>
+	<key>signingCertificate</key>
+	<string>F0DC348AC17593912FD1DFE98E25D31B536D29B0</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>stripSwiftSymbols</key>
+	<true/>
+	<key>teamID</key>
+	<string>2J4JJ3SYPV</string>
+	<key>uploadSymbols</key>
+	<true/>
+</dict>
+</plist>

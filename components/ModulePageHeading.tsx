@@ -26,7 +26,7 @@ const ModulePageHeading: React.FC<ModulePageHeadingProps> = ({
   titleAfter,
 }) => (
   <div className={`module-page-heading ${className}`}>
-    <div className="flex items-end justify-between gap-4">
+    <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
         <div className="app-module-kicker-row">
           <Icon className="h-4 w-4 shrink-0 text-[#A8B3C8]" strokeWidth={1.5} aria-hidden />
@@ -45,7 +45,7 @@ const ModulePageHeading: React.FC<ModulePageHeadingProps> = ({
           </h1>
         )}
       </div>
-      {actions ? <div className="shrink-0 pb-1">{actions}</div> : null}
+      {actions ? <div className="shrink-0 self-end pb-1">{actions}</div> : null}
     </div>
   </div>
 );

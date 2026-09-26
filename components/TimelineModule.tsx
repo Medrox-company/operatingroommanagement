@@ -4,6 +4,7 @@ import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_B
 import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
+import ModulePageHeading from './ModulePageHeading';
 import AroOvertimePopup from './AroOvertimePopup';
 import CapacityForecast from './timeline/CapacityForecast';
 import DayStatistics from './timeline/DayStatistics';
@@ -1465,8 +1466,12 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
       <div
-        className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden"
+        className="app-module-content hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden"
       >
+
+      <header className="app-module-page-header shrink-0">
+        <ModulePageHeading icon={Clock} kicker="OPERAČNÍ PROGRAM" title="ČASOVÁ" mutedTitle="OSA" />
+      </header>
 
       {/* ======== Header with Title and Stats ======== */}
       <div 
@@ -1475,7 +1480,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
           background: 'transparent',
         }}
       >
-        <div className="px-5 -mt-1 pt-1 pb-3">
+        <div className="-mt-1 pt-1 pb-3">
 
           {/* Jediná horní lišta — nástroje vlevo, čas uprostřed, zoom a ARO vpravo */}
           <div className="timeline-commandbar relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 xl:gap-3">
