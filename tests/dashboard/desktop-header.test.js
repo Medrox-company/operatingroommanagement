@@ -136,21 +136,37 @@ test('top-level Statistics and Personnel share the same shell and centered conte
   }
 });
 
-test('desktop Patient Flow and Timeline use the shared heading without changing mobile headers', () => {
-  for (const [path, mobileTag, title, mutedTitle] of [
-    ['components/FlowMonitorModule.tsx', 'MobileFlowView', 'TOK', 'PACIENTA'],
-    ['components/TimelineModule.tsx', 'MobileTimelineView', 'ČASOVÁ', 'OSA'],
-  ]) {
-    const source = parseComponent(path);
-    const [heading] = openings(source, 'ModulePageHeading');
-    assert.ok(heading, `${path} needs a desktop page heading`);
-    assert.ok(hasAncestorClass(heading, 'app-module-content'));
-    assert.ok(hasAncestorClass(heading, 'app-module-page-header'));
-    assert.ok(ancestorOpenings(heading).some(node => staticClasses(node).includes('hidden') && staticClasses(node).some(token => token.startsWith('md:'))));
-    assert.equal(attribute(heading, 'title').initializer.text, title);
-    assert.equal(attribute(heading, 'mutedTitle').initializer.text, mutedTitle);
-    assert.ok(openings(source, mobileTag).length, 'Existing mobile component must stay mounted');
-  }
+test('desktop Patient Flow uses the shared heading without changing its mobile header', () => {
+  const source = parseComponent('components/FlowMonitorModule.tsx');
+  const [heading] = openings(source, 'ModulePageHeading');
+  assert.ok(heading, 'Patient Flow needs a desktop page heading');
+  assert.ok(hasAncestorClass(heading, 'app-module-content'));
+  assert.ok(hasAncestorClass(heading, 'app-module-page-header'));
+  assert.ok(ancestorOpenings(heading).some(node => staticClasses(node).includes('hidden') && staticClasses(node).some(token => token.startsWith('md:'))));
+  assert.equal(attribute(heading, 'title').initializer.text, 'TOK');
+  assert.equal(attribute(heading, 'mutedTitle').initializer.text, 'PACIENTA');
+  assert.ok(openings(source, 'MobileFlowView').length, 'Existing mobile component must stay mounted');
+});
+
+test('Timeline intentionally omits a desktop page heading while keeping its commandbar and mobile view', () => {
+  const source = parseComponent('components/TimelineModule.tsx');
+  assert.equal(openings(source, 'ModulePageHeading').length, 0, 'Timeline starts with its controls, not a desktop title');
+  assert.ok(openings(source).some(node => staticClasses(node).includes('timeline-commandbar')), 'Timeline commands must remain available');
+  assert.ok(openings(source, 'MobileTimelineView').length, 'Existing mobile view must stay mounted');
+});
+
+test('Timeline schedule table and commandbar share both content edges without extra side margins', () => {
+  const source = parseComponent('components/TimelineModule.tsx');
+  const nodes = openings(source);
+  const commandbar = nodes.find(node => staticClasses(node).includes('timeline-commandbar'));
+  const scheduler = nodes.find(node => staticClasses(node).includes('timeline-scheduler-shell'));
+  assert.ok(commandbar, 'Timeline must retain its commandbar');
+  assert.ok(scheduler, 'Timeline must retain its schedule table');
+  const contentAncestor = node => ancestorOpenings(node).find(parent => staticClasses(parent).includes('app-module-content'));
+  const content = contentAncestor(commandbar);
+  assert.ok(content, 'Commandbar needs the shared content boundary');
+  assert.equal(contentAncestor(scheduler), content, 'Table and commandbar must use the same content boundary');
+  assert.ok(!staticClasses(scheduler).some(token => /^(?:[\w-]+:)*m(?:x|l|r|s|e)-/.test(token)), 'Side-margin utilities must not inset the table relative to its controls');
 });
 
 test('shared heading pins copy to the row top even when actions are taller than the title', () => {

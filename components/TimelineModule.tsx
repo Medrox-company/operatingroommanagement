@@ -4,7 +4,6 @@ import { OperatingRoom, WeeklySchedule, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_B
 import { STEP_DURATIONS, STEP_COLORS } from '../constants';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
-import ModulePageHeading from './ModulePageHeading';
 import AroOvertimePopup from './AroOvertimePopup';
 import CapacityForecast from './timeline/CapacityForecast';
 import DayStatistics from './timeline/DayStatistics';
@@ -1469,10 +1468,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
         className="app-module-content hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden"
       >
 
-      <header className="app-module-page-header shrink-0">
-        <ModulePageHeading icon={Clock} kicker="OPERAČNÍ PROGRAM" title="ČASOVÁ" mutedTitle="OSA" />
-      </header>
-
       {/* ======== Header with Title and Stats ======== */}
       <div 
         className="sticky top-0 z-40 flex-shrink-0"
@@ -1921,7 +1916,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
 
       {/* ======== Main Timeline ======== */}
-      <div className="timeline-scheduler-shell mx-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] sm:mx-6 relative z-10">
+      <div className="timeline-scheduler-shell flex min-h-0 flex-1 flex-col overflow-hidden rounded-[10px] relative z-10">
 
         {/* Time Axis Header — tmavší pás nad řádky; vnější hranu kreslí shell */}
         <div
