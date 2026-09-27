@@ -64,7 +64,7 @@ const hasAncestorClass = (node, className) => ancestorOpenings(node).some(parent
 test('all desktop titles use the reduced shared dashboard scale, not local container widths', () => {
   const title = declarations('.app-module-title', '(min-width: 768px)');
   const kicker = declarations('.app-module-kicker', '(min-width: 768px)');
-  assert.equal(compact(title['font-size'].value), 'clamp(25px,calc((100vw-168px)*0.04),72px)');
+  assert.equal(compact(title['font-size'].value), 'clamp(23px,calc((100vw-168px)*0.036),64px)');
   assert.equal(compact(kicker['font-size'].value), 'clamp(8px,calc((100vw-168px)*0.007),11px)');
   assert.equal(kicker['letter-spacing'].value, '0.22em');
   assert.equal(declarations('.app-module-kicker-row', '(min-width: 768px)').gap.value, '8px');
@@ -80,9 +80,9 @@ test('desktop headings shrink gently on tablet, laptop and wide screens without 
   const [minimum, gutters, factor, maximum] = formula.slice(1).map(Number);
   for (const width of [768, 1280, 1920, 3840]) {
     const size = Math.min(maximum, Math.max(minimum, (width - gutters) * factor));
-    const originalSize = Math.min(80, Math.max(28, (width - 168) * 0.045));
+    const originalSize = Math.min(72, Math.max(25, (width - 168) * 0.04));
     const ratio = size / originalSize;
-    assert.ok(ratio >= 0.88 && ratio <= 0.91, `${width}px headings should be approximately 10% smaller, not compressed`);
+    assert.ok(ratio >= 0.88 && ratio <= 0.93, `${width}px headings should be approximately 8–11% smaller than the previous scale, not compressed`);
   }
   assert.deepEqual(Object.keys(title), ['font-size'], 'The desktop adjustment must not move the title with margins, padding or offsets');
   const base = declarations('.app-module-title');

@@ -171,7 +171,7 @@
   }
 
   .app-module-title {
-    font-size: clamp(25px, calc((100vw - 168px) * 0.04), 72px);
+    font-size: clamp(23px, calc((100vw - 168px) * 0.036), 64px);
   }
 
   .app-module-kicker {
