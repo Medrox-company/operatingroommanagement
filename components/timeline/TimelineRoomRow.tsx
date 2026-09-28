@@ -4,10 +4,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE } from '../../types';
 import { Lock, AlertTriangle, Activity, Pause, Phone, BedDouble, CheckCircle, Biohazard } from 'lucide-react';
-import { C, TIMELINE_START_HOUR, ROOM_LABEL_WIDTH, MIN_ROW_HEIGHT, ROOM_COLOR_ORDER, ROOM_COLORS } from './constants';
+import { C, TIMELINE_START_HOUR, ROOM_LABEL_WIDTH, MIN_ROW_HEIGHT } from './constants';
 import { isOperationInWindow, exceedsT24Hours, getOperationPosition as getOperationPositionRaw } from './utils';
 import type { WorkflowStatus } from '../../contexts/WorkflowStatusesContext';
-import { useCurrentRoomSpecialties } from '../../hooks/useCurrentRoomSpecialties';
+import type { CurrentRoomSpecialty } from '../../lib/room-specialty';
 import { TimelineRoomSpecialtyStrip } from '../RoomSpecialtyBadge';
 /** Najetí myší na výkon — sdílený tvar mezi řádkem a bublinou v rodiči. */
 export interface TimelineHoveredOp {
@@ -25,8 +25,6 @@ export interface TimelineHoveredOp {
 export interface TimelineRoomRowProps {
   room: OperatingRoom;
   roomIndex: number;
-  /** Pořadí mezi aktivními sály; 0 = sál se nepočítá (volný, emergency, uzamčený). */
-  roomNumber: number;
   currentTime: Date;
   dayWindowStartMs: number;
   TIMELINE_HOURS: number;
@@ -37,7 +35,7 @@ export interface TimelineRoomRowProps {
   scrubTime: number | null;
   activeStatuses: WorkflowStatus[];
   statusByOrderIndex: Record<number, WorkflowStatus>;
-  currentSpecialties: ReturnType<typeof useCurrentRoomSpecialties>['currentByRoom'];
+  currentSpecialties: Map<string, CurrentRoomSpecialty[]>;
   /** Z celého objektu využití potřebuje řádek jen svoji vlastní míru vytížení. */
   roomUtilization: { rows: Array<{ id: string; utilizationPct: number; operations: number; occupiedMinutes: number }> };
   getTimePercentForTimeline: (date: Date, referenceStart: Date) => number;
@@ -70,7 +68,6 @@ export interface TimelineRoomRowProps {
 export function TimelineRoomRow({
   room,
   roomIndex,
-  roomNumber,
   currentTime,
   dayWindowStartMs,
   TIMELINE_HOURS,
@@ -100,15 +97,7 @@ export function TimelineRoomRow({
   const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
   const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
   const isActive = stepIndex > 0; // index 0 = "Sál připraven"
-  const isCleaning = stepIndex === totalSteps - 2; // Second to last step
   const isFree = stepIndex === 0;
-  
-  // Pořadové číslo aktivního sálu počítá rodič — řádek nesmí
-  // mutovat sdílené počítadlo, jinak by závisel na pořadí renderu.
-  const currentRoomNumber = roomNumber;
-  
-  const roomColorKey = ROOM_COLOR_ORDER[(currentRoomNumber - 1) % ROOM_COLOR_ORDER.length];
-  const roomColor = ROOM_COLORS[roomColorKey] || ROOM_COLORS.blue;
   const remainingTime = getRemainingTime(room);
   
   // Get status from database context.

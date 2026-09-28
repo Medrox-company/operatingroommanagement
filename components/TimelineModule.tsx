@@ -1053,23 +1053,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   };
 
   // Count active rooms for numbering
-  // Pořadová čísla aktivních sálů. Dřív se počítadlo inkrementovalo uvnitř
-  // .map() během renderu; odvozená mapa dává stejná čísla ve stejném pořadí,
-  // ale řádek sálu na pořadí renderu nezávisí.
-  const activeRoomNumbers = useMemo(() => {
-    const numbers = new Map<string, number>();
-    let counter = 0;
-    for (const room of displayRooms) {
-      const totalSteps = activeStatuses.length > 0 ? activeStatuses.length : 1;
-      const stepIndex = Math.min(room.currentStepIndex, totalSteps - 1);
-      const isActive = stepIndex > 0;
-      if (isActive && !room.isEmergency && !room.isLocked) {
-        counter += 1;
-        numbers.set(room.id, counter);
-      }
-    }
-    return numbers;
-  }, [displayRooms, activeStatuses]);
 
   return (
     <div
@@ -1809,7 +1792,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 key={room.id}
                 room={room}
                 roomIndex={roomIndex}
-                roomNumber={activeRoomNumbers.get(room.id) ?? 0}
                 currentTime={currentTime}
                 dayWindowStartMs={dayWindowStartMs}
                 TIMELINE_HOURS={TIMELINE_HOURS}
