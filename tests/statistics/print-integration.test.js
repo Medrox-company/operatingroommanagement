@@ -39,6 +39,7 @@ const payload = marker => ({ context: marker, metrics: [], sections: [] });
 
 function printer(overrides = {}) {
   const opened = [];
+  const exported = [];
   const errors = [];
   let overviewBuilds = 0;
   const overview = payload('CURRENT OVERVIEW');
@@ -51,10 +52,16 @@ function printer(overrides = {}) {
     setPrintError: error => errors.push(error),
     buildOverviewReport: () => { overviewBuilds += 1; return overview; },
     openStatisticsPrintReport: (...args) => opened.push(args),
+    downloadStatisticsCsv: (...args) => exported.push(args),
     ...overrides,
   };
+  // Tisk i CSV stojí na týchž dvou pomocnících — načítáme je z modulu, ne
+  // jako atrapy, aby test pokrýval skutečné rozhodování o připravenosti dat.
+  scope.resolveReport = loadExpression(initializer('resolveReport'), scope);
+  scope.reportMetadata = loadExpression(initializer('reportMetadata'), scope);
   const print = loadExpression(initializer('handlePrint'), scope);
-  return { print, opened, errors, reports, overview, overviewBuilds: () => overviewBuilds };
+  const exportCsv = loadExpression(initializer('handleExportCsv'), scope);
+  return { print, exportCsv, opened, exported, errors, reports, overview, overviewBuilds: () => overviewBuilds };
 }
 
 test('registry cleanup cannot remove a newer report or another tab', () => {
@@ -300,4 +307,44 @@ test('print shortcut routes Ctrl/Cmd+P to the latest handler without hijacking u
   for (const unrelated of [event({}), event({ ctrlKey: true, key: 's' }), event({ ctrlKey: true, altKey: true })]) shortcut(unrelated);
   assert.equal(calls, 12);
   assert.equal(prevented, 3);
+});
+
+test('CSV export uses the same readiness checks and metadata as printing', () => {
+  // Export nesmí obejít kontroly, které brání tisku nedopočítaných dat —
+  // jinak by z aplikace odešel soubor s tichými nulami místo chybějících hodnot.
+  for (const [tab, label] of Object.entries(tabLabelMap)) {
+    const fixture = printer({ tab });
+    fixture.exportCsv();
+    assert.equal(fixture.exported.length, 1);
+    const [report, metadata] = fixture.exported[0];
+    assert.equal(report, tab === 'prehled' ? fixture.overview : fixture.reports[tab]);
+    assert.equal(metadata.tabLabel, label);
+    assert.equal(metadata.periodLabel, periodLabelMap['týden']);
+    assert.match(metadata.filename, new RegExp(`^Statistiky_${tab}_\\d{4}-\\d{2}-\\d{2}$`));
+    assert.deepEqual(fixture.errors, [null]);
+  }
+
+  const loading = printer({ isStatisticsLoading: true });
+  loading.exportCsv();
+  assert.equal(loading.exported.length, 0);
+  assert.match(loading.errors[0], /ještě načítají/);
+  assert.match(loading.errors[0], /zkuste export znovu/, 'Hláška pojmenuje akci, kterou uživatel spustil');
+
+  const broken = printer({ statisticsError: 'Zdroj se nepodařilo načíst.' });
+  broken.exportCsv();
+  assert.equal(broken.exported.length, 0);
+  assert.match(broken.errors[0], /Data se nepodařilo úplně načíst/);
+
+  const stale = printer({
+    tab: 'saly',
+    dayHistoryCoverageStart: '2026-09-01T05:00:00.000Z',
+    reportData: { current: { saly: { context: 'saly', metrics: [], sections: [], requiredHistoryFrom: '2026-07-01T05:00:00.000Z' } } },
+  });
+  stale.exportCsv();
+  assert.equal(stale.exported.length, 0);
+  assert.match(stale.errors[0], /mimo úplně načtenou historii/);
+
+  const failing = printer({ downloadStatisticsCsv: () => { throw new Error('Zápis souboru selhal.'); } });
+  failing.exportCsv();
+  assert.deepEqual(failing.errors, [null, 'Zápis souboru selhal.']);
 });
