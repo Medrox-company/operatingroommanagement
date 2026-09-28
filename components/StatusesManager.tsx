@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import ModulePageHeading from './ModulePageHeading';
+import OperationalThresholdsPanel from './OperationalThresholdsPanel';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import {
   Activity,
@@ -296,6 +297,8 @@ const StatusesManager: React.FC = () => {
           actions={statusViewToggle}
         />
       </header>
+
+      <OperationalThresholdsPanel />
 
       {/* Stejná lišta jako v Rozpisu sálů a Operačních oborech. */}
       <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">

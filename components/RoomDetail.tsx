@@ -16,6 +16,7 @@ import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
 import { useHospital } from '../contexts/HospitalContext';
 import { useTutorial } from '../contexts/TutorialContext';
+import { useOperationalThresholds } from '../hooks/useOperationalThresholds';
 import { MobileThemeToggle } from './mobile/MobileShell';
 import { RapidSurgeryWarning } from './room/RapidSurgeryWarning';
 import { useNowMs } from '../hooks/useSharedClock';
@@ -46,7 +47,6 @@ const contrastText = (hex: string): string => {
   return lum > 145 ? '#17233F' : '#FFFFFF';
 };
 
-const CLEANING_WARNING_THRESHOLD_MS = 30 * 60 * 1000;
 const CLEANING_WARNING_VISIBLE_MS = 10 * 1000;
 
 // Dvouslovné názvy hlavních provozních fází držíme v kruhové grafice vždy
@@ -114,6 +114,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   // Interaktivní nápověda běží nad vymyšleným sálem — události ani notifikace
   // se z ní nesmí zapsat do databáze.
   const { isTutorial } = useTutorial();
+  // Prahy upozornění si řídí zařízení v nastavení; bez nastavení platí
+  // původní hodnoty (30 minut úklid, 5 minut krátká fáze).
+  const { thresholds } = useOperationalThresholds();
+  const cleaningWarningThresholdMs = thresholds.cleaningWarningMinutes * 60 * 1000;
   const recordEvent = useCallback(
     (payload: Parameters<typeof recordStatusEvent>[0]) => (
       isTutorial ? Promise.resolve(undefined) : recordStatusEvent(payload)
@@ -477,7 +481,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     };
 
     const elapsedMs = Date.now() - startMs;
-    const remainingMs = Math.max(0, CLEANING_WARNING_THRESHOLD_MS - elapsedMs);
+    const remainingMs = Math.max(0, cleaningWarningThresholdMs - elapsedMs);
     cleaningTimeoutRef.current = window.setTimeout(check, remainingMs);
 
     return () => {
@@ -487,7 +491,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCleaningStatus, isPaused, safeStepIndex, nextStepIndex, room.statusHistory, phaseStartTime]);
+  }, [isCleaningStatus, isPaused, safeStepIndex, nextStepIndex, room.statusHistory, phaseStartTime, cleaningWarningThresholdMs]);
 
   const confirmStepChange = () => {
     if (pendingStepIndex === null) return;
@@ -747,7 +751,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           </section>
 
           {showCleaningWarning && (
-            <p className="mrd-notice" role="alert"><AlertTriangle aria-hidden="true" />Úklid sálu přesahuje 30 minut. Tento krok bude automaticky ukončen.</p>
+            <p className="mrd-notice" role="alert"><AlertTriangle aria-hidden="true" />Úklid sálu přesahuje {thresholds.cleaningWarningMinutes} minut. Tento krok bude automaticky ukončen.</p>
           )}
 
           <section className="mrd-timing" aria-label="Časy sálu">
@@ -1433,7 +1437,7 @@ const prevStep = activeDbStatuses.length > 0
                       transition={{ delay: 0.1 }}
                       className="text-[clamp(1.5rem,4vw,3rem)] font-bold tracking-tight leading-tight text-center text-white"
                     >
-                      Úklid sálu<br />přesahuje<br />30 minut
+                      Úklid sálu<br />přesahuje<br />{thresholds.cleaningWarningMinutes} minut
                     </motion.h2>
                     <p className="text-[clamp(0.8rem,1.6vw,1.125rem)] text-white/60 leading-snug max-w-[85%] text-center">
                       Tento krok bude automaticky ukončen.
@@ -1693,6 +1697,7 @@ const prevStep = activeDbStatuses.length > 0
         safeStepIndex={safeStepIndex}
         validStepCount={validStepCount}
         elapsedSeconds={pendingStepElapsedSeconds}
+        shortPhaseMinutes={thresholds.shortPhaseMinutes}
         onConfirm={confirmStepChange}
         onCancel={cancelStepChange}
       />

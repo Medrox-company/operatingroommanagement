@@ -48,6 +48,7 @@ import { TimelineRoomSpecialtyStrip } from './RoomSpecialtyBadge';
 import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
 import { mergeCompletedOperations } from '../lib/completed-operations';
 import { useNowDate, useNowMsAtGranularity } from '../hooks/useSharedClock';
+import { useOperationalThresholds } from '../hooks/useOperationalThresholds';
 
 interface TimelineModuleProps {
   rooms: OperatingRoom[];
@@ -196,6 +197,9 @@ type SortMode = 'default' | 'name' | 'status';
 type StatusFilter = 'all' | 'active' | 'free' | 'attention';
 
 function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModuleProps) {
+  // Tolerance pozdního startu prvního výkonu dne — z nastavení zařízení.
+  const { thresholds } = useOperationalThresholds();
+  const firstCaseGraceMinutes = thresholds.firstCaseGraceMinutes;
   const {
     completedOperationsByRoom,
     refreshCompletedOperations,
@@ -766,7 +770,8 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
     const dayStartMs = dayStart.getTime();
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
     const todayKey = dayKeys[currentTime.getDay()];
-    const FCOTS_GRACE_MS = 15 * 60 * 1000;
+    // Tolerance pozdního startu prvního výkonu — nastavuje si ji zařízení.
+    const FCOTS_GRACE_MS = firstCaseGraceMinutes * 60 * 1000;
 
     let gapSumMin = 0;
     let gapCount = 0;
@@ -808,7 +813,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       fcotsPct: firstEligible > 0 ? Math.round((firstOnTime / firstEligible) * 100) : null,
       fcotsDetail: firstEligible > 0 ? `${firstOnTime}/${firstEligible}` : null,
     };
-  }, [rooms, currentTime, roomUtilization]);
+  }, [rooms, currentTime, roomUtilization, firstCaseGraceMinutes]);
 
   /* --- Data pro minimapu dne (komprimované lanes všech zobrazených sálů) --- */
   const minimapLanes = useMemo<MinimapLane[]>(() => {
