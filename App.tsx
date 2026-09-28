@@ -41,7 +41,7 @@ import { SIDEBAR_ITEMS } from './constants';
 // Main App Content - Operating Rooms Management System
 type CompletedOperations = NonNullable<OperatingRoom['completedOperations']>;
 type RoomStatusHistory = NonNullable<OperatingRoom['statusHistory']>;
-type StaffAssignmentField = 'doctor_id' | 'nurse_id' | 'anesthesiologist_id';
+type StaffAssignmentField = 'doctor_id' | 'nurse_id';
 type StaffAssignmentUpdate = Partial<Record<StaffAssignmentField, string | null>>;
 
 const SWR_OPTIONS = {
@@ -429,7 +429,10 @@ const AppContent: React.FC = () => {
       return { ...room, staff: updatedStaff };
     }));
 
-    const dbField: StaffAssignmentField = role === 'doctor' ? 'doctor_id' : role === 'nurse' ? 'nurse_id' : 'anesthesiologist_id';
+    // Anesteziolog a lékař jsou na sále tatáž role — obojí se ukládá do
+    // doctor_id. Sloupec anesthesiologist_id je pozůstatek vývoje a už se do
+    // něj nezapisuje.
+    const dbField: StaffAssignmentField = role === 'nurse' ? 'nurse_id' : 'doctor_id';
     const staffUpdate: StaffAssignmentUpdate = { [dbField]: isUnassigning ? null : staffId };
     await updateOperatingRoom(roomId, staffUpdate);
   }, [markRoomLocallyUpdated, setRooms]);

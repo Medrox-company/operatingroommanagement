@@ -76,7 +76,6 @@ export interface DBOperatingRoom {
   aro_overtime_since?: string | null;
   doctor_id: string | null;
   nurse_id: string | null;
-  anesthesiologist_id: string | null;
   current_patient_id: string | null;
   current_procedure_id: string | null;
   weekly_schedule: WeeklySchedule | null;
@@ -154,7 +153,11 @@ function transformRoom(
 ): OperatingRoom {
   const doctor = row.doctor_id ? staffMap.get(row.doctor_id) : null;
   const nurse = row.nurse_id ? staffMap.get(row.nurse_id) : null;
-  const anesthesiologist = row.anesthesiologist_id ? staffMap.get(row.anesthesiologist_id) : null;
+  // Anesteziolog a lékař jsou tatáž role na sále — jen jinak pojmenovaná
+  // v detailu sálu („ARO lékař") a v přehledu personálu („Anesteziolog").
+  // Dřívější sloupec anesthesiologist_id je pozůstatek vývoje a už se nečte:
+  // držel jména lidí, kteří na sále dávno nejsou.
+  const anesthesiologist = doctor;
   const patient = row.current_patient_id ? patientMap.get(row.current_patient_id) : null;
   const procedure = row.current_procedure_id ? procedureMap.get(row.current_procedure_id) : null;
 
@@ -314,7 +317,7 @@ const LIGHT_ROOM_COLUMNS = [
   'is_paused', 'paused_at', 'patient_called_at', 'patient_arrived_at',
   'phase_started_at', 'operation_started_at', 'current_step_index', 'estimated_end_time',
   'aro_overtime_since',
-  'doctor_id', 'nurse_id', 'anesthesiologist_id', 'current_patient_id', 'current_procedure_id',
+  'doctor_id', 'nurse_id', 'current_patient_id', 'current_procedure_id',
   'weekly_schedule', 'sort_order', 'hourly_operating_cost',
   'notice_message', 'notice_at', 'notice_sender',
 ].join(', ');
@@ -374,7 +377,7 @@ export async function fetchOperatingRoomById(
     if (!roomRes.data) return null;
 
     const row = roomRes.data as DBOperatingRoom;
-    const staffIds = [row.doctor_id, row.nurse_id, row.anesthesiologist_id]
+    const staffIds = [row.doctor_id, row.nurse_id]
       .filter((id): id is string => Boolean(id));
     const staffMap = new Map<string, DBStaff>();
 
@@ -420,7 +423,6 @@ type OperatingRoomUpdate = Partial<{
   weekly_schedule: WeeklySchedule;
   doctor_id: string | null;
   nurse_id: string | null;
-  anesthesiologist_id: string | null;
   status_history: RoomStatusHistoryEntry[] | null;
   completed_operations: CompletedOperation[] | null;
   hourly_operating_cost: number | null;
@@ -930,16 +932,14 @@ export function subscribeToOperatingRooms(
             // Compare old and new staff IDs
             staffChanged = (
               newRecord.doctor_id !== oldRecord.doctor_id ||
-              newRecord.nurse_id !== oldRecord.nurse_id ||
-              newRecord.anesthesiologist_id !== oldRecord.anesthesiologist_id
+              newRecord.nurse_id !== oldRecord.nurse_id
             );
           } else {
             // No old record available - check if any staff field is in the payload
             // This happens when REPLICA IDENTITY is not FULL
             const changedKeys = Object.keys(payload.new);
-            staffChanged = changedKeys.includes('doctor_id') || 
-                          changedKeys.includes('nurse_id') || 
-                          changedKeys.includes('anesthesiologist_id');
+            staffChanged = changedKeys.includes('doctor_id') ||
+                          changedKeys.includes('nurse_id');
           }
           
           if (staffChanged) {

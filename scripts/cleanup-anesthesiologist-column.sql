@@ -1,61 +1,59 @@
 -- ════════════════════════════════════════════════════════════════════════
--- Pročištění pozůstatku sloupce operating_rooms.anesthesiologist_id
+-- Odstranění pozůstatku operating_rooms.anesthesiologist_id
 --
--- POZOR — NESPOUŠTĚT BEZ ROZHODNUTÍ. Kontrola živých dat ukázala, že sloupec
--- NENÍ prázdný pozůstatek: na 11 sálech drží jediné přiřazení lékaře, které
--- tam je (doctor_id je u nich NULL):
+-- Rozhodnuto: anesteziolog a lékař jsou na sále tatáž role. Jediné platné
+-- pole je doctor_id; anesthesiologist_id je pozůstatek vývoje aplikace a
+-- jména v něm (na 11 sálech) jsou zastaralá, nikoli aktuální přiřazení.
+-- Nepřenášejí se tedy nikam — sloupec se pouze odstraní.
 --
---   ORTOPEDIE, Sál č. 7, PCHO SÁL Č.2, NEUROCHIRURGIE - 1, TRAUMATOLOGIE - 1,
---   COS NO SÁL Č.3, DaVinci, SÁL Č. 4, Sál č. 5, ORL - ÚČOCH - OČNÍ,
---   TRAUMATOLOGIE - 3
+-- POŘADÍ JE ZÁVAZNÉ:
+--   1. Nasadit verzi aplikace, která sloupec nečte ani do něj nezapisuje
+--      (větev zlepseni/rychle-vyhry — lib/db.ts, App.tsx,
+--      hooks/useOperatingRoomsData.ts).
+--   2. Teprve pak spustit tento skript.
+-- Obráceně by běžící produkce dostala chybu „column does not exist".
 --
--- Prosté DROP COLUMN by tedy o tato přiřazení připravilo.
---
--- Krok 1 níž je proto povinný: přesune anesteziologa do doctor_id tam, kde
--- žádný lékař není. Teprve pak má smysl sloupec odstranit.
---
--- Před spuštěním je nutné rozhodnout: je anesteziolog v dnešním rozhraní
--- totéž co dlaždice „Lékař"? Pokud ne, přiřazení se nesmí slučovat a sloupec
--- musí zůstat i s podporou v kódu.
+-- POZNÁMKA K MIGRACÍM: sloupec je jmenovitě uveden ve column-level grantu
+-- v supabase/migrations/20260910171139_restrict_settings_direct_writes.sql
+-- a v scripts/01-create-schema.sql. Postgres přidružené oprávnění při DROP
+-- COLUMN zruší sám, takže na běžící databázi nic nerozbije — ale při
+-- zakládání databáze od nuly je nutné sloupec vyřadit i z těchto souborů,
+-- jinak se rovnou vytvoří znovu.
 -- ════════════════════════════════════════════════════════════════════════
 
 BEGIN;
 
--- ── Krok 0: záloha dotčených řádků ──────────────────────────────────────
+-- ── Záloha ──────────────────────────────────────────────────────────────
+-- Data sice považujeme za zastaralá, ale smazání sloupce je nevratné.
+-- Tabulku lze po ověření kdykoli odstranit (viz konec skriptu).
 CREATE TABLE IF NOT EXISTS operating_rooms_anesthesiologist_backup AS
-SELECT id, name, hospital_id, doctor_id, anesthesiologist_id, now() AS backed_up_at
-FROM operating_rooms
-WHERE anesthesiologist_id IS NOT NULL;
+SELECT
+  r.id,
+  r.name,
+  r.hospital_id,
+  r.doctor_id,
+  r.anesthesiologist_id,
+  s.name AS anesthesiologist_name,
+  now()  AS backed_up_at
+FROM operating_rooms r
+LEFT JOIN staff s ON s.id = r.anesthesiologist_id
+WHERE r.anesthesiologist_id IS NOT NULL;
 
--- ── Krok 1: převzít anesteziologa jako lékaře tam, kde lékař chybí ──────
-UPDATE operating_rooms
-SET doctor_id = anesthesiologist_id
-WHERE anesthesiologist_id IS NOT NULL
-  AND doctor_id IS NULL;
-
--- ── Kontrola: nesmí zůstat sál, kde by se přiřazení ztratilo ────────────
+-- ── Kontrolní výpis ─────────────────────────────────────────────────────
+-- Kolik řádků se zálohovalo. Mělo by odpovídat počtu sálů s vyplněným
+-- anesteziologem (při posledním zjištění 11).
 DO $$
 DECLARE
-  zbyva integer;
+  zaloha integer;
 BEGIN
-  SELECT count(*) INTO zbyva
-  FROM operating_rooms
-  WHERE anesthesiologist_id IS NOT NULL
-    AND doctor_id IS DISTINCT FROM anesthesiologist_id;
-
-  IF zbyva > 0 THEN
-    RAISE EXCEPTION
-      'Na % sálech je anesteziolog odlišný od lékaře. Sloupec nelze odstranit bez rozhodnutí, co s těmito přiřazeními.', zbyva;
-  END IF;
+  SELECT count(*) INTO zaloha FROM operating_rooms_anesthesiologist_backup;
+  RAISE NOTICE 'Zálohováno % řádků s anesthesiologist_id.', zaloha;
 END $$;
 
--- ── Krok 2: odstranit sloupec ───────────────────────────────────────────
--- Odkomentovat teprve po nasazení verze aplikace, která sloupec nečte
--- (lib/db.ts, hooks/useOperatingRoomsData.ts, App.tsx).
---
--- ALTER TABLE operating_rooms DROP COLUMN IF EXISTS anesthesiologist_id;
+-- ── Odstranění sloupce ──────────────────────────────────────────────────
+ALTER TABLE operating_rooms DROP COLUMN IF EXISTS anesthesiologist_id;
 
 COMMIT;
 
--- Zálohu lze po ověření odstranit:
+-- Zálohu lze po ověření, že přiřazení personálu v aplikaci sedí, odstranit:
 --   DROP TABLE operating_rooms_anesthesiologist_backup;

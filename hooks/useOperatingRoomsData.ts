@@ -250,8 +250,6 @@ export function useOperatingRoomsData({
     const staffAssignmentChanged = Boolean(currentRoom) && (
       (raw.doctor_id !== undefined && raw.doctor_id !== (currentRoom?.staff.doctor.id ?? null))
       || (raw.nurse_id !== undefined && raw.nurse_id !== (currentRoom?.staff.nurse.id ?? null))
-      || (raw.anesthesiologist_id !== undefined
-        && raw.anesthesiologist_id !== (currentRoom?.staff.anesthesiologist?.id ?? null))
     );
     if (staffAssignmentChanged) {
       void reconcileRoom(roomId);
