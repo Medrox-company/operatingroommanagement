@@ -38,6 +38,7 @@ import { StatisticsNavigation, type StatisticsTab } from './statistics/Statistic
 import { StatisticsReportContext } from './statistics/StatisticsReportContext';
 import { openStatisticsPrintReport, type StatisticsReport } from '../lib/statistics-print';
 import { downloadStatisticsCsv } from '../lib/statistics-csv';
+import StatisticsTrendStrip from './StatisticsTrendStrip';
 import { useHospital } from '../contexts/HospitalContext';
 import './mobile/mobile-statistics.css';
 const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
@@ -2316,6 +2317,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 ))}
               </div>
 
+              {/* Srovnání období */}
+              <MobileCard className="m-unified-card">
+                <div className="m-unified-card-header mb-3">
+                  <h2 className="m-unified-card-title stats-card-title">Srovnání období</h2>
+                </div>
+                <StatisticsTrendStrip period={period} palette={C} />
+              </MobileCard>
+
               {/* Mini trend chart */}
               <MobileCard className="m-unified-card">
                 <div className="m-unified-card-header mb-3">
@@ -2712,6 +2721,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   <p className="text-2xl font-light leading-none" style={{color:k.c}}>{k.v}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Srovnání období — trend klíčových metrik proti minulému období a loňsku */}
+            <div className="space-y-2">
+              <SectionLabel>Srovnání období</SectionLabel>
+              <StatisticsTrendStrip period={period} palette={C} />
             </div>
 
             {/* Per-room KPI strips — provozní metriky s listováním po dnech */}
