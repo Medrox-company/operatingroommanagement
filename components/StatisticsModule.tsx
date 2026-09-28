@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic';
 import {
   TrendingUp, TrendingDown, Activity,
   AlertTriangle, Shield, Clock, Layers, X, BarChart3,
-  Printer, FileDown, ChevronLeft, ChevronRight, CalendarDays,
+  Printer, FileDown, Sheet, ChevronLeft, ChevronRight, CalendarDays,
 } from 'lucide-react';
 import { OperatingRoom, RoomStatus, DayWorkingHours } from '../types';
 // Step durations now calculated from real database history
@@ -37,6 +37,7 @@ import ModulePageHeading from './ModulePageHeading';
 import { StatisticsNavigation, type StatisticsTab } from './statistics/StatisticsNavigation';
 import { StatisticsReportContext } from './statistics/StatisticsReportContext';
 import { openStatisticsPrintReport, type StatisticsReport } from '../lib/statistics-print';
+import { downloadStatisticsCsv } from '../lib/statistics-csv';
 import { useHospital } from '../contexts/HospitalContext';
 import './mobile/mobile-statistics.css';
 const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
@@ -2122,30 +2123,51 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     };
   };
 
-  const handlePrint = () => {
+  // Připravenost dat řeší tisk i export stejně — jedna kontrola pro obojí.
+  const resolveReport = (action: 'tisk' | 'export'): StatisticsReport | null => {
     if (isStatisticsLoading || statisticsError) {
-      setPrintError(statisticsError ? 'Data se nepodařilo úplně načíst. Report nelze bezpečně vytvořit; zkuste načtení opakovat.' : 'Statistiky se ještě načítají. Počkejte na dokončení načítání a zkuste tisk znovu.');
-      return;
+      setPrintError(statisticsError
+        ? 'Data se nepodařilo úplně načíst. Report nelze bezpečně vytvořit; zkuste načtení opakovat.'
+        : `Statistiky se ještě načítají. Počkejte na dokončení načítání a zkuste ${action} znovu.`);
+      return null;
     }
     const report = tab === 'prehled' ? buildOverviewReport() : reportData.current[tab];
     if (!report) {
-      setPrintError('Data vybrané záložky ještě nejsou připravena pro tisk. Počkejte na jejich načtení, případně zkontrolujte zvolený filtr.');
-      return;
+      setPrintError('Data vybrané záložky ještě nejsou připravena. Počkejte na jejich načtení, případně zkontrolujte zvolený filtr.');
+      return null;
     }
     if (report.requiredHistoryFrom && (!dayHistoryCoverageStart || new Date(report.requiredHistoryFrom).getTime() < new Date(dayHistoryCoverageStart).getTime())) {
-      setPrintError('Vybraný den leží mimo úplně načtenou historii. Pro tisk vyberte novější den; chybějící data nelze vykázat jako nulové hodnoty.');
-      return;
+      setPrintError('Vybraný den leží mimo úplně načtenou historii. Vyberte novější den; chybějící data nelze vykázat jako nulové hodnoty.');
+      return null;
     }
     setPrintError(null);
+    return report;
+  };
+
+  const reportMetadata = (generatedAt: Date) => ({
+    tabLabel: tabLabelMap[tab],
+    periodLabel: periodLabelMap[period],
+    hospitalName: activeHospital?.hospital_name ?? activeHospital?.hospital_short_name ?? undefined,
+    generatedAt,
+    filename: `Statistiky_${tab}_${generatedAt.toISOString().slice(0, 10)}`,
+  });
+
+  const handleExportCsv = () => {
+    const report = resolveReport('export');
+    if (!report) return;
+    try {
+      downloadStatisticsCsv(report, reportMetadata(new Date()));
+    } catch (error) {
+      setPrintError(error instanceof Error ? error.message : 'Export se nepodařilo vytvořit.');
+    }
+  };
+
+  const handlePrint = () => {
+    const report = resolveReport('tisk');
+    if (!report) return;
     const generatedAt = new Date();
     try {
-      openStatisticsPrintReport(report, {
-        tabLabel: tabLabelMap[tab],
-        periodLabel: periodLabelMap[period],
-        hospitalName: activeHospital?.hospital_name ?? activeHospital?.hospital_short_name ?? undefined,
-        generatedAt,
-        filename: `Statistiky_${tab}_${generatedAt.toISOString().slice(0, 10)}`,
-      });
+      openStatisticsPrintReport(report, reportMetadata(generatedAt));
     } catch (error) {
       setPrintError(error instanceof Error ? error.message : 'Report se nepodařilo otevřít. Zkuste tisk znovu.');
     }
@@ -2233,6 +2255,18 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               }}>
               <FileDown className="w-4 h-4" />
               PDF
+            </button>
+            <button
+              onClick={handleExportCsv}
+              title={`Stáhnout data záložky ${tabLabelMap[tab]} jako CSV`}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest"
+              style={{
+                background: C.surface,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+              }}>
+              <Sheet className="w-4 h-4" />
+              CSV
             </button>
           </div>
 
@@ -2462,6 +2496,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             style={{ color: C.muted, border: `1px solid ${C.border}` }}>
             <FileDown className="w-4 h-4" />
             PDF
+          </button>
+          <button
+            onClick={handleExportCsv}
+            title={`Stáhnout data záložky ${tabLabelMap[tab]} jako CSV pro tabulkový procesor`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap"
+            style={{ color: C.muted, border: `1px solid ${C.border}` }}>
+            <Sheet className="w-4 h-4" />
+            CSV
           </button>
         </div>
       </div>
