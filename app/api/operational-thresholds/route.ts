@@ -28,6 +28,12 @@ const DEFAULTS = {
 } as const;
 
 type ThresholdKey = keyof typeof COLUMNS;
+const SELECT_COLUMNS = Object.values(COLUMNS).join(',');
+
+function isMissingThresholdColumn(error: { code?: string; message: string }): boolean {
+  return error.code === '42703' || error.code === 'PGRST204'
+    || /column .* does not exist/i.test(error.message);
+}
 
 /** Mimo rozsah 1–240 minut jde skoro jistě o překlep; takovou hodnotu neuložíme. */
 function sanitizeMinutes(value: unknown, fallback: number): number {
@@ -46,11 +52,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const admin = getSupabaseAdmin();
-    const { data } = await admin
+    const { data, error } = await admin
       .from('app_settings')
-      .select('*')
+      .select(SELECT_COLUMNS)
       .eq('hospital_id', access.hospitalId)
+      .eq('id', settingsId(access.hospitalId))
       .maybeSingle();
+
+    if (error) {
+      if (isMissingThresholdColumn(error)) {
+        return NextResponse.json({ thresholds: DEFAULTS, configured: false });
+      }
+      throw error;
+    }
 
     const row = (data ?? {}) as Record<string, unknown>;
     const thresholds = Object.fromEntries(
@@ -59,12 +73,11 @@ export async function GET(request: NextRequest) {
         sanitizeMinutes(row[COLUMNS[key]], DEFAULTS[key]),
       ]),
     );
-    // `configured` říká rozhraní, jestli už migrace proběhla.
-    const configured = Object.values(COLUMNS).some(column => column in row);
-    return NextResponse.json({ thresholds, configured });
+    // Explicitní SELECT úspěšně ověřil všechny sloupce, i když řádek chybí.
+    return NextResponse.json({ thresholds, configured: true });
   } catch (error) {
     console.error('[operational-thresholds] GET error:', error);
-    return NextResponse.json({ thresholds: DEFAULTS, configured: false });
+    return NextResponse.json({ error: 'Prahy se nepodařilo načíst.' }, { status: 503 });
   }
 }
 
@@ -84,30 +97,43 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Neplatný obsah požadavku.' }, { status: 400 });
   }
 
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+    || (Object.keys(COLUMNS) as ThresholdKey[]).some(key => (
+      typeof payload[key] !== 'number' || !Number.isInteger(payload[key])
+      || (payload[key] as number) < 1 || (payload[key] as number) > 240
+    ))) {
+    return NextResponse.json({ error: 'Všechny prahy musí být celá čísla od 1 do 240 minut.' }, { status: 400 });
+  }
+
   const update = Object.fromEntries(
     (Object.keys(COLUMNS) as ThresholdKey[]).map(key => [
       COLUMNS[key],
-      sanitizeMinutes(payload[key], DEFAULTS[key]),
+      payload[key],
     ]),
   );
 
   try {
     const admin = getSupabaseAdmin();
-    const { error } = await admin
+    const { data, error } = await admin
       .from('app_settings')
       .update(update)
       .eq('hospital_id', access.hospitalId)
-      .eq('id', settingsId(access.hospitalId));
+      .eq('id', settingsId(access.hospitalId))
+      .select(SELECT_COLUMNS)
+      .maybeSingle();
 
     if (error) {
       // Chybějící sloupec = neproběhlá migrace. Chceme to říct nahlas.
-      if (/column .* does not exist/i.test(error.message)) {
+      if (isMissingThresholdColumn(error)) {
         return NextResponse.json(
           { error: 'Prahy zatím nejsou v databázi. Spusťte scripts/add-operational-thresholds.sql.' },
           { status: 409 },
         );
       }
       throw error;
+    }
+    if (!data) {
+      return NextResponse.json({ error: 'Nastavení zařízení nebylo nalezeno. Prahy nebyly uloženy.' }, { status: 404 });
     }
     return NextResponse.json({ success: true });
   } catch (error) {

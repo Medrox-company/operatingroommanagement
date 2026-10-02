@@ -136,7 +136,7 @@ test('iOS cards retain common geometry and vertically stack identity, timing and
   assert.equal(open['flex-direction'], 'column');
   assert.equal(open.padding, 'var(--m-card-padding)');
   const title = declarationsFor(css, '.mro-room-identity strong');
-  assert.equal(title['font-size'], 'var(--m-card-title-size)');
+  assert.match(title['font-size'], /^clamp\(11px, 7\.8cqw, var\(--m-card-title-size\)\)$/);
   assert.equal(title['font-weight'], 'var(--m-card-title-weight)');
   assert.equal(declarationsFor(shell, '.m-unified-card')['border-radius'], 'var(--m-card-radius)');
   assert.equal(declarationsFor(shell, '.m-unified-card').background, 'var(--m-card)');
@@ -156,7 +156,8 @@ test('long room names remain complete and wrap without truncation or clamping', 
   const { tree } = renderOverview([room('long', { name: longName })]);
   const [title] = byClass(tree, 'm-unified-card-title');
   assert.equal(text(title), longName);
-  assert.equal(declarationsFor(css, '.mro-room-identity strong')['overflow-wrap'], 'anywhere');
+  assert.equal(declarationsFor(css, '.mro-room-identity strong')['overflow-wrap'], 'normal');
+  assert.equal(declarationsFor(css, '.mro-room-identity strong').hyphens, 'none');
   for (const selector of ['.mro-room', '.mro-room-open', '.mro-room-identity', '.mro-room-identity strong']) {
     const values = declarationsFor(css, selector);
     for (const prop of ['max-height', 'height', 'line-clamp', '-webkit-line-clamp', 'text-overflow']) {

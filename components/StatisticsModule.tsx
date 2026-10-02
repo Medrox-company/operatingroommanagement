@@ -6,6 +6,7 @@ import { OperatingRoom, RoomStatus } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { useIsMobileDark } from '../hooks/useIsMobileDark';
 import { aggregateRoomStatistics, useStatisticsData } from '../hooks/useStatisticsData';
+import { useStatisticsPerformance } from '../hooks/useStatisticsPerformance';
 import { scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../lib/statistics-room-scope';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import {
@@ -33,6 +34,7 @@ import { RoomDetailPanel } from './statistics/RoomActivityPanels';
 const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
 const RoomsTab = dynamic(() => import('./statistics/RoomsTab').then((module) => module.RoomsTab), { ssr: false });
 const PhasesTab = dynamic(() => import('./statistics/PhasesTab').then((module) => module.PhasesTab), { ssr: false });
+const PerformanceTab = dynamic(() => import('./statistics/PerformanceTab').then((module) => module.PerformanceTab), { ssr: false });
 const NotificationsTab = dynamic(() => import('./statistics/NotificationsTab').then((module) => module.NotificationsTab), { ssr: false });
 const DevicesTab = dynamic(() => import('./statistics/DevicesTab').then((module) => module.DevicesTab), { ssr: false });
 
@@ -68,9 +70,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
+  const performance = useStatisticsPerformance(tab === 'vykonnost');
   const { statusHistory: allStatusHistory, dayHistory: allDayHistory, notifications, devices, isReportLoading: isStatisticsLoading, reportSourceErrors, dayHistoryCoverageStart } = useStatisticsData(period);
   const periodScope = useMemo(() => scopeStatisticsRooms(allRooms, allStatusHistory, statisticsPeriodWindow(period)), [allRooms, allStatusHistory, period]);
   const rooms = periodScope.rooms;
+  const performanceRooms = useMemo(
+    () => scopeStatisticsRooms(allRooms, performance.history, statisticsPeriodWindow('rok')).rooms,
+    [allRooms, performance.history],
+  );
   const statusHistory = periodScope.history;
   const dbStats = useMemo(() => aggregateRoomStatistics(statusHistory), [statusHistory]);
   // A failure in a module the user is not printing must not block an otherwise
@@ -81,6 +88,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     sazby: [],
     saly: ['statusHistory', 'dayHistory'],
     faze: ['statusHistory'],
+    vykonnost: [],
     notifikace: ['notifications', 'statusHistory'],
     zarizeni: ['devices'],
   };
@@ -121,6 +129,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 'sazby':      'Sazby',
 'saly':       'Sály',
 'faze':       'Fáze',
+'vykonnost':  'Výkonnost',
 'notifikace': 'Notifikace',
 'zarizeni':   'Zařízení',
   };
@@ -737,8 +746,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
   // Připravenost dat řeší tisk i export stejně — jedna kontrola pro obojí.
   const resolveReport = (action: 'tisk' | 'export'): StatisticsReport | null => {
-    if (isStatisticsLoading || statisticsError) {
-      setPrintError(statisticsError
+    const reportLoading = tab === 'vykonnost' ? performance.isLoading || performance.isRefreshing : isStatisticsLoading;
+    const reportError = tab === 'vykonnost' ? performance.error : statisticsError;
+    if (reportLoading || reportError) {
+      setPrintError(reportError
         ? 'Data se nepodařilo úplně načíst. Report nelze bezpečně vytvořit; zkuste načtení opakovat.'
         : `Statistiky se ještě načítají. Počkejte na dokončení načítání a zkuste ${action} znovu.`);
       return null;
@@ -758,7 +769,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
   const reportMetadata = (generatedAt: Date) => ({
     tabLabel: tabLabelMap[tab],
-    periodLabel: periodLabelMap[period],
+    periodLabel: tab === 'vykonnost' ? 'Posledních 12 kalendářních měsíců' : periodLabelMap[period],
     hospitalName: activeHospital?.hospital_name ?? activeHospital?.hospital_short_name ?? undefined,
     generatedAt,
     filename: `Statistiky_${tab}_${generatedAt.toISOString().slice(0, 10)}`,
@@ -883,7 +894,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           </div>
 
           {/* Period toggle */}
-          <div className="print-hide">
+          {tab !== 'vykonnost' && <div className="print-hide">
             <MobileSectionLabel className="mb-2">Období</MobileSectionLabel>
             <MobilePillTabs<Period>
               tabs={[
@@ -895,7 +906,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               value={period}
               onChange={setPeriod}
             />
-          </div>
+          </div>}
 
           {/* Tab toggle */}
           <div className="print-hide">
@@ -995,6 +1006,20 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </div>
           )}
 
+          {(tab === 'vykonnost') && (
+            <div className="flex flex-col gap-3 print-section">
+              <PerformanceTab
+                rooms={performanceRooms}
+                history={performance.history}
+                isLoading={performance.isLoading || performance.isRefreshing}
+                error={performance.error}
+                loadedAt={performance.loadedAt}
+                loadingProgress={performance.progress}
+                onRefresh={() => { void performance.refresh(); }}
+              />
+            </div>
+          )}
+
           {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
           {(tab === 'finance') && (
             <div className="flex flex-col gap-3 print-section">
@@ -1085,7 +1110,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         <div className="stats-commandbar-actions">
           <span aria-hidden className="h-6 w-px" style={{ background: C.border }} />
 
-          <div className="flex items-center gap-1 p-1 rounded-lg"
+          {tab === 'vykonnost' ? (
+            <span className="px-3 py-1.5 text-[12px] font-medium whitespace-nowrap" style={{ color: C.muted }}>
+              12 kalendářních měsíců
+            </span>
+          ) : <div className="flex items-center gap-1 p-1 rounded-lg"
             style={{ background: C.surface, border: `1px solid ${C.border}` }}>
             {(['den','týden','měsíc','rok'] as Period[]).map(p=>(
               <button key={p} onClick={()=>setPeriod(p)} aria-pressed={period === p}
@@ -1097,7 +1126,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 {p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
-          </div>
+          </div>}
 
           <span aria-hidden className="h-6 w-px" style={{ background: C.border }} />
 
@@ -1578,7 +1607,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         {/* ── Finance & náklady (z hourly_operating_cost × historie) ── */}
         {(tab==='finance') && (
           <div key="finance" className="space-y-5 print-section">
-            <FinanceTab
+          <FinanceTab
               rooms={allRooms}
               totalOps={totalOps}
               avgUtilization={avgUtil}
@@ -1634,6 +1663,20 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               workflowSteps={WORKFLOW_STEPS}
               avgStepDurations={avgStepDurations}
               workflowAgg={workflowAgg}
+            />
+          </div>
+        )}
+
+        {(tab==='vykonnost') && (
+          <div key="vykonnost" className="space-y-5 print-section">
+            <PerformanceTab
+              rooms={performanceRooms}
+              history={performance.history}
+              isLoading={performance.isLoading || performance.isRefreshing}
+              error={performance.error}
+              loadedAt={performance.loadedAt}
+              loadingProgress={performance.progress}
+              onRefresh={() => { void performance.refresh(); }}
             />
           </div>
         )}

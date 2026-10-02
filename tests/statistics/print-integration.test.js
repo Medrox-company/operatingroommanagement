@@ -34,7 +34,7 @@ function loadExpression(node, scope = {}) {
 
 const tabLabelMap = loadExpression(initializer('tabLabelMap'));
 const periodLabelMap = loadExpression(initializer('periodLabelMap'));
-const labels = ['Přehled', 'Finance', 'Sazby', 'Sály', 'Fáze', 'Notifikace', 'Zařízení'];
+const labels = ['Přehled', 'Finance', 'Sazby', 'Sály', 'Fáze', 'Výkonnost', 'Notifikace', 'Zařízení'];
 const payload = marker => ({ context: marker, metrics: [], sections: [] });
 
 function printer(overrides = {}) {
@@ -47,6 +47,7 @@ function printer(overrides = {}) {
   const scope = {
     tab: 'finance', period: 'týden', tabLabelMap, periodLabelMap,
     reportData: { current: reports }, isStatisticsLoading: false, statisticsError: undefined,
+    performance: { isLoading: false, error: null },
     dayHistoryCoverageStart: '2026-08-14T10:00:00.000Z',
     activeHospital: { hospital_name: 'Nemocnice Žďár', hospital_short_name: 'NŽ' },
     setPrintError: error => errors.push(error),
@@ -88,7 +89,7 @@ test('registry cleanup cannot remove a newer report or another tab', () => {
   assert.deepEqual(reportData.current, {});
 });
 
-test('all seven tab handlers open exactly the active payload with current metadata', () => {
+test('all eight tab handlers open exactly the active payload with current metadata', () => {
   assert.deepEqual(Object.values(tabLabelMap), labels);
   for (const [tab, label] of Object.entries(tabLabelMap)) {
     const fixture = printer({ tab });
@@ -98,13 +99,34 @@ test('all seven tab handlers open exactly the active payload with current metada
     assert.equal(report, tab === 'prehled' ? fixture.overview : fixture.reports[tab]);
     assert.equal(fixture.overviewBuilds(), tab === 'prehled' ? 1 : 0);
     assert.equal(metadata.tabLabel, label);
-    assert.equal(metadata.periodLabel, periodLabelMap['týden']);
+    assert.equal(metadata.periodLabel, tab === 'vykonnost' ? 'Posledních 12 kalendářních měsíců' : periodLabelMap['týden']);
     assert.equal(metadata.hospitalName, 'Nemocnice Žďár');
     assert.ok(metadata.generatedAt instanceof Date);
     assert.match(metadata.filename, new RegExp(`^Statistiky_${tab}_\\d{4}-\\d{2}-\\d{2}$`));
     assert.deepEqual(fixture.errors, [null]);
   }
   assert.equal(initializer('handleExportPdf').getText(parsed), 'handlePrint');
+});
+
+test('performance report follows its own history loading state, not unrelated statistics sources', () => {
+  const independent = printer({
+    tab: 'vykonnost',
+    isStatisticsLoading: true,
+    statisticsError: 'Jiná statistická data nejsou dostupná.',
+  });
+  independent.print();
+  assert.equal(independent.opened.length, 1);
+  assert.deepEqual(independent.errors, [null]);
+
+  const loading = printer({ tab: 'vykonnost', performance: { isLoading: true, error: null } });
+  loading.print();
+  assert.equal(loading.opened.length, 0);
+  assert.match(loading.errors[0], /ještě načítají/);
+
+  const failed = printer({ tab: 'vykonnost', performance: { isLoading: false, error: 'Historie se nenačetla.' } });
+  failed.exportCsv();
+  assert.equal(failed.exported.length, 0);
+  assert.match(failed.errors[0], /Data se nepodařilo úplně načíst/);
 });
 
 test('source errors block only dependent tabs, so missing Devices permission cannot block other reports', () => {
@@ -319,7 +341,7 @@ test('CSV export uses the same readiness checks and metadata as printing', () =>
     const [report, metadata] = fixture.exported[0];
     assert.equal(report, tab === 'prehled' ? fixture.overview : fixture.reports[tab]);
     assert.equal(metadata.tabLabel, label);
-    assert.equal(metadata.periodLabel, periodLabelMap['týden']);
+    assert.equal(metadata.periodLabel, tab === 'vykonnost' ? 'Posledních 12 kalendářních měsíců' : periodLabelMap['týden']);
     assert.match(metadata.filename, new RegExp(`^Statistiky_${tab}_\\d{4}-\\d{2}-\\d{2}$`));
     assert.deepEqual(fixture.errors, [null]);
   }

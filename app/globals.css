@@ -2087,6 +2087,17 @@ html.capacitor-native select {
   --m-teal-glow: rgba(45, 212, 191, 0.16);
 }
 
+@media (max-width: 767px) {
+  :root:not(.m-dark) {
+    --m-faint: #5D718A;
+    --m-accent: #0A65BD;
+    --m-accent-rgb: 10, 101, 189;
+    --m-nav-active: #0869C9;
+  }
+
+  :root.m-dark { --m-faint: rgba(255, 255, 255, 0.55); }
+}
+
 /* Mobilní přihlášení: stejná struktura v obou motivech, pouze barevné tokeny. */
 .mobile-login-page {
   color-scheme: light;

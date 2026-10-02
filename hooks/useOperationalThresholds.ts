@@ -44,7 +44,7 @@ export const THRESHOLD_COLUMNS = {
 function toMinutes(value: unknown, fallback: number): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   // Nula ani záporné číslo nedávají smysl a vypnuly by upozornění potichu.
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 240 ? parsed : fallback;
 }
 
 export function useOperationalThresholds() {
@@ -63,6 +63,7 @@ export function useOperationalThresholds() {
         .from('app_settings')
         .select('*')
         .eq('hospital_id', activeHospitalId)
+        .eq('id', `${activeHospitalId}-global`)
         .maybeSingle();
 
       if (error || !data) {

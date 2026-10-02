@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback, useDeferredValue } from 'react';
+import useSWR from 'swr';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
+import { useHospital } from '../contexts/HospitalContext';
 import MobileTimelineView from './mobile/MobileTimelineView';
 import AroOvertimePopup from './AroOvertimePopup';
 import CapacityForecast from './timeline/CapacityForecast';
@@ -21,7 +23,8 @@ import { C, TIMELINE_START_HOUR, TIMELINE_HOURS as TIMELINE_HOURS_FULL, ROOM_LAB
 import { getTimePercent as getTimePercentRaw, parseTimeToDate, getTimePercentForTimeline as getTimePercentForTimelineRaw, getOperationPosition as getOperationPositionRaw } from './timeline/utils';
 import RoomDetailPopup from './timeline/RoomDetailPopup';
 import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
-import { clearRoomAroOvertimeStart, markRoomAroOvertimeStart } from '../lib/db';
+import { clearRoomAroOvertimeStart, fetchTimelineSchedules, markRoomAroOvertimeStart, type TimelineScheduleRow } from '../lib/db';
+import { deriveTimelineOperationalWarnings } from '../lib/timeline-operational-warnings';
 import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
 import { mergeCompletedOperations } from '../lib/completed-operations';
 import { useNowDate, useNowMsAtGranularity } from '../hooks/useSharedClock';
@@ -34,6 +37,7 @@ interface TimelineModuleProps {
 }
 
 const TIMELINE_OPERATIONAL_TICK_MS = 10_000;
+const localDateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
 const TimelineClockDisplay: React.FC = React.memo(() => {
   // Sdílený tik aplikace. Komponenta je memoizovaná, takže se sekundovým
@@ -173,6 +177,7 @@ const TimelineMinimap: React.FC<TimelineMinimapProps> = ({ lanes, nowPct, contai
 import type { SortMode, StatusFilter } from './timeline/row-types';
 
 function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModuleProps) {
+  const { activeHospitalId, tokenRevision, loading: hospitalLoading } = useHospital();
   // Tolerance pozdního startu prvního výkonu dne — z nastavení zařízení.
   const { thresholds } = useOperationalThresholds();
   const firstCaseGraceMinutes = thresholds.firstCaseGraceMinutes;
@@ -213,6 +218,31 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   
   const operationalTimeMs = useNowMsAtGranularity(TIMELINE_OPERATIONAL_TICK_MS);
   const currentTime = useMemo(() => new Date(operationalTimeMs), [operationalTimeMs]);
+  const operationalWindow = useMemo(() => {
+    const start = new Date(currentTime);
+    if (start.getHours() < TIMELINE_START_HOUR) start.setDate(start.getDate() - 1);
+    start.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    end.setHours(TIMELINE_START_HOUR, 0, 0, 0);
+    return { startMs: start.getTime(), endMs: end.getTime(), fromDate: localDateKey(start), toDate: localDateKey(end) };
+  }, [currentTime]);
+  // Plán se mění méně často než živý stav sálů. Krátký periodický refetch
+  // zachytí kolize i bez rozšíření realtime publikace a drží tenant oddělený.
+  const { data: plannedSchedules, mutate: refreshPlannedSchedules } = useSWR<TimelineScheduleRow[] | null>(
+    activeHospitalId && !hospitalLoading
+      ? ['timeline-planned-schedules', activeHospitalId, tokenRevision, operationalWindow.fromDate]
+      : null,
+    () => fetchTimelineSchedules({
+      hospitalId: activeHospitalId!,
+      fromDate: operationalWindow.fromDate,
+      toDate: operationalWindow.toDate,
+    }),
+    { refreshInterval: 2 * 60_000, dedupingInterval: 30_000, revalidateOnFocus: true, revalidateOnReconnect: true },
+  );
+  const warningsByRoom = useMemo(() => deriveTimelineOperationalWarnings(
+    rooms, plannedSchedules, currentTime.getTime(), activeStatuses, operationalWindow,
+  ), [rooms, plannedSchedules, currentTime, activeStatuses, operationalWindow]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
   const [selectedDetailTime, setSelectedDetailTime] = useState<Date | null>(null);
@@ -346,12 +376,13 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       await Promise.all([
         Promise.resolve(onRefresh()),
         refreshCompletedOperations(),
+        refreshPlannedSchedules(),
       ]);
       setLastUpdated(new Date());
     } finally {
       setIsRefreshing(false);
     }
-  }, [onRefresh, isRefreshing, refreshCompletedOperations]);
+  }, [onRefresh, isRefreshing, refreshCompletedOperations, refreshPlannedSchedules]);
 
   // ── Dynamický rozsah osy ──
   // Standardně osa končí v 0:00 (7:00 → 24:00 = 17 h). Jakmile aktuální čas
@@ -409,10 +440,6 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
   const roomRequiresAttention = useCallback((room: OperatingRoom) => {
     const estimatedEnd = room.estimatedEndTime ? new Date(room.estimatedEndTime).getTime() : null;
-    const isPastEstimate = room.currentStepIndex > 0
-      && estimatedEnd !== null
-      && Number.isFinite(estimatedEnd)
-      && estimatedEnd < currentTime.getTime();
 
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
     const schedule = room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE;
@@ -431,10 +458,10 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       || room.isLocked
       || room.isPaused
       || room.isEnhancedHygiene
-      || isPastEstimate
+      || warningsByRoom.has(room.id)
       || exceedsWorkingHours
     );
-  }, [currentTime]);
+  }, [currentTime, warningsByRoom]);
 
   // --- Filtrované sály podle provozního stavu ---
   // Stav odvozujeme z currentStepIndex: 0 = volný (Sál připraven), >0 = probíhá.
@@ -826,12 +853,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   const [scrubActive, setScrubActive] = useState(false);
   const [scrubTime, setScrubTime] = useState<number | null>(null);
 
-  const dayWindowStartMs = useMemo(() => {
-    const ws = new Date(currentTime);
-    ws.setHours(TIMELINE_START_HOUR, 0, 0, 0);
-    if (currentTime.getHours() < TIMELINE_START_HOUR) ws.setDate(ws.getDate() - 1);
-    return ws.getTime();
-  }, [currentTime]);
+  const dayWindowStartMs = operationalWindow.startMs;
 
   // Stav sálu v libovolném čase t — z dokončených operací i živé historie
   const statusAtTime = useCallback((room: OperatingRoom, t: number): { color: string; name: string } | null => {
@@ -1282,6 +1304,8 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
         onClose={() => setShowAttention(false)}
         rooms={rooms}
         currentTime={currentTime}
+        warningsByRoom={warningsByRoom}
+        planAvailable={plannedSchedules !== null && plannedSchedules !== undefined}
         onSelectRoom={(id) => { setShowAttention(false); openLiveRoom(id); }}
       />
       <PhaseOptimizer
@@ -1426,6 +1450,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
       <MobileTimelineView
         rooms={sortedRooms}
+        warningsByRoom={warningsByRoom}
         currentSpecialties={currentSpecialties}
         activeStatuses={activeStatuses}
         currentTime={currentTime}
@@ -1791,6 +1816,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               <TimelineRoomRow
                 key={room.id}
                 room={room}
+                warnings={warningsByRoom.get(room.id) ?? []}
                 roomIndex={roomIndex}
                 currentTime={currentTime}
                 dayWindowStartMs={dayWindowStartMs}

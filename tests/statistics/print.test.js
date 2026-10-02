@@ -17,7 +17,7 @@ function loadHelper(windowStub = {}) {
   return moduleStub.exports;
 }
 const { buildStatisticsPrintHtml } = loadHelper();
-const labels = ['Přehled', 'Finance', 'Sazby', 'Sály', 'Fáze', 'Notifikace', 'Zařízení'];
+const labels = ['Přehled', 'Finance', 'Sazby', 'Sály', 'Fáze', 'Výkonnost', 'Notifikace', 'Zařízení'];
 const metadata = (tabLabel = 'Přehled') => ({
   tabLabel,
   periodLabel: '1.–14. září 2026',
@@ -36,7 +36,7 @@ const report = (marker = 'AKTIVNÍ ŘÁDEK') => ({
   }],
 });
 
-test('all seven Czech tab titles render only the supplied active report payload', () => {
+test('all eight Czech tab titles render only the supplied active report payload', () => {
   const reports = labels.map((_, index) => report(`ŘÁDEK ZÁLOŽKY ${index}`));
   for (const [index, label] of labels.entries()) {
     const html = buildStatisticsPrintHtml(reports[index], metadata(label));

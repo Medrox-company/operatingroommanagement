@@ -54,6 +54,7 @@ const expectedTabs = [
   ['sazby', 'Sazby'],
   ['saly', 'Sály'],
   ['faze', 'Fáze'],
+  ['vykonnost', 'Výkonnost'],
   ['notifikace', 'Notifikace'],
   ['zarizeni', 'Zařízení'],
 ];
@@ -121,7 +122,7 @@ function keyEvent(key, currentTarget) {
   };
 }
 
-test('both navigation variants preserve the seven Czech tabs and stable panel references', () => {
+test('both navigation variants preserve the original tabs and the performance tab', () => {
   for (const compact of [false, true]) {
     const { tree, buttons } = render('prehled', compact);
     assert.equal(tree.type, 'nav');
@@ -159,14 +160,14 @@ test('each tab click requests its own selection once', () => {
 
 test('arrow and endpoint keys select and focus the expected tab', () => {
   const cases = [
-    ['ArrowLeft', 0, 6],
-    ['ArrowRight', 6, 0],
+    ['ArrowLeft', 0, 7],
+    ['ArrowRight', 7, 0],
     ['ArrowLeft', 3, 2],
     ['ArrowRight', 3, 4],
     ['Home', 4, 0],
-    ['End', 2, 6],
+    ['End', 2, 7],
     ['Home', 0, 0],
-    ['End', 6, 6],
+    ['End', 7, 7],
   ];
   for (const compact of [false, true]) {
     for (const [key, from, to] of cases) {
@@ -199,7 +200,7 @@ test('mount reveals the active mobile tab and one observer handles width changes
   assert.deepEqual(effects[0].dependencies, ['zarizeni', true]);
   const before = observers.length;
   const cleanup = effects[0].effect();
-  assert.equal(navigation.scrollLeft, 392, 'The active tab ends at the navigation right edge');
+  assert.equal(navigation.scrollLeft, 492, 'The active tab ends at the navigation right edge');
   assert.equal(navigation.scrollTop, 173, 'Revealing a tab must preserve the vertical position');
   assert.equal(observers.length, before + 1);
   const observer = observers.at(-1);
@@ -207,7 +208,7 @@ test('mount reveals the active mobile tab and one observer handles width changes
 
   navigation.clientWidth = 220;
   observer.callback();
-  assert.equal(navigation.scrollLeft, 472, 'Narrowing the navigation reveals the active tab again');
+  assert.equal(navigation.scrollLeft, 572, 'Narrowing the navigation reveals the active tab again');
   assert.equal(navigation.scrollTop, 173);
   assert.deepEqual(calls, [], 'Automatic reveal must not change selection or steal focus');
   cleanup();
@@ -234,7 +235,7 @@ test('effects depend on value and compact mode and tolerate a hidden navigation'
     assert.equal(navigation.scrollLeft, 0, 'No measurement-based scroll occurs while hidden');
     navigation.clientWidth = 300;
     observers.at(-1).callback();
-    assert.equal(navigation.scrollLeft, value === 'zarizeni' ? 392 : 0);
+    assert.equal(navigation.scrollLeft, value === 'zarizeni' ? 492 : 0);
     cleanup();
   }
 });
@@ -242,8 +243,8 @@ test('effects depend on value and compact mode and tolerate a hidden navigation'
 test('keyboard navigation reveals either edge using only the navigation horizontal offset', () => {
   const { buttons, targets, navigation, calls } = render('prehled', true, 300);
   buttons[0].props.onKeyDown(keyEvent('End', targets[0]));
-  assert.equal(navigation.scrollLeft, 392);
-  buttons[6].props.onKeyDown(keyEvent('Home', targets[6]));
+  assert.equal(navigation.scrollLeft, 492);
+  buttons[7].props.onKeyDown(keyEvent('Home', targets[7]));
   assert.equal(navigation.scrollLeft, 4);
   assert.equal(navigation.scrollTop, 173);
   assert.deepEqual(calls, [

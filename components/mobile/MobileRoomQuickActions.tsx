@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { AlertCircle, ArrowRight, Lock, Unlock } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 
@@ -30,16 +30,37 @@ export default function MobileRoomQuickActions({
   onClose,
 }: MobileRoomQuickActionsProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  const titleId = useId();
+  const phaseId = useId();
+  closeRef.current = onClose;
 
   useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); }
     };
     document.addEventListener('keydown', onKeyDown);
     // Fokus do dialogu, aby čtečka i klávesnice skončily uvnitř nabídky.
     dialogRef.current?.focus();
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
+
+  const keepFocusInside = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return;
+    const buttons = Array.from(dialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+    if (buttons.length === 0) { event.preventDefault(); return; }
+    const first = buttons[0];
+    const last = buttons[buttons.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first.focus();
+    }
+  };
 
   return (
     <div className="mrq-backdrop" onClick={onClose}>
@@ -47,14 +68,16 @@ export default function MobileRoomQuickActions({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="mrq-title"
+        aria-labelledby={titleId}
+        aria-describedby={phaseId}
         tabIndex={-1}
         className="mrq-dialog"
         onClick={event => event.stopPropagation()}
+        onKeyDown={keepFocusInside}
       >
         <p className="mrq-kicker">Rychlé akce</p>
-        <h2 id="mrq-title" className="mrq-title room-name-nobreak">{room.name}</h2>
-        <p className="mrq-phase">
+        <h2 id={titleId} className="mrq-title room-name-nobreak">{room.name}</h2>
+        <p id={phaseId} className="mrq-phase">
           <i style={{ background: phaseColor }} aria-hidden />
           {phaseTitle}
         </p>

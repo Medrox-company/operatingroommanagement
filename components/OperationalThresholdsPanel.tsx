@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Check, Loader2, SlidersHorizontal } from 'lucide-react';
 import { DEFAULT_THRESHOLDS, type OperationalThresholds } from '../hooks/useOperationalThresholds';
+import { useHospital } from '../contexts/HospitalContext';
 
 /**
  * Provozní prahy upozornění.
@@ -41,29 +42,40 @@ const FIELDS: Array<{
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function OperationalThresholdsPanel() {
+  const { activeHospitalId } = useHospital();
   const [values, setValues] = useState<OperationalThresholds>(DEFAULT_THRESHOLDS);
   const [loading, setLoading] = useState(true);
+  const [loadSucceeded, setLoadSucceeded] = useState(false);
   const [configured, setConfigured] = useState(true);
   const [state, setState] = useState<SaveState>('idle');
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setLoadSucceeded(false);
+    setMessage(null);
+    setState('idle');
     (async () => {
       try {
         const response = await fetch('/api/operational-thresholds', { credentials: 'include', cache: 'no-store' });
         const json = await response.json();
         if (cancelled) return;
+        if (!response.ok) {
+          setMessage(json?.error || 'Prahy se nepodařilo načíst. Zkuste nastavení otevřít znovu.');
+          return;
+        }
         if (json?.thresholds) setValues(json.thresholds);
         setConfigured(Boolean(json?.configured));
+        setLoadSucceeded(true);
       } catch {
-        // Necháme výchozí hodnoty, panel zůstane použitelný.
+        if (!cancelled) setMessage('Prahy se nepodařilo načíst — zkontrolujte spojení.');
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [activeHospitalId]);
 
   const save = useCallback(async () => {
     setState('saving');
@@ -81,6 +93,7 @@ export default function OperationalThresholdsPanel() {
         setMessage(json?.error || 'Uložení se nezdařilo.');
         return;
       }
+      setConfigured(true);
       setState('saved');
       window.setTimeout(() => setState('idle'), 2500);
     } catch {
@@ -127,7 +140,7 @@ export default function OperationalThresholdsPanel() {
                 min={1}
                 max={240}
                 value={values[key]}
-                disabled={loading}
+                disabled={loading || !loadSucceeded}
                 onChange={event => setField(key, event.target.value)}
                 className="w-16 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[17px] font-light tabular-nums text-white/95 outline-none transition-colors focus:border-cyan-300/50"
               />
@@ -142,7 +155,7 @@ export default function OperationalThresholdsPanel() {
         <button
           type="button"
           onClick={save}
-          disabled={loading || state === 'saving'}
+          disabled={loading || !loadSucceeded || state === 'saving'}
           className="inline-flex min-h-[34px] items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-400/10 px-3.5 text-[12px] font-semibold text-cyan-100 transition-colors hover:bg-cyan-400/16 disabled:opacity-50"
         >
           {state === 'saving' ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}

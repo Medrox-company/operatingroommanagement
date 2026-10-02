@@ -351,34 +351,37 @@ export const MobileSheet: React.FC<{
 export const MobileSearchInput: React.FC<{
   value: string;
   onChange: (v: string) => void;
+  label?: string;
   placeholder?: string;
   icon?: React.ReactNode;
-}> = ({ value, onChange, placeholder, icon }) => (
+}> = ({ value, onChange, label = 'Vyhledat', placeholder, icon }) => (
   <div
-    className="flex items-center gap-3 rounded-2xl px-4 py-3"
+    className="mobile-search-field flex min-h-[52px] items-center gap-3 rounded-2xl px-3 py-1"
     style={{
       background: 'var(--m-card)',
       border: '1px solid var(--m-border)',
       boxShadow: '0 4px 12px rgba(23,43,99,0.05)',
     }}
   >
-    {icon && <div className="shrink-0" style={{ color: 'var(--m-faint)' }}>{icon}</div>}
+    {icon && <div className="shrink-0" style={{ color: 'var(--m-muted)' }} aria-hidden="true">{icon}</div>}
     <input
       type="text"
       value={value}
       onChange={e => onChange(e.target.value)}
+      aria-label={label}
       placeholder={placeholder}
-      className="flex-1 bg-transparent outline-none text-sm placeholder:text-[#9AA7BF]"
+      className="mobile-search-input min-h-11 min-w-0 flex-1 bg-transparent outline-none text-base placeholder:text-[var(--m-muted)]"
       style={{ color: 'var(--m-text)' }}
     />
     {value && (
       <button
+        type="button"
         onClick={() => onChange('')}
-        aria-label="Smazat"
-        className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+        aria-label={`Smazat hledání: ${value}`}
+        className="mobile-search-clear w-11 h-11 rounded-full flex items-center justify-center shrink-0"
         style={{ background: 'var(--m-bg)', color: 'var(--m-muted)' }}
       >
-        <X className="w-3 h-3" strokeWidth={2.5} />
+        <X className="w-4 h-4" strokeWidth={2.5} aria-hidden="true" />
       </button>
     )}
   </div>

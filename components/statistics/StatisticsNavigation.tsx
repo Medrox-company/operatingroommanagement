@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Home, DollarSign, BadgeDollarSign, Building2, Layers, Bell, Monitor } from 'lucide-react';
+import { Home, DollarSign, BadgeDollarSign, Building2, Layers, Bell, Monitor, TrendingUp } from 'lucide-react';
 
 export const STATISTICS_TABS = [
   { id: 'prehled', label: 'Přehled', icon: Home },
@@ -9,6 +9,7 @@ export const STATISTICS_TABS = [
   { id: 'sazby', label: 'Sazby', icon: BadgeDollarSign },
   { id: 'saly', label: 'Sály', icon: Building2 },
   { id: 'faze', label: 'Fáze', icon: Layers },
+  { id: 'vykonnost', label: 'Výkonnost', icon: TrendingUp },
   { id: 'notifikace', label: 'Notifikace', icon: Bell },
   { id: 'zarizeni', label: 'Zařízení', icon: Monitor },
 ] as const;

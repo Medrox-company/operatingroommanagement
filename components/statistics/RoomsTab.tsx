@@ -406,14 +406,18 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
   /**
    * Fáze operačního cyklu — podíl reálného času jednotlivých statusů.
    * Každý uložený interval ořízneme na pracovní dobu příslušného sálu.
-   * „Sál připraven" je součástí přehledu, ale mimo pracovní dobu se stejně
-   * jako ostatní fáze nezapočítá.
+   * „Sál připraven" je čekání mezi cykly, proto se nezahrnuje ani do
+   * zobrazených fází, ani do celkového času pro výpočet jejich podílů.
    */
   const phaseRings = useMemo(() => {
     if (!analysisHistory || analysisHistory.length === 0 || workflowSteps.length === 0) return [];
     const totals: Record<string, number> = {};
     const roomById = new Map(rooms.map(room => [room.id, room]));
-    workflowSteps.forEach(s => { totals[s.title] = 0; });
+    const cycleSteps = workflowSteps.filter(step => {
+      const name = step.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+      return name !== 'sal pripraven';
+    });
+    cycleSteps.forEach(s => { totals[s.title] = 0; });
     totals.Pauza = totals.Pauza ?? 0;
 
     // Pauza má vlastní dvojici databázových událostí pause → resume. Párujeme
@@ -495,7 +499,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
 
     const total = Object.values(totals).reduce((a, b) => a + b, 0);
     if (total === 0) return [];
-    const workflowItems = workflowSteps
+    const workflowItems = cycleSteps
       .map(s => ({
         label: s.title,
         percent: (totals[s.title] / total) * 100,
@@ -583,7 +587,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
       },
       {
         title: 'Čas naměřených provozních fází',
-        description: 'Intervaly jsou omezené na pracovní dobu. Spárované pauzy se odečítají z běžných fází a vykazují samostatně; zahrnutý je i stav Sál připraven.',
+        description: 'Intervaly jsou omezené na pracovní dobu. Spárované pauzy se odečítají z běžných fází a vykazují samostatně. Stav Sál připraven není zahrnutý do fází ani do celkového času pro výpočet podílů.',
         columns: [{ label: 'Fáze' }, { label: 'Doba', align: 'right' }, { label: 'Podíl', align: 'right' }],
         rows: phaseRings.map(phase => [phase.label, phase.detail, `${formatNumber(phase.percent, 1)} %`]),
         emptyMessage: 'Pro vybraný rozsah nejsou k dispozici naměřené fáze.',
@@ -616,7 +620,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               <DistributionHeader
                 eyebrow="Sály"
                 title="Fáze operačního cyklu"
-                subtitle="Podíl času naměřených provozních fází"
+                subtitle="Podíl času naměřených provozních fází bez stavu Sál připraven"
                 badge={`${phaseRings.length} měřených fází`}
               />
               <div className="mt-4 grid gap-x-4 gap-y-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">

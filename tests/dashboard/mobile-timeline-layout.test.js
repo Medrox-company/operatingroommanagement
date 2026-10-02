@@ -32,6 +32,10 @@ function compile(sourceText, filename, dependencies = {}) {
 }
 const display = compile(read('lib/mobile-room-display.ts'), 'mobile-room-display.ts');
 const timeline = compile(read('lib/mobile-timeline.ts'), 'mobile-timeline.ts', { './mobile-room-display': display });
+const operationalWarnings = compile(read('lib/timeline-operational-warnings.ts'), 'timeline-operational-warnings.ts');
+const unusedMinutes = compile(read('lib/timeline-unused-minutes.ts'), 'timeline-unused-minutes.ts', {
+  '../types': { DEFAULT_DAILY_BREAK_MINUTES: 30 },
+});
 const statuses = [
   { title: 'Sál připraven', name: 'Sál připraven', color: '#00D6C4' },
   { title: 'Chirurgický výkon', name: 'Chirurgický výkon', color: '#E82064' },
@@ -42,11 +46,13 @@ const room = (id, active = false) => ({
   operationStartedAt: active ? new Date(now - 30 * 60000).toISOString() : null,
   phaseStartedAt: active ? new Date(now - 30 * 60000).toISOString() : null,
   estimatedEndTime: active ? new Date(now + 30 * 60000).toISOString() : null,
+  weeklySchedule: Object.fromEntries(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    .map(day => [day, { enabled: true, startHour: 7, startMinute: 0, endHour: 15, endMinute: 0, breakMinutes: 0 }])),
 });
 function MobileModuleHeader() { return null; }
 function MobilePillTabs() { return null; }
 
-function render(rooms, stateOverride = {}) {
+function render(rooms, stateOverride = {}, warningsByRoom) {
   const state = ['4', 0, 0, 3, null];
   for (const [index, value] of Object.entries(stateOverride)) state[Number(index)] = value;
   const effects = [];
@@ -72,12 +78,15 @@ function render(rooms, stateOverride = {}) {
     'lucide-react': { ChevronLeft: 'ChevronLeft', ChevronRight: 'ChevronRight', LocateFixed: 'LocateFixed' },
     '../../lib/mobile-room-display': display,
     '../../lib/mobile-timeline': timeline,
+    '../../lib/timeline-operational-warnings': operationalWarnings,
+    '../../lib/timeline-unused-minutes': unusedMinutes,
     './MobileShell': { MobileModuleHeader, MobilePillTabs },
     './mobile-timeline.css': {},
   }).default;
   const tree = Component({
     rooms, activeStatuses: statuses, currentSpecialties: new Map([['1', [{ name: 'Chirurgie' }]]]),
     currentTime: new Date(now), stats: { operations: 1, cleaning: 1, free: 2, completed: 3, emergencyCount: 0 },
+    warningsByRoom,
     onSelectRoom: value => selected.push(value),
   });
   return { tree, effects, mutations, selected, ref, state };
@@ -252,4 +261,55 @@ test('actual progress, estimated end and current state remain distinguishable an
   assert.match(text(byClass(result.tree, 'mtl-no-record')[0]), /Bez záznamu/);
   assert.equal(byLabel(result.tree, 'Časová osa provozu').type, 'section');
   assert.equal(byLabel(result.tree, 'Stránkování sálů').type, 'nav');
+});
+
+test('operational warnings appear only on affected room rows and read out all details', () => {
+  const warningsByRoom = new Map([['1', [
+    { type: 'overdue', roomId: '1', estimatedEndMs: now - 18 * 60_000, minutesOverdue: 18 },
+    { type: 'missing_staff', roomId: '1', missingRoles: ['doctor', 'nurse'] },
+    { type: 'schedule_collision', roomId: '1', scheduleIds: ['a', 'b'], overlapStartMs: now, overlapEndMs: now + 15 * 60_000, overlapMinutes: 15 },
+  ]]]);
+  const result = render([room(1, true), room(2)], {}, warningsByRoom);
+  const rows = byClass(result.tree, 'mtl-row');
+  assert.equal(byClass(rows[0], 'mtl-warning-chip').length, 1);
+  assert.equal(text(byClass(rows[0], 'mtl-warning-chip')[0]), 'Kolize');
+  assert.equal(byClass(rows[0], 'mtl-warning-chip')[0].props['data-kind'], 'schedule_collision');
+  assert.match(rows[0].props['aria-label'], /Upozornění:/);
+  assert.ok(rows[0].props['aria-label'].includes(operationalWarnings.describeTimelineOperationalWarning(warningsByRoom.get('1')[2])));
+  assert.doesNotMatch(rows[0].props['aria-label'], /Odhad konce překročen/);
+  assert.match(text(byClass(rows[0], 'mtl-unused-chip')[0]), /Nevyužito \d+ min/);
+  assert.equal(byClass(rows[1], 'mtl-warning-chip').length, 0);
+  assert.doesNotMatch(rows[1].props['aria-label'], /Upozornění:/);
+  assert.match(text(byClass(rows[1], 'mtl-unused-chip')[0]), /Nevyužito \d+ min/);
+  rows[0].props.onClick();
+  assert.equal(result.selected[0].id, '1');
+});
+
+test('team remains two stacked dots while unused working minutes replace overdue label', () => {
+  const warningsByRoom = new Map([
+    ['1', [{ type: 'overdue', roomId: '1', estimatedEndMs: now - 12 * 60_000, minutesOverdue: 12 }]],
+    ['2', [{ type: 'missing_staff', roomId: '2', missingRoles: ['nurse'] }]],
+  ]);
+  const rooms = [room(1, true), {
+    ...room(2, true), staff: { doctor: { name: 'MUDr. Novák' }, nurse: { name: '' } },
+  }];
+  const rows = byClass(render(rooms, {}, warningsByRoom).tree, 'mtl-row');
+  assert.equal(byClass(rows[0], 'mtl-warning-chip').length, 0);
+  assert.match(text(byClass(rows[0], 'mtl-unused-chip')[0]), /Nevyužito \d+ min/);
+  assert.equal(byClass(rows[1], 'mtl-warning-chip').length, 0);
+  const dots = byClass(rows[1], 'mtl-team-dots');
+  assert.equal(dots.length, 1);
+  assert.deepEqual(React.Children.toArray(dots[0].props.children).map(dot => [dot.props['data-team-role'], dot.props['data-team-assigned']]),
+    [['doctor', true], ['nurse', false]]);
+  assert.match(rows[1].props['aria-label'], /ARO lékař: vyplněno; ARO sestra: nevyplněno/);
+  assert.match(rows[1].props['aria-label'], /nevyužitých minut/);
+  assert.doesNotMatch(rows[1].props['aria-label'], /Odhad konce překročen/);
+});
+
+test('room without configured working hours shows unavailable minutes rather than zero', () => {
+  const rows = byClass(render([room(1, false)], {}, new Map()).tree, 'mtl-row');
+  assert.match(text(byClass(rows[0], 'mtl-unused-chip')[0]), /Nevyužito \d+ min/);
+  const unconfigured = byClass(render([{ ...room(1, false), weeklySchedule: undefined }], {}, new Map()).tree, 'mtl-row');
+  assert.equal(text(byClass(unconfigured[0], 'mtl-unused-chip')[0]), 'Nevyužito —');
+  assert.match(unconfigured[0].props['aria-label'], /nelze určit/);
 });

@@ -3,11 +3,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE } from '../../types';
-import { Lock, AlertTriangle, Activity, Pause, Phone, BedDouble, CheckCircle, Biohazard } from 'lucide-react';
+import { Lock, AlertTriangle, Activity, Pause, Phone, BedDouble, Biohazard } from 'lucide-react';
 import { C, TIMELINE_START_HOUR, ROOM_LABEL_WIDTH, MIN_ROW_HEIGHT } from './constants';
 import { isOperationInWindow, exceedsT24Hours, getOperationPosition as getOperationPositionRaw } from './utils';
 import type { WorkflowStatus } from '../../contexts/WorkflowStatusesContext';
 import type { CurrentRoomSpecialty } from '../../lib/room-specialty';
+import { describeTimelineOperationalWarning, type TimelineOperationalWarning } from '../../lib/timeline-operational-warnings';
+import { calculateUnusedOperatingMinutes } from '../../lib/timeline-unused-minutes';
 import { TimelineRoomSpecialtyStrip } from '../RoomSpecialtyBadge';
 /** Najetí myší na výkon — sdílený tvar mezi řádkem a bublinou v rodiči. */
 export interface TimelineHoveredOp {
@@ -24,6 +26,7 @@ export interface TimelineHoveredOp {
 
 export interface TimelineRoomRowProps {
   room: OperatingRoom;
+  warnings: readonly TimelineOperationalWarning[];
   roomIndex: number;
   currentTime: Date;
   dayWindowStartMs: number;
@@ -67,6 +70,7 @@ export interface TimelineRoomRowProps {
  */
 export function TimelineRoomRow({
   room,
+  warnings,
   roomIndex,
   currentTime,
   dayWindowStartMs,
@@ -99,6 +103,39 @@ export function TimelineRoomRow({
   const isActive = stepIndex > 0; // index 0 = "Sál připraven"
   const isFree = stepIndex === 0;
   const remainingTime = getRemainingTime(room);
+  const visibleWarnings = warnings.filter(warning => warning.type === 'schedule_collision');
+  const warningSummary = visibleWarnings.map(describeTimelineOperationalWarning).join('; ');
+  const unusedMinutes = calculateUnusedOperatingMinutes(room, currentTime);
+  const unusedLabel = `Nevyužito ${unusedMinutes === null ? '—' : `${unusedMinutes} min`}`;
+  const unusedDescription = unusedMinutes === null
+    ? 'Nevyužité minuty nelze určit: pro dnešek není nastavena platná pracovní doba sálu.'
+    : `${unusedMinutes} nevyužitých minut v dosud uplynulé nastavené pracovní době sálu, po zohlednění přestávky. Zahrnuje čas bez zaznamenaného operačního cyklu.`;
+  const unusedSeverity = unusedMinutes === null ? 'unknown'
+    : unusedMinutes >= 240 ? 'critical'
+    : unusedMinutes >= 120 ? 'high'
+    : unusedMinutes >= 60 ? 'medium' : 'low';
+  const unusedLineColor = {
+    unknown: C.slate,
+    low: C.green,
+    medium: C.yellow,
+    high: C.orange,
+    critical: C.red,
+  }[unusedSeverity];
+  const teamRoles = [
+    { role: 'doctor', label: 'ARO lékař', assigned: Boolean(room.staff?.doctor?.name?.trim()) },
+    { role: 'nurse', label: 'ARO sestra', assigned: Boolean(room.staff?.nurse?.name?.trim()) },
+  ] as const;
+  const teamSummary = teamRoles.map(({ label, assigned }) => `${label}: ${assigned ? 'vyplněno' : 'nevyplněno'}`).join('; ');
+  const teamDots = (
+    <span className="flex flex-shrink-0 flex-col items-center justify-center gap-[6px] px-[3px]"
+      title={teamSummary} aria-hidden="true">
+      {teamRoles.map(({ role, assigned }) => (
+        <span key={role} data-team-role={role} data-team-assigned={assigned}
+          className="block h-[7px] w-[7px] rounded-full"
+          style={{ backgroundColor: assigned ? C.green : C.red }} />
+      ))}
+    </span>
+  );
   
   // Get status from database context.
   // FIX: room.currentStepIndex je pozice v POLI activeStatuses (0-based), NIKOLI
@@ -118,6 +155,32 @@ export function TimelineRoomRow({
       ? 'Pauza' 
       : (currentStep?.title || currentStep?.name || 'Status');
   const StepIcon = Activity; // Default icon
+  const availabilityStatus = room.isEmergency
+    ? { label: 'Stav nouze', color: C.red }
+    : room.isLocked
+      ? { label: 'Sál uzamčen', color: C.slate }
+      : room.isPaused
+        ? { label: 'Pauza', color: C.cyan }
+        : isFree
+          ? { label: stepName, color: C.green }
+          : { label: 'Sál v provozu', color: C.blue };
+  const availabilityBadge = (
+    <div className="timeline-room-availability-summary absolute right-3 top-1/2 z-[15] flex max-h-[calc(100%-4px)] w-[122px] -translate-y-1/2 flex-col overflow-hidden rounded-md"
+      style={{ background: `${availabilityStatus.color}1a`, border: `1px solid ${availabilityStatus.color}45` }}
+      data-room-availability={room.isEmergency ? 'emergency' : room.isLocked ? 'locked' : room.isPaused ? 'paused' : isFree ? 'ready' : 'busy'}>
+      <div className="flex min-h-0 items-center gap-2 px-2 py-0.5">
+        <p className="min-w-0 flex-1 truncate text-[10px] font-semibold leading-tight"
+          style={{ color: isFree ? C.textHi : availabilityStatus.color }}>{availabilityStatus.label}</p>
+        <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+          style={{ background: availabilityStatus.color }} aria-hidden="true" />
+      </div>
+      <div className="border-t px-2 py-0.5 text-center text-[9px] font-medium leading-tight tabular-nums whitespace-nowrap"
+        style={{ borderColor: `${availabilityStatus.color}35`, color: '#B9C7D8', background: C.bgPanel }}
+        title={unusedDescription} aria-hidden="true">{unusedLabel}</div>
+      <div className="h-[2px] flex-shrink-0" style={{ background: unusedLineColor }}
+        data-unused-severity={unusedSeverity} aria-hidden="true" />
+    </div>
+  );
 
   // Calculate operation bar position
   // Use currentProcedure if available, otherwise use phaseStartedAt or current time as fallback
@@ -215,7 +278,7 @@ export function TimelineRoomRow({
         key={room.id}
         role="button"
         tabIndex={0}
-        aria-label={`${room.name} — ${bannerLabel}`}
+        aria-label={`${room.name} — ${bannerLabel}; ${unusedDescription}; ${teamSummary}${warningSummary ? `; ${warningSummary}` : ''}`}
         className={`timeline-room-row ${roomIndex % 2 === 1 ? 'timeline-room-row-alt' : ''} flex items-stretch cursor-pointer transition-colors duration-200 group overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/70`}
         style={density === 'auto'
           ? { flex: '1 1 0%', minHeight: MIN_ROW_HEIGHT }
@@ -231,7 +294,7 @@ export function TimelineRoomRow({
         <div 
           role="button"
           tabIndex={0}
-          aria-label={`Celodenní souhrn sálu ${room.name}`}
+          aria-label={`Celodenní souhrn sálu ${room.name}; ${unusedDescription}; ${teamSummary}${warningSummary ? `; ${warningSummary}` : ''}`}
           className="timeline-room-label flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-colors duration-200 group-hover:bg-white/[0.04]"
           style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH }}
           onClick={(event) => {
@@ -257,6 +320,14 @@ export function TimelineRoomRow({
             </div>
             <TimelineRoomSpecialtyStrip specialties={currentSpecialty} />
           </div>
+          {visibleWarnings.length > 0 && (
+            <span className="flex flex-shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[9px] font-semibold"
+              style={{ color: C.yellow, background: `${C.yellow}16`, border: `1px solid ${C.yellow}55` }}
+              title={warningSummary} aria-hidden="true">
+              <AlertTriangle className="h-3 w-3" />Kolize{visibleWarnings.length > 1 ? ` +${visibleWarnings.length - 1}` : ''}
+            </span>
+          )}
+          {teamDots}
         </div>
         {/* Emergency timeline box - tinted glassmorph */}
         <div className="relative flex-1 overflow-hidden rounded-r-[14px]">
@@ -282,6 +353,7 @@ export function TimelineRoomRow({
               )}
             </div>
           </div>
+          {availabilityBadge}
         </div>
       </div>
     );
@@ -293,7 +365,7 @@ export function TimelineRoomRow({
       key={room.id}
       role="button"
       tabIndex={0}
-      aria-label={`${room.name} — ${stepName}`}
+      aria-label={`${room.name} — ${stepName}; ${unusedDescription}; ${teamSummary}${warningSummary ? `; ${warningSummary}` : ''}`}
         className={`timeline-room-row ${roomIndex % 2 === 1 ? 'timeline-room-row-alt' : ''} relative flex items-stretch group cursor-pointer overflow-hidden transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/65 ${room.isLocked ? 'locked-room-glow' : ''}`}
         style={{
           ...(density === 'auto'
@@ -328,7 +400,7 @@ export function TimelineRoomRow({
       <div
         role="button"
         tabIndex={0}
-        aria-label={`Celodenní souhrn sálu ${room.name}`}
+        aria-label={`Celodenní souhrn sálu ${room.name}; ${unusedDescription}; ${teamSummary}${warningSummary ? `; ${warningSummary}` : ''}`}
         className="timeline-room-label flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-colors duration-200 sticky left-0 z-20"
         style={{
           width: ROOM_LABEL_WIDTH,
@@ -449,6 +521,14 @@ export function TimelineRoomRow({
             )}
           </div>
         </div>
+        {visibleWarnings.length > 0 && (
+          <span className="flex flex-shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[9px] font-semibold"
+            style={{ color: C.yellow, background: `${C.yellow}16`, border: `1px solid ${C.yellow}55` }}
+            title={warningSummary} aria-hidden="true">
+            <AlertTriangle className="h-3 w-3" />Kolize{visibleWarnings.length > 1 ? ` +${visibleWarnings.length - 1}` : ''}
+          </span>
+        )}
+        {teamDots}
       </div>
 
       {/* Timeline section - Premium glass with grid */}
@@ -458,6 +538,17 @@ export function TimelineRoomRow({
           background: 'transparent'
         }}
       >
+        {warnings.filter(warning => warning.type === 'schedule_collision').map(warning => {
+          if (warning.type !== 'schedule_collision') return null;
+          const visibleHours = TIMELINE_HOURS * 3600_000;
+          const left = Math.max(0, (warning.overlapStartMs - dayWindowStartMs) / visibleHours * 100);
+          const right = Math.min(100, (warning.overlapEndMs - dayWindowStartMs) / visibleHours * 100);
+          if (right <= left) return null;
+          return <span key={warning.scheduleIds.join(':')}
+            className="absolute top-0 z-[12] h-[3px] rounded-full pointer-events-none"
+            style={{ left: `${left}%`, width: `${right - left}%`, minWidth: 3, background: C.yellow, boxShadow: `0 0 6px ${C.yellow}99` }}
+            aria-hidden="true" />;
+        })}
         {/* Marker aktivace hygienického režimu (infekční pacient) — ikona
             v čase, kdy byl režim vyhlášen. Bod zůstává i po vypnutí režimu
             (pulzuje jen dokud je režim aktivní). */}
@@ -1430,7 +1521,7 @@ export function TimelineRoomRow({
               const estMs = new Date(room.estimatedEndTime).getTime();
               if (!Number.isFinite(estMs)) return null;
               const overrunMs = currentTime.getTime() - estMs;
-              if (overrunMs < 60 * 1000) return null; // skluz < 1 min neřešíme
+              if (overrunMs < 5 * 60 * 1000 || !warnings.some(warning => warning.type === 'overdue')) return null;
               const startMs = startDate.getTime();
               const span = Math.max(1, endDate.getTime() - startMs);
               const leftPct = Math.max(0, Math.min(100, ((estMs - startMs) / span) * 100));
@@ -1439,7 +1530,7 @@ export function TimelineRoomRow({
               return (
                 <div
                   className="absolute top-0 bottom-0 right-0 z-[6] pointer-events-none rounded-r-[5px] overflow-hidden flex items-center justify-center"
-                  title={`Skluz · +${overrunMins} min po plánovaném konci`}
+                  title={`Překročený odhad konce · +${overrunMins} min`}
                   style={{
                     left: `${leftPct}%`,
                     background: `${C.red}14`,
@@ -1532,35 +1623,9 @@ export function TimelineRoomRow({
           </motion.div>
         )}
 
-        {/* Free room indicator — kompaktní pill zarovnaný na PRAVOU stranu řádku.
-            Záměrně NEzabírá celou šířku, aby nepřekrýval barvy již proběhlých
-            statusů (dokončené operace) na levé ��ásti časové osy. */}
-        {!showSummary && isFree && !room.isLocked && (
-          <div 
-            className="absolute right-3 top-1/2 flex h-8 -translate-y-1/2 items-center gap-2 pl-2 pr-2.5 rounded-md overflow-hidden"
-            style={{
-              background: `${C.green}1a`,
-              border: `1px solid ${C.green}45`,
-            }}
-          >
-            <div className="relative flex-shrink-0">
-              <div 
-                className="relative w-5 h-5 rounded-md flex items-center justify-center"
-                style={{ 
-                  background: `linear-gradient(135deg, ${C.green}2e 0%, ${C.green}12 100%)`,
-                  border: `1px solid ${C.green}45`,
-                }}
-              >
-                <CheckCircle className="w-3 h-3" style={{ color: C.green }} />
-              </div>
-            </div>
-            <p className="text-[11px] font-semibold text-white/90 leading-tight truncate">{stepName}</p>
-            <div 
-              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ background: C.green, boxShadow: `0 0 6px ${C.green}` }}
-            />
-          </div>
-        )}
+        {/* Stejná dvouřádková karta pro každý stav; tenká linka kóduje
+            množství dosud nevyužité pracovní doby. */}
+        {availabilityBadge}
 
         {/* Room-specific end of working hours indicator */}
         {(() => {

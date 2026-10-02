@@ -452,7 +452,8 @@
   .msc-warning { display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; padding: 11px 13px; border: 1px solid rgba(245, 158, 11, .3); border-radius: 16px; background: rgba(245, 158, 11, .08); }
   .msc-warning p { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--m-text); }
   .msc-warning strong { color: var(--m-text-strong); font-weight: 600; }
-  .msc-warning .msc-warning-value { color: #F59E0B; }
+  .msc-warning .msc-warning-value { color: #8A4F00; }
+  .m-dark .msc-warning .msc-warning-value { color: #FBBF24; }
   .msc-warning-icon { display: grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0; border-radius: 10px; border: 1px solid rgba(245, 158, 11, .3); color: #F59E0B; }
   .msc-warning-icon svg { width: 16px; height: 16px; }
 

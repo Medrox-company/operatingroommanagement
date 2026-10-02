@@ -36,6 +36,13 @@ const utils = load('../../components/timeline/utils.ts', name => {
   if (name === './constants') return constants;
   throw new Error(`utils nemá mít závislost: ${name}`);
 });
+const warningLabels = load('../../lib/timeline-operational-warnings.ts', name => {
+  throw new Error(`Upozornění nemají mít runtime závislost: ${name}`);
+});
+const unusedMinutes = load('../../lib/timeline-unused-minutes.ts', name => {
+  if (name === '../types') return { DEFAULT_DAILY_BREAK_MINUTES: 30 };
+  throw new Error(`Výpočet nevyužitých minut nemá mít runtime závislost: ${name}`);
+});
 
 const allowed = {
   react: React,
@@ -48,6 +55,8 @@ const allowed = {
   '../RoomSpecialtyBadge': { TimelineRoomSpecialtyStrip: stubComponent('span') },
   './constants': constants,
   './utils': utils,
+  '../../lib/timeline-operational-warnings': warningLabels,
+  '../../lib/timeline-unused-minutes': unusedMinutes,
 };
 
 const { TimelineRoomRow } = load('../../components/timeline/TimelineRoomRow.tsx', name => {
@@ -82,6 +91,7 @@ const room = (overrides = {}) => ({
 
 const props = (overrides = {}) => ({
   room: room(),
+  warnings: [],
   roomIndex: 0,
   currentTime,
   dayWindowStartMs: at(7).getTime(),
@@ -132,4 +142,104 @@ test('volný, uzamčený a nouzový sál se vykreslí bez výjimky', () => {
     const markup = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({ room: room(overrides) })));
     assert.match(markup, /PCHO SÁL Č\.2/, `Stav ${JSON.stringify(overrides)} musí zůstat vykreslitelný`);
   }
+});
+
+test('kolize je viditelná v řádku i ve správném úseku osy a má přístupný popis', () => {
+  const markup = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({
+    warnings: [{ type: 'schedule_collision', roomId: 'sal-1', scheduleIds: ['a', 'b'],
+      overlapStartMs: at(10).getTime(), overlapEndMs: at(10, 30).getTime(), overlapMinutes: 30 }],
+  })));
+  assert.match(markup, /Kolize/);
+  assert.match(markup, /Kolize plánovaných výkonů 10:00–10:30/);
+  assert.match(markup, /background:#FBBF24/);
+});
+
+test('obsazení ARO lékaře a sestry ukazují dvě tečky bez textového štítku Chybí tým', () => {
+  const currentRoom = room({ staff: { doctor: { name: 'MUDr. Novák' }, nurse: { name: '' } } });
+  const missingTeam = [{ type: 'missing_staff', roomId: currentRoom.id, missingRoles: ['nurse'] }];
+  for (const isEmergency of [false, true]) {
+    const markup = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({
+      room: { ...currentRoom, isEmergency }, warnings: missingTeam,
+    })));
+    assert.match(markup, /data-team-role="doctor" data-team-assigned="true"/);
+    assert.match(markup, /data-team-role="nurse" data-team-assigned="false"/);
+    assert.match(markup, /ARO lékař: vyplněno; ARO sestra: nevyplněno/);
+    assert.doesNotMatch(markup, />Chybí tým(?:<|\s)/);
+  }
+});
+
+test('štítek místo skluzu ukazuje dosud nevyužité minuty nastavené směny', () => {
+  const overdue = [{ type: 'overdue', roomId: 'sal-1', estimatedEndMs: at(10).getTime(), minutesOverdue: 90 }];
+  const markup = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({
+    room: room({ estimatedEndTime: at(10).toISOString() }), warnings: overdue,
+  })));
+  assert.match(markup, /Nevyužito 113 min/);
+  assert.match(markup, /113 nevyužitých minut/);
+  assert.doesNotMatch(markup, />Skluz(?:<|\s)/);
+  assert.match(markup, /Překročený odhad konce/);
+});
+
+test('připravený sál spojuje stav a nevyužité minuty do jedné karty vpravo', () => {
+  const markup = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({
+    room: room({ currentStepIndex: 0, operationStartedAt: null }),
+  })));
+  const summaryStart = markup.indexOf('timeline-room-availability-summary');
+  assert.ok(summaryStart > 0, 'Souhrnná karta připraveného sálu musí být zobrazena');
+  assert.match(markup.slice(summaryStart), /Sál připraven[\s\S]*?>Nevyužito \d+ min</);
+  assert.match(markup.slice(summaryStart), /data-room-availability="ready"/);
+  assert.equal((markup.match(/>Nevyužito \d+ min</g) ?? []).length, 1,
+    'Údaj nesmí být zároveň vedle názvu sálu');
+});
+
+test('aktivní, uzamčený a nouzový sál používají stejnou dvouřádkovou kartu vpravo', () => {
+  for (const [overrides, kind, label] of [
+    [{}, 'busy', 'Sál v provozu'],
+    [{ isLocked: true }, 'locked', 'Sál uzamčen'],
+    [{ isEmergency: true }, 'emergency', 'Stav nouze'],
+  ]) {
+    const markup = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({
+      room: room(overrides),
+    })));
+    assert.match(markup, /timeline-room-availability-summary absolute right-3/);
+    assert.match(markup, new RegExp(`data-room-availability="${kind}"[\\s\\S]*?${label}[\\s\\S]*?>Nevyužito \\d+ min<`));
+    assert.equal((markup.match(/>Nevyužito \d+ min</g) ?? []).length, 1);
+    assert.ok(markup.indexOf('timeline-room-availability-summary') > markup.indexOf('timeline-room-label'),
+      'Metrika nesmí být v levém sloupci s názvem sálu');
+  }
+});
+
+test('stavové karty vpravo zobrazují text bez piktogramů', () => {
+  for (const overrides of [
+    { currentStepIndex: 0, operationStartedAt: null },
+    {},
+    { isLocked: true },
+    { isPaused: true },
+    { isEmergency: true },
+  ]) {
+    const markup = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({ room: room(overrides) })));
+    const start = markup.indexOf('timeline-room-availability-summary');
+    const end = markup.indexOf('data-unused-severity=', start);
+    assert.ok(start >= 0 && end > start);
+    assert.doesNotMatch(markup.slice(start, end), /data-stub="span"/,
+      `Stavová karta ${JSON.stringify(overrides)} nesmí obsahovat ikonu`);
+  }
+});
+
+test('barevná linka rozlišuje množství nevyužitých minut a neznámý rozvrh', () => {
+  for (const [time, severity, color] of [
+    [at(7, 30), 'low', '#34D399'],
+    [at(9), 'medium', '#FBBF24'],
+    [at(10), 'high', '#FB923C'],
+    [at(12), 'critical', '#F43F5E'],
+  ]) {
+    const markup = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({
+      room: room({ currentStepIndex: 0, operationStartedAt: null }), currentTime: time,
+    })));
+    assert.match(markup, new RegExp(`style="background:${color}" data-unused-severity="${severity}"`));
+  }
+  const withoutSchedule = renderToStaticMarkup(React.createElement(TimelineRoomRow, props({
+    room: room({ currentStepIndex: 0, operationStartedAt: null, weeklySchedule: undefined }),
+  })));
+  assert.match(withoutSchedule, /data-unused-severity="unknown"/);
+  assert.match(withoutSchedule, />Nevyužito —</);
 });

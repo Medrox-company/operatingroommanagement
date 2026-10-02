@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, BellRing, AlertTriangle, Clock, Pause, Phone, Biohazard, Lock, CheckCircle2, Timer } from 'lucide-react';
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE } from '../../types';
+import { describeTimelineOperationalWarning, type TimelineOperationalWarning } from '../../lib/timeline-operational-warnings';
 import { C } from './constants';
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -18,6 +19,8 @@ interface Props {
   onClose: () => void;
   rooms: OperatingRoom[];
   currentTime: Date;
+  warningsByRoom: ReadonlyMap<string, TimelineOperationalWarning[]>;
+  planAvailable: boolean;
   onSelectRoom?: (id: string) => void;
 }
 
@@ -38,7 +41,7 @@ const SEV_RANK: Record<Severity, number> = { critical: 3, warning: 2, info: 1 };
 const CALLED_THRESHOLD_MIN = 10;  // pacient volaný a nedorazil
 const PAUSE_THRESHOLD_MIN = 15;   // dlouhá pauza
 
-const AttentionFeed: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime, onSelectRoom }) => {
+const AttentionFeed: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime, warningsByRoom, planAvailable, onSelectRoom }) => {
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -55,6 +58,19 @@ const AttentionFeed: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime, o
     const fmtMin = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`);
 
     rooms.forEach((r) => {
+      for (const warning of warningsByRoom.get(r.id) ?? []) {
+        if (warning.type === 'schedule_collision') {
+          out.push({ roomId: r.id, roomName: r.name, severity: 'warning', icon: AlertTriangle,
+            title: 'Kolize plánovaných výkonů', detail: describeTimelineOperationalWarning(warning), sortKey: 900 });
+        } else if (warning.type === 'overdue') {
+          out.push({ roomId: r.id, roomName: r.name, severity: 'warning', icon: Clock,
+            title: 'Překročen odhad konce', detail: describeTimelineOperationalWarning(warning),
+            sortKey: 600 + warning.minutesOverdue });
+        } else {
+          out.push({ roomId: r.id, roomName: r.name, severity: 'warning', icon: AlertTriangle,
+            title: 'Neúplné obsazení sálu', detail: describeTimelineOperationalWarning(warning), sortKey: 550 });
+        }
+      }
       // 1) Nouze — kritická
       if (r.isEmergency) {
         out.push({ roomId: r.id, roomName: r.name, severity: 'critical', icon: AlertTriangle, title: 'Stav nouze', detail: 'Vyhlášen stav nouze na sále', sortKey: 1000 });
@@ -70,12 +86,6 @@ const AttentionFeed: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime, o
             const over = Math.round((estEnd - end.getTime()) / 60000);
             out.push({ roomId: r.id, roomName: r.name, severity: 'warning', icon: Timer, title: 'Přesah provozní doby', detail: `Odhad konce přesahuje směnu o ${fmtMin(over)}`, sortKey: 700 + over });
           }
-        }
-        // skluz proti odhadu
-        const estEnd = new Date(r.estimatedEndTime).getTime();
-        if (now > estEnd) {
-          const slip = Math.round((now - estEnd) / 60000);
-          if (slip >= 5) out.push({ roomId: r.id, roomName: r.name, severity: 'warning', icon: Clock, title: 'Operační výkon přesahující odhadované ukončení', detail: `Překračuje odhad o ${fmtMin(slip)}`, sortKey: 600 + slip });
         }
       }
       // 3) Pacient volaný a nedorazil
@@ -103,7 +113,7 @@ const AttentionFeed: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime, o
     });
 
     return out.sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity] || b.sortKey - a.sortKey);
-  }, [rooms, currentTime, now]);
+  }, [rooms, currentTime, now, warningsByRoom]);
 
   const counts = useMemo(() => ({
     critical: items.filter((i) => i.severity === 'critical').length,
@@ -158,11 +168,19 @@ const AttentionFeed: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime, o
             </div>
 
             <div className="relative z-10 px-6 pb-6 overflow-y-auto" style={{ maxHeight: 'calc(92vh - 96px)' }}>
+              {!planAvailable && (
+                <p className="mb-3 rounded-xl px-4 py-2 text-xs" role="status"
+                  style={{ color: C.yellow, background: `${C.yellow}12`, border: `1px solid ${C.yellow}35` }}>
+                  Kolize v plánovaném rozpisu zatím nelze ověřit. Ostatní upozornění zůstávají aktuální.
+                </p>
+              )}
               {items.length === 0 ? (
                 <div className="text-center py-14">
                   <CheckCircle2 className="w-12 h-12 mx-auto mb-3" style={{ color: C.green }} />
-                  <p className="text-lg font-bold text-white">Vše v pořádku</p>
-                  <p className="text-sm text-white/45 mt-1">Žádný sál právě nevyžaduje pozornost.</p>
+                  <p className="text-lg font-bold text-white">{planAvailable ? 'Vše v pořádku' : 'Žádná další upozornění'}</p>
+                  <p className="text-sm text-white/45 mt-1">{planAvailable
+                    ? 'Žádný sál právě nevyžaduje pozornost.'
+                    : 'V dostupných provozních údajích není další upozornění.'}</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
