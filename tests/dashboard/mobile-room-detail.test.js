@@ -68,6 +68,12 @@ function harness(overrides = {}) {
     '../contexts/WorkflowStatusesContext': { useWorkflowStatusesContext: () => ({ workflowStatuses: statuses }) },
     '../contexts/HospitalContext': { useHospital: () => ({ activeHospitalId: 'test-hospital' }) },
     '../hooks/useSharedClock': { useNowMs: () => Date.now() },
+    // Interaktivní nápověda: v ostrém provozu vrací isTutorial false, takže
+    // se události zapisují do databáze. Atrapa drží tentýž stav.
+    '../contexts/TutorialContext': { useTutorial: () => ({ isTutorial: false }) },
+    '../hooks/useOperationalThresholds': { useOperationalThresholds: () => ({
+      thresholds: { shortPhaseMinutes: 5, cleaningWarningMinutes: 30, rapidSurgeryMinutes: 5, firstCaseGraceMinutes: 15 },
+    }) },
     '../lib/db': { recordStatusEvent: async event => { events.push(event); } },
     './StaffPickerModal': { default: 'staff-picker' },
     './StepConfirmationOverlay': { default: 'step-confirmation' },

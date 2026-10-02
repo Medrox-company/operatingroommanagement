@@ -56,6 +56,10 @@ function renderOverview(rooms, { loaded = true, search = '', filter = 'all' } = 
       default: React,
       useId: () => 'test-room-search',
       useMemo: compute => compute(),
+      // Dlouhý stisk karty (nabídka rychlých akcí) používá ref, callback i efekt.
+      useRef: value => ({ current: value }),
+      useCallback: fn => fn,
+      useEffect: () => {},
       useState: () => {
         const index = stateIndex++;
         return [state[index], value => mutations.push([index, value])];
@@ -66,6 +70,11 @@ function renderOverview(rooms, { loaded = true, search = '', filter = 'all' } = 
     '../../contexts/AuthContext': { useAuth: () => ({ hasModuleAccess: () => true }) },
     '../../contexts/WorkflowStatusesContext': { useWorkflowStatusesContext: () => ({ workflowStatuses: statuses }) },
     '../../hooks/useSharedClock': { useNowMinuteMs: () => now },
+    // Světlý i tmavý mobilní motiv vybírá barvu písma v barevném pruhu karty.
+    // V testu držíme světlý motiv, na který jsou očekávané hodnoty psané.
+    '../../hooks/useIsMobileDark': { useIsMobileDark: () => false },
+    // Nabídka rychlých akcí (dlouhý stisk karty) — v testu jen zástupný prvek.
+    './MobileRoomQuickActions': { __esModule: true, default: 'quick-actions' },
     '../../lib/mobile-room-display': display,
     '../ui/DropdownMenu': { DropdownMenu, DropdownItem },
     './MobileShell': { MobileHeader: () => null },
