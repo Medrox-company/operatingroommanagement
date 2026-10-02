@@ -86,3 +86,7 @@ tsconfig.tsbuildinfo
 .vercel
 .env*
 .fuse_hidden*
+
+# Generované soubory agentů a nástrojů
+output/
+tmp/
