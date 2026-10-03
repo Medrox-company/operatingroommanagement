@@ -49,14 +49,7 @@ export interface TimelineRoomRowProps {
   statusAtTime: (room: OperatingRoom, t: number) => { color: string; name: string } | null;
   utilColor: (pct: number) => string;
   openLiveRoom: (roomOrId: OperatingRoom | string) => void;
-  openHistoricalPhase: (
-    room: OperatingRoom,
-    history: NonNullable<OperatingRoom['statusHistory']>,
-    phaseIndex: number,
-    operationStartedAt: string,
-    phaseEndedAt: string,
-    cycleEndedAt?: string,
-  ) => void;
+  openCompletedCycle: (room: OperatingRoom, cycle: NonNullable<OperatingRoom['completedOperations']>[number]) => void;
   setStatsRoomId: React.Dispatch<React.SetStateAction<string | null>>;
   setHoveredOp: React.Dispatch<React.SetStateAction<TimelineHoveredOp | null>>;
 }
@@ -92,7 +85,7 @@ export function TimelineRoomRow({
   statusAtTime,
   utilColor,
   openLiveRoom,
-  openHistoricalPhase,
+  openCompletedCycle,
   setStatsRoomId,
   setHoveredOp,
 }: TimelineRoomRowProps) {
@@ -692,12 +685,13 @@ export function TimelineRoomRow({
           activeStatuses.forEach((s, idx) => {
             stepColorMap[idx] = s.accent_color || s.color || '#6b7280';
           });
-          type Seg = { l: number; w: number; color: string; name: string };
+          type Seg = { l: number; w: number; color: string; name: string; openCycle: () => void };
           const segs: Seg[] = [];
           const addHistory = (
             history: Array<{ stepIndex: number; startedAt: string; color?: string; stepName?: string }> | undefined,
             fallbackStart: number,
             opEnd: number,
+            openCycle: () => void,
           ) => {
             const hist = history && history.length > 0
               ? history
@@ -715,16 +709,17 @@ export function TimelineRoomRow({
                 w,
                 color: stepColorMap[entry.stepIndex] || entry.color || C.slate,
                 name: entry.stepName || activeStatuses[entry.stepIndex]?.name || 'Fáze',
+                openCycle,
               });
             });
           };
           (room.completedOperations || []).forEach((op) => {
             const s = new Date(op.startedAt).getTime();
             const e = new Date(op.endedAt).getTime();
-            if (Number.isFinite(s) && Number.isFinite(e) && e > s) addHistory(op.statusHistory, s, e);
+            if (Number.isFinite(s) && Number.isFinite(e) && e > s) addHistory(op.statusHistory, s, e, () => openCompletedCycle(room, op));
           });
           if (room.operationStartedAt && room.currentStepIndex > 0) {
-            addHistory(room.statusHistory, new Date(room.operationStartedAt).getTime(), currentTime.getTime());
+            addHistory(room.statusHistory, new Date(room.operationStartedAt).getTime(), currentTime.getTime(), () => openLiveRoom(room.id));
           }
 
           // ── Turnover / prostoje: mezery mezi po sobě jdoucími výkony ──
@@ -782,7 +777,18 @@ export function TimelineRoomRow({
               {segs.map((sg, i) => (
                 <div
                   key={`sum-${i}`}
-                  className="absolute top-[20%] bottom-[20%] rounded-[4px]"
+                  className="absolute top-[20%] bottom-[20%] rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/80"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${sg.name} — statistiky celého cyklu sálu ${room.name}`}
+                  onClick={(event) => { event.stopPropagation(); sg.openCycle(); }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      sg.openCycle();
+                    }
+                  }}
                   title={sg.name}
                   style={{
                     left: `${sg.l}%`,
@@ -911,6 +917,22 @@ export function TimelineRoomRow({
             return (
               <div
                 key={`completed-${opIdx}`}
+                role="button"
+                tabIndex={0}
+                aria-label={`Statistiky celého cyklu sálu ${room.name}, ${opStartDate.toLocaleString('cs-CZ')} – ${opEndDate.toLocaleString('cs-CZ')}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setHoveredOp(null);
+                  openCompletedCycle(room, operation);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setHoveredOp(null);
+                    openCompletedCycle(room, operation);
+                  }
+                }}
                 /* Výkon je neutrální karta; barvu nese proužek fází po HORNÍ
                    hraně. Když barvy vyplňovaly celou plochu, sousední výkony
                    splynuly v jednu pruhovanou masu a nešlo poznat, kde jeden
@@ -922,7 +944,7 @@ export function TimelineRoomRow({
                    zakazuje záře. Karta výkonu to plní doslova — žádný rámeček,
                    žádný stín, jen tón barvy převažující fáze a krátký ukazatel
                    při spodní hraně. Rádius je nemocnicky střídmý, ne oblý. */
-                className="timeline-operation-block timeline-operation-completed absolute top-1 bottom-1 overflow-hidden rounded-[4px] group"
+                className="timeline-operation-block timeline-operation-completed absolute top-1 bottom-1 overflow-hidden rounded-[4px] group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/80"
                 style={{
                   left: `${position.left}%`,
                   width: `${Math.max(0.5, position.width)}%`,
@@ -977,9 +999,6 @@ export function TimelineRoomRow({
                           return (
                             <div
                               key={`seg-${idx}`}
-                              role="button"
-                              tabIndex={0}
-                              aria-label={`Zobrazit fázi ${entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}`}
                               /* hover:brightness() je filtr a vytlačil by každý
                                  segment do vlastní offscreen textury. Průhlednost
                                  zvládne kompozitor sám. */
@@ -995,17 +1014,6 @@ export function TimelineRoomRow({
                                 borderRight: idx < operation.statusHistory.length - 1 ? '1px solid rgba(185,205,225,0.14)' : 'none',
                               }}
                               title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openHistoricalPhase(room, operation.statusHistory, idx, operation.startedAt, new Date(segEnd).toISOString(), operation.endedAt);
-                              }}
-                              onKeyDown={(event) => {
-                                if (event.key === 'Enter' || event.key === ' ') {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  openHistoricalPhase(room, operation.statusHistory, idx, operation.startedAt, new Date(segEnd).toISOString(), operation.endedAt);
-                                }
-                              }}
                             />
                           );
                         }).filter(Boolean);
@@ -1200,7 +1208,23 @@ export function TimelineRoomRow({
 
         {!showSummary && isActive && !room.isLocked && shouldShowBar && boxWidthPct > 0 && (
           <motion.div
-            className="timeline-operation-block absolute top-1 bottom-1 overflow-hidden rounded-[5px]"
+            className="timeline-operation-block absolute top-1 bottom-1 overflow-hidden rounded-[5px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/80"
+            role="button"
+            tabIndex={0}
+            aria-label={`Statistiky celého probíhajícího cyklu sálu ${room.name}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              setHoveredOp(null);
+              openLiveRoom(room.id);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                event.stopPropagation();
+                setHoveredOp(null);
+                openLiveRoom(room.id);
+              }
+            }}
             style={{
               left: `${Math.max(0, boxLeftPct)}%`,
               width: `${boxWidthPct}%`,
@@ -1275,9 +1299,6 @@ export function TimelineRoomRow({
                         return (
                           <div
                             key={`active-seg-${idx}`}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`Zobrazit fázi ${entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}`}
                             className="cursor-pointer transition-[filter] hover:brightness-125 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/80"
                             style={{
                               position: 'absolute',
@@ -1293,27 +1314,6 @@ export function TimelineRoomRow({
                                 : 'inset 0 1px 0 rgba(255,255,255,0.1)',
                             }}
                             title={entry.stepName || statusByOrderIndex[entry.stepIndex]?.title || ''}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (isCurrentSegment) {
-                                openLiveRoom(room.id);
-                                return;
-                              }
-                              const historicalEnd = nextEntry?.startedAt ?? currentTime.toISOString();
-                              openHistoricalPhase(room, history, idx, new Date(operationStart).toISOString(), historicalEnd, currentTime.toISOString());
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter' || event.key === ' ') {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                if (isCurrentSegment) {
-                                  openLiveRoom(room.id);
-                                  return;
-                                }
-                                const historicalEnd = nextEntry?.startedAt ?? currentTime.toISOString();
-                                openHistoricalPhase(room, history, idx, new Date(operationStart).toISOString(), historicalEnd, currentTime.toISOString());
-                              }
-                            }}
                           >
                           </div>
                         );

@@ -1518,7 +1518,7 @@ html.capacitor-native select {
 }
 
 .dashboard-workspace-card:hover {
-  transform: translateY(-2px);
+  transform: none;
 }
 
 .dashboard-workspace-card--sized { height: var(--dashboard-card-height, 336px); }
@@ -1536,7 +1536,7 @@ html.capacitor-native select {
    specialty fields when the viewport is short or a room title wraps. */
 .dashboard-workspace-cycle-indicator { width: min(160px, 36cqw, max(64px, calc(100cqh - 24px))); height: min(160px, 36cqw, max(64px, calc(100cqh - 24px))); }
 .dashboard-workspace-cycle-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 10px; row-gap: 3px; width: 100%; }
-.dashboard-workspace-cycle-caption { color: rgba(222, 231, 255, 0.65); font-size: clamp(10px, 2.6cqw, 13px); font-weight: 500; letter-spacing: .025em; }
+.dashboard-workspace-cycle-caption { color: rgba(222, 231, 255, 0.76); font-size: clamp(11px, 2.6cqw, 13px); font-weight: 500; letter-spacing: .025em; }
 .dashboard-workspace-estimate { display: inline-flex; align-items: center; gap: 4px; color: #d6e1f5; font-size: clamp(11px, 3cqw, 15px); font-weight: 600; white-space: nowrap; }
 .dashboard-workspace-estimate > svg { color: #8fa4cd; }
 .dashboard-workspace-card-info { display: grid; gap: clamp(8px, 2.5cqw, 14px); }
@@ -1552,10 +1552,10 @@ html.capacitor-native select {
 .dashboard-room-badges svg { width: clamp(12px, 3.5cqw, 17px); height: clamp(12px, 3.5cqw, 17px); }
 
 /* Compact rows still retain two-line names, readable metadata and the action pocket. */
-.dashboard-room-grid[data-density='compact'] .dashboard-workspace-card-content { --dashboard-card-padding: 14px; gap: 6px; }
-.dashboard-room-grid[data-density='compact'] .dashboard-room-name { font-size: clamp(14px, 4.6cqw, 17px); }
+.dashboard-room-grid[data-density='compact'] .dashboard-workspace-card-content { --dashboard-card-padding: 16px; gap: 6px; }
+.dashboard-room-grid[data-density='compact'] .dashboard-room-name { font-size: clamp(15px, 4.6cqw, 18px); }
 .dashboard-room-grid[data-density='compact'] .dashboard-room-department { font-size: 10px; margin-top: 4px; }
-.dashboard-room-grid[data-density='compact'] .dashboard-workspace-cycle-indicator { width: min(90px, max(64px, calc(100cqh - 20px))); height: min(90px, max(64px, calc(100cqh - 20px))); }
+.dashboard-room-grid[data-density='compact'] .dashboard-workspace-cycle-indicator { width: min(104px, max(64px, calc(100cqh - 24px))); height: min(104px, max(64px, calc(100cqh - 24px))); }
 .dashboard-room-grid[data-density='compact'] .dashboard-workspace-card-info { gap: 7px; }
 .dashboard-room-grid[data-density='compact'] .dashboard-specialty-slot { padding: 6px 8px; gap: 3px; }
 .dashboard-room-grid[data-density='compact'] .dashboard-specialty-period { font-size: 9px; }
@@ -1628,17 +1628,18 @@ html.capacitor-native select {
 }
 
 .dashboard-workspace-card-outline-path {
-  fill: rgba(159, 180, 237, 0.075);
-  stroke: rgba(203, 213, 247, 0.17);
+  fill: rgba(159, 180, 237, 0.062);
+  stroke: rgba(203, 213, 247, 0.20);
   stroke-width: 1;
   stroke-linecap: round;
   stroke-linejoin: round;
   transition: fill 180ms ease, stroke 180ms ease;
 }
 
-.dashboard-workspace-card:hover .dashboard-workspace-card-outline-path {
-  fill: rgba(159, 180, 237, 0.11);
-  stroke: rgba(220, 226, 255, 0.28);
+.dashboard-workspace-card:hover .dashboard-workspace-card-outline-path,
+.dashboard-workspace-card:focus-visible .dashboard-workspace-card-outline-path {
+  fill: rgba(159, 180, 237, 0.09);
+  stroke: rgba(220, 226, 255, 0.34);
 }
 
 .dashboard-workspace-card-outline-path--emergency {
@@ -1657,13 +1658,16 @@ html.capacitor-native select {
 .dashboard-workspace-card-corner-control {
   bottom: .816cqw;
   transform: translateX(-50%);
-  width: 13.878cqw;
+  /* Keep touch targets usable while leaving clearance inside the SVG pocket. */
+  width: clamp(44px, 12cqw, 64px);
+  min-width: 44px;
+  min-height: 44px;
   aspect-ratio: 1;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.045);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 3px 8px rgba(0, 0, 0, 0.10);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, color 180ms ease;
 }
 
 .dashboard-workspace-card-emergency {
@@ -1677,21 +1681,23 @@ html.capacitor-native select {
 }
 
 .dashboard-workspace-card-corner-action:hover {
-  transform: translateX(-50%) translateY(-2px);
+  transform: translateX(-50%);
 }
 
 .dashboard-workspace-card-emergency:hover,
 .dashboard-workspace-card-emergency.is-active {
-  border-color: rgba(248, 113, 113, 0.28);
-  background: rgba(239, 68, 68, 0.11);
-  color: rgba(254, 202, 202, 0.92);
+  border-color: rgba(248, 113, 113, 0.85);
+  background: rgba(239, 68, 68, 0.08);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.35), inset 0 0 12px rgba(239, 68, 68, 0.38), inset 0 0 4px rgba(239, 68, 68, 0.28);
+  color: #FFFFFF;
 }
 
 .dashboard-workspace-card-lock:hover,
 .dashboard-workspace-card-lock.is-active {
-  border-color: rgba(251, 191, 36, 0.26);
-  background: rgba(245, 158, 11, 0.11);
-  color: rgba(254, 243, 199, 0.92);
+  border-color: rgba(251, 191, 36, 0.85);
+  background: rgba(245, 158, 11, 0.08);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.35), inset 0 0 12px rgba(245, 158, 11, 0.38), inset 0 0 4px rgba(245, 158, 11, 0.28);
+  color: #FFFFFF;
 }
 
 .dashboard-workspace-card-corner-icon {
@@ -1711,9 +1717,17 @@ html.capacitor-native select {
   min-height: 2.75rem;
 }
 
+.dashboard-workspace-card .dashboard-room-department:not(.text-red-300):not(.text-amber-300) {
+  color: rgba(222, 231, 255, 0.68);
+}
+
+.dashboard-workspace-card .dashboard-specialty-period {
+  color: rgba(209, 221, 252, 0.70);
+}
+
 .dashboard-workspace-specialties {
   border-radius: 8px;
-  background: rgba(128, 151, 216, 0.025);
+  background: rgba(3, 10, 40, 0.12);
 }
 
 @media (max-width: 1100px) {
@@ -1928,6 +1942,25 @@ html.capacitor-native select {
   min-height: 32px;
   font-size: 10px;
   font-weight: 600;
+}
+
+/* Keep navigation width and wrapping identical when Performance replaces
+   the period buttons with its fixed twelve-month history label. */
+.stats-commandbar-period {
+  display: flex;
+  flex: 0 0 224px;
+  width: 224px;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+}
+
+.stats-commandbar-period > div {
+  width: 100%;
+}
+
+.stats-commandbar-period button {
+  flex: 1;
 }
 
 .stats-section-nav {

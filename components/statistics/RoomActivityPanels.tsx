@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, memo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { Clock, X } from 'lucide-react';
 import { OperatingRoom } from '../../types';
-import {
-  buildCompletedOperationsFromEvents,
-  fetchStatusHistory,
-  type StatusHistoryRow,
-} from '../../lib/db';
+import { type StatusHistoryRow } from '../../lib/db';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Line, CartesianGrid, ComposedChart } from 'recharts';
 import '../mobile/mobile-statistics.css';
-import { DAYS, getRoomWorkingHours, getRoomWorkingMinutes, calculateAvgStepDurations, formatRoomWorkingHours, isRoomBusyByStep, WorkflowStep, buildTimeline, buildDist, mergeSeg } from '../../lib/statistics-room-activity';
+import { getRoomWorkingMinutes, formatRoomWorkingHours, isRoomBusyByStep, WorkflowStep, buildTimeline, mergeSeg, type Period, weekdayIndex, operationalToday, operationalDayKey, countOperationsForDay, countOperationsInWorkingHours, calculateRoomUtilizationForDay, calculateRoomUtilization } from '../../lib/statistics-room-activity';
+import { statisticsDayWindow, statisticsPeriodWindow, hasStatisticsRoomCapacity } from '../../lib/statistics-room-scope';
+import { roomDetailPhaseDistribution, roomDetailHourlyEvents } from '../../lib/statistics-room-detail';
 import { C, TIP } from './statistics-theme';
 import { roomStatusColor, roomStatusLabel, Card, SectionLabel } from './StatisticsPrimitives';
 
@@ -171,145 +169,71 @@ export const RoomMiniCard: React.FC<RoomMiniCardProps> = memo(({ r, onClick, wor
 // ══════������═══════════════════════════════════════�����══════════════════════════════
 // ROOM DETAIL PANEL
 // ══════════════════════════════════════════════════════�������═���════════════════════
-export interface RoomPanelProps{ room:OperatingRoom; onClose:()=>void; workflowSteps:WorkflowStep[]; }
+export interface RoomPanelProps {
+  room: OperatingRoom;
+  onClose: () => void;
+  workflowSteps: WorkflowStep[];
+  period: Period;
+  selectedDay: Date | null;
+  history: StatusHistoryRow[];
+  trendHistory: StatusHistoryRow[];
+  loading: boolean;
+  error: string | null;
+}
 
-export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowSteps})=>{
-  const sc     = roomStatusColor(room);
-  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-  const todayWorkingHours = getRoomWorkingHours(room, todayIndex);
-  const todayWorkingHoursLabel = formatRoomWorkingHours(room, todayIndex);
+export const RoomDetailPanel: React.FC<RoomPanelProps> = ({
+  room, onClose, workflowSteps, period, selectedDay, history, trendHistory, loading, error,
+}) => {
+  const sc = roomStatusColor(room);
+  const now = new Date();
+  const window = useMemo(() => selectedDay ? statisticsDayWindow(selectedDay) : statisticsPeriodWindow(period),
+    [selectedDay, period, history]);
+  const periodLabels: Record<Period, string> = {
+    den: 'Posledních 24 hodin', týden: 'Posledních 7 dní', měsíc: 'Posledních 30 dní', rok: 'Posledních 365 dní',
+  };
+  const selectionLabel = selectedDay
+    ? selectedDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · 7:00–6:59'
+    : periodLabels[period];
+  const todayWorkingHoursLabel = formatRoomWorkingHours(room, weekdayIndex(selectedDay ?? operationalToday(now)));
+  const ready = !loading && !error;
+  const opsDay = selectedDay ? countOperationsForDay(room, history, selectedDay)
+    : countOperationsInWorkingHours(room, history, period);
+  const hasCapacity = hasStatisticsRoomCapacity(room, window);
+  const utilPct = selectedDay ? calculateRoomUtilizationForDay(room, history, selectedDay)
+    : calculateRoomUtilization(room, history, period);
 
-  // State must be declared first - before any useMemo that depends on it
-  const [roomHistory, setRoomHistory] = useState<StatusHistoryRow[]>([]);
-  
-  // Load room-specific history
-  useEffect(() => {
-    const loadRoomHistory = async () => {
-      const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const history = await fetchStatusHistory({ 
-        roomId: room.id, 
-        fromDate, 
-        toDate: new Date(),
-        limit: 1000 
-      });
-      if (history) setRoomHistory(history);
-    };
-    loadRoomHistory();
-  }, [room.id]);
+  // The parent owns the complete, hospital-scoped, realtime history. No second
+  // capped query, room counter snapshot, or schedule gate in the detail.
+  const dist = useMemo(() => roomDetailPhaseDistribution(history, room.id, workflowSteps, window),
+    [history, room.id, workflowSteps, window]);
+  const tl = dist.filter(phase => phase.min > 0);
+  const dayCurve = useMemo(() => roomDetailHourlyEvents(history, room.id, window),
+    [history, room.id, window]);
+  const hourlyEvents = dayCurve.map(d => ({ t: d.t, events: d.v }));
+  const phaseBar = dist.map(phase => ({ name: phase.title, ...phase }));
+  const pieData = tl;
+  const statusUtil = dist.map(phase => ({ label: phase.title, pct: phase.pct, color: phase.color }));
 
-  // Calculate room-specific step durations from history
-  const roomStepDurationsForCalc = useMemo(() => {
-    return calculateAvgStepDurations(roomHistory, workflowSteps);
-  }, [roomHistory, workflowSteps]);
-  
-  const tl     = useMemo(()=>mergeSeg(buildTimeline(room,workflowSteps, roomStepDurationsForCalc)),[room,workflowSteps, roomStepDurationsForCalc]);
-  const dist   = useMemo(()=>buildDist(room,workflowSteps, roomStepDurationsForCalc),[room,workflowSteps, roomStepDurationsForCalc]);
-  const opsDay = room.operations24h;
-  const utilPct= dist.find(d=>d.title==='Chirurgický výkon')?.pct??0;
-
-  // Day utilisation curve from real data using room's weekly schedule
-  const dayCurve=useMemo(()=>{
-    // Get today's day index (Monday=0)
-    if (!todayWorkingHours.enabled) return [];
-    const start = todayWorkingHours.startHour;
-    const end = todayWorkingHours.endHour + (todayWorkingHours.endMinute > 0 ? 1 : 0);
-    
-    const hourCounts: Record<number, number> = {};
-    for (let h = start; h < end; h++) hourCounts[h] = 0;
-    
-    roomHistory.filter(e => e.event_type === 'step_change' || e.event_type === 'operation_start')
-      .forEach(e => {
-        const hour = new Date(e.timestamp).getHours();
-        if (hour >= start && hour < end) {
-          hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-        }
-      });
-    
-    return Array.from({length:end-start},(_,i)=>({
-      t:`${start+i}`,
-      v: hourCounts[start+i],
-    }));
-  },[roomHistory,todayWorkingHours]);
-
-  // Weekly stacked data from real data, respecting room's schedule
-  const weeklyStacked=useMemo(()=>DAYS.map((day,di)=>{
-    const base:Record<string,number|string>={day};
-    const dayHours = getRoomWorkingHours(room, di);
-    
-    // If room doesn't operate this day, return zeros
-    if (!dayHours.enabled) {
-      workflowSteps.forEach((step) => {
-        base[step.title] = 0;
-      });
-      return base;
-    }
-    
-    // Count events for this day of week
-    const dayEvents = roomHistory.filter(e => {
-      const eventDay = new Date(e.timestamp).getDay();
-      const adjustedDay = eventDay === 0 ? 6 : eventDay - 1;
-      return adjustedDay === di && e.event_type === 'step_change';
-    });
-    
-    workflowSteps.forEach((step) => {
-      const stepEvents = dayEvents.filter(e => e.step_name === step.title);
-      const totalDuration = stepEvents.reduce((sum, e) => sum + (e.duration_seconds || 0), 0);
-      base[step.title] = Math.round(totalDuration / 60); // Convert to minutes
-    });
-    return base;
-  }),[roomHistory,workflowSteps,room]);
-
-  // Hourly event counts from recorded history
-  const hourlyEvents=useMemo(()=>dayCurve.map(d=>({
-    t:d.t,
-    events:d.v,
-  })),[dayCurve]);
-
-  // Phase bar - using room step durations calculated earlier
-  const phaseBar=useMemo(()=>workflowSteps.map((step,i)=>({
-    name:step.title.split(' ').slice(-1)[0],
-    pct:dist.find(d=>d.title===step.title)?.pct??0,
-    min:roomStepDurationsForCalc[i] || 0,
-    color:step.color,
-  })),[dist,roomStepDurationsForCalc,workflowSteps]);
-
-  // Pie from dist
-  const pieData=dist.filter(d=>d.min>0);
-
-  // 30-day cumulative from real data
-  const cumulData=useMemo(()=>{
-    const last30Days: Record<string, number> = {};
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000);
-      last30Days[date.toISOString().split('T')[0]] = 0;
-    }
-    
-    buildCompletedOperationsFromEvents(roomHistory).forEach(operation => {
-      const day = operation.startedAt.split('T')[0];
-      if (last30Days[day] !== undefined) {
-        last30Days[day] = (last30Days[day] || 0) + 1;
-      }
-    });
-    
+  // Context charts intentionally retain their explicit trailing-day windows,
+  // independent of the selected reporting period above.
+  const todayKey = operationalDayKey(now);
+  const weeklyStacked = useMemo(() => Array.from({ length: 7 }, (_, i) => {
+    const day = operationalToday();
+    day.setDate(day.getDate() - 6 + i);
+    const phases = roomDetailPhaseDistribution(trendHistory, room.id, workflowSteps, statisticsDayWindow(day));
+    return { day: day.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' }),
+      ...Object.fromEntries(phases.map(phase => [phase.title, phase.min])) };
+  }), [trendHistory, room.id, workflowSteps, todayKey]);
+  const cumulData = useMemo(() => {
     let cum = 0;
-    return Object.entries(last30Days).map(([_, daily], i) => {
+    return Array.from({ length: 30 }, (_, i) => {
+      const day = operationalToday();
+      day.setDate(day.getDate() - 29 + i);
+      const daily = countOperationsForDay(room, trendHistory, day);
       cum += daily;
-      return { d: `${i + 1}`, daily, cum };
+      return { d: day.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' }), daily, cum };
     });
-  },[roomHistory]);
-
-  // Utilisation per status (time-based %)
-  const cleanupDistribution = dist.find((entry) => (
-    entry.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes('uklid')
-  ));
-  const statusUtil=[
-    {label:'Výkon',      pct:utilPct,                         color:workflowSteps[3]?.color || '#FCA5A5'},
-    {label:'Anestezie',  pct:(dist.find(d=>d.title==='Začátek anestezie')?.pct??0)+(dist.find(d=>d.title==='Ukončení anestezie')?.pct??0), color:workflowSteps[2]?.color || '#C4B5FD'},
-    {label:'Příprava',   pct:(dist.find(d=>d.title==='Příjezd na sál')?.pct??0)+(dist.find(d=>d.title==='Ukončení výkonu')?.pct??0),       color:workflowSteps[1]?.color || '#5EEAD4'},
-    {label:'Úklid',      pct:cleanupDistribution?.pct??0,                                                                                  color:cleanupDistribution?.color || '#F97316'},
-    {label:'Volno',      pct:dist.find(d=>d.title==='Sál připraven')?.pct??0,                                                               color:workflowSteps[0]?.color || '#34D399'},
-  ];
-
+  }, [room, trendHistory, todayKey]);
   return(
     <div className="statistics-module statistics-settings fixed inset-0 z-50 flex justify-end" style={{background:'rgba(0,0,0,0.7)'}}>
       <button
@@ -341,14 +265,20 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
         </div>
 
         <div className="p-7 space-y-7">
+          <p className="text-xs" style={{ color: C.muted }}>{selectionLabel}</p>
+          {!ready ? (
+            <p role={error ? 'alert' : 'status'} style={{ color: error ? C.red : C.muted }}>
+              {error || 'Načítání statistik sálu…'}
+            </p>
+          ) : <>
 
           {/* KPI row */}
           <div className="grid grid-cols-4 gap-3">
             {[
-              {l:'Výkony / den',v:opsDay,       c:C.accent},
-              {l:'Využití výkonem',v:`${utilPct}%`, c:C.text},
-              {l:'Provoz',v:todayWorkingHoursLabel, c:C.muted},
-              {l:'Fronta',v:room.queueCount,    c:room.queueCount>0?C.yellow:C.muted},
+              {l:'Výkony ve výběru',v:opsDay, c:C.accent},
+              {l:'Vytížení sálu',v:hasCapacity ? `${utilPct}%` : '—', c:C.text},
+              {l:selectedDay ? 'Rozvrh dne' : 'Rozvrh dnes',v:todayWorkingHoursLabel, c:C.muted},
+              {l:'Fronta nyní',v:room.queueCount, c:room.queueCount>0?C.yellow:C.muted},
             ].map(k=>(
               <Card key={k.l} className="p-4 text-center">
                 <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{color:C.muted}}>{k.l}</p>
@@ -360,13 +290,15 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
           {/* Timeline bar */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <SectionLabel>Rozložení naměřených fází — {todayWorkingHoursLabel}</SectionLabel>
+              <SectionLabel>Rozložení naměřených fází — vybrané období</SectionLabel>
             </div>
+            {!hasCapacity && <p className="mb-3 text-xs" style={{ color: C.muted }}>Bez nastavené kapacity nelze určit vytížení. Skutečné výkony a naměřené časy jsou zachovány.</p>}
+            {tl.length === 0 && <p className="mb-3 text-xs" style={{ color: C.muted }}>Ve vybraném období nejsou doložené délky dokončených fází. Chybějící čas se neodhaduje.</p>}
             <div className="flex h-7 w-full rounded-lg overflow-hidden gap-px">
               {tl.map((seg,i)=>(
                 <div key={i} className="h-full relative"
                   style={{background:seg.color,opacity:0.88,width:`${seg.pct}%`}}
-                  title={`${seg.title} — ${seg.min} min (${seg.pct.toFixed(1)}%)`}>
+                  title={`${seg.title} — ${Math.round(seg.min)} min (${seg.pct.toFixed(1)}%)`}>
                   {seg.pct>=9&&(
                     <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-black/60 pointer-events-none">
                       {Math.round(seg.pct)}%
@@ -384,7 +316,7 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
                     <p className="text-[10px] leading-tight" style={{color:C.muted}}>{seg.title}</p>
                     <p className="text-xs font-bold leading-tight" style={{color:seg.color}}>
                       {Math.round(seg.pct)}%
-                      <span className="font-normal ml-1" style={{color:C.faint}}>{seg.min} min</span>
+                      <span className="font-normal ml-1" style={{color:C.faint}}>{Math.round(seg.min)} min</span>
                     </p>
                   </div>
                 </div>
@@ -395,7 +327,7 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
           {/* Row: Day curve + Status distribution */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Card className="p-5">
-              <SectionLabel>Zaznamenané události v průběhu dne</SectionLabel>
+              <SectionLabel>Události podle hodin — vybrané období</SectionLabel>
               <ResponsiveContainer width="100%" height={140} minWidth={0} minHeight={0}>
                 <AreaChart data={dayCurve} margin={{top:4,right:0,bottom:0,left:-24}}>
                   <defs>
@@ -405,14 +337,14 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="t" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
-                  <YAxis stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false} domain={[0,100]}/>
-                  <Tooltip {...TIP} formatter={(v:number)=>[`${v}%`,'Využití']}/>
+                  <YAxis stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false}/>
+                  <Tooltip {...TIP} formatter={(v:number)=>[v,'Události']}/>
                   <Area type="monotone" dataKey="v" stroke={sc} fill={`url(#rg${room.id})`} strokeWidth={1.5} dot={false}/>
                 </AreaChart>
               </ResponsiveContainer>
             </Card>
             <Card className="p-5">
-              <SectionLabel>Procentuální využití statusů</SectionLabel>
+              <SectionLabel>Podíl naměřeného času fází</SectionLabel>
               <div className="space-y-3">
                 {statusUtil.map((s,i)=>(
                   <div key={i}>
@@ -421,7 +353,7 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
                         <div className="w-2 h-2 rounded-[2px] shrink-0" style={{background:s.color}}/>
                         <span className="text-xs" style={{color:C.muted}}>{s.label}</span>
                       </div>
-                      <span className="text-sm font-bold" style={{color:s.color}}>{s.pct}%</span>
+                      <span className="text-sm font-bold" style={{color:s.color}}>{Math.round(s.pct)}%</span>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{background:C.ghost}}>
                       <div className="h-full rounded-full" style={{background:s.color,opacity:0.85,width:`${s.pct}%`}}/>
@@ -446,19 +378,19 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
               </ResponsiveContainer>
             </Card>
             <Card className="p-5">
-              <SectionLabel>Týdenní workflow fáze — min/den</SectionLabel>
+              <SectionLabel>Fáze — posledních 7 provozních dní</SectionLabel>
               <ResponsiveContainer width="100%" height={150} minWidth={0} minHeight={0}>
                 <BarChart data={weeklyStacked} margin={{top:4,right:0,bottom:0,left:-24}} barSize={16}>
                   <XAxis dataKey="day" stroke={C.ghost} fontSize={11} tickLine={false} axisLine={false}/>
                   <YAxis stroke={C.ghost} fontSize={10}  tickLine={false} axisLine={false}/>
-                  <Tooltip {...TIP}/>
-                  {workflowSteps.map(step=>(
+                  <Tooltip {...TIP} formatter={(v:number)=>[`${Math.round(v)} min`]}/>
+                  {dist.map(step=>(
                     <Bar key={step.title} dataKey={step.title} stackId="w" fill={step.color} opacity={0.8}/>
                   ))}
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                {workflowSteps.map(s=>(
+                {dist.map(s=>(
                   <div key={s.title} className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-[2px]" style={{background:s.color}}/>
                     <span className="text-[9px]" style={{color:C.faint}}>{s.title.split(' ').slice(-1)[0]}</span>
@@ -471,12 +403,12 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
           {/* Row: measured phase duration + cycle structure */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Card className="p-5">
-              <SectionLabel>Délka fází ��� minuty</SectionLabel>
+              <SectionLabel>Součet délek fází — minuty</SectionLabel>
               <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                 <BarChart data={phaseBar} layout="vertical" margin={{top:0,right:16,bottom:0,left:0}} barSize={8}>
                   <XAxis type="number" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
                   <YAxis type="category" dataKey="name" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false} width={52}/>
-                  <Tooltip {...TIP} formatter={(v:number)=>[`${v} min`,'Trvání']}/>
+                  <Tooltip {...TIP} formatter={(v:number)=>[`${Math.round(v)} min`,'Trvání']}/>
                   <Bar dataKey="min" radius={[0,2,2,0]}>
                     {phaseBar.map((e,i)=><Cell key={i} fill={e.color} opacity={0.82}/>)}
                   </Bar>
@@ -491,7 +423,7 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
                     innerRadius={34} outerRadius={56} paddingAngle={2} strokeWidth={0}>
                     {pieData.map((_,i)=><Cell key={i} fill={pieData[i].color} opacity={0.85}/>)}
                   </Pie>
-                  <Tooltip contentStyle={TIP.contentStyle} formatter={(v:number,name:string)=>[`${v}%`,name]}/>
+                  <Tooltip contentStyle={TIP.contentStyle} formatter={(v:number,name:string)=>[`${Math.round(v)}%`,name]}/>
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
@@ -507,12 +439,11 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
 
           {/* Cumulative 30-day */}
           <Card className="p-5">
-            <SectionLabel>Kumulativní počet výkonů — 30 dní</SectionLabel>
+            <SectionLabel>Zahájené výkony — posledních 30 provozních dní</SectionLabel>
             <ResponsiveContainer width="100%" height={120} minWidth={0} minHeight={0}>
               <ComposedChart data={cumulData} margin={{top:4,right:4,bottom:0,left:-16}}>
                 <CartesianGrid stroke="rgba(255,255,255,0.03)" strokeDasharray="3 3"/>
-                <XAxis dataKey="d" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}
-                  ticks={['1','5','10','15','20','25','30']}/>
+                <XAxis dataKey="d" stroke={C.ghost} fontSize={9} tickLine={false} axisLine={false}/>
                 <YAxis yAxisId="l" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
                 <YAxis yAxisId="r" orientation="right" stroke={C.ghost} fontSize={10} tickLine={false} axisLine={false}/>
                 <Tooltip {...TIP}/>
@@ -557,6 +488,7 @@ export const RoomDetailPanel:React.FC<RoomPanelProps> = ({room,onClose,workflowS
             </div>
           </div>
 
+          </>}
         </div>
       </div>
     </div>

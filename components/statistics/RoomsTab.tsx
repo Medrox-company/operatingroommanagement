@@ -39,7 +39,7 @@ export interface RoomsTabProps {
   /** Delší databázová historie určená pro výběr konkrétního dne v kalendáři. */
   calendarHistory: StatusHistoryRow[];
   periodLabel: Period;
-  onRoomSelect?: (room: OperatingRoom) => void;
+  onRoomSelect?: (room: OperatingRoom, day: Date | null) => void;
   calculateRoomUtilization: (room: OperatingRoom, history: StatusHistoryRow[], period: Period) => number;
   countOperationsInWorkingHours: (room: OperatingRoom, history: StatusHistoryRow[], period: Period) => number;
   calculateRoomUtilizationForDay: (room: OperatingRoom, history: StatusHistoryRow[], date: Date) => number;
@@ -257,6 +257,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
     day: 'numeric', month: 'long', year: 'numeric',
   }), [calendarDay]);
   const activePeriodLabel = calendarSelectionActive ? selectedDayLabel : periodLabel;
+  const openRoom = (room: OperatingRoom) => onRoomSelect?.(room, calendarSelectionActive ? calendarDay : null);
   const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? calendarHistory : statusHistory,
     calendarSelectionActive ? statisticsDayWindow(calendarDay) : statisticsPeriodWindow(periodLabel)),
   [allRooms, calendarHistory, statusHistory, calendarSelectionActive, calendarDay, periodLabel]);
@@ -687,7 +688,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
                   <button
                     type="button"
                     key={r.room.id}
-                    onClick={() => onRoomSelect?.(r.room)}
+                    onClick={() => openRoom(r.room)}
                     aria-label={`${r.room.name}, využití ${r.hasCapacity ? `${Math.round(r.utilization)} procent` : 'nelze určit bez kapacity'}`}
                     className="group relative min-h-[88px] min-w-0 overflow-hidden rounded-lg p-2.5 text-center transition-colors hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2"
                     style={{ background: 'var(--stats-surface-2)', border: `1px solid ${C.border}`, color }}
@@ -812,7 +813,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
               hasCapacity={data.hasCapacity}
               opsCount={data.operations}
               avgOpTime={data.avgOpTime}
-              onClick={() => onRoomSelect?.(data.room)}
+              onClick={() => openRoom(data.room)}
             />
           ))}
         </div>
@@ -855,7 +856,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
                     key={data.room.id}
                     className="border-t cursor-pointer hover:bg-white/[0.02] transition-colors"
                     style={{ borderColor: C.ghost }}
-                    onClick={() => onRoomSelect?.(data.room)}
+                    onClick={() => openRoom(data.room)}
                   >
                     <td className="px-4 py-3 font-bold" style={{ color: C.textHi }}>{data.room.name}</td>
                     <td className="px-4 py-3 text-right">

@@ -27,6 +27,7 @@ import { clearRoomAroOvertimeStart, fetchTimelineSchedules, markRoomAroOvertimeS
 import { deriveTimelineOperationalWarnings } from '../lib/timeline-operational-warnings';
 import { useTimelineCompletedOperations } from '../hooks/useTimelineCompletedOperations';
 import { mergeCompletedOperations } from '../lib/completed-operations';
+import { completedCycleSnapshot, dailyCycleStatistics, type CompletedTimelineCycle } from '../lib/timeline-cycle-statistics';
 import { useNowDate, useNowMsAtGranularity } from '../hooks/useSharedClock';
 import { useOperationalThresholds } from '../hooks/useOperationalThresholds';
 
@@ -245,8 +246,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   ), [rooms, plannedSchedules, currentTime, activeStatuses, operationalWindow]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<OperatingRoom | null>(null);
-  const [selectedDetailTime, setSelectedDetailTime] = useState<Date | null>(null);
-  const [selectedPhaseEndTime, setSelectedPhaseEndTime] = useState<Date | null>(null);
+  const [selectedCycleEndTime, setSelectedCycleEndTime] = useState<Date | null>(null);
   const [showLegend, setShowLegend] = useState(false);
   const [rowHeight, setRowHeight] = useState<number>(MAX_ROW_HEIGHT);
   // Hustota řádků: 'auto' = vejít vše na obrazovku; 'compact' = víc sálů (pevná nízká
@@ -304,15 +304,13 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   const openLiveRoom = useCallback((roomOrId: OperatingRoom | string) => {
     setSelectedRoom(null);
     setSelectedRoomId(typeof roomOrId === 'string' ? roomOrId : roomOrId.id);
-    setSelectedDetailTime(null);
-    setSelectedPhaseEndTime(null);
+    setSelectedCycleEndTime(null);
   }, []);
 
   const closeRoomDetail = useCallback(() => {
     setSelectedRoomId(null);
     setSelectedRoom(null);
-    setSelectedDetailTime(null);
-    setSelectedPhaseEndTime(null);
+    setSelectedCycleEndTime(null);
   }, []);
 
   const detailRoom = useMemo(() => {
@@ -321,34 +319,10 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
     return rooms.find(room => room.id === selectedRoomId) ?? null;
   }, [rooms, selectedRoom, selectedRoomId]);
 
-  const openHistoricalPhase = useCallback((
-    room: OperatingRoom,
-    history: NonNullable<OperatingRoom['statusHistory']>,
-    phaseIndex: number,
-    operationStartedAt: string,
-    phaseEndedAt: string,
-    cycleEndedAt: string = phaseEndedAt,
-  ) => {
-    const phase = history[phaseIndex];
-    if (!phase) return;
-
+  const openCompletedCycle = useCallback((room: OperatingRoom, cycle: CompletedTimelineCycle) => {
     setSelectedRoomId(null);
-    setSelectedDetailTime(new Date(cycleEndedAt));
-    setSelectedPhaseEndTime(new Date(phaseEndedAt));
-    setSelectedRoom({
-      ...room,
-      // Historický snímek nesmí být nahrazen aktuálním sálem při živém refetchi.
-      id: `${room.id}:history:${operationStartedAt}:${phaseIndex}`,
-      currentStepIndex: phase.stepIndex,
-      operationStartedAt,
-      phaseStartedAt: phase.startedAt,
-      estimatedEndTime: phaseEndedAt,
-      // Procenta vždy vycházejí z celého dostupného cyklu; zvýrazněná fáze
-      // má samostatný konec pro správný údaj „ve fázi“.
-      statusHistory: history,
-      isPaused: false,
-      pausedAt: null,
-    });
+    setSelectedCycleEndTime(new Date(cycle.endedAt));
+    setSelectedRoom(completedCycleSnapshot(room, cycle));
   }, []);
 
   useEffect(() => {
@@ -626,21 +600,9 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
       };
 
       let occupiedMs = 0;
-      let operations = 0;
-      let pausedMs = 0;
-      const phaseMs: Record<number, number> = {}; // stepIndex (pozice) → ms
-
-      // Akumulace času po fázích z historie statusů jedné operace
-      const accumulatePhases = (history: Array<{ stepIndex: number; startedAt: string }> | undefined, opEndMs: number) => {
-        if (!history || history.length === 0) return;
-        history.forEach((entry, idx) => {
-          const segStart = new Date(entry.startedAt).getTime();
-          const next = history[idx + 1];
-          const segEnd = next ? new Date(next.startedAt).getTime() : opEndMs;
-          const dur = workingOverlapMs(segStart, segEnd);
-          if (dur > 0) phaseMs[entry.stepIndex] = (phaseMs[entry.stepIndex] || 0) + dur;
-        });
-      };
+      // Počet cyklů a fáze jsou za celý den, nejen za nastavenou směnu.
+      // Směna omezuje pouze výpočet využití pracovní kapacity.
+      const { operations, durationMs, phaseMs, pausedMs, isRunning } = dailyCycleStatistics(room, currentTime);
 
       // Dokončené operace — započítá se výhradně průnik se směnou.
       (room.completedOperations || []).forEach((op) => {
@@ -650,24 +612,18 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
           const occupiedInShift = workingOverlapMs(s, e);
           if (occupiedInShift <= 0) return;
           occupiedMs += occupiedInShift;
-          operations += 1;
-          accumulatePhases(op.statusHistory, e);
         }
       });
 
       // Probíhající operace — pouze její část uvnitř směny; pauza se nepočítá.
-      const isRunning = room.currentStepIndex > 0 && room.currentStepIndex < 6 && !room.isLocked;
       if (isRunning && room.operationStartedAt) {
         const s = new Date(room.operationStartedAt as string).getTime();
         const pauseStart = room.isPaused && room.pausedAt ? new Date(room.pausedAt).getTime() : NaN;
         const measuredEnd = Number.isFinite(pauseStart) ? Math.min(now, pauseStart) : now;
         const occupiedInShift = workingOverlapMs(s, measuredEnd);
         if (occupiedInShift > 0) {
-          operations += 1;
           occupiedMs += occupiedInShift;
-          accumulatePhases(room.statusHistory, measuredEnd);
         }
-        if (Number.isFinite(pauseStart) && now > pauseStart) pausedMs = workingOverlapMs(pauseStart, now);
       }
 
       // Databázové duplicity ani souběžné intervaly nesmí překročit kapacitu.
@@ -680,7 +636,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
         ? Math.min(100, Math.max(0, Math.round((occupiedMinutes / workingMinutes) * 100)))
         : 0;
 
-      const avgOpMin = operations > 0 ? Math.round(occupiedMs / 60000 / operations) : 0;
+      const avgOpMin = operations > 0 ? Math.round(durationMs / 60000 / operations) : 0;
 
       // Sestavení fází cyklu pro per-room timeline (seřazeno dle pozice)
       const phases = Object.entries(phaseMs)
@@ -1093,8 +1049,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
             key={detailRoom.id}
             room={detailRoom}
             onClose={closeRoomDetail}
-            currentTime={selectedDetailTime ?? currentTime}
-            selectedPhaseEndTime={selectedPhaseEndTime}
+            cycleEndedAt={selectedCycleEndTime}
           />
         )}
         {showAroPopup && (
@@ -1117,7 +1072,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
           const kpis: { label: string; value: string; color: string }[] = [
             { label: 'Vytíženost', value: closed ? '—' : `${sr.utilizationPct}%`, color: col },
             { label: 'Operace dnes', value: `${sr.operations}`, color: C.cyan },
-            { label: 'Obsazené', value: fmtMin(sr.occupiedMinutes), color: C.textHi },
+            { label: 'Obsazeno ve směně', value: sr.workingMinutes > 0 ? fmtMin(sr.occupiedMinutes) : '—', color: C.textHi },
             { label: 'Pracovní', value: sr.workingMinutes > 0 ? fmtMin(sr.workingMinutes) : '—', color: 'rgba(255,255,255,0.7)' },
             { label: 'Ø délka operace', value: sr.avgOpMin > 0 ? fmtMin(sr.avgOpMin) : '—', color: C.textHi },
             { label: 'Pauza', value: sr.pausedMinutes > 0 ? fmtMin(sr.pausedMinutes) : '—', color: sr.pausedMinutes > 0 ? C.cyan : 'rgba(255,255,255,0.4)' },
@@ -1329,7 +1284,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
       {/* Hover tooltip pro probíhající operace — fixed pozice u kurzoru, mimo overflow clip */}
       <AnimatePresence>
-        {hoveredOp && hoveredOp.completed && (() => {
+        {!detailRoom && !statsRoomId && hoveredOp && hoveredOp.completed && (() => {
           const r = hoveredOp.room;
           const c = hoveredOp.completed;
           const startMs = new Date(c.startedAt).getTime();
@@ -1386,7 +1341,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
             </motion.div>
           );
         })()}
-        {hoveredOp && !hoveredOp.completed && (() => {
+        {!detailRoom && !statsRoomId && hoveredOp && !hoveredOp.completed && (() => {
           const r = hoveredOp.room;
           const stepIdx = Math.max(0, Math.min(r.currentStepIndex, activeStatuses.length - 1));
           const step = activeStatuses[stepIdx] || statusByOrderIndex[r.currentStepIndex] || null;
@@ -1838,7 +1793,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 statusAtTime={statusAtTime}
                 utilColor={utilColor}
                 openLiveRoom={openLiveRoom}
-                openHistoricalPhase={openHistoricalPhase}
+                openCompletedCycle={openCompletedCycle}
                 setStatsRoomId={setStatsRoomId}
                 setHoveredOp={setHoveredOp}
               />

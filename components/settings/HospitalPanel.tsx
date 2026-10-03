@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useId } from 'react';
 import { Building2, AlertTriangle, Check, Loader2, Save, Lock, Mail, Phone, MapPin, Hash, Smartphone } from 'lucide-react';
 import { type Hospital } from '../../contexts/HospitalContext';
 import { HospitalInfo } from './settings-types';
@@ -29,6 +29,8 @@ export interface HospitalPanelProps {
 }
 
 export const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospitals, activeHospitalId, onSelectHospital, onNewHospital, loading, saving, message, onChange, onSave, isAdmin, isInstallable, isInstalled, onPWAInstall, pwInstallLoading }) => {
+  const hospitalSelectId = useId();
+  const notesId = useId();
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -48,16 +50,17 @@ export const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospital
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+      <div className="system-settings-hospital-picker flex flex-col sm:flex-row gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
         <div className="flex-1">
-          <label className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-cyan-200/60">
+          <label htmlFor={hospitalSelectId} className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-cyan-200/60">
             Aktivní nemocniční zařízení
           </label>
           <select
+            id={hospitalSelectId}
             value={hospital.id || activeHospitalId || ''}
             onChange={e => onSelectHospital(e.target.value)}
             disabled={!hospital.id}
-            className="h-10 w-full rounded-lg border border-white/[0.08] bg-[#10182a] px-3 text-sm text-white outline-none transition-colors focus:border-cyan-200/30 disabled:opacity-50"
+            className="h-10 w-full rounded-lg border border-white/[0.08] bg-[#10182a] px-3 text-sm text-white transition-colors focus:border-cyan-200/30 disabled:opacity-50"
           >
             {!hospital.id && <option value="">Nové zařízení</option>}
             {hospitals.map(item => (
@@ -69,7 +72,7 @@ export const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospital
           <button
             type="button"
             onClick={onNewHospital}
-            className="flex h-10 shrink-0 items-center gap-2 self-end rounded-lg border border-cyan-200/[0.20] bg-cyan-300/[0.10] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-cyan-100 hover:bg-cyan-300/[0.16]"
+            className="system-settings-secondary flex h-10 shrink-0 items-center gap-2 self-end rounded-lg border border-cyan-200/[0.20] bg-cyan-300/[0.10] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-cyan-100 hover:bg-cyan-300/[0.16]"
           >
             <Building2 className="w-4 h-4" />
             Přidat zařízení
@@ -147,16 +150,17 @@ export const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospital
           type="email"
         />
         <div className="md:col-span-2">
-          <label className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">
+          <label htmlFor={notesId} className="mb-2 block text-[8px] font-bold uppercase tracking-[0.16em] text-white/38">
             Poznámky
           </label>
           <textarea
+            id={notesId}
             value={hospital.hospital_notes ?? ''}
             onChange={e => onChange('hospital_notes', e.target.value)}
             rows={3}
             disabled={!isAdmin}
             placeholder="Interní poznámky ke konfiguraci zařízení..."
-            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#0EA5E9]/50 focus:ring-1 focus:ring-[#0EA5E9]/30 transition-all resize-none disabled:opacity-50"
+            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:border-cyan-200/30 transition-colors resize-none disabled:opacity-50"
           />
         </div>
       </div>
@@ -178,11 +182,7 @@ export const HospitalPanel: React.FC<HospitalPanelProps> = ({ hospital, hospital
         <button
           onClick={onSave}
           disabled={!isAdmin || saving}
-          className="flex h-10 items-center gap-2 rounded-lg px-5 text-[9px] font-semibold uppercase tracking-[0.08em] text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-          style={{
-            background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)',
-            boxShadow: '0 0 30px rgba(14,165,233,0.3)',
-          }}
+          className="system-settings-primary flex h-10 items-center gap-2 rounded-lg px-5 text-[9px] font-semibold uppercase tracking-[0.08em] text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           <span>{hospital.id ? 'Uložit informace' : 'Vytvořit zařízení'}</span>

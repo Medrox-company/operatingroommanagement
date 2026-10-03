@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { AlertCircle, ArrowLeftRight, LogOut, RefreshCw, Scissors, Sparkles, Stethoscope, type LucideIcon } from 'lucide-react';
+import { AlertCircle, ArrowLeftRight, LogOut, RefreshCw, Scissors, SlidersHorizontal, Sparkles, Stethoscope, Timer, type LucideIcon } from 'lucide-react';
 import {
   CartesianGrid,
   Line,
@@ -117,16 +117,6 @@ function TrendChart({ months, mode, metric }: {
           <Line type="linear" dataKey="p90" name="p90" stroke="var(--performance-p90)" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 2.5, strokeWidth: 1.5, fill: 'var(--stats-surface-3)' }} activeDot={{ r: 5 }} connectNulls={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
-    </div>
-  );
-}
-
-function SummaryTile({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="stats-performance-summary-tile">
-      <p className="stats-performance-eyebrow">{label}</p>
-      <p className="stats-performance-summary-value">{value}</p>
-      <p className="stats-performance-fine-print">{detail}</p>
     </div>
   );
 }
@@ -261,11 +251,13 @@ export function PerformanceTab({ rooms, history, isLoading, error, loadedAt, onR
 
   return (
     <section className="stats-performance space-y-4" aria-label="Měsíční výkonnost operačních sálů">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="min-w-0 flex flex-col gap-4 xl:order-2">
       <div className="stats-performance-intro">
         <div>
           <p className="stats-performance-eyebrow">Historie událostí · 12 kalendářních měsíců</p>
           <h2 className="stats-performance-heading">Výkonnost provozu</h2>
-          <p className="stats-performance-description">Průměrné časy z doložených událostí. Vyberte ukazatel pro podrobný měsíční trend; období boxů nastavíte níže.</p>
+          <p className="stats-performance-description">Průměrné časy z doložených událostí. Vyberte ukazatel pro podrobný měsíční trend; období boxů nastavíte v panelu Výběr dat.</p>
         </div>
         <div className="stats-performance-freshness">
           <span>{sourcesLoading ? 'Obnovuji historii…' : loadedLabel ? `Načteno ${loadedLabel}` : 'Čas načtení není k dispozici'}</span>
@@ -273,25 +265,6 @@ export function PerformanceTab({ rooms, history, isLoading, error, loadedAt, onR
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-      </div>
-
-      <div className="stats-performance-controls">
-        <label className="stats-performance-room-filter">
-          <span>Období boxů</span>
-          <select value={monthKey === 'all' ? 'all' : selectedMonth.key} onChange={event => setMonthKey(event.target.value)}>
-            {[...months].reverse().map(month => <option key={month.key} value={month.key}>{month.label}{month.isPartial ? ' (průběžně)' : ''}</option>)}
-            <option value="all">Celých 12 měsíců</option>
-          </select>
-        </label>
-        <label className="stats-performance-room-filter">
-          <span>Sál</span>
-          <select value={selectedRoom ? selectedRoom.id : 'all'} onChange={event => setRoomId(event.target.value)}>
-            <option value="all">Všechny sály</option>
-            {[...rooms].sort((a, b) => a.name.localeCompare(b.name, 'cs-CZ')).map(room => (
-              <option key={room.id} value={room.id}>{room.name}</option>
-            ))}
-          </select>
-        </label>
       </div>
 
       <fieldset className="stats-performance-metric-grid" aria-label="Ukazatel výkonnosti">
@@ -329,14 +302,6 @@ export function PerformanceTab({ rooms, history, isLoading, error, loadedAt, onR
         </label>
       </Card>
 
-      <div className="stats-performance-summary">
-        <SummaryTile label="Uzavřený měsíc" value={latestClosed?.label ?? '—'} detail="Probíhající měsíc není podkladem souhrnu" />
-        <SummaryTile label="Průměr" value={formatMinutes(latestValues?.average ?? null)} detail={metricLabel} />
-        <SummaryTile label="90. percentil" value={formatMinutes(latestValues?.p90 ?? null)} detail="Devět z deseti měření je nejvýše tato doba" />
-        <SummaryTile label="Počet měření" value={latestSummary?.observed ? wholeFormatter.format(latestValues?.count ?? 0) : '—'} detail={`Z ${wholeFormatter.format(latestSummary?.observed ?? 0)} posuzovaných intervalů`} />
-      </div>
-      <p className="stats-performance-month-delta" role="status">{averageDifferenceLabel} Srovnání pouze uzavřených měsíců. Jde o změnu naměřené doby, ne o hodnocení kvality péče.</p>
-
       <Card className="stats-performance-chart-card p-3 sm:p-5">
         <div className="stats-performance-chart-head">
           <div>
@@ -367,6 +332,50 @@ export function PerformanceTab({ rooms, history, isLoading, error, loadedAt, onR
           </div>
         )}
       </Card>
+
+        </div>
+        <aside className="stats-performance-sidebar min-w-0 flex flex-col gap-4 xl:order-1" aria-label="Souhrn výkonnosti">
+          <Card className="stats-performance-overview">
+            <div className="flex items-center justify-between gap-3">
+              <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ color: C.accent, background: C.surface2, border: `1px solid ${C.border}` }}><Timer size={16} aria-hidden="true" /></span>
+              <span className="rounded-md border px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.1em]" style={{ color: C.muted, borderColor: C.border }}>Uzavřený měsíc</span>
+            </div>
+            <h2 className="stats-performance-card-title mt-4">{metricLabel}</h2>
+            <p className="stats-performance-fine-print">{latestClosed?.label ?? 'Bez uzavřeného měsíce'} · {roomLabel}</p>
+            <p className="stats-performance-overview-value">{formatMinutes(latestValues?.average ?? null)}</p>
+            <p className="stats-performance-fine-print">Průměrná doba z reálných měření</p>
+            <dl className="stats-performance-overview-details">
+              <div><dt>90. percentil</dt><dd>{formatMinutes(latestValues?.p90 ?? null)}</dd></div>
+              <div><dt>Počet měření</dt><dd>{latestSummary?.observed ? wholeFormatter.format(latestValues?.count ?? 0) : '—'}</dd></div>
+              <div><dt>Posuzované intervaly</dt><dd>{wholeFormatter.format(latestSummary?.observed ?? 0)}</dd></div>
+            </dl>
+            <p className="stats-performance-fine-print">90. percentil: devět z deseti měření je nejvýše tato doba. Probíhající měsíc není podkladem souhrnu.</p>
+            <div className="mt-4 border-t pt-4" style={{ borderColor: C.border }}>
+              <p className="stats-performance-eyebrow">Meziměsíční srovnání</p>
+              <p className="stats-performance-fine-print" role="status">{averageDifferenceLabel}</p>
+              <p className="stats-performance-fine-print">Pouze uzavřené měsíce. Změna doby není hodnocením kvality péče.</p>
+            </div>
+          </Card>
+          <Card title="Výběr dat" icon={SlidersHorizontal}>
+            <div className="stats-performance-sidebar-filters">
+              <label className="stats-performance-room-filter">
+                <span>Období boxů</span>
+                <select value={monthKey === 'all' ? 'all' : selectedMonth.key} onChange={event => setMonthKey(event.target.value)}>
+                  {[...months].reverse().map(month => <option key={month.key} value={month.key}>{month.label}{month.isPartial ? ' (průběžně)' : ''}</option>)}
+                  <option value="all">Celých 12 měsíců</option>
+                </select>
+              </label>
+              <label className="stats-performance-room-filter">
+                <span>Sál</span>
+                <select value={selectedRoom ? selectedRoom.id : 'all'} onChange={event => setRoomId(event.target.value)}>
+                  <option value="all">Všechny sály</option>
+                  {[...rooms].sort((a, b) => a.name.localeCompare(b.name, 'cs-CZ')).map(room => <option key={room.id} value={room.id}>{room.name}</option>)}
+                </select>
+              </label>
+            </div>
+          </Card>
+        </aside>
+      </div>
 
       <div className="grid gap-4">
         <Card className="p-3 sm:p-5">

@@ -1031,10 +1031,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
       {/* Staff Names - Top Right next to close button */}
       <div
-        className="absolute z-50 flex flex-row gap-[clamp(0.5rem,1vw,0.75rem)]"
+        className="absolute z-50 flex flex-row gap-[clamp(0.5rem,1.5vw,1rem)]"
         style={{
           top: 'clamp(0.75rem, 4vh, 2rem)',
-          right: 'calc(clamp(3.5rem, min(7.5vw, 14vh), 6rem) + clamp(1.5rem, 3vw, 3rem))',
+          right: 'calc(clamp(0.75rem, 2.5vw, 2rem) + clamp(3.5rem, min(7.5vw, 14vh), 6rem) + clamp(0.5rem, 1.5vw, 1rem))',
           height: 'clamp(3.5rem, min(7.5vw, 14vh), 6rem)',
         }}
       >

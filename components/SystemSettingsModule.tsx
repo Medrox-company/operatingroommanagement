@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ModulePageHeading from './ModulePageHeading';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Settings as SettingsIcon, Building2, Database, Lock, UserCog, LayoutGrid, SlidersHorizontal, Smartphone, ShieldOff, Gauge } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Settings as SettingsIcon, Building2, Database, Lock, UserCog, LayoutGrid, SlidersHorizontal, Smartphone, ShieldOff, Gauge, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useHospital } from '../contexts/HospitalContext';
 import { logger } from '../lib/logger';
@@ -18,16 +18,18 @@ import { ModulesPanel } from './settings/ModulesPanel';
 import { ResetConfirmModal } from './settings/ResetConfirmModal';
 import { ImportConfirmModal } from './settings/ImportConfirmModal';
 import { TabId, SETTINGS_TAB_SUBMODULE } from './settings/settings-tabs';
+import './settings/system-settings.css';
 
 const SETTINGS_TABS = [
-  { id: 'hospital' as const, label: 'Zdravotnické zařízení', icon: Building2, sub: 'settings.hospital' },
-  { id: 'modules' as const, label: 'Správa modulů', icon: SlidersHorizontal, sub: 'settings.modules' },
-  { id: 'diagnostics' as const, label: 'Rychlost a připojení', icon: Gauge, sub: 'settings.diagnostics' },
-  { id: 'database' as const, label: 'Administrace databáze', icon: Database, sub: 'settings.database' },
-  { id: 'access' as const, label: 'Přihlášení a přístup', icon: UserCog, sub: 'settings.access' },
+  { id: 'hospital' as const, label: 'Zdravotnické zařízení', description: 'Identita a kontaktní údaje', icon: Building2, sub: 'settings.hospital' },
+  { id: 'modules' as const, label: 'Správa modulů', description: 'Dostupnost a oprávnění rolí', icon: SlidersHorizontal, sub: 'settings.modules' },
+  { id: 'diagnostics' as const, label: 'Rychlost a připojení', description: 'Odezva a diagnostika aplikace', icon: Gauge, sub: 'settings.diagnostics' },
+  { id: 'database' as const, label: 'Administrace databáze', description: 'Zálohy, import a správa dat', icon: Database, sub: 'settings.database' },
+  { id: 'access' as const, label: 'Přihlášení a přístup', description: 'Účet a možnosti přihlášení', icon: UserCog, sub: 'settings.access' },
 ];
 
 const SystemSettingsModule: React.FC = () => {
+  const reduceMotion = useReducedMotion();
   const { user, isAdmin, isSuperAdmin, canManageModuleRoles, logout, modules, submodules, toggleModule, toggleModuleRole, toggleSubmodule, toggleSubmoduleRole, hasSubmoduleAccess } = useAuth();
   const { hospitals, activeHospital, activeHospitalId, selectHospital, refreshHospitals, loading: hospitalsLoading } = useHospital();
   // Otevřený panel přežije i případné přemontování komponenty (např. když
@@ -351,72 +353,61 @@ const SystemSettingsModule: React.FC = () => {
   // ==========================================================================
 
   return (
-    <div className="statistics-module min-h-full w-full pb-10 font-sans">
+    <div className="statistics-module system-settings min-h-full w-full pb-10 font-sans">
       <header className="mb-7">
         <ModulePageHeading icon={SettingsIcon} kicker="SYSTEM CONTROL" title="NASTAVENÍ" mutedTitle="SYSTÉMU" />
       </header>
 
-      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
-        <div className="flex min-w-max items-center gap-2.5">
-          {[
-            ...(isSuperAdmin
-              ? [{ label: 'Zařízení', value: systemStats.hospital, suffix: 'konfigurace', color: systemStats.hospital ? COLORS.green : COLORS.amber, icon: Building2 }]
-              : []),
-            { label: 'Aktivní moduly', value: systemStats.enabledModules, suffix: 'modulů', color: COLORS.cyan, icon: LayoutGrid },
-            { label: 'Vypnuté moduly', value: systemStats.disabledModules, suffix: 'modulů', color: systemStats.disabledModules ? COLORS.amber : COLORS.green, icon: ShieldOff },
-            { label: 'Nastavené role', value: systemStats.configuredRoles, suffix: 'rolí', color: COLORS.blue, icon: UserCog },
-            { label: 'Instalace PWA', value: systemStats.pwa, suffix: systemStats.pwa ? 'aktivní' : 'prohlížeč', color: COLORS.violet, icon: Smartphone },
-          ].map(({ label, value, suffix, color, icon: Icon }) => (
-            <div
-              key={label}
-              className="relative flex h-[68px] w-[112px] shrink-0 items-center overflow-hidden rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[128px]"
-            >
-              <div className="flex w-full items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
-                  <div className="mt-1.5 flex items-baseline gap-1">
-                    <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{value}</span>
-                    <span className="text-[8px] font-medium text-white/28">{suffix}</span>
-                  </div>
-                </div>
-                <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} style={{ color }} />
-              </div>
-            </div>
-          ))}
-          <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
-          <nav className="flex items-center gap-1 rounded-lg border border-white/[0.05] bg-black/10 p-1" aria-label="Sekce nastavení systému">
-{/* Panely Nastavení jsou podmoduly — superadministrátor u nich řídí, které
-    role je uvidí. Zakázaný panel se v liště vůbec nezobrazí. */}
-{availableTabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex h-8 items-center gap-2 whitespace-nowrap rounded-md px-3 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 ${isActive ? 'bg-white/[0.09] text-cyan-300' : 'text-white/40 hover:bg-white/[0.045] hover:text-white/70'}`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      <div className="system-settings-workspace">
+        <aside className="system-settings-sections" aria-label="Přehled nastavení">
+          <div className="system-settings-intro">
+            <span className="system-settings-badge"><SettingsIcon size={14} aria-hidden="true" /> Konfigurace aplikace</span>
+            <h2>Vše na jednom místě</h2>
+            <p>Vyberte oblast, kterou chcete spravovat.</p>
+          </div>
+          <nav className="system-settings-nav" aria-label="Sekce nastavení systému">
+            {/* Zachováváme oprávnění podmodulů; nepřístupné sekce se nenabízejí. */}
+            {availableTabs.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  id={`system-settings-nav-${tab.id}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-controls={isActive ? 'system-settings-content' : undefined}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="system-settings-nav-item"
+                >
+                  <span className="system-settings-nav-icon"><Icon size={18} strokeWidth={1.5} aria-hidden="true" /></span>
+                  <span className="system-settings-nav-copy">
+                    <span>{tab.label}</span>
+                    <small>{tab.description}</small>
+                  </span>
+                  <ChevronRight className="system-settings-nav-arrow" size={15} aria-hidden="true" />
+                </button>
+              );
+            })}
           </nav>
-        </div>
-      </section>
+        </aside>
 
-      <div className="relative overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 sm:p-6">
+      <section
+        id="system-settings-content"
+        className="system-settings-content"
+        aria-labelledby={activeTabIsAvailable ? `system-settings-nav-${activeTab}` : undefined}
+        aria-label={activeTabIsAvailable ? undefined : 'Nastavení systému'}
+      >
 
         <AnimatePresence mode="wait">
           {activeTab === 'hospital' && isSuperAdmin && activeTabIsAvailable && (
             <motion.div
               key="hospital"
-              initial={{ opacity: 0, y: 8 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="relative"
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              className="system-settings-panel relative"
             >
             <HospitalPanel
               hospital={hospital}
@@ -441,11 +432,11 @@ const SystemSettingsModule: React.FC = () => {
           {activeTab === 'modules' && activeTabIsAvailable && (
             <motion.div
               key="modules"
-              initial={{ opacity: 0, y: 8 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="relative"
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              className="system-settings-panel relative"
             >
               <ModulesPanel
                 isAdmin={isAdmin}
@@ -463,11 +454,11 @@ const SystemSettingsModule: React.FC = () => {
           {activeTab === 'diagnostics' && activeTabIsAvailable && (
             <motion.div
               key="diagnostics"
-              initial={{ opacity: 0, y: 8 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="relative"
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              className="system-settings-panel relative"
             >
               <SpeedDiagnosticsPanel
                 hospitalId={activeHospitalId}
@@ -479,11 +470,11 @@ const SystemSettingsModule: React.FC = () => {
           {activeTab === 'database' && activeTabIsAvailable && (
             <motion.div
               key="database"
-              initial={{ opacity: 0, y: 8 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="relative"
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              className="system-settings-panel relative"
             >
               <DatabasePanel
                 isAdmin={isAdmin}
@@ -516,11 +507,11 @@ const SystemSettingsModule: React.FC = () => {
   {activeTab === 'access' && activeTabIsAvailable && (
             <motion.div
               key="access"
-              initial={{ opacity: 0, y: 8 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="relative"
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              className="system-settings-panel relative"
             >
               <AccessPanel user={user} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} onLogout={logout} hospitalName={hospital.hospital_name} hospitalId={activeHospitalId} />
             </motion.div>
@@ -535,6 +526,26 @@ const SystemSettingsModule: React.FC = () => {
             </div>
           </div>
         )}
+      </section>
+        <section className="system-settings-overview" aria-label="Souhrn konfigurace">
+          <h3>Souhrn konfigurace</h3>
+          <dl className="system-settings-metrics">
+            {[
+              ...(isSuperAdmin
+                ? [{ label: 'Zařízení', value: systemStats.hospital, suffix: 'konfigurace', color: systemStats.hospital ? COLORS.green : COLORS.amber, icon: Building2 }]
+                : []),
+              { label: 'Aktivní moduly', value: systemStats.enabledModules, suffix: 'modulů', color: COLORS.cyan, icon: LayoutGrid },
+              { label: 'Vypnuté moduly', value: systemStats.disabledModules, suffix: 'modulů', color: systemStats.disabledModules ? COLORS.amber : COLORS.green, icon: ShieldOff },
+              { label: 'Nastavené role', value: systemStats.configuredRoles, suffix: 'rolí', color: COLORS.blue, icon: UserCog },
+              { label: 'Instalace PWA', value: systemStats.pwa, suffix: systemStats.pwa ? 'aktivní' : 'prohlížeč', color: COLORS.violet, icon: Smartphone },
+            ].map(({ label, value, suffix, color, icon: Icon }) => (
+              <div key={label} className="system-settings-metric">
+                <dt><Icon size={14} strokeWidth={1.5} style={{ color }} aria-hidden="true" />{label}</dt>
+                <dd><span>{value}</span><small>{suffix}</small></dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       </div>
 
       {/* Reset confirmation modal */}

@@ -330,22 +330,25 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         {/* Central Content Wrapper */}
         <div className="dashboard-workspace-cycle">
             <div className="relative flex items-center justify-center">
-                {/* Static glow behind the circle - replaced motion for performance */}
-                <div
-                  className="glow-core absolute rounded-full"
-                  style={{ width: 72, height: 72, ['--glow' as string]: themeColor, opacity: 0.13 }}
-                />
                 <svg
                   viewBox="0 0 112 112"
                   className="dashboard-workspace-cycle-indicator flex-shrink-0 select-none overflow-visible"
                   style={{ transform: 'rotate(-90deg)' }}
                 >
+                    {/* Záře pouze kolem obvodu; střed zůstává průhledný. */}
+                    <circle
+                      cx={center} cy={center} r={radius + 2}
+                      fill="none"
+                      stroke={themeColor}
+                      strokeWidth="3"
+                      opacity="0.22"
+                      style={{ filter: 'blur(3px)' }}
+                    />
                     <circle 
                       cx={center} cy={center} r={radius} 
-                      fill="rgba(255,255,255,0.012)"
-                      stroke="white" 
-                      strokeWidth="1.5" 
-                      className="opacity-[0.055]"
+                      fill="none"
+                      stroke="rgba(209, 221, 252, 0.16)"
+                      strokeWidth="1"
                     />
                     <circle 
                       cx={center} cy={center} r={radius} 

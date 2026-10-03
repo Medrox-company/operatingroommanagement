@@ -113,10 +113,121 @@ const props = (overrides = {}) => ({
   statusAtTime: () => ({ color: '#38BDF8', name: 'Výkon' }),
   utilColor: () => '#34D399',
   openLiveRoom: () => {},
-  openHistoricalPhase: () => {},
+  openCompletedCycle: () => {},
   setStatsRoomId: () => {},
   setHoveredOp: () => {},
   ...overrides,
+});
+
+const elementPaths = (node, ancestors = []) => {
+  if (!React.isValidElement(node)) return [];
+  const path = [...ancestors, node];
+  return [path, ...React.Children.toArray(node.props.children).flatMap(child => elementPaths(child, path))];
+};
+const clickPath = path => {
+  let stopped = false;
+  for (const node of [...path].reverse()) {
+    node.props.onClick?.({ stopPropagation() { stopped = true; } });
+    if (stopped) break;
+  }
+};
+const testCycle = (hour = 8) => ({
+  startedAt: at(hour).toISOString(), endedAt: at(hour + 1).toISOString(),
+  statusHistory: [
+    { stepIndex: 1, startedAt: at(hour).toISOString(), stepName: 'Příprava' },
+    { stepIndex: 2, startedAt: at(hour, 10).toISOString(), stepName: 'Výkon' },
+    { stepIndex: 3, startedAt: at(hour, 50).toISOString(), stepName: 'Úklid' },
+  ],
+});
+
+test('název sálu otevře pouze denní souhrn v běžném, souhrnném i nouzovém řádku', () => {
+  for (const mode of [{}, { showSummary: true }, { room: room({ isEmergency: true }) }]) {
+    const calls = [];
+    const tree = TimelineRoomRow(props({ ...mode,
+      setStatsRoomId: id => calls.push(['day', id]), openLiveRoom: id => calls.push(['live', id]),
+    }));
+    const label = elementPaths(tree).find(path => path.at(-1).props['aria-label']?.startsWith('Celodenní souhrn sálu'));
+    clickPath(label);
+    assert.deepEqual(calls, [['day', 'sal-1']]);
+  }
+});
+
+test('libovolná fáze, okraj i prázdná plocha dokončeného bloku otevře tentýž celý cyklus', () => {
+  const cycles = [testCycle(8), testCycle(10)];
+  const calls = [];
+  const tree = TimelineRoomRow(props({ room: room({ currentStepIndex: 0, completedOperations: cycles }),
+    getOperationPosition: () => ({ left: 10, width: 20 }),
+    openCompletedCycle: (selectedRoom, cycle) => calls.push([selectedRoom.id, cycle]),
+    openLiveRoom: () => assert.fail('Dokončený cyklus nesmí otevřít aktuální sál'),
+    setStatsRoomId: () => assert.fail('Kliknutí na cyklus nesmí probublat na denní souhrn'),
+  }));
+  const paths = elementPaths(tree);
+  const blocks = paths.filter(path => path.at(-1).props.className?.includes('timeline-operation-completed'));
+  assert.equal(blocks.length, 2);
+  blocks.forEach((block, index) => {
+    const allParts = paths.filter(path => path.includes(block.at(-1)));
+    for (const part of allParts) {
+      calls.length = 0;
+      clickPath(part);
+      assert.deepEqual(calls, [['sal-1', cycles[index]]]);
+    }
+    for (const key of ['Enter', ' ']) {
+      calls.length = 0;
+      let stopped = false;
+      let prevented = false;
+      block.at(-1).props.onKeyDown({ key, stopPropagation() { stopped = true; }, preventDefault() { prevented = true; } });
+      assert.equal(stopped && prevented, true);
+      assert.deepEqual(calls, [['sal-1', cycles[index]]]);
+    }
+    assert.equal(allParts.filter(path => path.at(-1).props.role === 'button').length, 1,
+      'Jeden cyklus má jediný focusovatelný vstup; fáze nejsou samostatná tlačítka');
+  });
+});
+
+test('i dokončený blok bez historie otevře vybraný cyklus, ne aktuální sál', () => {
+  const cycle = { ...testCycle(), statusHistory: [] };
+  const calls = [];
+  const tree = TimelineRoomRow(props({ room: room({ completedOperations: [cycle] }),
+    getOperationPosition: () => ({ left: 10, width: 20 }),
+    openCompletedCycle: (_room, selected) => calls.push(selected),
+  }));
+  clickPath(elementPaths(tree).find(path => path.at(-1).props.className?.includes('timeline-operation-completed')));
+  assert.deepEqual(calls, [cycle]);
+});
+
+test('minulé i aktuální fáze živého bloku otevřou stejný živý cyklus', () => {
+  const calls = [];
+  const tree = TimelineRoomRow(props({ room: room({ statusHistory: testCycle(9).statusHistory }),
+    getOperationPosition: () => ({ left: 10, width: 20 }),
+    openLiveRoom: id => calls.push(id), openCompletedCycle: () => assert.fail('Živý cyklus není archivní snímek'),
+  }));
+  const paths = elementPaths(tree);
+  const block = paths.find(path => path.at(-1).props['aria-label']?.startsWith('Statistiky celého probíhajícího cyklu'));
+  assert.ok(block, 'Živý blok musí být interaktivní jako celek');
+  for (const part of paths.filter(path => path.includes(block.at(-1)))) {
+    calls.length = 0;
+    clickPath(part);
+    assert.deepEqual(calls, ['sal-1']);
+  }
+});
+
+test('souhrnné zobrazení rovněž otevírá celý cyklus z každé jeho fáze', () => {
+  const cycle = testCycle();
+  const calls = [];
+  const tree = TimelineRoomRow(props({ room: room({ completedOperations: [cycle], statusHistory: cycle.statusHistory }),
+    showSummary: true,
+    getTimePercentForTimeline: (date, start) => (date.getTime() - start.getTime()) / 60_000,
+    openCompletedCycle: (_room, selected) => calls.push(selected),
+    openLiveRoom: id => calls.push(id),
+  }));
+  const segments = elementPaths(tree).filter(path => String(path.at(-1).key).includes('sum-'));
+  assert.ok(segments.length > 1);
+  for (const segment of segments) {
+    calls.length = 0;
+    clickPath(segment);
+    assert.equal(calls.length, 1);
+    assert.ok(calls[0] === cycle || calls[0] === 'sal-1');
+  }
 });
 
 test('řádek sálu se vykreslí z reálných props a ukáže název sálu i aktuální fázi', () => {

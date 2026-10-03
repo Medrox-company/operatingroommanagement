@@ -48,7 +48,7 @@ type Tab = StatisticsTab;
 // ══════════════════════════════════════════════════════════════════════════════
 const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms }) => {
   const isMobileDark = useIsMobileDark();
-  const { activeHospital } = useHospital();
+  const { activeHospital, activeHospitalId } = useHospital();
   const isMobileViewport = useMediaQuery('(max-width: 767px)');
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -69,7 +69,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const allRooms = propRooms ?? EMPTY_ROOMS;
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
-  const [selectedRoom, setSelectedRoom] = useState<OperatingRoom|null>(null);
+  const [roomSelection, setRoomSelection] = useState<{ id: string; day: Date | null; hospitalId: string | null } | null>(null);
+  const selectedRoom = roomSelection?.hospitalId === activeHospitalId
+    ? allRooms.find(room => room.id === roomSelection?.id) : undefined;
+  const selectRoom = useCallback((room: OperatingRoom, day: Date | null) => {
+    setRoomSelection({ id: room.id, day, hospitalId: activeHospitalId });
+  }, [activeHospitalId]);
   const performance = useStatisticsPerformance(tab === 'vykonnost');
   const { statusHistory: allStatusHistory, dayHistory: allDayHistory, notifications, devices, isReportLoading: isStatisticsLoading, reportSourceErrors, dayHistoryCoverageStart } = useStatisticsData(period);
   const periodScope = useMemo(() => scopeStatisticsRooms(allRooms, allStatusHistory, statisticsPeriodWindow(period)), [allRooms, allStatusHistory, period]);
@@ -980,7 +985,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 statusHistory={allStatusHistory}
                 calendarHistory={allDayHistory}
                 periodLabel={period}
-                onRoomSelect={setSelectedRoom}
+                onRoomSelect={selectRoom}
                 calculateRoomUtilization={calculateRoomUtilization}
                 countOperationsInWorkingHours={countOperationsInWorkingHours}
                 calculateRoomUtilizationForDay={calculateRoomUtilizationForDay}
@@ -1110,6 +1115,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         <div className="stats-commandbar-actions">
           <span aria-hidden className="h-6 w-px" style={{ background: C.border }} />
 
+          <div className="stats-commandbar-period">
           {tab === 'vykonnost' ? (
             <span className="px-3 py-1.5 text-[12px] font-medium whitespace-nowrap" style={{ color: C.muted }}>
               12 kalendářních měsíců
@@ -1127,6 +1133,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               </button>
             ))}
           </div>}
+          </div>
 
           <span aria-hidden className="h-6 w-px" style={{ background: C.border }} />
 
@@ -1642,7 +1649,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               statusHistory={allStatusHistory}
               calendarHistory={allDayHistory}
               periodLabel={period}
-              onRoomSelect={setSelectedRoom}
+              onRoomSelect={selectRoom}
               calculateRoomUtilization={calculateRoomUtilization}
               countOperationsInWorkingHours={countOperationsInWorkingHours}
               calculateRoomUtilizationForDay={calculateRoomUtilizationForDay}
@@ -1710,7 +1717,17 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       )}
       {/* ── Room detail panel (shared mobile + desktop) �����─ */}
       {selectedRoom&&(
-        <RoomDetailPanel room={selectedRoom} onClose={()=>setSelectedRoom(null)} workflowSteps={WORKFLOW_STEPS}/>
+        <RoomDetailPanel
+          room={selectedRoom}
+          onClose={() => setRoomSelection(null)}
+          workflowSteps={WORKFLOW_STEPS}
+          period={period}
+          selectedDay={roomSelection?.day ?? null}
+          history={roomSelection?.day ? allDayHistory : allStatusHistory}
+          trendHistory={allDayHistory}
+          loading={isStatisticsLoading}
+          error={reportSourceErrors.statusHistory || reportSourceErrors.dayHistory}
+        />
       )}
     </StatisticsReportContext.Provider>
   );
