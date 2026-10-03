@@ -3,8 +3,11 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import ts from 'typescript';
 
-const source = readFileSync(new URL('../../components/StatisticsModule.tsx', import.meta.url), 'utf8');
-const parsed = ts.createSourceFile('StatisticsModule.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+// Výpočty žijí v lib/statistics-room-activity.ts — čisté funkce bez Reactu.
+// Test je spouští transpilované, takže žádná náhodná runtime závislost
+// (především databázový klient) neprojde.
+const source = readFileSync(new URL('../../lib/statistics-room-activity.ts', import.meta.url), 'utf8');
+const parsed = ts.createSourceFile('statistics-room-activity.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 const names = [
   'getRoomWorkingHours', 'getDayBreakMinutes', 'getRoomWorkingMinutes', 'getRoomTotalWorkingMinutes',
   'countOperationsInWorkingHours', 'getPeriodStart', 'buildRoomOperationIntervals', 'mergeOperationIntervals',

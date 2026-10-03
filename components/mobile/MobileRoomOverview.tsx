@@ -65,8 +65,8 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
 
   useEffect(() => cancelPress, [cancelPress]);
 
-  const openQuickActions = useCallback((roomId: string) => {
-    pressRef.current.opened = true;
+  const openQuickActions = useCallback((roomId: string, suppressNextClick = true) => {
+    pressRef.current.opened = suppressNextClick;
     // Krátká vibrace potvrdí, že se stisk počítá — jinak uživatel drží naslepo.
     navigator.vibrate?.(18);
     setQuickActionsId(roomId);
@@ -111,7 +111,7 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
             {onNavigate && hasModuleAccess('alerts') && (
               <button type="button" className="mro-icon-button" onClick={() => onNavigate('alerts')} aria-label={hasNotice ? 'Upozornění – nové zprávy' : 'Upozornění'}>
                 <Bell size={20} strokeWidth={1.7} aria-hidden />
-                {hasNotice && <span className="mro-notice-dot" />}
+                {hasNotice && <span className="mro-notice-dot" aria-hidden="true" />}
               </button>
             )}
           </>
@@ -173,13 +173,18 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
                     onPointerUp={cancelPress}
                     onPointerCancel={cancelPress}
                     onPointerLeave={cancelPress}
-                    onContextMenu={event => { event.preventDefault(); cancelPress(); openQuickActions(room.id); }}
-                    aria-label={`Sál ${room.name}, ${phase.title}. Ťuknutím otevřete detail, podržením nabídku akcí.`}
+                    onContextMenu={event => { event.preventDefault(); cancelPress(); openQuickActions(room.id, event.detail !== 0); }}
+                    onKeyDown={event => {
+                      if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+                      event.preventDefault();
+                      openQuickActions(room.id, false);
+                    }}
+                    aria-label={`Sál ${room.name}, ${phase.title}. Uplynulo ${elapsed}, odhad konce ${phase.active ? mobileEndTime(room.estimatedEndTime) : 'není k dispozici'}. Otevřít detail. Podržením nebo klávesou nabídky otevřít rychlé akce.`}
                   >
                     <span className="mro-room-identity">
                       <strong className="m-unified-card-title">{room.name}</strong>
                       <span className="mro-phase-row">
-                        <span className="mro-phase-label" style={{ color: `color-mix(in srgb, ${phase.color} 65%, var(--m-text) 35%)` }}>
+                        <span className="mro-phase-label">
                           <i className="mro-status-dot" style={{ background: phase.color }} aria-hidden />
                           <span className="mro-phase-name">{phase.title}</span>
                         </span>

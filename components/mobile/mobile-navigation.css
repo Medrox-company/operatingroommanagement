@@ -33,7 +33,7 @@
     padding: 1px 0;
     border-radius: 15px;
     color: var(--m-nav-fg);
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 500;
     line-height: 1.25;
     letter-spacing: 0.005em;
@@ -76,7 +76,7 @@
   }
 
   .mobile-nav-more-sheet {
-    --mobile-more-danger: var(--m-danger, var(--color-danger, #EF4444));
+    --mobile-more-danger: #B42332;
     z-index: 210 !important;
     border-color: var(--m-border) !important;
     border-radius: 28px 28px 0 0;
@@ -185,6 +185,7 @@
   .mobile-more-logout:active { background: color-mix(in srgb, var(--mobile-more-danger) 8%, var(--m-card-2)); }
   .mobile-more-links > p { margin: 0; color: var(--mobile-more-danger); font-size: 13px; line-height: 1.45; }
   .mobile-more-logout:disabled { opacity: 0.6; cursor: wait; }
+  .m-dark .mobile-nav-more-sheet { --mobile-more-danger: #FF8B91; }
 }
 
 @media (max-width: 767px) and (prefers-reduced-motion: reduce) {

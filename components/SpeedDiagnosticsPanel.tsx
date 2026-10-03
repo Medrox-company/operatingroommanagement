@@ -9,14 +9,12 @@ import {
   Database,
   Gauge,
   Loader2,
-  Radio,
   RefreshCw,
   Server,
   ShieldCheck,
-  Sparkles,
   Wifi,
-  Zap,
 } from 'lucide-react';
+import { COLORS } from './settings/settings-theme';
 
 type TestStage = 'idle' | 'application' | 'database' | 'download' | 'evaluation' | 'done' | 'error';
 
@@ -75,10 +73,10 @@ function calculateScore(appMs: number, databaseMs: number, downloadMbps: number,
 }
 
 function getQuality(score: number) {
-  if (score >= 90) return { label: 'VÝBORNÉ', color: '#34D399', glow: 'rgba(52,211,153,0.32)' };
-  if (score >= 75) return { label: 'VELMI DOBRÉ', color: '#36D9EC', glow: 'rgba(54,217,236,0.3)' };
-  if (score >= 55) return { label: 'POUŽITELNÉ', color: '#FBBF24', glow: 'rgba(251,191,36,0.28)' };
-  return { label: 'POMALÉ', color: '#FB7185', glow: 'rgba(251,113,133,0.3)' };
+  if (score >= 90) return { label: 'VÝBORNÉ', color: COLORS.green };
+  if (score >= 75) return { label: 'VELMI DOBRÉ', color: COLORS.cyan };
+  if (score >= 55) return { label: 'POUŽITELNÉ', color: COLORS.amber };
+  return { label: 'POMALÉ', color: COLORS.red };
 }
 
 async function fetchWithTimeout(url: string, timeoutMs = 12000) {
@@ -214,166 +212,136 @@ const SpeedDiagnosticsPanel: React.FC<SpeedDiagnosticsPanelProps> = ({ hospitalN
   }, [result]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-300/75">
-            <Radio className="h-3.5 w-3.5" />
-            Živá diagnostika
-          </div>
-          <h2 className="text-xl font-bold text-white sm:text-2xl">Rychlost aplikace a databáze</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-white/45">
-            Měření probíhá mezi tímto zařízením, serverem aplikace a databází. Nečte ani nepřenáší údaje pacientů.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
-          <ShieldCheck className="h-4 w-4 text-emerald-400" />
-          {hospitalName || 'Aktivní zařízení'}
-        </div>
-      </div>
-
-      <div
-        className="relative overflow-hidden rounded-[30px] border border-cyan-300/15 p-4 sm:p-6"
-        style={{
-          background: 'radial-gradient(circle at 15% 0%, rgba(54,217,236,0.12), transparent 34%), radial-gradient(circle at 85% 100%, rgba(167,139,250,0.12), transparent 36%), rgba(6,13,24,0.86)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 24px 70px rgba(0,0,0,0.28)',
-        }}
-      >
-        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(54,217,236,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(54,217,236,.2) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-
-        <div className="relative grid gap-6 lg:grid-cols-[280px_1fr] lg:items-center">
-          <div className="flex flex-col items-center justify-center py-2">
-            <div className="relative grid h-52 w-52 place-items-center">
-              <div
-                className="absolute inset-3 rounded-full p-[1px]"
-                style={{ background: `conic-gradient(${result ? quality.color : '#36D9EC'} ${progress * 3.6}deg, rgba(255,255,255,.07) 0deg)` }}
-              >
-                <div className="h-full w-full rounded-full bg-[#07101c]/95" />
-              </div>
-              <div className="relative z-10 flex flex-col items-center">
-                {running ? (
-                  <Activity className="mb-2 h-9 w-9 text-cyan-300" />
-                ) : result ? (
-                  <Sparkles className="mb-1 h-8 w-8" style={{ color: quality.color }} />
-                ) : (
-                  <Gauge className="mb-2 h-9 w-9 text-cyan-300" />
-                )}
-                <span className="text-5xl font-semibold tabular-nums tracking-[-0.06em] text-white">
-                  {result?.score ?? progress}
-                </span>
-                <span className="mt-1 text-[9px] font-bold uppercase tracking-[0.28em]" style={{ color: result ? quality.color : 'rgba(255,255,255,.42)' }}>
-                  {result ? quality.label : running ? 'PRŮBĚH %' : 'PŘIPRAVENO'}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-1 text-center">
-              <p className="text-sm font-bold text-white">{stageMeta.label}</p>
-              <p className="mt-1 text-[11px] text-white/35">{stageMeta.detail}</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <MetricCard
-                icon={Server}
-                label="Odezva aplikace"
-                value={result?.appMs ?? liveAppMs}
-                suffix="ms"
-                color="#36D9EC"
-                detail="zařízení → aplikace"
-              />
-              <MetricCard
-                icon={Database}
-                label="Odezva databáze"
-                value={result?.databaseMs ?? liveDatabaseMs}
-                suffix="ms"
-                color="#A78BFA"
-                detail="server → Supabase"
-              />
-              <MetricCard
-                icon={Wifi}
-                label="Rychlost přenosu"
-                value={result?.downloadMbps ?? null}
-                suffix="Mb/s"
-                color="#34D399"
-                detail="kontrolní data"
-              />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-stretch">
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/35">Stabilita jednotlivých měření</p>
-                    <p className="mt-1 text-xs text-white/55">
-                      {result ? `Kolísání odezvy ${result.jitterMs.toFixed(0)} ms` : 'Zobrazí se po dokončení testu'}
-                    </p>
-                  </div>
-                  <Zap className="h-4 w-4 text-amber-300" />
-                </div>
-                <SampleBars samples={result?.appSamples ?? []} color="#36D9EC" />
-              </div>
-
-              <button
-                type="button"
-                onClick={runTest}
-                disabled={running || !hospitalId}
-                className="group flex min-h-[86px] items-center justify-center gap-3 rounded-2xl border border-cyan-300/25 bg-cyan-300/[0.09] px-6 text-sm font-bold text-cyan-100 transition-all hover:border-cyan-200/45 hover:bg-cyan-300/[0.14] disabled:cursor-not-allowed disabled:opacity-45"
-                style={{ boxShadow: running ? '0 0 35px rgba(54,217,236,.12)' : undefined }}
-              >
-                {running ? <Loader2 className="h-5 w-5 animate-spin" /> : result ? <RefreshCw className="h-5 w-5 transition-transform group-hover:rotate-90" /> : <Gauge className="h-5 w-5" />}
-                {running ? 'Probíhá měření' : result ? 'Změřit znovu' : 'Spustit test'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="speed-diagnostics space-y-6">
       <div>
-        {result && recommendation && (
-          <div
-            className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center rounded-2xl border p-4"
-            style={{ borderColor: `${quality.color}35`, background: `${quality.color}0C`, boxShadow: `0 12px 38px ${quality.glow}` }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={{ background: `${quality.color}18` }}>
-                <CheckCircle2 className="h-5 w-5" style={{ color: quality.color }} />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: quality.color }}>Doporučení diagnostiky</p>
-                <p className="mt-1 text-sm leading-relaxed text-white/65">{recommendation}</p>
-              </div>
-            </div>
-            <div className="text-left sm:text-right">
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Poslední test</p>
-              <p className="mt-1 text-xs tabular-nums text-white/55">{new Date(result.measuredAt).toLocaleString('cs-CZ')}</p>
-            </div>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="flex items-start gap-3 rounded-2xl border border-rose-400/25 bg-rose-400/[0.07] p-4 text-sm text-rose-100/80">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-300" />
-            <div>
-              <p className="font-bold text-rose-200">Test se nepodařilo dokončit</p>
-              <p className="mt-1 leading-relaxed text-rose-100/60">{errorMessage}</p>
-            </div>
-          </div>
-        )}
+        <p className="text-[8px] font-bold uppercase tracking-[0.22em] text-white/38">Živá diagnostika</p>
+        <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-white">Rychlost aplikace a databáze</h2>
+        <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-white/60">
+          Měření probíhá mezi tímto zařízením, serverem aplikace a databází. Nečte ani nepřenáší údaje pacientů.
+        </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <section className="speed-diagnostics-surface space-y-5" aria-label="Stav diagnostiky">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="system-settings-nav-icon" aria-hidden="true">
+              {running ? <Activity size={18} /> : result ? <CheckCircle2 size={18} /> : <Gauge size={18} />}
+            </span>
+            <div role="status" aria-live="polite">
+              <p className="text-sm font-medium text-white/95">{stageMeta.label}</p>
+              <p className="speed-diagnostics-muted mt-1 text-xs leading-relaxed">{stageMeta.detail}</p>
+            </div>
+          </div>
+          <span className="system-settings-badge max-w-full break-words">
+            <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {hospitalName || 'Aktivní zařízení'}
+          </span>
+        </div>
+
+        {running && (
+          <div>
+            <div className="speed-diagnostics-muted mb-2 flex items-center justify-between text-xs">
+              <span>Průběh měření</span><span className="tabular-nums text-white/90">{progress} %</span>
+            </div>
+            <div
+              className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]"
+              role="progressbar"
+              aria-label="Průběh diagnostiky"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress}
+            >
+              <div className="h-full rounded-full" style={{ width: `${progress}%`, background: COLORS.blue }} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.08] pt-4">
+          {result ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div>
+                <p className="speed-diagnostics-muted text-[11px]">Celkové skóre</p>
+                <p className="mt-1 text-2xl font-normal tabular-nums text-white/95">{result.score}<span className="speed-diagnostics-muted ml-1 text-xs">/ 100</span></p>
+              </div>
+              <span className="rounded-full border border-white/10 px-3 py-1.5 text-[10px] font-semibold tracking-wide" style={{ color: quality.color }}>{quality.label}</span>
+            </div>
+          ) : (
+            <p className="speed-diagnostics-muted max-w-sm text-xs leading-relaxed">
+              {running
+                ? 'Výsledky se zobrazí po dokončení měření.'
+                : hospitalId
+                  ? 'Test můžete spustit pro aktuálně vybrané zařízení.'
+                  : 'Pro spuštění testu nejprve vyberte zdravotnické zařízení.'}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={runTest}
+            disabled={running || !hospitalId}
+            className="system-settings-primary flex items-center gap-2 px-5 py-2.5 text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {running ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : result ? <RefreshCw className="h-4 w-4" aria-hidden="true" /> : <Gauge className="h-4 w-4" aria-hidden="true" />}
+            {running ? 'Probíhá měření' : result ? 'Změřit znovu' : 'Spustit test'}
+          </button>
+        </div>
+      </section>
+
+      <div className="speed-diagnostics-grid">
+        <MetricCard icon={Server} label="Odezva aplikace" value={result?.appMs ?? liveAppMs} suffix="ms" detail="zařízení → aplikace" />
+        <MetricCard icon={Database} label="Odezva databáze" value={result?.databaseMs ?? liveDatabaseMs} suffix="ms" detail="server → Supabase" />
+        <MetricCard icon={Wifi} label="Rychlost přenosu" value={result?.downloadMbps ?? null} suffix="Mb/s" detail="kontrolní data" />
+      </div>
+
+      <section className="speed-diagnostics-surface" aria-label="Stabilita jednotlivých měření">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-medium text-white/90">Stabilita jednotlivých měření</h3>
+            <p className="speed-diagnostics-muted mt-1 text-xs">
+              {result ? `Kolísání odezvy ${result.jitterMs.toFixed(0)} ms` : 'Zobrazí se po dokončení testu'}
+            </p>
+          </div>
+          <Activity className="h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
+        </div>
+        <SampleBars samples={result?.appSamples ?? []} />
+      </section>
+
+      {result && recommendation && (
+        <div className="speed-diagnostics-surface flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: quality.color }} aria-hidden="true" />
+            <div>
+              <h3 className="text-sm font-medium text-white/90">Doporučení diagnostiky</h3>
+              <p className="speed-diagnostics-muted mt-1 text-xs leading-relaxed">{recommendation}</p>
+            </div>
+          </div>
+          <div className="speed-diagnostics-muted text-xs">
+            <p>Poslední test</p>
+            <p className="mt-1 tabular-nums">{new Date(result.measuredAt).toLocaleString('cs-CZ')}</p>
+          </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div role="alert" className="flex items-start gap-3 rounded-2xl border border-rose-400/25 bg-rose-400/[0.04] p-4 text-sm text-rose-100/90">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-300" aria-hidden="true" />
+          <div>
+            <p className="font-bold text-rose-200">Test se nepodařilo dokončit</p>
+            <p className="mt-1 text-xs leading-relaxed text-rose-100/80">{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="speed-diagnostics-grid border-t border-white/[0.08] pt-5">
         {[
           { icon: Cloud, title: 'Aplikační server', text: 'Celková odezva včetně nemocniční sítě a proxy.' },
           { icon: Database, title: 'Databázové spojení', text: 'Bezpečný dotaz omezený na právě zvolené zařízení.' },
           { icon: ShieldCheck, title: 'Bez klinických dat', text: 'Test nepřenáší pacienty, výkony ani personální údaje.' },
         ].map(({ icon: Icon, title, text }) => (
-          <div key={title} className="flex gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-            <Icon className="h-4 w-4 shrink-0 text-cyan-300/75" />
+          <div key={title} className="flex min-w-0 gap-3">
+            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-white/50" aria-hidden="true" />
             <div>
-              <p className="text-xs font-bold text-white/70">{title}</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-white/30">{text}</p>
+              <p className="text-xs font-medium text-white/85">{title}</p>
+              <p className="speed-diagnostics-muted mt-1 text-[11px] leading-relaxed">{text}</p>
             </div>
           </div>
         ))}
@@ -387,46 +355,41 @@ interface MetricCardProps {
   label: string;
   value: number | null;
   suffix: string;
-  color: string;
   detail: string;
 }
 
-const MetricCard: React.FC<MetricCardProps> = ({ icon: Icon, label, value, suffix, color, detail }) => (
-  <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
-    <div className="relative flex items-start justify-between gap-2">
-      <div>
-        <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/35">{label}</p>
-        <div className="mt-3 flex items-baseline gap-1.5">
-          <span className="text-3xl font-semibold tabular-nums tracking-tight text-white">
-            {value === null ? '—' : value < 10 ? value.toFixed(1) : Math.round(value)}
-          </span>
-          <span className="text-[10px] font-bold" style={{ color }}>{suffix}</span>
-        </div>
-        <p className="mt-1 text-[9px] text-white/25">{detail}</p>
-      </div>
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border" style={{ color, background: `${color}11`, borderColor: `${color}28` }}>
-        <Icon className="h-4 w-4" />
-      </div>
+const MetricCard: React.FC<MetricCardProps> = ({ icon: Icon, label, value, suffix, detail }) => (
+  <div className="speed-diagnostics-surface">
+    <div className="mb-4 flex items-center gap-2 text-white/65">
+      <Icon className="h-4 w-4 shrink-0" />
+      <h3 className="text-xs font-medium">{label}</h3>
     </div>
+    <div className="flex flex-wrap items-baseline gap-1.5">
+      <span className="text-3xl font-normal tabular-nums tracking-tight text-white/95">
+        {value === null ? '—' : value < 10 ? value.toFixed(1) : Math.round(value)}
+      </span>
+      <span className="speed-diagnostics-muted text-xs">{suffix}</span>
+    </div>
+    <p className="speed-diagnostics-muted mt-2 text-[11px]">{detail}</p>
   </div>
 );
 
-const SampleBars: React.FC<{ samples: number[]; color: string }> = ({ samples, color }) => {
+const SampleBars: React.FC<{ samples: number[] }> = ({ samples }) => {
+  if (!samples.length) {
+    return <p className="speed-diagnostics-muted rounded-xl border border-dashed border-white/[0.10] px-4 py-5 text-center text-xs">Čeká na data</p>;
+  }
   const max = Math.max(...samples, 1);
 
   return (
-    <div className="flex h-8 items-end gap-1.5" aria-label={samples.length ? 'Graf stability odezvy' : 'Čeká na data'}>
-      {Array.from({ length: 12 }, (_, index) => {
-        const sample = samples[index % Math.max(1, samples.length)];
-        const height = sample === undefined ? 13 + (index % 4) * 5 : clamp((sample / max) * 28, 8, 28);
-        return (
-          <span
-            key={index}
-            className="min-w-0 flex-1 rounded-full"
-            style={{ background: color, height, opacity: sample === undefined ? 0.14 : 0.72 }}
-          />
-        );
-      })}
+    <div className="flex items-end gap-3" role="list" aria-label="Naměřené odezvy aplikace">
+      {samples.map((sample, index) => (
+        <div key={index} role="listitem" className="min-w-0 flex-1" aria-label={`Měření ${index + 1}: ${Math.round(sample)} ms`}>
+          <div className="flex h-12 items-end" aria-hidden="true">
+            <div className="w-full rounded-t-md bg-white/20" style={{ height: clamp((sample / max) * 48, 4, 48) }} />
+          </div>
+          <p className="speed-diagnostics-muted mt-2 text-center text-[10px] tabular-nums">{Math.round(sample)} ms</p>
+        </div>
+      ))}
     </div>
   );
 };

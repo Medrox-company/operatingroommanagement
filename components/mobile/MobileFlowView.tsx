@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useId, useMemo, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import type { OperatingRoom } from '../../types';
 import type { WorkflowStatus } from '../../contexts/WorkflowStatusesContext';
 import { Activity, Workflow } from 'lucide-react';
@@ -80,15 +80,17 @@ function buildFlow(room: OperatingRoom, statuses: WorkflowStatus[]): { steps: Fl
   return { steps, currentIdx };
 }
 
-const STEP_CHIP: Record<StepState, { label: string; bg: string; color: string }> = {
-  done: { label: 'DOKONČENO', bg: 'rgba(59,162,115,0.16)', color: GREEN },
-  current: { label: 'PROBÍHÁ', bg: 'var(--m-accent-soft)', color: BLUE },
-  waiting: { label: 'ČEKÁ', bg: 'var(--m-bg)', color: FAINT },
+const STEP_CHIP: Record<StepState, { label: string; bg: string }> = {
+  done: { label: 'DOKONČENO', bg: 'rgba(59,162,115,0.16)' },
+  current: { label: 'PROBÍHÁ', bg: 'var(--m-accent-soft)' },
+  waiting: { label: 'ČEKÁ', bg: 'var(--m-bg)' },
 };
 
 const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = false }) => {
   const [filter, setFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const panelId = useId();
+  const reduceMotion = useReducedMotion();
 
   const realStatuses = useMemo(
     () => [...statuses]
@@ -146,16 +148,18 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
           </MobileModuleHeader>
 
           {/* Filtr pilulky — horizontální scroll */}
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-1">
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-1" role="group" aria-label="Filtrovat tok podle sálu">
             {[{ id: 'all', label: 'Všechny' }, ...flowRooms.map(r => ({ id: r.id, label: r.name }))].map(p => {
               const active = filter === p.id;
               return (
                 <button
                   key={p.id}
+                  type="button"
                   onClick={() => setFilter(p.id)}
-                  className="shrink-0 h-9 px-4 rounded-full text-[12px] font-bold whitespace-nowrap transition-colors"
+                  aria-pressed={active}
+                  className="shrink-0 min-h-11 px-4 rounded-full text-[13px] font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--m-accent)]"
                   style={active
-                    ? { background: 'var(--m-accent)', color: '#FFFFFF' }
+                    ? { background: 'var(--m-accent)', color: 'var(--m-on-accent)' }
                     : { background: 'var(--m-card)', color: NAVY, border: '1px solid var(--m-border)' }}
                 >
                   {p.label}
@@ -197,9 +201,13 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                 >
                   {/* Hlavička karty */}
                   <button
+                    type="button"
                     onClick={() => setExpandedId(isOpen ? '' : room.id)}
-                    className="m-unified-card-header w-full flex items-start justify-between gap-3 p-4 text-left"
+                    className="m-unified-card-header w-full flex items-start justify-between gap-3 p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--m-accent)]"
                     aria-expanded={isOpen}
+                    aria-controls={isOpen ? `${panelId}-${room.id}-panel` : undefined}
+                    id={`${panelId}-${room.id}-button`}
+                    aria-label={`${room.currentProcedure?.name || `Pacient ${String(idx + 1).padStart(2, '0')}`}, ${room.name}, nyní ${chip}, krok ${Math.max(1, currentIdx + 1)} z ${Math.max(1, steps.length)}. ${isOpen ? 'Sbalit' : 'Rozbalit'} podrobnosti.`}
                   >
                     <span className="flex-1 min-w-0">
                       <span className="m-unified-card-title room-name-nobreak block">
@@ -210,12 +218,13 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                       </span>
                       <span
                         className="mt-2 max-w-full px-2.5 py-1 rounded-full inline-flex text-[11px] font-semibold leading-tight"
-                        style={{ background: `${currentColor}20`, color: currentColor }}
+                        style={{ background: `${currentColor}20`, color: NAVY }}
                       >
+                        <span className="mr-1.5 h-1.5 w-1.5 rounded-full shrink-0" style={{ background: currentColor }} aria-hidden="true" />
                         {chip}
                       </span>
                       {/* Skutečné workflow fáze zařízení */}
-                      <span className="mt-2 flex gap-1.5">
+                      <span className="mt-2 flex gap-1.5" aria-hidden="true">
                         {steps.map((s, i) => (
                           <span
                             key={s.id}
@@ -244,10 +253,13 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                   <AnimatePresence initial={false}>
                     {isOpen && (
                       <motion.div
+                        id={`${panelId}-${room.id}-panel`}
+                        role="region"
+                        aria-labelledby={`${panelId}-${room.id}-button`}
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                        transition={reduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                         className="overflow-hidden"
                       >
                         <div className="px-4 pb-4">
@@ -257,13 +269,13 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                               <div
                                 key={s.id}
                                 className="flex items-center gap-3 py-3"
-                                style={{ borderTop: '1px solid var(--m-track)', opacity: s.state === 'waiting' ? 0.65 : 1 }}
+                                style={{ borderTop: '1px solid var(--m-track)' }}
                               >
                                 <span
                                   className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 text-[12px] font-bold tabular-nums"
                                   style={{
                                     background: s.state === 'waiting' ? 'var(--m-bg)' : `${s.color}20`,
-                                    color: s.state === 'waiting' ? FAINT : s.color,
+                                    color: s.state === 'waiting' ? MUTED : NAVY,
                                   }}
                                 >
                                   {i + 1}
@@ -275,10 +287,10 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                                   {s.time || '--:--'}
                                 </span>
                                 <span
-                                  className="px-2 h-6 rounded-full inline-flex items-center text-[9px] font-bold uppercase tracking-wide shrink-0"
+                                  className="px-2 min-h-6 rounded-full inline-flex items-center text-[11px] font-bold uppercase tracking-wide shrink-0"
                                   style={s.state === 'current'
-                                    ? { background: `${s.color}20`, color: s.color }
-                                    : { background: meta.bg, color: meta.color }}
+                                    ? { background: `${s.color}20`, color: NAVY }
+                                    : { background: meta.bg, color: NAVY }}
                                 >
                                   {meta.label}
                                 </span>
@@ -289,7 +301,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                           {/* Patička — poloha + odhad propuštění */}
                           <div className="flex items-end justify-between pt-3" style={{ borderTop: '1px solid var(--m-track)' }}>
                             <div>
-                              <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: FAINT }}>
+                              <p className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: FAINT }}>
                                 Aktuální poloha
                               </p>
                               <p className="text-[15px] font-extrabold mt-1 leading-none" style={{ color: NAVY }}>
@@ -297,7 +309,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: FAINT }}>
+                              <p className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: FAINT }}>
                                 Odhad propuštění
                               </p>
                               <p className="text-[17px] font-extrabold mt-1 leading-none tabular-nums" style={{ color: NAVY }}>

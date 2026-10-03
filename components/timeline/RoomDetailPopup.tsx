@@ -8,6 +8,7 @@ import { getReadableTextColor } from './utils';
 import { MobileThemeToggle } from '../mobile/MobileShell';
 import { RapidSurgeryWarning } from '../room/RapidSurgeryWarning';
 import { useNowMs } from '../../hooks/useSharedClock';
+import { cyclePhaseMinutes } from '../../lib/timeline-cycle-statistics';
 
 /* ════════════════════════════════════════════════════════════════════════
    Detail sálu — ANIMOVANÝ TACHOMETR dílčích statusů
@@ -18,8 +19,7 @@ import { useNowMs } from '../../hooks/useSharedClock';
 interface RoomDetailPopupProps {
   room: OperatingRoom;
   onClose: () => void;
-  currentTime: Date;
-  selectedPhaseEndTime?: Date | null;
+  cycleEndedAt?: Date | null;
 }
 
 // Geometrie tachometru (viewBox souřadnice)
@@ -37,17 +37,20 @@ const polar = (angleDeg: number, radius: number) => {
   return { x: CX + radius * Math.cos(rad), y: CY - radius * Math.sin(rad) };
 };
 
-const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, currentTime, selectedPhaseEndTime }) => {
+const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, cycleEndedAt }) => {
   const { workflowStatuses } = useWorkflowStatusesContext();
   const activeStatuses = workflowStatuses;
   const [hoverDot, setHoverDot] = useState<number | null>(null);
-  const isHistoricalSnapshot = selectedPhaseEndTime != null;
+  const isCompletedCycle = cycleEndedAt != null;
 
-  // Živý čas bere ze sdíleného tiku aplikace. U historického náhledu se hodnota
-  // stejně nepoužije, takže překreslování nic nestojí.
+  // Sdílený tik aktualizuje živý cyklus, dokončený cyklus má pevný konec.
   const liveTimeMs = useNowMs();
 
-  const displayTimeMs = isHistoricalSnapshot ? currentTime.getTime() : liveTimeMs;
+  const displayTimeMs = cycleEndedAt?.getTime() ?? liveTimeMs;
+  const cycleStartMs = new Date(room.operationStartedAt ?? room.phaseStartedAt ?? '').getTime();
+  const cycleDurationMinutes = Number.isFinite(cycleStartMs) && displayTimeMs >= cycleStartMs
+    ? Math.round((displayTimeMs - cycleStartMs) / 60_000) : null;
+  const cycleDurationLabel = cycleDurationMinutes == null ? '—' : `${cycleDurationMinutes} min`;
 
   // Zavření klávesou Escape
   useEffect(() => {
@@ -63,39 +66,24 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
     ? C.cyan
     : (currentStatus?.accent_color || currentStatus?.color || '#6B7280');
   const stepTextColor = getReadableTextColor(stepColor);
-  const progress = totalSteps > 1 ? stepIndex / (totalSteps - 1) : 0;
+  const progress = isCompletedCycle ? 1 : totalSteps > 1 ? stepIndex / (totalSteps - 1) : 0;
   const progressPercent = Math.round(progress * 100);
-  const isActive = stepIndex > 0 && !room.isPaused;
+  const isActive = !isCompletedCycle && stepIndex > 0 && !room.isPaused;
+  const statusLabel = isCompletedCycle ? 'Dokončený cyklus' : room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status');
 
   // Skutečné minuty strávené v jednotlivých fázích (z historie aktuální operace)
-  const phaseMinutes = useMemo(() => {
-    const mins: Record<number, number> = {};
-    const hist = room.statusHistory || [];
-    hist.forEach((entry, idx) => {
-      const s = new Date(entry.startedAt).getTime();
-      const e = idx + 1 < hist.length
-        ? new Date(hist[idx + 1].startedAt).getTime()
-        : displayTimeMs;
-      if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
-        // Nezaokrouhlujeme jednotlivé úseky před výpočtem procent. Krátké fáze
-        // dokončených cyklů by jinak zmizely nebo změnily poměr celého cyklu.
-        mins[entry.stepIndex] = (mins[entry.stepIndex] || 0) + ((e - s) / 60000);
-      }
-    });
-    return mins;
-  }, [room.statusHistory, displayTimeMs]);
+  const phaseMinutes = useMemo(
+    () => cyclePhaseMinutes(room.statusHistory, cycleStartMs, displayTimeMs),
+    [room.statusHistory, cycleStartMs, displayTimeMs],
+  );
 
   // Procentuální zastoupení jednotlivých fází. Jakmile existuje historie,
   // počítáme výhradně reálné naměřené časy (budoucí fáze mají 0 %).
-  // Výchozí délky slouží pouze jako fallback před prvním měřením.
+  // Chybějící měření nenahrazujeme výchozími délkami fází.
   const phaseShares = useMemo(() => {
     const measuredWeights = activeStatuses.map((_, index) => Math.max(0, phaseMinutes[index] || 0));
     const measuredTotal = measuredWeights.reduce((sum, value) => sum + value, 0);
-    const weights = measuredTotal > 0
-      ? measuredWeights
-      : activeStatuses.map(status => Math.max(1, Number(status.default_duration) || 1));
-    const total = weights.reduce((sum, value) => sum + value, 0) || 1;
-    return weights.map(value => (value / total) * 100);
+    return measuredWeights.map(value => measuredTotal > 0 ? (value / measuredTotal) * 100 : 0);
   }, [activeStatuses, phaseMinutes]);
 
   const recommendations = useMemo(() => {
@@ -142,19 +130,19 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
   // Uplynulý čas v aktuální fázi
   const elapsedInPhase = useMemo(() => {
     if (!room.phaseStartedAt) return null;
-    const phaseEnd = selectedPhaseEndTime?.getTime() ?? displayTimeMs;
-    const ms = phaseEnd - new Date(room.phaseStartedAt).getTime();
+    const ms = displayTimeMs - new Date(room.phaseStartedAt).getTime();
     if (ms < 0) return null;
     const m = Math.floor(ms / 60000);
     const h = Math.floor(m / 60);
     return h > 0 ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`;
-  }, [room.phaseStartedAt, displayTimeMs, selectedPhaseEndTime]);
+  }, [room.phaseStartedAt, displayTimeMs]);
 
   // Začátek operace + zbývá/skluz
   const operationStart = room.operationStartedAt
     ? new Date(room.operationStartedAt)
     : room.phaseStartedAt ? new Date(room.phaseStartedAt) : null;
   const remainingInfo = (() => {
+    if (isCompletedCycle) return { label: 'DÉLKA CYKLU', text: cycleDurationLabel, color: C.textHi };
     if (!room.estimatedEndTime) return null;
     const diffMs = new Date(room.estimatedEndTime).getTime() - displayTimeMs;
     const abs = Math.abs(diffMs);
@@ -231,7 +219,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           className="flex-1 overflow-y-auto hide-scrollbar px-5 pt-5"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)' }}
         >
-          <RapidSurgeryWarning room={room} statuses={activeStatuses} className="mb-5" />
+          {!isCompletedCycle && <RapidSurgeryWarning room={room} statuses={activeStatuses} className="mb-5" />}
 
           <section className="mobile-timeline-progress-card rounded-[26px] px-4 pt-5 pb-6 mb-5">
           {/* Aktivní status */}
@@ -246,7 +234,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: stepTextColor }} />
                 </span>
               )}
-              {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
+              {statusLabel}
             </span>
           </div>
 
@@ -273,7 +261,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 <p className="text-[44px] font-black tabular-nums leading-none mt-1" style={{ color: 'var(--m-text-strong)' }}>
                   {progressPercent}<span className="text-[22px] font-bold" style={{ color: 'var(--m-muted)' }}>%</span>
                 </p>
-                <p className="text-[11px] mt-1.5" style={{ color: 'var(--m-muted)' }}>krok {stepIndex + 1} z {totalSteps}</p>
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--m-muted)' }}>{isCompletedCycle ? 'Celý cyklus' : `krok ${stepIndex + 1} z ${totalSteps}`}</p>
               </div>
               {/* Pilulka cíle — jako „Goal: 10,000" */}
               <div
@@ -282,7 +270,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               >
                 <Flag className="w-3 h-3" style={{ color: 'var(--m-muted)' }} />
                 <span className="text-[11px] font-semibold tabular-nums" style={{ color: 'var(--m-text)' }}>
-                  Cíl: {room.estimatedEndTime
+                  {isCompletedCycle ? 'Konec' : 'Cíl'}: {room.estimatedEndTime
                     ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                     : '—'}
                 </span>
@@ -305,16 +293,16 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               },
               {
                 icon: Timer,
-                label: 'Ve fázi',
-                value: elapsedInPhase || '—',
-                unit: 'aktuální',
+                label: 'Celý cyklus',
+                value: cycleDurationLabel,
+                unit: isCompletedCycle ? 'dokončený' : 'dosud',
                 color: stepColor,
               },
               {
                 icon: Flag,
-                label: remainingInfo ? (remainingInfo.label === 'ZBÝVÁ' ? 'Zbývá' : 'Přesah') : 'Zbývá',
-                value: remainingInfo?.text || '—',
-                unit: 'odhad',
+                label: isCompletedCycle ? 'Konec' : remainingInfo ? (remainingInfo.label === 'ZBÝVÁ' ? 'Zbývá' : 'Přesah') : 'Zbývá',
+                value: isCompletedCycle ? cycleEndedAt.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : remainingInfo?.text || '—',
+                unit: isCompletedCycle ? 'skutečnost' : 'odhad',
                 color: remainingInfo?.color || stepColor,
               },
             ].map((card) => {
@@ -336,8 +324,8 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           {/* ── Tým ── */}
           <div className="grid grid-cols-2 gap-2.5 mb-7">
             {[
-              { icon: Stethoscope, label: 'Lékař', value: room.staff?.doctor?.name || '—' },
-              { icon: Users, label: 'Sestra', value: room.staff?.nurse?.name || '—' },
+              { icon: Stethoscope, label: isCompletedCycle ? 'Současný lékař' : 'Lékař', value: room.staff?.doctor?.name || '—' },
+              { icon: Users, label: isCompletedCycle ? 'Současná sestra' : 'Sestra', value: room.staff?.nurse?.name || '—' },
             ].map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
@@ -361,18 +349,18 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[15px] font-bold" style={{ color: 'var(--m-text-strong)' }}>Fáze procesu</h3>
             <span className="text-[11px] font-semibold" style={{ color: stepColor }}>
-              {stepIndex} / {totalSteps} hotovo
+              {isCompletedCycle ? 'Dokončený cyklus' : `${stepIndex} / ${totalSteps} hotovo`}
             </span>
           </div>
           <div className="flex flex-col gap-2">
             {activeStatuses.map((s, i) => {
               const col = s.accent_color || s.color || '#6B7280';
-              const done = i < stepIndex;
-              const isCurrent = i === stepIndex && !room.isPaused;
+              const done = isCompletedCycle ? phaseMinutes[i] !== undefined : i < stepIndex;
+              const isCurrent = !isCompletedCycle && i === stepIndex && !room.isPaused;
               const mins = phaseMinutes[i];
               const sub = mins !== undefined
                 ? `${mins < 1 ? '< 1' : Math.round(mins)} min`
-                : done ? 'dokončeno' : isCurrent ? 'probíhá' : (s.default_duration ? `~${s.default_duration} min` : 'čeká');
+                : isCompletedCycle ? 'Bez záznamu' : done ? 'dokončeno' : isCurrent ? 'probíhá' : (s.default_duration ? `~${s.default_duration} min` : 'čeká');
               return (
                 <motion.div
                   key={s.id || i}
@@ -452,11 +440,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: stepColor }} />
                   </span>
                 )}
-                {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
+                {statusLabel}
               </span>
             </div>
             <p className="text-white/45 text-xs mt-1 uppercase tracking-[0.2em]">
-              {room.department} · krok {stepIndex + 1} z {totalSteps}
+              {room.department} · {isCompletedCycle
+                ? `celý cyklus ${operationStart?.toLocaleString('cs-CZ')} – ${cycleEndedAt.toLocaleString('cs-CZ')}`
+                : `krok ${stepIndex + 1} z ${totalSteps}`}
             </p>
           </div>
           <button
@@ -469,7 +459,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
         </div>
 
         <div className="relative z-10 px-6 pt-4">
-          <RapidSurgeryWarning room={room} statuses={activeStatuses} variant="desktop" />
+          {!isCompletedCycle && <RapidSurgeryWarning room={room} statuses={activeStatuses} variant="desktop" />}
         </div>
 
         {/* ── Cesta výkonu — jediná hlavní vizualizace detailu ── */}
@@ -531,9 +521,9 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                   {progressPercent}<span className="text-[22px] text-white/40">%</span>
                 </p>
                 <p className="text-[11px] mt-2 font-semibold" style={{ color: stepColor }}>
-                  {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
+                  {statusLabel}
                 </p>
-                {elapsedInPhase && <p className="text-[10px] text-white/40 mt-1 tabular-nums">{elapsedInPhase} v této fázi</p>}
+                {elapsedInPhase && <p className="text-[10px] text-white/40 mt-1 tabular-nums">{isCompletedCycle ? `${cycleDurationLabel} za celý cyklus` : `${elapsedInPhase} v této fázi`}</p>}
               </div>
             </div>
           </div>
@@ -544,31 +534,31 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 <p className="timeline-popup-journey-kicker text-[10px] uppercase tracking-[0.28em] font-semibold">Cesta výkonu</p>
                 <p className="timeline-popup-journey-title mt-2">Průběh jednotlivých fází</p>
               </div>
-              <span className="timeline-popup-journey-count tabular-nums">{String(stepIndex + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}</span>
+              <span className="timeline-popup-journey-count tabular-nums">{isCompletedCycle ? 'Celý cyklus' : `${String(stepIndex + 1).padStart(2, '0')} / ${String(totalSteps).padStart(2, '0')}`}</span>
             </div>
 
             {/* Jedna souvislá procesní plocha — bez radiálního diagramu a černých karet. */}
             <section className="timeline-popup-journey" aria-label="Průběh operačního cyklu">
               <div className="timeline-popup-journey-summary">
                 <div className="min-w-0">
-                  <span className="timeline-popup-section-title">Aktuální průběh</span>
+                  <span className="timeline-popup-section-title">{isCompletedCycle ? 'Souhrn cyklu' : 'Aktuální průběh'}</span>
                   <div className="mt-2 flex items-baseline gap-3">
                     <strong className="text-[44px] leading-none font-semibold tracking-[-0.05em] text-white tabular-nums">
                       {progressPercent}<span className="ml-1 text-lg font-medium text-white/35">%</span>
                     </strong>
                     <span className="min-w-0 text-sm font-semibold" style={{ color: stepColor }}>
-                      {room.isPaused ? 'Pauza' : (currentStatus?.name || 'Status')}
+                      {statusLabel}
                     </span>
                   </div>
                   <p className="mt-2 text-[10px] text-white/38 tabular-nums">
-                    {elapsedInPhase ? `${elapsedInPhase} v aktuální fázi` : `${stepIndex + 1}. fáze z ${totalSteps}`}
+                    {cycleDurationLabel} {isCompletedCycle ? 'za celý cyklus' : 'od začátku cyklu'}
                   </p>
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="timeline-popup-section-title">Podíl naměřených fází</span>
-                    <span className="text-[9px] font-mono text-white/30">100 %</span>
+                    <span className="text-[9px] font-mono text-white/30">{Object.keys(phaseMinutes).length > 0 ? '100 %' : 'Bez měření'}</span>
                   </div>
                   <div className="timeline-popup-data-bar flex h-3 w-full overflow-hidden gap-px p-px">
                     {activeStatuses.map((status, index) => {
@@ -591,13 +581,13 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                 {activeStatuses.map((status, index) => {
                   const color = status.accent_color || status.color || '#6B7280';
                   const labelColor = getReadableTextColor(color);
-                  const done = index < stepIndex;
-                  const current = index === stepIndex;
+                  const done = isCompletedCycle ? phaseMinutes[index] !== undefined : index < stepIndex;
+                  const current = !isCompletedCycle && index === stepIndex;
                   const mins = phaseMinutes[index];
                   const share = phaseShares[index] || 0;
                   const timeLabel = mins !== undefined
                     ? `${mins < 1 ? '< 1' : Math.round(mins)} min`
-                    : current
+                    : isCompletedCycle ? '—' : current
                       ? (elapsedInPhase || 'probíhá')
                       : done
                         ? 'dokončeno'
@@ -620,7 +610,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
                         {done ? <Check className="h-3.5 w-3.5" /> : index + 1}
                       </span>
                       <span className="timeline-popup-phase-roadmap-status" style={{ color: current ? color : undefined }}>
-                        {current ? 'Probíhá' : done ? 'Dokončeno' : 'Čeká'}
+                        {current ? 'Probíhá' : done ? 'Dokončeno' : isCompletedCycle ? 'Bez záznamu' : 'Čeká'}
                       </span>
                       <strong className="timeline-popup-phase-roadmap-name">{status.name || `Fáze ${index + 1}`}</strong>
                       <span className="timeline-popup-phase-roadmap-share" style={{ color }}>{share.toFixed(1)} %</span>
@@ -740,12 +730,12 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
               const dot = polar(a, R_DOT);
               const lbl = polar(a, R_LBL);
               const col = s.accent_color || s.color || '#6B7280';
-              const done = i < stepIndex;
-              const isCurrent = i === stepIndex;
+              const done = isCompletedCycle ? phaseMinutes[i] !== undefined : i < stepIndex;
+              const isCurrent = !isCompletedCycle && i === stepIndex;
               const mins = phaseMinutes[i];
               const value = mins !== undefined
                 ? `${mins < 1 ? '< 1' : Math.round(mins)} min`
-                : done ? '✓' : isCurrent ? '·' : (s.default_duration ? `~${s.default_duration}m` : '—');
+                : isCompletedCycle ? '—' : done ? '✓' : isCurrent ? '·' : (s.default_duration ? `~${s.default_duration}m` : '—');
               const dim = !done && !isCurrent;
               const isHover = hoverDot === i;
               // zarovnání textu podle strany oblouku
@@ -833,7 +823,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
             </p>
             {elapsedInPhase && (
               <p className="text-[11px] text-white/55 mt-1 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> {elapsedInPhase} v aktuální fázi
+                <Clock className="w-3 h-3" /> {isCompletedCycle ? `${cycleDurationLabel} za celý cyklus` : `${elapsedInPhase} v aktuální fázi`}
               </p>
             )}
           </div>
@@ -849,14 +839,14 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div className="timeline-popup-fact">
             <Stethoscope className="h-4 w-4 shrink-0" style={{ color: C.purple }} />
             <div className="min-w-0">
-              <dt>Lékař</dt>
+              <dt>{isCompletedCycle ? 'Současný lékař' : 'Lékař'}</dt>
               <dd className="truncate">{room.staff?.doctor?.name || '—'}</dd>
             </div>
           </div>
           <div className="timeline-popup-fact">
             <Users className="h-4 w-4 shrink-0" style={{ color: C.green }} />
             <div className="min-w-0">
-              <dt>Sestra</dt>
+              <dt>{isCompletedCycle ? 'Současná sestra' : 'Sestra'}</dt>
               <dd className="truncate">{room.staff?.nurse?.name || '—'}</dd>
             </div>
           </div>
@@ -872,7 +862,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, curren
           <div className="timeline-popup-fact">
             <Flag className="h-4 w-4 shrink-0" style={{ color: C.accent }} />
             <div>
-              <dt>Odhad konce</dt>
+              <dt>{isCompletedCycle ? 'Konec cyklu' : 'Odhad konce'}</dt>
               <dd className="font-mono tabular-nums" style={{ color: C.accent }}>
                 {room.estimatedEndTime
                   ? new Date(room.estimatedEndTime).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })

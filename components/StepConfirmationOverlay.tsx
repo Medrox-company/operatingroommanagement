@@ -18,6 +18,8 @@ interface StepConfirmationOverlayProps {
   safeStepIndex: number;
   validStepCount: number;
   elapsedSeconds: number | null;
+  /** Hranice „podezřele krátká fáze" v minutách — řídí ji nastavení zařízení. */
+  shortPhaseMinutes?: number;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -55,6 +57,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
   safeStepIndex,
   validStepCount,
   elapsedSeconds,
+  shortPhaseMinutes = 5,
   onConfirm,
   onCancel,
 }) => {
@@ -67,7 +70,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
     1,
     currentStep?.default_duration_minutes || currentStep?.default_duration || 5,
   );
-  const isShortInterval = elapsedSeconds !== null && elapsedSeconds < 5 * 60;
+  const isShortInterval = elapsedSeconds !== null && elapsedSeconds < shortPhaseMinutes * 60;
   const elapsedLabel = elapsedSeconds === null
     ? '—'
     : elapsedSeconds < 60
@@ -121,7 +124,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
               <span className="msc-warning-icon" aria-hidden><AlertTriangle /></span>
               <p>
                 Fáze <strong>{currentStep?.name || 'aktuální krok'}</strong> trvá pouze{' '}
-                <strong className="msc-warning-value">{elapsedLabel}</strong> — méně než 5 minut
+                <strong className="msc-warning-value">{elapsedLabel}</strong> — méně než {shortPhaseMinutes} minut
                 a kratší než průměr tohoto kroku ({averageMinutes} min).
               </p>
             </div>
@@ -169,7 +172,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
               <p className="text-[12.5px] leading-relaxed step-confirm-muted min-w-0">
                 Fáze <span className="font-medium step-confirm-text">{currentStep?.name || 'aktuální krok'}</span>{' '}
                 trvá pouze <span className="font-semibold text-amber-600 md:text-amber-300">{elapsedLabel}</span> —
-                méně než 5 minut a kratší než nastavený průměr tohoto kroku ({averageMinutes} min).
+                méně než {shortPhaseMinutes} minut a kratší než nastavený průměr tohoto kroku ({averageMinutes} min).
                 Opravdu chcete přejít dál?
               </p>
             </div>

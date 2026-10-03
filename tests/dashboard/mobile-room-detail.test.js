@@ -68,6 +68,12 @@ function harness(overrides = {}) {
     '../contexts/WorkflowStatusesContext': { useWorkflowStatusesContext: () => ({ workflowStatuses: statuses }) },
     '../contexts/HospitalContext': { useHospital: () => ({ activeHospitalId: 'test-hospital' }) },
     '../hooks/useSharedClock': { useNowMs: () => Date.now() },
+    // Interaktivní nápověda: v ostrém provozu vrací isTutorial false, takže
+    // se události zapisují do databáze. Atrapa drží tentýž stav.
+    '../contexts/TutorialContext': { useTutorial: () => ({ isTutorial: false }) },
+    '../hooks/useOperationalThresholds': { useOperationalThresholds: () => ({
+      thresholds: { shortPhaseMinutes: 5, cleaningWarningMinutes: 30, rapidSurgeryMinutes: 5, firstCaseGraceMinutes: 15 },
+    }) },
     '../lib/db': { recordStatusEvent: async event => { events.push(event); } },
     './StaffPickerModal': { default: 'staff-picker' },
     './StepConfirmationOverlay': { default: 'step-confirmation' },
@@ -112,6 +118,28 @@ function harness(overrides = {}) {
     },
   };
 }
+
+test('desktop staff controls use the same horizontal gap and right rail as the lower actions', () => {
+  const { tree } = harness().render();
+  const [staffRail] = elements(tree, element => element.type === 'div'
+    && element.props.className?.includes('absolute')
+    && elements(element.props.children, child => child.props['data-tour'] === 'staff-nurse').length > 0);
+  const [actionRail] = elements(tree, element => element.type === 'div'
+    && element.props.className?.includes('absolute bottom-')
+    && elements(element.props.children, child => child.props['data-tour'] === 'patient-call').length > 0);
+  const [closeRail] = elements(tree, element => element.type === 'div'
+    && element.props.className?.includes('absolute right-')
+    && elements(element.props.children, child => child.props['aria-label'] === 'Zavřít detail sálu').length > 0);
+  assert.ok(staffRail && actionRail && closeRail, 'All three desktop control groups must be present');
+
+  const gap = actionRail.props.className.match(/gap-\[([^\]]+)\]/)[1];
+  const inset = actionRail.props.className.match(/right-\[([^\]]+)\]/)[1];
+  const compact = value => value.replace(/\s+/g, '');
+  assert.ok(staffRail.props.className.includes(`gap-[${gap}]`));
+  assert.ok(closeRail.props.className.includes(`right-[${inset}]`));
+  const [close] = elements(closeRail, element => element.props['aria-label'] === 'Zavřít detail sálu');
+  assert.equal(compact(staffRail.props.style.right), `calc(${inset}+${compact(close.props.style.width)}+${gap})`);
+});
 
 test('mobile detail has real room data, two timing cards, two staff roles and all four actions', () => {
   const view = harness().render();

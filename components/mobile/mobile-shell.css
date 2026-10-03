@@ -20,6 +20,8 @@
   .mobile-module-container.mobile-safe-top { padding: calc(18px + env(safe-area-inset-top, 0px)) var(--m-page-gutter) calc(6rem + env(safe-area-inset-bottom, 0px)) !important; }
   .mobile-theme-toggle { flex-shrink: 0; touch-action: manipulation; }
   .mobile-theme-toggle:focus-visible, .mobile-ios-segments button:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+  .mobile-glass-card:focus-visible, .mobile-search-field:focus-within { outline: 2px solid var(--m-accent); outline-offset: 2px; }
+  .mobile-search-clear:focus-visible { outline: 2px solid var(--m-accent); outline-offset: -2px; }
   .mobile-ios-segments { border-radius: 12px; gap: 0; padding: 3px; }
   .mobile-ios-segments button { min-height: 44px; border-radius: 9px; }
   .mobile-ios-segments button > span:last-child { font-size: 13px; }

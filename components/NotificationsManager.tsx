@@ -68,11 +68,17 @@ const TYPE_META: Record<NotificationType, {
   shortLabel: string;
   color: string;
   icon: typeof Mail;
+  /**
+   * Má kanál skutečnou doručovací cestu? E-mail odchází přes Resend, oznámení
+   * v aplikaci a zvuk řeší realtime vrstva. SMS zatím žádnou bránu nemá —
+   * nabízet ji jako funkční by znamenalo slíbit doručení, které nenastane.
+   */
+  delivers: boolean;
 }> = {
-  email: { label: 'E-mail', shortLabel: 'MAIL', color: COLORS.blue, icon: Mail },
-  sms: { label: 'SMS zpráva', shortLabel: 'SMS', color: COLORS.cyan, icon: MessageSquare },
-  push: { label: 'Push oznámení', shortLabel: 'PUSH', color: '#EC4899', icon: Bell },
-  sound: { label: 'Zvukový signál', shortLabel: 'ZVUK', color: COLORS.amber, icon: Volume2 },
+  email: { label: 'E-mail', shortLabel: 'MAIL', color: COLORS.blue, icon: Mail, delivers: true },
+  sms: { label: 'SMS zpráva', shortLabel: 'SMS', color: COLORS.cyan, icon: MessageSquare, delivers: false },
+  push: { label: 'Push oznámení', shortLabel: 'PUSH', color: '#EC4899', icon: Bell, delivers: true },
+  sound: { label: 'Zvukový signál', shortLabel: 'ZVUK', color: COLORS.amber, icon: Volume2, delivers: true },
 };
 
 const INITIAL_NOTIFICATIONS: Notification[] = [
@@ -274,10 +280,15 @@ const NotificationCard: React.FC<{
         <span className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/26">
           {notification.type === 'email' ? 'Příjemce' : 'Doručení'}
         </span>
-        <span className="ml-auto min-w-0 truncate text-[10px] text-white/45">
-          {notification.type === 'email'
-            ? notification.recipientEmail || 'Výchozí distribuční seznam'
-            : notification.enabled ? 'Povoleno v systému' : 'Doručování vypnuto'}
+        <span
+          className={`ml-auto min-w-0 truncate text-[10px] ${TYPE_META[notification.type].delivers ? 'text-white/45' : 'text-amber-300/70'}`}
+          title={TYPE_META[notification.type].delivers ? undefined : 'Kanál je připravený v konfiguraci, ale zprávy zatím neodesílá.'}
+        >
+          {!TYPE_META[notification.type].delivers
+            ? 'Zatím nedoručuje'
+            : notification.type === 'email'
+              ? notification.recipientEmail || 'Výchozí distribuční seznam'
+              : notification.enabled ? 'Povoleno v systému' : 'Doručování vypnuto'}
         </span>
       </div>
     </article>

@@ -4,6 +4,8 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, LocateFixed } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 import type { CurrentRoomSpecialty } from '../../lib/room-specialty';
+import { describeTimelineOperationalWarning, type TimelineOperationalWarning } from '../../lib/timeline-operational-warnings';
+import { calculateUnusedOperatingMinutes } from '../../lib/timeline-unused-minutes';
 import { mobileRoomPhase } from '../../lib/mobile-room-display';
 import { getMobileRoomSegments, getMobileTimelineWindow, mobileTimelinePageSize, type MobileTimelineStatus } from '../../lib/mobile-timeline';
 import { MobileModuleHeader, MobilePillTabs } from './MobileShell';
@@ -15,6 +17,7 @@ interface Props {
   activeStatuses: MobileTimelineStatus[];
   currentTime: Date;
   stats: { operations: number; cleaning: number; free: number; completed: number; emergencyCount: number };
+  warningsByRoom?: ReadonlyMap<string, TimelineOperationalWarning[]>;
   onSelectRoom: (room: OperatingRoom) => void;
 }
 
@@ -22,7 +25,7 @@ const formatTime = (ms: number) => new Date(ms).toLocaleTimeString('cs-CZ', { ho
 const formatDate = (ms: number) => new Date(ms).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' });
 
 /** A viewport-sized schedule: navigate time and room pages, never the whole page. */
-export default function MobileTimelineView({ rooms, currentSpecialties, activeStatuses, currentTime, stats, onSelectRoom }: Props) {
+export default function MobileTimelineView({ rooms, currentSpecialties, activeStatuses, currentTime, stats, warningsByRoom, onSelectRoom }: Props) {
   const [scale, setScale] = useState<'2' | '4' | 'day'>('4');
   const [timeOffset, setTimeOffset] = useState(0);
   const [firstRoom, setFirstRoom] = useState(0);
@@ -76,7 +79,7 @@ export default function MobileTimelineView({ rooms, currentSpecialties, activeSt
       </div>
       <section className="m-unified-card mtl-axis" aria-label="Časová osa provozu">
         <header className="m-unified-card-header mtl-axis-heading">
-          <div><h2 className="m-unified-card-title">Časová osa</h2><p aria-live="polite">{rangeLabel}</p></div>
+          <div><h2 className="m-unified-card-title">Časová osa</h2><p>{rangeLabel}</p><span className="mtl-range-announcement" role="status">Časový úsek {formatTime(window.startMs)} až {formatTime(window.endMs)}</span></div>
           <div className="mtl-time-pager" role="group" aria-label="Posun časové osy">
             <button type="button" onClick={() => moveTime(-1)} aria-label="Předchozí časový úsek"><ChevronLeft size={19} aria-hidden /></button>
             <button type="button" onClick={() => moveTime(1)} aria-label="Následující časový úsek"><ChevronRight size={19} aria-hidden /></button>
@@ -90,13 +93,36 @@ export default function MobileTimelineView({ rooms, currentSpecialties, activeSt
             const phase = mobileRoomPhase(room, activeStatuses);
             const segments = getMobileRoomSegments(room, activeStatuses, nowMs, window);
             const specialtyLabel = currentSpecialties.get(room.id)?.map(specialty => specialty.name).join(', ');
+            const warnings = warningsByRoom?.get(room.id) ?? [];
+            const visibleWarnings = warnings.filter(warning => warning.type === 'schedule_collision');
+            const featuredWarning = visibleWarnings[0];
+            const unusedMinutes = calculateUnusedOperatingMinutes(room, currentTime);
+            const unusedLabel = `Nevyužito ${unusedMinutes === null ? '—' : `${unusedMinutes} min`}`;
+            const unusedDescription = unusedMinutes === null
+              ? 'Nevyužité minuty nelze určit: pro dnešek není nastavena platná pracovní doba sálu.'
+              : `${unusedMinutes} nevyužitých minut v dosud uplynulé nastavené pracovní době sálu, po zohlednění přestávky. Zahrnuje čas bez zaznamenaného operačního cyklu.`;
+            const doctorAssigned = Boolean(room.staff?.doctor?.name?.trim());
+            const nurseAssigned = Boolean(room.staff?.nurse?.name?.trim());
+            const teamSummary = `ARO lékař: ${doctorAssigned ? 'vyplněno' : 'nevyplněno'}; ARO sestra: ${nurseAssigned ? 'vyplněno' : 'nevyplněno'}`;
             return (
               <button type="button" key={room.id} className="mtl-row" onClick={() => onSelectRoom(room)}
-                aria-label={`${room.name}, nyní ${phase.title}${specialtyLabel ? `, ${specialtyLabel}` : ''}. Otevřít detail sálu.`}
+                aria-label={`${room.name}, nyní ${phase.title}${specialtyLabel ? `, ${specialtyLabel}` : ''}. ${unusedDescription} ${teamSummary}.${visibleWarnings.length ? ` Upozornění: ${visibleWarnings.map(describeTimelineOperationalWarning).join('; ')}.` : ''} Otevřít detail sálu.`}
                 aria-describedby={`${descriptionId}-${room.id}`}>
                 <span className="mtl-row-heading">
                   <strong title={room.name}>{room.name}</strong>
-                  <span className="mtl-phase" title={`Aktuální stav: ${phase.title}`}><i style={{ background: phase.color }} aria-hidden />{phase.title}</span>
+                  <span className="mtl-row-status">
+                    <span className="mtl-status-line">
+                      <span className="mtl-phase" title={`Aktuální stav: ${phase.title}`}><i style={{ background: phase.color }} aria-hidden />{phase.title}</span>
+                      <span className="mtl-team-dots" title={teamSummary} aria-hidden="true">
+                        <i data-team-role="doctor" data-team-assigned={doctorAssigned} />
+                        <i data-team-role="nurse" data-team-assigned={nurseAssigned} />
+                      </span>
+                    </span>
+                    {featuredWarning && <span className="mtl-warning-chip" data-kind="schedule_collision" aria-hidden="true">
+                      Kolize{visibleWarnings.length > 1 ? ` +${visibleWarnings.length - 1}` : ''}
+                    </span>}
+                    <span className="mtl-unused-chip" title={unusedDescription} aria-hidden="true">{unusedLabel}</span>
+                  </span>
                 </span>
                 <span className="mtl-track" aria-hidden>
                   {ticks.map((tick, index) => <span key={index} className="mtl-gridline" style={{ left: `${tick.percent}%` }} />)}

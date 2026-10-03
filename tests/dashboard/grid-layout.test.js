@@ -6,6 +6,8 @@ import { calculateDashboardGridLayout } from '../../lib/dashboard-grid-layout.js
 const viewports = [
   { width: 600, height: 550 },
   { width: 704, height: 640 },
+  { width: 856, height: 600 },
+  { width: 1012, height: 650 },
   { width: 1112, height: 540 },
   { width: 1272, height: 730 },
   { width: 1752, height: 880 },
@@ -52,7 +54,7 @@ for (const viewport of viewports) {
       assert.ok(layout.columns * layout.rows >= count, 'every room has a slot');
       assert.ok((layout.rows - 1) * layout.columns < count, 'no empty trailing row');
       assert.ok((layout.columns - 1) * layout.rows < count, 'columns are balanced within the chosen number of rows');
-      assert.ok(cardWidth(layout) >= (viewport.width >= 2500 ? 360 : viewport.width >= 1800 ? 300 : 240));
+      assert.ok(cardWidth(layout) >= (viewport.width >= 2500 ? 360 : 320));
 
       const minimumHeight = Math.max(280, Math.ceil(cardWidth(layout) * 0.72));
       const minimumGridHeight = layout.rows * minimumHeight + (layout.rows - 1) * layout.gap;
@@ -73,10 +75,10 @@ test('six rooms use two balanced rows instead of leaving one isolated room', () 
 
 test('room grids use available height for larger cards while respecting readable width tiers', () => {
   const cases = [
-    [600, 2],
+    [600, 1],
     [704, 2],
-    [1112, 4],
-    [1272, 4],
+    [1112, 3],
+    [1272, 3],
     [1752, 5],
     [2392, 5],
     [3300, 5],
@@ -134,13 +136,13 @@ test('one room is capped at 520px wide even on an ultrawide display', () => {
 
 test('short screens scroll without crushing cards and fitting screens round down safely', () => {
   const short = calculateDashboardGridLayout({ width: 1272, height: 200, count: 15 });
-  assert.equal(short.cardHeight, 280);
+  assert.equal(short.cardHeight, 300);
   assert.equal(short.density, 'compact');
   assert.ok(gridHeight(short) > 200);
 
-  const fitting = calculateDashboardGridLayout({ width: 1272, height: 866.9, count: 15 });
-  assert.equal(fitting.cardHeight, 280);
-  assert.ok(gridHeight(fitting) <= 866.9);
+  const fitting = calculateDashboardGridLayout({ width: 1272, height: 1548.9, count: 15 });
+  assert.equal(fitting.cardHeight, 300);
+  assert.ok(gridHeight(fitting) <= 1548.9);
 
   const fractional = calculateDashboardGridLayout({ width: 2392.5, height: 1069.8, count: 15 });
   assert.ok(gridHeight(fractional) <= 1069.8);
@@ -151,6 +153,19 @@ test('wave pocket minimum is rounded up even when the available height is too sh
   const layout = calculateDashboardGridLayout({ width: 500.25, height: 200, count: 1 });
   assert.equal(layout.cardHeight, 361);
   assert.ok(layout.cardHeight >= cardWidth(layout) * 0.72);
+});
+
+test('tablet rotation preserves readable cards and separate 44px action targets', () => {
+  for (const width of [600, 652, 856, 1012, 1112, 1198]) {
+    for (const height of [250, 600, 1000]) {
+      const layout = calculateDashboardGridLayout({ width, height, count: 15 });
+      const widthPerCard = cardWidth(layout);
+      assert.ok(widthPerCard >= 320, `${width}px content must retain readable cards`);
+      assert.ok(widthPerCard * 0.15102 >= 48, 'touch targets retain at least 4px of separation');
+      assert.ok(layout.maxWidth <= width);
+      assert.ok(layout.columns * layout.rows >= 15, 'all rooms remain in the scrollable grid');
+    }
+  }
 });
 
 test('zero or invalid measurements and counts return finite layouts without dividing by zero', () => {
