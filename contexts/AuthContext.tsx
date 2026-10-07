@@ -187,7 +187,6 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         { id: 'timeline',   name: 'Timeline',   description: 'Operations timeline',          is_enabled: true, icon: 'Calendar',   accent_color: '#A855F7', sort_order: 2, allowed_roles: ['aro','cos','management','primar'] },
         { id: 'statistics', name: 'Statistics', description: 'Statistics and analytics',     is_enabled: true, icon: 'BarChart3',  accent_color: '#06B6D4', sort_order: 3, allowed_roles: ['management','primar','cos'] },
         { id: 'staff',      name: 'Staff',      description: 'Staff management',             is_enabled: true, icon: 'Users',      accent_color: '#10B981', sort_order: 4, allowed_roles: ['cos','management'] },
-        { id: 'acute',      name: 'Akutní příjem', description: 'Požadavky na akutní operační výkon', is_enabled: true, icon: 'Siren', accent_color: '#FB7185', sort_order: 5, allowed_roles: ['aro','cos','management','primar'] },
         { id: 'alerts',     name: 'Alerts',     description: 'Alert system',                 is_enabled: true, icon: 'Bell',       accent_color: '#EC4899', sort_order: 5, allowed_roles: ['aro','cos','management','primar'] },
         { id: 'settings',   name: 'Settings',   description: 'System configuration',         is_enabled: true, icon: 'Settings',   accent_color: '#64748B', sort_order: 6, allowed_roles: ['admin'] },
       ]);

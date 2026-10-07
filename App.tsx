@@ -22,9 +22,7 @@ const StatisticsModule = dynamic(() => import('./components/StatisticsModule'), 
 const StaffOverviewModule = dynamic(() => import('./components/StaffOverviewModule'), { ssr: false, loading: ModuleLoader });
 const SettingsPage = dynamic(() => import('./components/SettingsPage'), { ssr: false, loading: ModuleLoader });
 const FlowMonitorModule = dynamic(() => import('./components/FlowMonitorModule'), { ssr: false, loading: ModuleLoader });
-const AcuteRequestsModule = dynamic(() => import('./components/acute/AcuteRequestsModule'), { ssr: false, loading: ModuleLoader });
 import DeviceRegistration from './components/DeviceRegistration';
-import { AcuteRequestsProvider } from './contexts/AcuteRequestsContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppToaster } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
@@ -569,9 +567,6 @@ const AppContent: React.FC = () => {
 
   return (
     <ErrorBoundary>
-    {/* Fronta akutních požadavků žije nad přepínáním modulů, aby se její stav
-        neztrácel při odskočení na dashboard. Druhý krok ji napojí na databázi. */}
-    <AcuteRequestsProvider>
     <div className="flex h-dvh md:h-screen w-full font-sans overflow-hidden bg-black text-white">
       {!hospitalLoading && activeHospitalId && <DeviceRegistration key={activeHospitalId} />}
       {/* Statická CSS pozadí — bez fotografií, vzdálených zdrojů a runtime konfigurace. */}
@@ -687,15 +682,6 @@ const AppContent: React.FC = () => {
   </div>
   )}
 
-            {/* Akutní příjem */}
-            {currentView === 'acute' && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar">
-                <div className="mobile-module-container app-module-shell w-full px-4 sm:px-6 py-6 pb-mobile-nav mobile-safe-top md:p-0 md:pb-0">
-                  <AcuteRequestsModule />
-                </div>
-              </div>
-            )}
-
   {/* Alerts */}
             {currentView === 'alerts' && (
               <div className="w-full h-full">
@@ -733,7 +719,6 @@ const AppContent: React.FC = () => {
         </main>
       </div>
     </div>
-    </AcuteRequestsProvider>
     </ErrorBoundary>
   );
 };
