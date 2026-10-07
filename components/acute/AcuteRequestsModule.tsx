@@ -8,15 +8,21 @@ import { MobileCard, MobileModuleHeader, MobileScreen, MobileSectionLabel } from
 import { useNowMinuteMs } from '../../hooks/useSharedClock';
 import { useAcuteRequests } from '../../contexts/AcuteRequestsContext';
 import { URGENCY_LEVELS, formatDuration, isWaiting } from '../../lib/acute-requests';
+import { C } from '../statistics/statistics-theme';
+import { SectionLabel } from '../statistics/StatisticsPrimitives';
 import AcuteQueue from './AcuteQueue';
 import AcuteRequestForm, { type AcuteDepartmentOption } from './AcuteRequestForm';
 
 /**
  * Modul Akutní příjem — fronta požadavků na akutní operační výkon.
  *
- * První krok staví jen rozhraní. Oddělení i požadavky jsou zatím ukázkové;
- * druhý krok je vymění za tabulky `departments` a `acute_requests`, aniž by
- * se musely měnit komponenty — celý modul sahá jen na AcuteRequestsContext.
+ * Obal, typografie i plochy jsou shodné s ostatními moduly: `app-module-shell`
+ * / `app-module-content` / `app-module-page-header` a ModulePageHeading na
+ * desktopu, MobileScreen s kartami na telefonu. Barvy a odstíny textu jdou
+ * z tokenů `--stats-*` na :root. Modul nepřidává žádný vlastní CSS soubor.
+ *
+ * První krok staví jen rozhraní; druhý vymění paměťové úložiště za tabulky,
+ * aniž by se komponenty změnily.
  */
 
 /**
@@ -30,7 +36,7 @@ const DEMO_DEPARTMENTS: AcuteDepartmentOption[] = [
   { id: 'demo-traumatologie', name: 'Traumatologie', accent_color: '#06B6D4' },
   { id: 'demo-ortopedie', name: 'Ortopedie', accent_color: '#A78BFA' },
   { id: 'demo-urologie', name: 'Urologie', accent_color: '#EC4899' },
-  { id: 'demo-gynekologie', name: 'Gynekologie', accent_color: '#34D399' },
+  { id: 'demo-gynekologie', name: 'Gynekologie', accent_color: '#10B981' },
 ];
 
 export default function AcuteRequestsModule() {
@@ -40,11 +46,6 @@ export default function AcuteRequestsModule() {
 
   const waiting = useMemo(() => requests.filter(isWaiting), [requests]);
 
-  const counters = URGENCY_LEVELS.map(level => ({
-    level,
-    count: summary.byUrgency[level.id],
-  }));
-
   const headline = summary.waiting === 0
     ? 'Fronta je prázdná'
     : `${summary.waiting} ${summary.waiting === 1 ? 'požadavek' : summary.waiting < 5 ? 'požadavky' : 'požadavků'} čeká na sál`;
@@ -53,39 +54,56 @@ export default function AcuteRequestsModule() {
     ? new Date(summary.nextDeadlineMs).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
     : null;
 
-  /** Shrnutí nad frontou — stejné na mobilu i na desktopu. */
+  /**
+   * Souhrn po stupních — stejná geometrie jako pruh ukazatelů ve statistikách:
+   * drobný popisek nad velkým lehkým číslem.
+   */
   const Overview = (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        {counters.map(({ level, count }) => (
-          <div
-            key={level.id}
-            className="flex min-w-[112px] flex-1 flex-col gap-1 rounded-xl border p-3"
-            style={{
-              borderColor: count > 0 ? `${level.color}40` : 'rgba(255,255,255,0.07)',
-              background: count > 0 ? `${level.color}12` : 'rgba(255,255,255,0.02)',
-            }}
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: count > 0 ? level.color : 'rgba(255,255,255,0.45)' }}>
-              {level.label}
-            </span>
-            <span className="text-[22px] font-light leading-none tabular-nums text-white/95">{count}</span>
-            <span className="text-[10px] text-white/40">okno {formatDuration(windows[level.id])}</span>
-          </div>
-        ))}
+      <div
+        className="grid grid-cols-3 overflow-hidden rounded-xl"
+        style={{ background: C.surface, border: `1px solid ${C.border}` }}
+      >
+        {URGENCY_LEVELS.map((level, index) => {
+          const count = summary.byUrgency[level.id];
+          return (
+            <div
+              key={level.id}
+              className="flex flex-col justify-between px-4 py-3"
+              style={{ borderRight: index < URGENCY_LEVELS.length - 1 ? `1px solid ${C.border}` : undefined }}
+            >
+              <p
+                className="mb-2.5 text-[9px] font-semibold uppercase tracking-[0.12em]"
+                style={{ color: count > 0 ? level.color : C.muted }}
+              >
+                {level.label}
+              </p>
+              <p className="text-2xl font-light leading-none tabular-nums" style={{ color: count > 0 ? C.text : C.faint }}>
+                {count}
+              </p>
+              <p className="mt-1.5 text-[10px]" style={{ color: C.faint }}>okno {formatDuration(windows[level.id])}</p>
+            </div>
+          );
+        })}
       </div>
 
       {summary.overdue > 0 ? (
-        <p className="flex items-start gap-2 rounded-lg border border-[#FB7185]/30 bg-[#FB7185]/[0.08] px-3 py-2 text-[12px] leading-relaxed text-[#FFC9D1]">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+        <p
+          className="flex items-start gap-2 rounded-lg px-3 py-2 text-[11.5px] leading-relaxed"
+          style={{ background: `${C.red}14`, border: `1px solid ${C.red}3d`, color: C.text }}
+        >
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: C.red }} strokeWidth={2} aria-hidden />
           {summary.overdue} {summary.overdue === 1 ? 'požadavek má' : 'požadavky mají'} vypršelé okno do sálu.
         </p>
       ) : nextDeadline ? (
-        <p className="text-[12px] text-white/50">Nejbližší konec okna v {nextDeadline}.</p>
+        <p className="text-[11.5px]" style={{ color: C.muted }}>Nejbližší konec okna v {nextDeadline}.</p>
       ) : null}
 
       {isDemoData ? (
-        <p className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-[11px] leading-relaxed text-amber-200/80">
+        <p
+          className="rounded-lg px-3 py-2 text-[11px] leading-relaxed"
+          style={{ background: `${C.yellow}12`, border: `1px solid ${C.yellow}2e`, color: C.muted }}
+        >
           Ukázková data. Modul zatím běží bez databáze — po obnovení stránky se fronta vrátí do výchozího stavu.
         </p>
       ) : null}
@@ -116,6 +134,7 @@ export default function AcuteRequestsModule() {
       {/* ========== MOBILNÍ ROZVRŽENÍ ========== */}
       <MobileScreen>
         <MobileModuleHeader kicker="Operační blok" title="Akutní příjem" />
+
         <MobileCard>
           <h2 className="m-unified-card-title">{headline}</h2>
           <div className="mt-3">{Overview}</div>
@@ -127,18 +146,16 @@ export default function AcuteRequestsModule() {
             <div className="mt-3">{Form}</div>
           </MobileCard>
         ) : (
-          <button
-            type="button"
-            onClick={() => setFormOpen(true)}
-            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-400/15 text-[14px] font-semibold text-cyan-50"
-          >
-            <Plus className="h-4.5 w-4.5" strokeWidth={2.2} aria-hidden />
-            Zadat akutní výkon
-          </button>
+          <MobileCard as="button" onClick={() => setFormOpen(true)}>
+            <span className="flex items-center justify-center gap-2 text-[14px] font-semibold" style={{ color: 'var(--m-accent)' }}>
+              <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden />
+              Zadat akutní výkon
+            </span>
+          </MobileCard>
         )}
 
         <MobileSectionLabel>Fronta požadavků</MobileSectionLabel>
-        <div className="px-1">{Queue}</div>
+        {Queue}
       </MobileScreen>
 
       {/* ========== DESKTOPOVÉ ROZVRŽENÍ ========== */}
@@ -158,9 +175,10 @@ export default function AcuteRequestsModule() {
                 <button
                   type="button"
                   onClick={() => setFormOpen(open => !open)}
-                  className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-cyan-300/30 bg-cyan-400/12 px-3.5 text-[12.5px] font-semibold text-cyan-50 transition-colors hover:bg-cyan-400/20"
+                  aria-pressed={formOpen}
+                  className="dashboard-view-option"
                 >
-                  {formOpen ? <X className="h-4 w-4" strokeWidth={2.2} aria-hidden /> : <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden />}
+                  {formOpen ? <X className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden /> : <Plus className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden />}
                   {formOpen ? 'Zavřít zadání' : 'Zadat akutní výkon'}
                 </button>
               }
@@ -168,21 +186,19 @@ export default function AcuteRequestsModule() {
           </header>
 
           <div className="grid min-h-0 flex-1 gap-5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_380px]">
-            {/* fronta */}
-            <section className="flex min-h-0 flex-col gap-3 overflow-hidden" aria-label="Fronta akutních požadavků">
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-white/70">{headline}</h2>
-              </div>
+            <section className="flex min-h-0 flex-col overflow-hidden" aria-label="Fronta akutních požadavků">
+              <SectionLabel>{headline}</SectionLabel>
               <div className="min-h-0 flex-1 overflow-y-auto pr-1">{Queue}</div>
             </section>
 
-            {/* pravý sloupec: souhrn, případně formulář */}
             <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
               {Overview}
               {formOpen ? (
-                <section className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4" aria-label="Nový požadavek">
-                  <h2 className="mb-4 text-[13px] font-semibold uppercase tracking-[0.12em] text-white/70">Nový požadavek</h2>
-                  {Form}
+                <section aria-label="Nový požadavek">
+                  <SectionLabel>Nový požadavek</SectionLabel>
+                  <div className="rounded-xl p-4" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+                    {Form}
+                  </div>
                 </section>
               ) : null}
             </aside>

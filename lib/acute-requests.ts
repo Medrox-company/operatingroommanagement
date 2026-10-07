@@ -36,27 +36,29 @@ export interface UrgencyLevel {
  * České zdroje se v pojmech „urgentní" a „akutní" rozcházejí, proto u každého
  * stupně stojí časové okno — to je definice, slovo je jen zkratka.
  */
+/* Barvy odpovídají paletě aplikace (components/statistics/statistics-theme.ts):
+   červená / oranžová / akcentová. Žádné vlastní odstíny. */
 export const URGENCY_LEVELS: readonly UrgencyLevel[] = [
   {
     id: 'neodkladny',
     label: 'Neodkladný',
     meaning: 'Vitální indikace — přímé ohrožení života nebo končetiny. Jde se ihned.',
     defaultWindowMinutes: 30,
-    color: '#FB7185',
+    color: '#EF4444',
   },
   {
     id: 'urgentni',
     label: 'Urgentní',
     meaning: 'Nesnese odklad do dalšího dne. Řádově hodiny.',
     defaultWindowMinutes: 360,
-    color: '#FBBF24',
+    color: '#F97316',
   },
   {
     id: 'odkladny',
     label: 'Odkladný',
     meaning: 'Musí proběhnout, ale vejde se do programu. Desítky hodin.',
     defaultWindowMinutes: 1440,
-    color: '#38BDF8',
+    color: '#06B6D4',
   },
 ] as const;
 

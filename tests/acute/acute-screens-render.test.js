@@ -40,10 +40,31 @@ const reactStub = {
   useRef: value => ({ current: value }),
 };
 
+/**
+ * Designové tokeny aplikace (--stats-* na :root) a sdílené primitivy. Modul je
+ * používá záměrně, aby se vzhled nelišil od ostatních modulů — v testu je
+ * nahrazujeme, ať se nevtahuje globální CSS.
+ */
+const theme = {
+  C: {
+    accent: '#06B6D4', green: '#10B981', orange: '#F97316', yellow: '#FBBF24', red: '#EF4444',
+    border: 'var(--stats-border)', borderHover: 'var(--stats-border-hover)',
+    surface: 'var(--stats-surface)', surfaceActive: 'var(--stats-surface-active)',
+    muted: 'var(--stats-muted)', faint: 'var(--stats-faint)', ghost: 'var(--stats-ghost)',
+    text: 'var(--stats-text)',
+  },
+};
+const primitives = {
+  Card: ({ children }) => React.createElement('div', { 'data-card': true }, children),
+  EmptyState: ({ title, desc }) => React.createElement('div', null, title, ' ', desc),
+};
+
 const allowed = {
   react: reactStub,
   'lucide-react': icons,
   '../../lib/acute-requests': domain,
+  '../statistics/statistics-theme': theme,
+  '../statistics/StatisticsPrimitives': primitives,
 };
 
 const Form = compile('../../components/acute/AcuteRequestForm.tsx', name => {
