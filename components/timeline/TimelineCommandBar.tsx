@@ -92,10 +92,10 @@ export function TimelineCommandBar({
         aria-label="Obnovit data"
         data-tour="tl-refresh"
         title={`Živě · aktualizováno ${lastUpdated.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
-        className="flex items-center justify-center gap-1 xl:gap-2 h-8 w-8 xl:w-auto px-0 xl:px-2 rounded-xl transition-colors hover:bg-white/5 disabled:cursor-default"
+        className="timeline-tool-button flex items-center justify-center gap-1 xl:gap-2 h-8 w-8 xl:w-auto px-0 xl:px-2 rounded-xl transition-colors hover:bg-white/5 disabled:cursor-default"
       >
         <span className="relative flex h-2 w-2 flex-shrink-0">
-          <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: C.green }} />
+          <span className="timeline-refresh-ping absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: C.green }} />
           <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: C.green }} />
         </span>
         <span className="hidden xl:inline text-[10px] font-semibold uppercase tracking-wider text-white/50 tabular-nums">
@@ -114,7 +114,7 @@ export function TimelineCommandBar({
         aria-label="Historie"
         data-tour="tl-history"
         title="Historie — listování po dnech a zpětné zobrazení časové osy"
-        className="w-7 xl:w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+        className="timeline-tool-button w-7 xl:w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
       >
         <CalendarDays className="w-4 h-4 text-white/60" />
       </button>
@@ -126,7 +126,7 @@ export function TimelineCommandBar({
         data-tour="tl-summary"
         aria-pressed={showSummary}
         title={showSummary ? 'Zpět na živý provoz' : 'Denní souhrn — všechny dnešní výkony a využití sálů'}
-        className="h-8 w-7 xl:w-auto px-0 xl:px-2 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 transition-colors hover:bg-white/5"
+        className="timeline-tool-button h-8 w-7 xl:w-auto px-0 xl:px-2 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 transition-colors hover:bg-white/5"
         style={showSummary
           ? { background: `${C.blue}1f`, color: C.blue, boxShadow: `inset 0 0 0 1px ${C.blue}35` }
           : { color: 'rgba(255,255,255,0.6)' }}
@@ -143,7 +143,7 @@ export function TimelineCommandBar({
         aria-label="Hustota řádků"
         data-tour="tl-density"
         title={density === 'auto' ? 'Hustota: Auto (vejít vše) — klikni pro Kompakt' : density === 'compact' ? 'Hustota: Kompakt (víc sálů) — klikni pro Komfort' : 'Hustota: Komfort (víc detailu) — klikni pro Auto'}
-        className="h-8 w-7 xl:w-auto px-0 xl:px-2 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 transition-colors hover:bg-white/5"
+        className="timeline-tool-button h-8 w-7 xl:w-auto px-0 xl:px-2 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 transition-colors hover:bg-white/5"
         style={density !== 'auto'
           ? { background: `${C.cyan}1f`, color: C.cyan, boxShadow: `inset 0 0 0 1px ${C.cyan}35` }
           : { color: 'rgba(255,255,255,0.6)' }}
@@ -160,7 +160,7 @@ export function TimelineCommandBar({
         aria-label="Triáž pozornosti"
         data-tour="tl-attention"
         title="Triáž pozornosti — vše, co teď vyžaduje pozornost na sálech"
-        className="relative w-7 xl:w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+        className="timeline-tool-button relative w-7 xl:w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
       >
         <BellRing className="w-4 h-4 text-white/60" />
         {attentionCount > 0 && (
@@ -182,7 +182,7 @@ export function TimelineCommandBar({
           aria-haspopup="dialog"
           aria-expanded={showLegend}
           title="Legenda fází a provozních značek"
-          className="w-7 xl:w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+          className="timeline-tool-button w-7 xl:w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
           style={showLegend ? { background: `${C.cyan}1f`, color: C.cyan } : undefined}
         >
           <Info className={`w-4 h-4 ${showLegend ? '' : 'text-white/60'}`} />
@@ -258,7 +258,7 @@ export function TimelineCommandBar({
           data-tour="tl-tools"
           aria-haspopup="menu"
           aria-expanded={showToolsMenu}
-          className="h-8 w-8 xl:w-auto px-0 xl:px-2.5 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
+          className="timeline-tool-button h-8 w-8 xl:w-auto px-0 xl:px-2.5 rounded-xl flex items-center justify-center gap-0 xl:gap-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
           style={showToolsMenu ? { background: `${C.cyan}1f`, color: C.cyan } : { color: 'rgba(255,255,255,0.65)' }}
         >
           <SlidersHorizontal className="w-4 h-4" />
@@ -371,7 +371,7 @@ export function TimelineCommandBar({
         aria-pressed={scrubActive}
         aria-label="Časová lupa — stav sálů v čase"
         title="Časová lupa: táhni po ose a uvidíš stav všech sálů v daném čase (Esc zavře)"
-        className="hidden xl:flex w-8 h-8 rounded-xl items-center justify-center transition-colors hover:bg-white/5"
+        className="timeline-tool-button hidden xl:flex w-8 h-8 rounded-xl items-center justify-center transition-colors hover:bg-white/5"
         style={scrubActive ? { background: `${C.purple}1f`, color: C.purple } : undefined}
       >
         <History className={`w-4 h-4 ${scrubActive ? '' : 'text-white/60'}`} />
@@ -385,7 +385,7 @@ export function TimelineCommandBar({
         aria-label={isFullscreen ? 'Ukončit režim celé obrazovky' : 'Režim celé obrazovky (TV)'}
         aria-pressed={isFullscreen}
         title={isFullscreen ? 'Ukončit TV režim (F)' : 'TV režim — celá obrazovka (F)'}
-        className="hidden xl:flex w-8 h-8 rounded-xl items-center justify-center transition-colors hover:bg-white/5"
+        className="timeline-tool-button hidden xl:flex w-8 h-8 rounded-xl items-center justify-center transition-colors hover:bg-white/5"
         style={isFullscreen ? { background: `${C.cyan}1f`, color: C.cyan } : undefined}
       >
         {isFullscreen
@@ -403,7 +403,7 @@ export function TimelineCommandBar({
           aria-haspopup="menu"
           aria-expanded={showSortMenu}
           title="Řadit sály"
-          className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
+          className="timeline-tool-button w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/5"
           style={sortMode !== 'default' ? { background: `${C.cyan}1f`, color: C.cyan } : undefined}
         >
           <ArrowUpDown className={`w-4 h-4 ${sortMode !== 'default' ? '' : 'text-white/60'}`} />

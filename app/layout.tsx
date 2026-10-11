@@ -40,7 +40,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: "try{if(localStorage.getItem('or-mobile-theme')!=='light')document.documentElement.classList.add('m-dark')}catch(e){document.documentElement.classList.add('m-dark')}",
+            __html: "try{document.documentElement.dataset.appDesign=localStorage.getItem('or-app-design')==='cliniq'?'cliniq':'classic'}catch(e){}try{if(localStorage.getItem('or-mobile-theme')!=='light')document.documentElement.classList.add('m-dark')}catch(e){document.documentElement.classList.add('m-dark')}",
           }}
         />
         <meta name="mobile-web-app-capable" content="yes" />

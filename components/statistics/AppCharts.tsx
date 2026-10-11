@@ -286,6 +286,7 @@ export const DayNavigator: React.FC<{
         <span className="text-[13px]" style={{ color: C.accent }}>🕐</span>
         <input
           type="date"
+          aria-label="Vybraný den"
           value={toDateInput(value)}
           max={noFuture ? toDateInput(today) : undefined}
           min={toDateInput(min)}
@@ -434,8 +435,9 @@ export const GlassCalendar: React.FC<{
               key={d.toISOString()}
               onClick={() => !disabled && onChange(d)}
               disabled={disabled}
+              aria-label={d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}
               aria-current={isSelected ? 'date' : undefined}
-              className="relative aspect-square rounded-lg flex items-center justify-center text-[12px] font-semibold tabular-nums transition-all disabled:cursor-not-allowed"
+              className="relative aspect-square rounded-lg flex items-center justify-center text-[12px] font-semibold tabular-nums transition-colors disabled:cursor-not-allowed"
               style={{
                 background: isSelected
                   ? accent

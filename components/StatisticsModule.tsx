@@ -27,10 +27,12 @@ import { downloadStatisticsCsv } from '../lib/statistics-csv';
 import StatisticsTrendStrip from './StatisticsTrendStrip';
 import { useHospital } from '../contexts/HospitalContext';
 import './mobile/mobile-statistics.css';
+import './statistics/statistics-toolbar.css';
 import { Period, getRoomWorkingHours, getRoomWorkingMinutes, calculateAvgStepDurations, calculateWorkflowDistribution, calculateRoomWorkflowDistribution, getRoomTotalWorkingMinutes, countOperationsInWorkingHours, calculateRoomUtilization, dayBounds, operationalToday, operationalDayKey, weekdayIndex, getRoomWorkingMinutesForDate, calculateActiveMinutesForDay, countOperationsForDay, calculateRoomUtilizationForDay, calculatePausedMinutesForDay, calculateOvertimeMinutesForDay, isIdleStatusName, fmtDurationMin, formatDayLabel, formatRoomWorkingHours, Seg } from '../lib/statistics-room-activity';
 import { C, DEPT_COLORS } from './statistics/statistics-theme';
 import { roomStatusColor, roomStatusLabel, Card, SectionLabel, EmptyState } from './statistics/StatisticsPrimitives';
 import { RoomDetailPanel } from './statistics/RoomActivityPanels';
+import { RoomMetricsTable } from './statistics/RoomMetricsTable';
 const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
 const RoomsTab = dynamic(() => import('./statistics/RoomsTab').then((module) => module.RoomsTab), { ssr: false });
 const PhasesTab = dynamic(() => import('./statistics/PhasesTab').then((module) => module.PhasesTab), { ssr: false });
@@ -1388,8 +1390,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 </div>
               </div>
 
-              <div className="stats-room-metrics" role="region" aria-label="Provozní metriky jednotlivých sálů" tabIndex={0}>
-              {dayRooms.map(r => {
+              <RoomMetricsTable rows={dayRooms.map(r => {
                 const dayIdx = weekdayIndex(metricsDay);
                 const opsInHours = countOperationsForDay(r, dayHistory, metricsDay);
                 const util = calculateRoomUtilizationForDay(r, dayHistory, metricsDay);
@@ -1410,71 +1411,25 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                 const flags: string[] = [];
                 if (r.isEmergency) flags.push('EMERG');
                 if (r.isSeptic)    flags.push('SEPT');
-                const flagsLabel = flags.length > 0 ? flags.join(' · ') : '—';
                 const flagsColor = r.isEmergency ? C.orange : r.isSeptic ? C.red : C.faint;
-
-                const cells = [
-                  { l: 'Sál',                  v: r.name,                                   c: C.text },
-                  // Stav + příznaky (nouze / septický) v jedné buňce
-                  { l: 'Stav',                 v: flags.length > 0 ? `${roomStatusLabel(r)} · ${flagsLabel}` : roomStatusLabel(r), c: flags.length > 0 ? flagsColor : roomStatusColor(r) },
-                  // Vytížení — barevné procento + barevná linka pod hodnotou
-                  { l: 'Využití kapacity',     v: totalMins > 0 ? `${util}%` : '—',         c: utilColor, bar: totalMins > 0 ? Math.min(100, util) : undefined },
-                  { l: 'Výkony',               v: String(opsInHours),                       c: opsInHours > 0 ? C.accent : C.muted },
-                  { l: 'Pracovní doba',        v: dayHoursLabel,                            c: closed ? C.faint : C.text },
-                  { l: 'Pauza',                v: pausedMins > 0 ? `${pausedMins} m` : '—', c: pausedMins > 0 ? C.yellow : C.faint },
-                  { l: 'Aktivní / Kap.',       v: `${activeMins} / ${totalMins > 0 ? totalMins : '—'} m`, c: C.text },
-                  { l: 'Přesah',               v: totalMins > 0 && overtimeMins > 0 ? `+${overtimeMins} m` : '—', c: totalMins > 0 && overtimeMins > 0 ? C.red : C.faint },
-                ];
-
-                return (
-                  <div
-                    key={r.id}
-                    className="stats-room-metrics-row">
-                    {cells.map((k, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-col justify-between px-4 py-3"
-                        style={{
-                          background: C.surface,
-                          borderRight: i < cells.length - 1 ? `1px solid ${C.border}` : undefined,
-                        }}>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.1em] mb-2" style={{color: C.muted}}>
-                          {k.l}
-                        </p>
-                        {/* Delší názvy a stavy se zalomí bez ztráty informace. */}
-                        <p
-                          className="text-xs font-medium leading-snug whitespace-normal break-words"
-                          style={{ color: k.c }}
-                          title={String(k.v)}
-                        >
-                          {k.v}
-                        </p>
-                        {/* Barevná linka vytížení pod procentem */}
-                        {k.bar !== undefined && (
-                          <div
-                            className="mt-2 h-1.5 rounded-full overflow-hidden"
-                            style={{ background: 'var(--stats-ghost)' }}
-                          >
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{
-                                width: `${k.bar}%`,
-                                background: k.c,
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-              {dayRooms.length === 0 && (
-                <p className="text-xs py-4 text-center" style={{color: C.faint}}>
-                  Žádné sály k zobrazení.
-                </p>
-              )}
-              </div>
+                return {
+                  id: r.id,
+                  name: r.name,
+                  statusLabel: roomStatusLabel(r),
+                  statusColor: flags.length > 0 ? flagsColor : roomStatusColor(r),
+                  flags,
+                  flagsColor,
+                  utilization: totalMins > 0 ? util : null,
+                  utilizationColor: utilColor,
+                  operations: opsInHours,
+                  workingHours: dayHoursLabel,
+                  closed,
+                  pausedMinutes: pausedMins,
+                  activeMinutes: activeMins,
+                  capacityMinutes: totalMins > 0 ? totalMins : null,
+                  overtimeMinutes: totalMins > 0 ? overtimeMins : null,
+                };
+              })} />
             </div>
 
             {/* Row 1 odstraněna — „Využití jednotlivých sálů" i „Stav sálů — podíl"

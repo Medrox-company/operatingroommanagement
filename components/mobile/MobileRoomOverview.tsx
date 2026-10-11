@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, CalendarDays } from 'lucide-react';
+import { Bell, CalendarDays, ChevronRight, LayoutGrid, Rows3 } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 import { useHospital } from '../../contexts/HospitalContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,13 +9,13 @@ import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesConte
 import { useNowMinuteMs } from '../../hooks/useSharedClock';
 import { filterMobileRooms, mobileElapsed, mobileEndTime, mobileRoomPhase, readableInk, type MobileRoomFilter } from '../../lib/mobile-room-display';
 import { useIsMobileDark } from '../../hooks/useIsMobileDark';
+import { useAppDesign } from '../../hooks/useAppDesign';
 import { MobileHeader } from './MobileShell';
 import MobileRoomQuickActions from './MobileRoomQuickActions';
+import { acuteDashboardDescription, type AcuteDashboardRoomSummary } from '../../lib/acute-dashboard';
+import AcuteDashboardBadge from '../room/AcuteDashboardBadge';
 import './mobile-overview.css';
 
-/* Krytí barevného pruhu a plocha karty pod ním. Musí odpovídat --mro-band-alpha
-   v mobile-overview.css — z těchto hodnot se počítá, jak pruh doopravdy vypadá,
-   a podle toho se volí barva písma. */
 const BAND = {
   light: { alpha: 0.65, surface: '#FDFEFF' },
   dark: { alpha: 0.72, surface: '#131F49' },
@@ -34,16 +34,27 @@ interface MobileRoomOverviewProps {
   onEmergency: (id: string) => void;
   onLock: (id: string) => void;
   onNavigate?: (view: string) => void;
+  acuteByRoom?: ReadonlyMap<string, AcuteDashboardRoomSummary>;
 }
 
-export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, onSelectRoom, onEmergency, onLock, onNavigate }: MobileRoomOverviewProps) {
+export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, onSelectRoom, onEmergency, onLock, onNavigate, acuteByRoom }: MobileRoomOverviewProps) {
   const { activeHospital } = useHospital();
   const { hasModuleAccess } = useAuth();
   const { workflowStatuses } = useWorkflowStatusesContext();
+  const now = useNowMinuteMs();
   const isDark = useIsMobileDark();
   const band = isDark ? BAND.dark : BAND.light;
-  const now = useNowMinuteMs();
+  const { design } = useAppDesign();
+  const cliniq = design === 'cliniq';
   // Hledání sálů se na telefonu neujalo — seznam je krátký a filtry stačí.
+  const [layout, setLayout] = useState<'grid' | 'rows'>('grid');
+  useEffect(() => {
+    try { if (localStorage.getItem('or-room-card-layout') === 'rows') setLayout('rows'); } catch { /* Storage is optional. */ }
+  }, []);
+  const changeLayout = (value: 'grid' | 'rows') => {
+    setLayout(value);
+    try { localStorage.setItem('or-room-card-layout', value); } catch { /* Keep the visible choice. */ }
+  };
   const [filter, setFilter] = useState<MobileRoomFilter>('all');
   const visibleRooms = useMemo(() => filterMobileRooms(rooms, workflowStatuses, filter, ''), [rooms, workflowStatuses, filter]);
   const readyCount = rooms.filter(room => mobileRoomPhase(room, workflowStatuses).ready).length;
@@ -123,7 +134,7 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
       />
 
       <div className="mro-counts" aria-label="Souhrn sálů">
-        <div><strong>{roomsLoaded ? rooms.length : '—'}</strong><span>sálů</span></div>
+        <div className="mro-count-total"><strong>{roomsLoaded ? rooms.length : '—'}</strong><span>{cliniq ? 'operačních sálů' : 'sálů'}</span></div>
         <div><strong>{roomsLoaded ? activeCount : '—'}</strong><span>aktivních</span></div>
         <div><strong>{roomsLoaded ? readyCount : '—'}</strong><span>připravených</span></div>
       </div>
@@ -137,20 +148,21 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
       {!roomsLoaded ? <p className="mro-empty" role="status">Načítám operační sály…</p> : (
         <>
           <p className="sr-only" role="status">Zobrazeno {visibleRooms.length} z {rooms.length} sálů.</p>
-          <div className="mro-list-heading" aria-hidden><span>Operační sály</span><span>{visibleRooms.length}</span></div>
-          <ul className="mro-room-list">
+          <div className="mro-list-heading"><span>Operační sály <small>{visibleRooms.length}</small></span>
+            {cliniq && <div className="mro-layout-toggle" role="group" aria-label="Rozložení sálů">
+              <button type="button" aria-label="Dva sály vedle sebe" aria-pressed={layout === 'grid'} onClick={() => changeLayout('grid')}><LayoutGrid size={17} aria-hidden /></button>
+              <button type="button" aria-label="Podélné boxy" aria-pressed={layout === 'rows'} onClick={() => changeLayout('rows')}><Rows3 size={18} aria-hidden /></button>
+            </div>}
+          </div>
+          <ul className="mro-room-list" data-layout={cliniq ? layout : 'grid'}>
             {visibleRooms.map(room => {
               const phase = mobileRoomPhase(room, workflowStatuses);
               const elapsed = phase.active ? mobileElapsed(room.operationStartedAt || room.phaseStartedAt, now) : '—';
-              // Závoj = opak inkoustu. Přechod se tak odklání od barvy písma,
-              // takže stínování kontrast nesnižuje, ale zvyšuje.
               const phaseInk = readableInk(phase.color, band.alpha, band.surface);
               const phaseVeil = phaseInk === '#FFFFFF' ? '#05070F' : '#FFFFFF';
+              const acuteSummary = acuteByRoom?.get(room.id);
               return (
-                // Barvu aktuálního statusu nese patka karty — plný barevný pruh
-                // je v mřížce čitelný na první pohled i přes celý displej.
-                // Tělo karty se navíc jemně tónuje, ale jen když se na sále něco
-                // děje; připravený sál zůstává klidný a barvu má jen v pruhu.
+                // Phase color follows the hospital workflow, including its custom statuses.
                 <li
                   key={room.id}
                   className="mro-room m-unified-card"
@@ -179,7 +191,7 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
                       event.preventDefault();
                       openQuickActions(room.id, false);
                     }}
-                    aria-label={`Sál ${room.name}, ${phase.title}. Uplynulo ${elapsed}, odhad konce ${phase.active ? mobileEndTime(room.estimatedEndTime) : 'není k dispozici'}. Otevřít detail. Podržením nebo klávesou nabídky otevřít rychlé akce.`}
+                    aria-label={`Sál ${room.name}, ${phase.title}. Uplynulo ${elapsed}, odhad konce ${phase.active ? mobileEndTime(room.estimatedEndTime) : 'není k dispozici'}. ${acuteDashboardDescription(acuteSummary)} Otevřít detail. Podržením nebo klávesou nabídky otevřít rychlé akce.`}
                   >
                     <span className="mro-room-identity">
                       <strong className="m-unified-card-title">{room.name}</strong>
@@ -192,11 +204,13 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
                       {room.isEnhancedHygiene && <small>Hygienický režim</small>}
                       {room.patientCalledAt && !room.patientArrivedAt && <small>Pacient přivolán</small>}
                       {room.patientArrivedAt && <small>Pacient na sále</small>}
+                      <AcuteDashboardBadge summary={acuteSummary} mobile />
                     </span>
                     <span className="mro-room-time">
-                      <span className="mro-room-metric"><span>Uplynulo</span><strong aria-label={`Uplynulý čas ${elapsed}`}>{elapsed}</strong></span>
+                      <span className="mro-room-metric"><span>{cliniq ? 'Od začátku' : 'Uplynulo'}</span><strong aria-label={`Uplynulý čas ${elapsed}`}>{elapsed}</strong></span>
                       <span className="mro-room-metric"><span>Odhad konce</span><strong>{phase.active ? mobileEndTime(room.estimatedEndTime) : '—'}</strong></span>
                     </span>
+                    {cliniq && <span className="mro-room-chevron" aria-hidden><ChevronRight size={18} /></span>}
                   </button>
                 </li>
               );

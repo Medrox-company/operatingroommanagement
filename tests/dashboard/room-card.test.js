@@ -45,6 +45,9 @@ const imports = {
   '../hooks/useOperationalDayWindow': {
     useOperationalDayWindow: () => ({ start: dayStart, end: dayEnd }),
   },
+  '../lib/acute-dashboard': { acuteDashboardDescription: () => '' },
+  './room/AcuteDashboardBadge': { __esModule: true, default: () => null },
+  './room/acute-dashboard-badge.module.css': { __esModule: true, default: { cardWithAcute: 'cardWithAcute' } },
 };
 new Function('require', 'exports', 'module', outputText)(
   (name) => {

@@ -1,0 +1,34 @@
+.badge {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 6px 9px;
+  border: 1px solid color-mix(in srgb, var(--acute-dashboard-color) 23%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--acute-dashboard-color) 6%, transparent);
+  color: var(--color-text-primary);
+  text-align: left;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.heading, .detail { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.heading { color: var(--color-text-secondary); font-size: 10px; font-weight: 500; }
+.dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--acute-dashboard-color); }
+.count { margin-left: auto; color: inherit; font-variant-numeric: tabular-nums; }
+.procedure { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.rank { flex-shrink: 0; color: var(--color-text-secondary); font-size: 10px; font-variant-numeric: tabular-nums; }
+.mobile { border-color: var(--m-border); color: var(--m-text); padding: 7px 8px; }
+.mobile .heading, .mobile .rank { color: var(--m-muted); }
+.mobile .detail { align-items: start; flex-wrap: wrap; gap: 3px 6px; }
+.mobile .procedure { flex-basis: 100%; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; font-size: 12px; }
+
+/* Keep the existing action pocket and specialty/personnel rows in place.
+   Only the transparent cycle gauge yields space to this additional evidence. */
+.cardWithAcute :global(.dashboard-workspace-card-content) { --dashboard-card-padding: 16px; gap: 6px; }
+.cardWithAcute :global(.dashboard-workspace-card-info) { gap: 6px; }
+.cardWithAcute :global(.dashboard-workspace-cycle-indicator) {
+  /* Radius 38 / viewBox 112: an 84px SVG keeps the visible ring about 60px wide. */
+  width: min(120px, 32cqw, max(84px, calc(100cqh - 24px)));
+  height: min(120px, 32cqw, max(84px, calc(100cqh - 24px)));
+}

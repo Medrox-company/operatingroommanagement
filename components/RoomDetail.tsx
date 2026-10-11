@@ -21,7 +21,11 @@ import { MobileThemeToggle } from './mobile/MobileShell';
 import { RapidSurgeryWarning } from './room/RapidSurgeryWarning';
 import { useNowMs } from '../hooks/useSharedClock';
 import ModulePageHeading from './ModulePageHeading';
+import type { AcuteRequest } from '../lib/acute-requests';
+import type { AcuteRoomContext } from '../lib/acute-room-context';
+import AcuteRoomQueueRibbon from './room/AcuteRoomQueueRibbon';
 import './mobile/mobile-room-detail.css';
+import './room/room-acute-detail.css';
 
 // Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
 const formatElapsed = (totalSeconds: number): string => {
@@ -92,13 +96,16 @@ interface RoomDetailProps {
   room: OperatingRoom;
   allRooms?: OperatingRoom[];
   onClose: () => void;
-  onStepChange: (index: number, stepColor?: string) => void;
+  onStepChange: (index: number, stepColor?: string) => void | boolean | Promise<void | boolean>;
   onEndTimeChange: (newTime: Date | null) => void;
   onEnhancedHygieneToggle?: (enabled: boolean) => void;
   onPauseChange?: (paused: boolean, pausedAt: string | null) => void;
   onStaffChange?: (role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
   onPatientStatusChange?: (calledAt: string | null, arrivedAt: string | null) => void;
   onClearNotice?: () => void;
+  acuteContext?: AcuteRoomContext;
+  acuteContextMessage?: string;
+  onSelectAcuteRequest?: (request: AcuteRequest) => void;
 }
 
 const usePrevious = (value: number) => {
@@ -109,7 +116,7 @@ const usePrevious = (value: number) => {
   return ref.current;
 };
 
-const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onPauseChange, onStaffChange, onPatientStatusChange, onClearNotice }) => {
+const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onPauseChange, onStaffChange, onPatientStatusChange, onClearNotice, acuteContext, acuteContextMessage, onSelectAcuteRequest }) => {
   const { activeHospitalId } = useHospital();
   // Interaktivní nápověda běží nad vymyšleným sálem — události ani notifikace
   // se z ní nesmí zapsat do databáze.
@@ -134,6 +141,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [phaseStartTime, setPhaseStartTime] = useState(() => resolvePhaseStartTime(room));
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const mobilePhaseStepsRef = useRef<HTMLOListElement>(null);
+  const acuteMobileBackRef = useRef<HTMLButtonElement>(null);
+  const acuteDesktopCloseRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!acuteContext && !acuteContextMessage) return;
+    const target = [acuteMobileBackRef.current, acuteDesktopCloseRef.current]
+      .find(button => button && button.getClientRects().length > 0);
+    target?.focus();
+  }, [acuteContext?.selectedRequest.id, Boolean(acuteContextMessage)]);
   const [liveNowMs, setLiveNowMs] = useState(() => Date.now());
   const [isPaused, setIsPaused] = useState(room.isPaused || false);
   const [pauseStartedAt, setPauseStartedAt] = useState<Date | null>(() => {
@@ -147,6 +162,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [patientArrivedTime, setPatientArrivedTime] = useState<Date | null>(room.patientArrivedAt ? new Date(room.patientArrivedAt) : null);
   const [staffPickerOpen, setStaffPickerOpen] = useState(false);
   const [notificationOverlayOpen, setNotificationOverlayOpen] = useState(false);
+  const notificationRequest = useRef<{ key: string; id: string } | null>(null);
   const [staffPickerRole, setStaffPickerRole] = useState<'doctor' | 'nurse'>('doctor');
   const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
   const [pendingStepElapsedSeconds, setPendingStepElapsedSeconds] = useState<number | null>(null);
@@ -380,7 +396,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         ? '#FBBF24' 
         : (isPaused ? '#06b6d4' : (currentStep?.color || '#6B7280')));
 
-  const changeStep = (newIndex: number) => {
+  const changeStep = async (newIndex: number) => {
     if (isInteractionBlocked) return;
 
     // SEQUENTIAL STEP RESTRICTION: Only allow next step (+1) or reset to 0 (from final step)
@@ -400,10 +416,13 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     const newStepColor = newStep?.color || '#6B7280';
 
     // ============================================================
-    // OPTIMISTIC UI UPDATE — fire IMMEDIATELY, do not await DB
+    // Confirm the explicit transition before local follow-up work. Ordinary
+    // phases update optimistically in App; acute arrival waits for the DB link.
     // ============================================================
-    // 1) Propagate step change to App (this triggers optimistic setRooms + DB write in App)
-    onStepChange(newIndex, newStepColor);
+    // 1) Propagate the phase through App's authoritative transition handler.
+    // Acute arrival waits for its atomic cycle/link confirmation. A rejected
+    // start must not reset local timers or write ancillary patient/time fields.
+    if (await onStepChange(newIndex, newStepColor) === false) return;
     // 2) Reset local phase timer immediately so the elapsed counter starts from zero
     setPhaseStartTime(new Date());
 
@@ -596,7 +615,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
   return (
     <motion.div 
-      className="fixed inset-0 z-50 bg-black text-white font-sans overflow-hidden"
+      className={`fixed inset-0 z-50 bg-black text-white font-sans overflow-hidden${acuteContext || acuteContextMessage ? ' room-detail-with-acute' : ''}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -655,9 +674,9 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       >
         <header className="mrd-header">
           <div className="mrd-header-tools">
-            <button type="button" className="mrd-back" onClick={onClose} aria-label="Zpět na přehled sálů">
+            <button ref={acuteMobileBackRef} type="button" className="mrd-back" onClick={onClose} aria-label={acuteContext || acuteContextMessage ? 'Zpět na časovou osu' : 'Zpět na přehled sálů'}>
               <ArrowLeft aria-hidden="true" />
-              <span>Operační sály</span>
+              <span>{acuteContext || acuteContextMessage ? 'Časová osa' : 'Operační sály'}</span>
             </button>
             <div className="mrd-header-actions">
               <MobileThemeToggle />
@@ -673,6 +692,11 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         </header>
 
         <div className="mrd-scroll-content">
+          {acuteContext ? <AcuteRoomQueueRibbon mobile selectedRequest={acuteContext.selectedRequest}
+            cycleLink={acuteContext.cycleLink}
+            orderWarning={acuteContext.orderWarning}
+            followingRequests={acuteContext.followingRequests} rooms={allRooms} onSelectRequest={onSelectAcuteRequest} />
+            : acuteContextMessage ? <p className="room-detail-acute-message" role="status">{acuteContextMessage}</p> : null}
           <RapidSurgeryWarning room={room} statuses={activeDbStatuses} />
 
           {/* Celý box aktuální fáze je aktivní plocha — personál v rukavicích
@@ -983,6 +1007,14 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         </div>
       </header>
 
+      {(acuteContext || acuteContextMessage) && <div className="room-detail-acute-ribbon">
+        {acuteContext ? <AcuteRoomQueueRibbon selectedRequest={acuteContext.selectedRequest}
+          cycleLink={acuteContext.cycleLink}
+          orderWarning={acuteContext.orderWarning}
+          followingRequests={acuteContext.followingRequests} rooms={allRooms} onSelectRequest={onSelectAcuteRequest} />
+          : <p className="room-detail-acute-message" role="status">{acuteContextMessage}</p>}
+      </div>}
+
       {/* Upozornění na krátký interval sedí v pravém sloupci mezi horními
           a spodními ikonami. Dřív viselo přes střed obrazovky a překrývalo
           název fáze. Šířka odpovídá dvojici tlačítek pod ním, takže sloupec
@@ -1006,6 +1038,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       <div className="absolute right-[clamp(0.75rem,2.5vw,2rem)] top-[clamp(0.75rem,4vh,2rem)] z-50 flex flex-col gap-[clamp(0.5rem,2vh,1rem)]">
         {/* Close Button */}
         <button 
+          ref={acuteDesktopCloseRef}
           onClick={onClose}
           aria-label="Zavřít detail sálu"
           className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2 opacity-70 backdrop-blur-md transition-all hover:bg-white/10 hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[#FBBF24]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
@@ -1281,7 +1314,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       </div>
 
       {/* Main Three-Circle Status Display */}
-      <main className="relative z-20 flex h-full w-full items-center justify-center px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]">
+      <main className="room-detail-phase-stage relative z-20 flex h-full w-full items-center justify-center px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]">
         {/* Background decorative rings — hidden on small screens to avoid overflow */}
         <div
           className="hidden lg:block absolute rounded-full border border-white/5 pointer-events-none"
@@ -1307,7 +1340,7 @@ const prevStep = activeDbStatuses.length > 0
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="relative flex items-center justify-center shrink-0"
+                className="room-detail-circle-side relative flex items-center justify-center shrink-0"
                 style={{ width: 'clamp(90px, min(16vw, 28vh), 280px)', height: 'clamp(90px, min(16vw, 28vh), 280px)' }}
               >
                 {/* Gradient Glow - transparent from center */}
@@ -1345,7 +1378,7 @@ const prevStep = activeDbStatuses.length > 0
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className={`relative flex items-center justify-center rounded-full group transition-all focus:outline-none z-10 shrink-0
+            className={`room-detail-circle-current relative flex items-center justify-center rounded-full group transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 z-10 shrink-0
               ${isInteractionBlocked ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
             style={{ width: 'clamp(180px, min(30vw, 58vh), 500px)', height: 'clamp(180px, min(30vw, 58vh), 500px)' }}
@@ -1574,7 +1607,7 @@ const prevStep = activeDbStatuses.length > 0
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative flex items-center justify-center cursor-pointer shrink-0"
+            className="room-detail-circle-side relative flex items-center justify-center cursor-pointer shrink-0"
             style={{ width: 'clamp(90px, min(16vw, 28vh), 280px)', height: 'clamp(90px, min(16vw, 28vh), 280px)' }}
           >
             {/* Glow - gradient transparent from center */}
@@ -1736,6 +1769,10 @@ const prevStep = activeDbStatuses.length > 0
             return;
           }
           try {
+            const requestKey = JSON.stringify([activeHospitalId, room.id, type, customReason || '']);
+            if (notificationRequest.current?.key !== requestKey) {
+              notificationRequest.current = { key: requestKey, id: crypto.randomUUID() };
+            }
             const response = await fetch('/api/send-notification', {
               method: 'POST',
               credentials: 'include',
@@ -1746,12 +1783,15 @@ const prevStep = activeDbStatuses.length > 0
                 roomName: room.name,
                 customReason,
                 hospitalId: activeHospitalId,
+                requestId: notificationRequest.current.id,
               }),
             });
             const result = await response.json().catch(() => ({}));
             if (!response.ok) {
               throw new Error(result?.error || `Odeslání selhalo (${response.status})`);
             }
+            if (!result.success) throw new Error(result?.message || 'E-mailové odeslání nebylo potvrzeno.');
+            notificationRequest.current = null;
           } catch (error) {
             console.error('[RoomDetail] Error sending notification:', error);
             throw error;
@@ -1783,6 +1823,12 @@ export default memo(RoomDetail, (prev, next) => {
   if (prev.onEnhancedHygieneToggle !== next.onEnhancedHygieneToggle) return false;
   if (prev.onStaffChange !== next.onStaffChange) return false;
   if (prev.onPatientStatusChange !== next.onPatientStatusChange) return false;
+  if (prev.onPauseChange !== next.onPauseChange) return false;
+  if (prev.onClearNotice !== next.onClearNotice) return false;
+  if (prev.acuteContext !== next.acuteContext) return false;
+  if (prev.acuteContextMessage !== next.acuteContextMessage) return false;
+  if (prev.onSelectAcuteRequest !== next.onSelectAcuteRequest) return false;
+  if ((prev.acuteContext || next.acuteContext) && prev.allRooms !== next.allRooms) return false;
   // allRooms — jen porovnej délku; obsah jiných sálů ovlivňuje pouze StaffPickerModal,
   // který se otevírá vzácně a snese drobnou latenci sync.
   if ((prev.allRooms?.length || 0) !== (next.allRooms?.length || 0)) return false;

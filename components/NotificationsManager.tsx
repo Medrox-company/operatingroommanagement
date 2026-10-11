@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import ModulePageHeading from './ModulePageHeading';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -23,7 +23,6 @@ import {
   Volume2,
   X,
 } from 'lucide-react';
-import { generateEmailTemplate, sendEmailNotification } from '../lib/email';
 
 type NotificationType = 'email' | 'sms' | 'push' | 'sound';
 type NotificationFilter = 'all' | 'active' | 'inactive';
@@ -304,6 +303,7 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({ onNotificat
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [newNotification, setNewNotification] = useState<NotificationDraft>(EMPTY_DRAFT);
   const [testRecipientEmail, setTestRecipientEmail] = useState('');
+  const testRequest = useRef<{ email: string; id: string } | null>(null);
   const [emailTestState, setEmailTestState] = useState<EmailTestState>({
     isLoading: false,
     message: '',
@@ -354,26 +354,20 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({ onNotificat
     setEmailTestState({ isLoading: true, message: '', isError: false });
 
     try {
-      const html = generateEmailTemplate({
-        type: 'custom',
-        roomName: 'Test Operační Sál',
-        message: 'Toto je testovací zpráva z Operating Room Management Systému',
-        details: {
-          'Čas odeslání': new Date().toLocaleString('cs-CZ'),
-          'Test typ': 'E-mail notifikace',
-          'Stav systému': 'Aktivní',
-        },
+      const email = testRecipientEmail.trim().toLowerCase();
+      if (testRequest.current?.email !== email) testRequest.current = { email, id: crypto.randomUUID() };
+      const response = await fetch('/api/notifications/test-email', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, requestId: testRequest.current.id }),
       });
-
-      const result = await sendEmailNotification({
-        to: testRecipientEmail.trim(),
-        subject: 'Test: Operating Room Management System – E-mail notifikace',
-        html,
-      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Testovací e-mail se nepodařilo odeslat.');
+      if (result.success) testRequest.current = null;
 
       setEmailTestState(result.success
-        ? { isLoading: false, message: 'Testovací e-mail byl úspěšně odeslán.', isError: false }
-        : { isLoading: false, message: result.error || 'Testovací e-mail se nepodařilo odeslat.', isError: true });
+        ? { isLoading: false, message: result.message || 'E-mailová služba přijala testovací zprávu.', isError: false }
+        : { isLoading: false, message: result.message || 'Testovací e-mail se nepodařilo odeslat.', isError: true });
     } catch (error) {
       setEmailTestState({
         isLoading: false,
@@ -648,7 +642,7 @@ const NotificationsManager: React.FC<NotificationsManagerProps> = ({ onNotificat
                 onClose={closeTestModal}
               >
                 <p className="mb-4 text-xs leading-relaxed text-white/38">
-                  Odešlete bezpečnou testovací zprávu a ověřte konfiguraci e-mailové služby i dostupnost příjemce.
+                  Test může odeslat pouze oprávněný správce na aktivní kontakt v sekci Management kontakty. Platí stejné bezpečnostní limity jako pro ostatní e-maily.
                 </p>
                 <label className="block">
                   <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/38">E-mail příjemce</span>

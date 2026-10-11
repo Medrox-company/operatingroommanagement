@@ -21,7 +21,7 @@ const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate }) =
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const moreRef = useRef<HTMLButtonElement>(null);
-  const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => isSuperAdmin || hasModuleAccess(item.id)), [isSuperAdmin, hasModuleAccess]);
+  const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => hasModuleAccess(item.id)), [hasModuleAccess]);
   const primaryItems = enabledItems.filter(item => PRIMARY_IDS.has(item.id));
   const moreItems = enabledItems.filter(item => !PRIMARY_IDS.has(item.id));
   const moreActive = moreItems.some(item => item.id === currentView);

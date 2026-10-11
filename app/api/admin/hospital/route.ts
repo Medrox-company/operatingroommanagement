@@ -124,9 +124,23 @@ export async function POST(req: NextRequest) {
       admin.from('workflow_statuses').select('*').eq('hospital_id', 'default'),
       admin.from('app_settings').select('*').eq('hospital_id', 'default').eq('id', 'default-global'),
     ]);
-    if (modulesResult.data?.length) {
-      await admin.from('app_modules').insert(modulesResult.data.map(row => ({ ...row, hospital_id: id })));
+    const defaultModules = modulesResult.data ?? [];
+    const newModules = defaultModules.map(row => ({
+        ...row,
+        hospital_id: id,
+        // Akutní příjem se u nového zařízení musí zapnout vědomě.
+        ...(row.id === 'acute-requests' ? { is_enabled: false } : {}),
+      }));
+    if (!newModules.some(row => row.id === 'acute-requests')) {
+      const timelineRoles = defaultModules.find(row => row.id === 'timeline')?.allowed_roles;
+      newModules.push({
+        id: 'acute-requests', hospital_id: id, name: 'Akutní výkony',
+        description: 'Požadavky akutních výkonů, klinická naléhavost, pořadník a audit změn',
+        is_enabled: false, icon: 'Siren', accent_color: '#FF5560', sort_order: 3,
+        allowed_roles: Array.isArray(timelineRoles) ? timelineRoles.filter(role => ['admin', 'aro', 'cos', 'primar'].includes(role)) : [],
+      });
     }
+    await admin.from('app_modules').insert(newModules);
     if (submodulesResult.data?.length) {
       await admin.from('app_submodules').insert(submodulesResult.data.map(row => ({ ...row, hospital_id: id })));
     }

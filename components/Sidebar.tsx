@@ -15,9 +15,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentView, onNavigate, onSendM
   // Superadministrátor řídí dostupnost všech modulů. Žádný provozní pohled
   // proto nesmí mít klientskou výjimku mimo centrální hasModuleAccess().
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => {
-    if (isSuperAdmin) return true;
     return hasModuleAccess(item.id);
-  }), [isSuperAdmin, hasModuleAccess]);
+  }), [hasModuleAccess]);
 
   return (
     <aside className="pointer-events-none fixed inset-y-0 left-0 z-[100] hidden w-24 flex-col items-center py-[clamp(0.5rem,2.2vh,1.5rem)] md:flex">

@@ -17,3 +17,19 @@ build/
 /design-current-*.png
 /design-qa.md
 /.qa-spatial-editor/
+
+# Native projects and generated local artifacts are not part of the web deploy.
+/ios/
+/android/
+/mobile-dist/
+/output/
+/tmp/
+/docs/app-store/screenshots-preview/
+tsconfig.tsbuildinfo
+
+# Use only the environment configured in Vercel; never upload local secrets.
+.env*
+*.pem
+*.key
+*.keystore
+secrets.json

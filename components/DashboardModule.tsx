@@ -1,8 +1,8 @@
 'use client';
 
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, { memo, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Cuboid, HelpCircle, LayoutGrid, Shield } from 'lucide-react';
+import { Cuboid, GalleryHorizontalEnd, HelpCircle, LayoutGrid, Shield } from 'lucide-react';
 import type { OperatingRoom } from '../types';
 import LiveClock from './LiveClock';
 import RoomCard from './RoomCard';
@@ -17,7 +17,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { preloadSpatialProject } from '../hooks/useSpatialProject';
 import SpatialLoadingBar from './spatial/SpatialLoadingBar';
 import { useDashboardGridLayout } from '../hooks/useDashboardGridLayout';
+import type { AcuteDashboardRoomSummary } from '../lib/acute-dashboard';
+import { resolveDashboardView, type DashboardView } from '../lib/dashboard-carousel';
+import DashboardCarousel from './dashboard/DashboardCarousel';
 import './tutorial/tutorial.css';
+import './dashboard/dashboard-card-polish.css';
 
 const loadSpatialDashboard = () => import('./spatial/SpatialDashboardView');
 
@@ -32,8 +36,6 @@ const SpatialDashboardView = dynamic(loadSpatialDashboard, {
   </div>,
 });
 
-type DashboardView = 'cards' | 'spatial';
-
 interface DashboardModuleProps {
   rooms: OperatingRoom[];
   roomsLoaded: boolean;
@@ -41,6 +43,17 @@ interface DashboardModuleProps {
   onEmergency: (roomId: string) => void;
   onLock: (roomId: string) => void;
   onNavigate?: (view: string) => void;
+  acuteByRoom?: ReadonlyMap<string, AcuteDashboardRoomSummary>;
+}
+
+function readDashboardView(activeHospitalId: string | null, canViewSpatial: boolean): DashboardView {
+  if (!activeHospitalId || typeof window === 'undefined') return 'cards';
+  try {
+    return resolveDashboardView(window.localStorage.getItem(`or-dashboard-view:${activeHospitalId}`), canViewSpatial);
+  } catch {
+    // Blokované úložiště nesmí zabránit otevření dashboardu.
+    return 'cards';
+  }
 }
 
 const DashboardModule: React.FC<DashboardModuleProps> = ({
@@ -50,12 +63,14 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   onEmergency,
   onLock,
   onNavigate,
+  acuteByRoom,
 }) => {
   const { activeHospitalId } = useHospital();
   const { hasSubmoduleAccess } = useAuth();
   const canViewSpatial = hasSubmoduleAccess('dashboard.spatial');
-  const [dashboardView, setDashboardView] = useState<DashboardView>('cards');
-  const [spatialMounted, setSpatialMounted] = useState(false);
+  // Modul je client-only; uložený pohled musí platit už při návratovém renderu.
+  const [dashboardView, setDashboardView] = useState<DashboardView>(() => readDashboardView(activeHospitalId, canViewSpatial));
+  const [spatialMounted, setSpatialMounted] = useState(dashboardView === 'spatial');
   const [cameraMode, setCameraMode] = useState<'spatial' | 'plan'>('spatial');
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { currentByRoom } = useCurrentRoomSpecialties();
@@ -66,10 +81,9 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
     void preloadSpatialProject(activeHospitalId).catch(() => undefined);
   }, [activeHospitalId, canViewSpatial]);
 
-  useEffect(() => {
-    if (!activeHospitalId) return;
-    const saved = localStorage.getItem(`or-dashboard-view:${activeHospitalId}`);
-    const savedView = saved === 'spatial' && canViewSpatial ? 'spatial' : 'cards';
+  useLayoutEffect(() => {
+    // I změnu zařízení/oprávnění promítneme před malováním, ne až po něm.
+    const savedView = readDashboardView(activeHospitalId, canViewSpatial);
     setDashboardView(savedView);
     if (savedView === 'spatial') {
       setSpatialMounted(true);
@@ -96,7 +110,13 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
       warmSpatialView();
     }
     setDashboardView(view);
-    if (activeHospitalId) localStorage.setItem(`or-dashboard-view:${activeHospitalId}`, view);
+    if (activeHospitalId) {
+      try {
+        window.localStorage.setItem(`or-dashboard-view:${activeHospitalId}`, view);
+      } catch {
+        // Volba stále funguje v aktuálním zobrazení, i když ji prohlížeč neuloží.
+      }
+    }
   };
 
   // Číslo uprostřed karty = počet dokončených cyklů provozního dne. Samotný
@@ -113,12 +133,13 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
       completedOperations: mergeCompletedOperations(room.completedOperations ?? [], eventOperations),
     };
   }), [completedOperationsByRoom, sourceRooms]);
-  const viewToggle = canViewSpatial ? (
+  const viewToggle = (
     <div className="dashboard-view-switch" role="group" aria-label="Zobrazení dashboardu">
       {([
         ['cards', 'Karty', LayoutGrid],
         ['spatial', '3D dispozice', Cuboid],
-      ] as const).map(([value, label, Icon]) => (
+        ['carousel', 'Carousel', GalleryHorizontalEnd],
+      ] as const).filter(([value]) => value !== 'spatial' || canViewSpatial).map(([value, label, Icon]) => (
         <button
           key={value}
           type="button"
@@ -136,10 +157,11 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
         </button>
       ))}
     </div>
-  ) : null;
+  );
 
   const spatialMode = canViewSpatial && dashboardView === 'spatial';
-  const gridRef = useDashboardGridLayout(rooms.length, roomsLoaded && !spatialMode && rooms.length > 0);
+  const carouselMode = dashboardView === 'carousel';
+  const gridRef = useDashboardGridLayout(rooms.length, roomsLoaded && !spatialMode && !carouselMode && rooms.length > 0, acuteByRoom?.size ? 360 : 280);
   // Na mobilu jsou zobrazení jen dvě kruhové ikony v horní liště vedle zvonku.
   // Pruh se třemi záložkami (Karty / 3D pohled / Půdorys) zabíral celý řádek
   // a půdorys se na telefonu stejně nepoužíval.
@@ -170,10 +192,10 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   ) : null;
 
   return (
-    <div className={`app-module-shell dashboard-module statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top ${spatialMode ? 'spatial-dashboard-module' : ''}`}>
+    <div className={`app-module-shell dashboard-module statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top ${spatialMode ? 'spatial-dashboard-module' : ''} ${carouselMode ? 'dashboard-carousel-module' : ''}`}>
       <div aria-hidden className="mobile-theme-surface fixed inset-0 -z-10 md:hidden" />
       <div className={`app-module-content ${spatialMode ? 'flex h-full min-h-0 flex-col' : 'dashboard-cards-layout'}`}>
-        {!spatialMode && <MobileRoomOverview rooms={rooms} roomsLoaded={roomsLoaded} viewControls={mobileViewControls} onSelectRoom={onSelectRoom} onEmergency={onEmergency} onLock={onLock} onNavigate={onNavigate} />}
+        {!spatialMode && <MobileRoomOverview rooms={rooms} roomsLoaded={roomsLoaded} viewControls={mobileViewControls} onSelectRoom={onSelectRoom} onEmergency={onEmergency} onLock={onLock} onNavigate={onNavigate} acuteByRoom={acuteByRoom} />}
 
         {/* Hlavička karet se přizpůsobuje dostupné šířce; 3D má vlastní layout. */}
         <header className="dashboard-page-header mb-7 hidden min-w-0 flex-shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-[clamp(1rem,3vw,3rem)] md:grid md:pr-2">
@@ -230,6 +252,16 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
                     <h2>Zatím nejsou k dispozici žádné sály</h2>
                     <p>Sály se zde zobrazí po přiřazení k vašemu zdravotnickému zařízení.</p>
                   </div>
+                ) : carouselMode ? (
+                  <DashboardCarousel
+                    key={activeHospitalId}
+                    rooms={rooms}
+                    specialtiesByRoom={currentByRoom}
+                    acuteByRoom={acuteByRoom}
+                    onSelectRoom={onSelectRoom}
+                    onEmergency={onEmergency}
+                    onLock={onLock}
+                  />
                 ) : (
                 <div ref={gridRef} className="dashboard-room-grid">
                   {rooms.map((room) => (
@@ -237,6 +269,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
                       key={room.id}
                       room={room}
                       specialties={currentByRoom.get(room.id)}
+                      acuteSummary={acuteByRoom?.get(room.id)}
                       onClick={() => onSelectRoom(room.id)}
                       onEmergency={() => onEmergency(room.id)}
                       onLock={() => onLock(room.id)}

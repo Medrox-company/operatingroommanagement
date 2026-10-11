@@ -14,6 +14,7 @@ import {
   Sparkles,
   BarChart3,
   Workflow,
+  Siren,
 } from 'lucide-react';
 
 export interface SubDepartment {
@@ -152,6 +153,7 @@ export const SIDEBAR_ITEMS = [
   { icon: LayoutGrid, label: 'Přehled', id: 'dashboard' },
   { icon: Workflow, label: 'Tok pacienta', id: 'flow' },
   { icon: CalendarDays, label: 'Timeline', id: 'timeline' },
+  { icon: Siren, label: 'Akutní výkony', id: 'acute-requests' },
   { icon: BarChart3, label: 'Statistiky', id: 'statistics' },
   { icon: AlertCircle, label: 'Upozornění', id: 'alerts' },
   { icon: Settings, label: 'Nastavení', id: 'settings' },

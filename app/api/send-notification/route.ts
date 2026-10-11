@@ -1,51 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendEmailNotification, generateEmailTemplate } from '@/lib/email';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
-import { rateLimit, getClientIdentifier } from '@/lib/auth/rate-limit';
 import { requireHospitalAccess } from '@/lib/hospital/access';
 import { assertSameOrigin } from '@/lib/auth/csrf';
+import { dispatchEmails } from '@/lib/email-dispatch';
+import { EmailPolicyError, getEmailPolicy, isEmailRequestId, readEmailRequest, requireCurrentEmailAccount } from '@/lib/email-policy';
 
 export const runtime = 'nodejs';
 
-interface NotificationRequest {
-  type: string;
-  roomId: string;
-  roomName: string;
-  customReason?: string;
-}
-
-const NOTIFICATION_TYPE_MAP: Record<string, { name: string; field: string; subject: string }> = {
-  'notify_late_surgeon': {
-    name: 'Pozdní příchod chirurga',
-    field: 'notify_late_surgeon',
-    subject: 'Upozornění: Pozdní příchod chirurga'
-  },
-  'notify_late_anesthesiologist': {
-    name: 'Pozdní příchod anesteziologa',
-    field: 'notify_late_anesthesiologist',
-    subject: 'Upozornění: Pozdní příchod anesteziologa'
-  },
-  'notify_patient_not_ready': {
-    name: 'Nepřipravený pacient',
-    field: 'notify_patient_not_ready',
-    subject: 'Upozornění: Nepřipravený pacient'
-  },
-  'notify_late_arrival': {
-    name: 'Pozdní příjezd',
-    field: 'notify_late_arrival',
-    subject: 'Upozornění: Pozdní příjezd'
-  },
-  'notify_emergencies': {
-    name: 'Stav nouze',
-    field: 'notify_emergencies',
-    subject: 'STAV NOUZE aktivován'
-  },
-  'notify_other': {
-    name: 'Jiný důvod',
-    field: 'notify_other',
-    subject: 'Upozornění: Jiný důvod'
-  },
-};
+const NOTIFICATION_TYPES = new Map([
+  ['notify_late_surgeon', 'Pozdní příchod chirurga'],
+  ['notify_late_anesthesiologist', 'Pozdní příchod anesteziologa'],
+  ['notify_patient_not_ready', 'Nepřipravený pacient'],
+  ['notify_late_arrival', 'Pozdní příjezd'],
+  ['notify_emergencies', 'Stav nouze'],
+  ['notify_other', 'Jiný důvod'],
+]);
 
 export async function POST(request: NextRequest) {
   const access = await requireHospitalAccess(request);
@@ -53,161 +22,75 @@ export async function POST(request: NextRequest) {
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const { hospitalId, user } = access;
-
-  // Rate limit — max 20 odeslání / 1 minuta / uživatel (ochrana proti zneužití)
-  const rl = rateLimit(`notify:${user.sub}:${getClientIdentifier(request.headers)}`, {
-    limit: 20,
-    windowMs: 60 * 1000,
-  });
-  if (!rl.success) {
-    return NextResponse.json(
-      { error: 'Příliš mnoho notifikací v krátkém čase. Zkuste za chvíli.' },
-      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
-    );
-  }
-
-  const supabase = getSupabaseAdmin();
-
   try {
-    const { type, roomId, roomName, customReason }: NotificationRequest = await request.json();
-
-    const notificationType = NOTIFICATION_TYPE_MAP[type];
-    if (!notificationType) {
-      return NextResponse.json({ error: 'Neznámý typ notifikace' }, { status: 400 });
-    }
-
-    // Validuj payload
-    if (typeof roomId !== 'string' || !roomId || typeof roomName !== 'string' || !roomName) {
-      return NextResponse.json({ error: 'Chybí roomId nebo roomName' }, { status: 400 });
+    const body = await readEmailRequest(request);
+    const { type, roomId, customReason, requestId } = body;
+    if (typeof type !== 'string' || !NOTIFICATION_TYPES.has(type)) throw new EmailPolicyError('Neznámý typ notifikace.', 400);
+    if (typeof roomId !== 'string' || !roomId || roomId.length > 200 || !isEmailRequestId(requestId)) {
+      throw new EmailPolicyError('Chybí platný sál nebo identifikátor zprávy. Obnovte aplikaci.', 400);
     }
     if (customReason !== undefined && (typeof customReason !== 'string' || customReason.length > 2000)) {
-      return NextResponse.json({ error: 'Neplatný customReason' }, { status: 400 });
+      throw new EmailPolicyError('Neplatný důvod notifikace.', 400);
     }
-    const { data: room, error: roomError } = await supabase
-      .from('operating_rooms')
-      .select('id, name')
-      .eq('id', roomId)
-      .eq('hospital_id', hospitalId)
-      .maybeSingle();
-    if (roomError) {
-      return NextResponse.json({ error: 'Operační sál nelze ověřit' }, { status: 500 });
-    }
-    if (!room) {
-      return NextResponse.json({ error: 'Operační sál do vybraného zařízení nepatří' }, { status: 404 });
-    }
-    const verifiedRoomName = room.name || roomName;
-
-    // Get management contacts that want this type of notification
-    const { data: contacts, error: contactsError } = await supabase
-      .from('management_contacts')
-      .select('email, name, position')
-      .eq('hospital_id', hospitalId)
-      .eq(notificationType.field, true)
-      .eq('is_active', true);
-
-    if (contactsError) {
-      console.error('[send-notification] Error fetching contacts:', contactsError);
-      return NextResponse.json({ error: 'Chyba při načítání kontaktů' }, { status: 500 });
-    }
-
-    if (!contacts || contacts.length === 0) {
-      // Log notification even if no recipients
-      try {
-        const { error: logError } = await supabase
-          .from('notifications_log')
-          .insert({
-            hospital_id: hospitalId,
-            room_id: roomId,
-            room_name: verifiedRoomName,
-            notification_type: type,
-            custom_reason: customReason || null,
-            recipient_count: 0,
-          });
-        if (logError) {
-          console.error('[send-notification] Error logging notification:', logError);
+    // No client-supplied recipients, HTML, subject or room name are used.
+    const db = getSupabaseAdmin();
+    await requireCurrentEmailAccount(db, user);
+    const { data: room, error: roomError } = await db.from('operating_rooms')
+      .select('id,name').eq('id', roomId).eq('hospital_id', hospitalId).maybeSingle();
+    if (roomError) throw new EmailPolicyError('Operační sál nelze ověřit.');
+    if (!room) throw new EmailPolicyError('Operační sál do vybraného zařízení nepatří.', 404);
+    const { data: contacts, error: contactsError } = await db.from('management_contacts')
+      .select('email,name').eq('hospital_id', hospitalId).eq(type, true).eq('is_active', true).limit(51);
+    if (contactsError) throw new EmailPolicyError('Příjemce nelze bezpečně ověřit.');
+    const label = NOTIFICATION_TYPES.get(type)!;
+    const reason = typeof customReason === 'string' ? customReason.trim() : '';
+    if (!contacts?.length) {
+      // No configured recipient is a normal record-only workflow. Confirm the
+      // event was persisted before letting the notification overlay close.
+      const { error } = await db.from('notifications_log').insert({
+        id: requestId, hospital_id: hospitalId, room_id: roomId, room_name: room.name,
+        notification_type: type, custom_reason: reason || null, recipient_count: 0,
+      });
+      if (error?.code === '23505') {
+        // A retry must not count the same event twice or reuse another event's ID.
+        const { data: existing, error: lookupError } = await db.from('notifications_log')
+          .select('room_id,notification_type,custom_reason')
+          .eq('id', requestId).eq('hospital_id', hospitalId).maybeSingle();
+        if (lookupError) throw new EmailPolicyError('Uložení upozornění nelze ověřit.');
+        if (!existing || existing.room_id !== roomId || existing.notification_type !== type
+          || existing.custom_reason !== (reason || null)) {
+          throw new EmailPolicyError('Identifikátor upozornění již patří jinému požadavku.', 409);
         }
-      } catch (logErr) {
-        console.error('[send-notification] Error logging notification:', logErr);
+      } else if (error) {
+        throw new EmailPolicyError('Upozornění se nepodařilo uložit. Zkuste to znovu.');
       }
-
-      return NextResponse.json({
-        message: 'Žádný příjemce není nakonfigurován pro tento typ notifikace',
-        sentTo: [],
-        recipientCount: 0
-      }, { status: 200 });
+      return NextResponse.json({ success: true, emailSkipped: true, reason: 'no_active_recipients',
+        recipientCount: 0, failedCount: 0, unknownCount: 0 }, { headers: { 'Cache-Control': 'no-store' } });
     }
-
-    // Generate email HTML using the same template as NotificationsManager
-    const emailHtml = generateEmailTemplate({
-      type: 'emergency_alert',
-      roomName: verifiedRoomName,
-      message: customReason || notificationType.name,
-      details: {
-        'Typ notifikace': notificationType.name,
-        'Sál': verifiedRoomName,
-        'Čas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }),
-        ...(customReason ? { 'Podrobnosti': customReason } : {}),
-      },
+    // The kill switch and email limits still apply whenever mail would be sent.
+    getEmailPolicy();
+    const result = await dispatchEmails(db, {
+      hospitalId, userId: user.sub, requestId,
+      intent: [type, roomId, reason], contacts: contacts ?? [],
+      subject: `${type === 'notify_emergencies' ? 'STAV NOUZE aktivován' : `Upozornění: ${label}`} - Sál: ${room.name}`,
+      template: { type: 'emergency_alert', roomName: room.name, message: reason || label,
+        details: { 'Typ notifikace': label, 'Sál': room.name, 'Čas': new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }), ...(reason ? { 'Podrobnosti': reason } : {}) } },
     });
-
-    // Send emails
-    const results: { email: string; name: string; sent: boolean; error?: string }[] = [];
-
-    for (const contact of contacts) {
-      const result = await sendEmailNotification({
-        to: contact.email,
-        subject: `${notificationType.subject} - Sál: ${verifiedRoomName}`,
-        html: emailHtml,
-        recipientName: contact.name,
-      });
-
-      results.push({
-        email: contact.email,
-        name: contact.name,
-        sent: result.success,
-        error: result.error,
-      });
-      
-      // Small delay between emails to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 100));
+    if (!('duplicate' in result)) {
+      // A logging failure must never cause a resend or conceal accepted mail.
+      try {
+        const { error } = await db.from('notifications_log').insert({ hospital_id: hospitalId,
+          room_id: roomId, room_name: room.name, notification_type: type,
+          custom_reason: reason || null, recipient_count: result.recipientCount });
+        if (error) console.warn('[email] notification_log_unavailable');
+      } catch { console.warn('[email] notification_log_unavailable'); }
     }
-
-    const successCount = results.filter((r) => r.sent).length;
-
-    // Log notification in database
-    try {
-      const { error: logError } = await supabase
-        .from('notifications_log')
-        .insert({
-          hospital_id: hospitalId,
-          room_id: roomId,
-          room_name: verifiedRoomName,
-          notification_type: type,
-          custom_reason: customReason || null,
-          recipient_count: successCount,
-        });
-      if (logError) {
-        console.error('[send-notification] Error logging notification:', logError);
-      }
-    } catch (logErr) {
-      console.error('[send-notification] Error logging notification:', logErr);
-    }
-
-    return NextResponse.json({
-      success: successCount > 0,
-      message: successCount > 0 
-        ? `Notifikace byla odeslána ${successCount} příjemcům` 
-        : 'Nepodařilo se odeslat žádnou notifikaci',
-      sentTo: results.filter((r) => r.sent).map((r) => `${r.name} (${r.email})`),
-      failedCount: results.filter((r) => !r.sent).length,
-      recipientCount: successCount,
-      errors: results.filter((r) => !r.sent).map((r) => `${r.email}: ${r.error}`),
-    });
+    return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    console.error('[send-notification] Error:', error);
-    return NextResponse.json(
-      { error: 'Interní chyba serveru' },
-      { status: 500 }
-    );
+    if (error instanceof EmailPolicyError) return NextResponse.json({ success: false, error: error.message }, {
+      status: error.status, headers: error.retryAfterSec ? { 'Retry-After': String(error.retryAfterSec) } : {},
+    });
+    console.warn('[email] notification_request_failed');
+    return NextResponse.json({ success: false, error: 'E-mailové odesílání nelze bezpečně dokončit.' }, { status: 503 });
   }
 }

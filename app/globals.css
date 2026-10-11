@@ -1497,6 +1497,16 @@ html.capacitor-native select {
     max-width: var(--dashboard-grid-width, 100%);
     margin-inline: auto;
   }
+  /* The Settings-style carousel owns a full-height stage, not the cards grid. */
+  .dashboard-carousel-module { position: relative; overflow: hidden; scrollbar-gutter: auto; }
+  .dashboard-carousel-module .dashboard-cards-layout { position: relative; height: 100%; }
+  .dashboard-carousel-module .dashboard-page-header { position: relative; z-index: 40; }
+  .dashboard-carousel-module:has([data-overflow='true']) { overflow-y: auto; }
+  .dashboard-carousel-module:has([data-overflow='true']) .dashboard-cards-layout { height: auto; }
+}
+@media (min-width: 768px) and (max-height: 699px) {
+  .dashboard-carousel-module { overflow-y: auto; }
+  .dashboard-carousel-module .dashboard-cards-layout { height: auto; }
 }
 @media (min-width: 768px) and (max-width: 1199px) {
   .dashboard-view-option { padding: 0 10px; }
@@ -2038,22 +2048,6 @@ html.capacitor-native select {
   border-radius: 12px;
 }
 
-.stats-room-metrics {
-  overflow-x: auto;
-  border: 1px solid var(--stats-border);
-  border-radius: 12px;
-}
-
-.stats-room-metrics-row {
-  display: grid;
-  grid-template-columns: minmax(180px, 1.4fr) minmax(160px, 1.3fr) repeat(6, minmax(100px, 1fr));
-  min-width: 1050px;
-}
-
-.stats-room-metrics-row + .stats-room-metrics-row {
-  border-top: 1px solid var(--stats-border);
-}
-
 @media (max-width: 767px) {
   .stats-section-nav--mobile [role='tab'] {
     min-height: 44px;
@@ -2066,8 +2060,7 @@ html.capacitor-native select {
 }
 
 @media print {
-  .stats-overview-metrics,
-  .stats-room-metrics {
+  .stats-overview-metrics {
     overflow: visible;
   }
 
@@ -2075,16 +2068,6 @@ html.capacitor-native select {
     grid-template-columns: repeat(8, minmax(0, 1fr));
   }
 
-  .stats-room-metrics-row {
-    min-width: 0;
-    grid-template-columns: 1.4fr 1.3fr repeat(6, minmax(0, 1fr));
-  }
-
-  .stats-room-metrics-row > div {
-    min-width: 0;
-    padding: 6px;
-    overflow-wrap: anywhere;
-  }
 }
 
 .m-dark {

@@ -18,17 +18,18 @@ const ModuleLoader = () => (
 const RoomDetail = dynamic(() => import('./components/RoomDetail'), { ssr: false, loading: ModuleLoader });
 const DashboardModule = dynamic(() => import('./components/DashboardModule'), { ssr: false, loading: ModuleLoader });
 const TimelineModule = dynamic(() => import('./components/TimelineModule'), { ssr: false, loading: ModuleLoader });
+const AcuteRequestsModule = dynamic(() => import('./components/AcuteRequestsModule'), { ssr: false, loading: ModuleLoader });
 const StatisticsModule = dynamic(() => import('./components/StatisticsModule'), { ssr: false, loading: ModuleLoader });
 const StaffOverviewModule = dynamic(() => import('./components/StaffOverviewModule'), { ssr: false, loading: ModuleLoader });
 const SettingsPage = dynamic(() => import('./components/SettingsPage'), { ssr: false, loading: ModuleLoader });
 const FlowMonitorModule = dynamic(() => import('./components/FlowMonitorModule'), { ssr: false, loading: ModuleLoader });
 import DeviceRegistration from './components/DeviceRegistration';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { AppToaster } from './components/ui/toast';
+import { AppToaster, toast } from './components/ui/toast';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { OperatingRoom, WeeklySchedule } from './types';
 import { AlertTriangle } from 'lucide-react';
-import { updateOperatingRoom, advanceRoomStepIfUnchanged, logNotificationEvent, setDatabaseHospitalId } from './lib/db';
+import { updateOperatingRoom, advanceRoomStepIfUnchanged, logNotificationEvent, setDatabaseHospitalId, transformSingleRoom } from './lib/db';
 import { AuthProvider, useAuth, type User } from './contexts/AuthContext';
 import { HospitalProvider, useHospital } from './contexts/HospitalContext';
 import { RealtimeProvider } from './contexts/RealtimeContext';
@@ -37,12 +38,19 @@ import LoginPage from './components/LoginPage';
 import { useEmergencyAlert } from './hooks/useEmergencyAlert';
 import { useOperatingRoomsData } from './hooks/useOperatingRoomsData';
 import { SIDEBAR_ITEMS } from './constants';
+import { useAcuteRequests } from './hooks/useAcuteRequests';
+import { isActiveAcuteRequest, type AcuteRequest } from './lib/acute-requests';
+import { getAcuteRoomContext } from './lib/acute-room-context';
+import { useAcuteCycleLinks } from './hooks/useAcuteCycleLinks';
+import { startAcuteRoomCycle } from './lib/acute-cycle-links-client';
+import { getAcuteDashboardByRoom, type AcuteDashboardRoomSummary } from './lib/acute-dashboard';
 
 // Main App Content - Operating Rooms Management System
 type CompletedOperations = NonNullable<OperatingRoom['completedOperations']>;
 type RoomStatusHistory = NonNullable<OperatingRoom['statusHistory']>;
 type StaffAssignmentField = 'doctor_id' | 'nurse_id';
 type StaffAssignmentUpdate = Partial<Record<StaffAssignmentField, string | null>>;
+const EMPTY_ACUTE_BY_ROOM: ReadonlyMap<string, AcuteDashboardRoomSummary> = new Map();
 
 const SWR_OPTIONS = {
   revalidateOnFocus: false,
@@ -60,11 +68,17 @@ const AppContent: React.FC = () => {
     isAdmin,
     isSuperAdmin,
     hasModuleAccess,
+    modules,
     user,
   } = useAuth();
   const { activeHospitalId, loading: hospitalLoading } = useHospital();
   const { workflowStatuses } = useWorkflowStatusesContext();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedAcuteRoom, setSelectedAcuteRoom] = useState<{ requestId: string; hospitalId: string; userId: string } | null>(null);
+  const acuteRoomOpenerRef = useRef<HTMLElement | null>(null);
+  const acuteStartInFlightRef = useRef(false);
+  const acuteScopeRef = useRef({ hospitalId: activeHospitalId, userId: user?.id });
+  acuteScopeRef.current = { hospitalId: activeHospitalId, userId: user?.id };
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
@@ -83,6 +97,49 @@ const AppContent: React.FC = () => {
     enabled: isAuthenticated && !hospitalLoading && hasAnyModuleAccess,
     loadAllDetails: currentView === 'timeline',
   });
+
+  // Opening a request is navigation only. Clinical progression keeps the
+  // existing explicit room actions; no acute request or phase is changed here.
+  const acuteRoomEnabled = Boolean(selectedAcuteRoom && isAuthenticated && !hospitalLoading && !permissionsLoading
+    && selectedAcuteRoom.hospitalId === activeHospitalId && selectedAcuteRoom.userId === user?.id
+    && modules.some(module => module.id === 'acute-requests' && module.is_enabled)
+    && hasModuleAccess('acute-requests') && hasModuleAccess('dashboard'));
+  const acuteDetailDataEnabled = Boolean(selectedRoomId && isAuthenticated && !hospitalLoading && !permissionsLoading
+    && modules.some(module => module.id === 'acute-requests' && module.is_enabled)
+    && hasModuleAccess('acute-requests') && hasModuleAccess('dashboard'));
+  const acuteDashboardDataEnabled = Boolean(currentView === 'dashboard' && isAuthenticated && !hospitalLoading && !permissionsLoading
+    && modules.some(module => module.id === 'acute-requests' && module.is_enabled)
+    && hasModuleAccess('acute-requests') && hasModuleAccess('dashboard'));
+  // One hospital/user-scoped SWR source, shared with Timeline. Cards receive
+  // only a derived map and do not each request their own copy of the queue.
+  const acuteDataEnabled = acuteDetailDataEnabled || acuteDashboardDataEnabled;
+  const acuteRoom = useAcuteRequests(acuteDataEnabled);
+  const acuteCycles = useAcuteCycleLinks(acuteDataEnabled);
+  const acuteByRoom = useMemo(() => {
+    if (!acuteDashboardDataEnabled || acuteRoom.loading || acuteRoom.error || acuteCycles.loading || acuteCycles.error) {
+      return EMPTY_ACUTE_BY_ROOM;
+    }
+    return getAcuteDashboardByRoom(acuteRoom.requests, acuteCycles.links, rooms, activeHospitalId);
+  }, [acuteDashboardDataEnabled, acuteRoom.loading, acuteRoom.error, acuteRoom.requests,
+    acuteCycles.loading, acuteCycles.error, acuteCycles.links, rooms, activeHospitalId]);
+  const acuteRoomContext = useMemo(() => {
+    if (!acuteDetailDataEnabled || acuteRoom.loading || acuteRoom.error || acuteCycles.loading || acuteCycles.error || !selectedRoomId) return null;
+    const liveRoom = rooms.find(room => room.id === selectedRoomId);
+    const activeLink = acuteCycles.links.find(link => link.hospitalId === activeHospitalId && link.roomId === selectedRoomId
+      && !link.endedAt && Date.parse(link.operationStartedAt) === Date.parse(liveRoom?.operationStartedAt ?? ''));
+    return getAcuteRoomContext(acuteRoom.requests,
+      acuteRoomEnabled ? selectedAcuteRoom?.requestId ?? null : activeLink?.requestId ?? null,
+      selectedRoomId, activeHospitalId, acuteCycles.links);
+  }, [acuteDetailDataEnabled, acuteRoomEnabled, acuteRoom.loading, acuteRoom.error, acuteRoom.requests,
+    acuteCycles.loading, acuteCycles.error, acuteCycles.links, rooms,
+    selectedAcuteRoom?.requestId, selectedRoomId, activeHospitalId]);
+
+  useEffect(() => {
+    if (selectedAcuteRoom && !acuteRoomEnabled) {
+      setSelectedAcuteRoom(null);
+      setSelectedRoomId(null);
+    }
+  }, [acuteRoomEnabled, selectedAcuteRoom]);
 
   useEffect(() => {
     setDatabaseHospitalId(activeHospitalId);
@@ -185,6 +242,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (currentView !== defaultView && !isModuleEnabled(currentView)) {
       setSelectedRoomId(null);
+      setSelectedAcuteRoom(null);
       setCurrentView(defaultView);
     }
   }, [currentView, defaultView, isModuleEnabled]);
@@ -475,9 +533,27 @@ const AppContent: React.FC = () => {
       return view;
     });
     setSelectedRoomId(null);
+    setSelectedAcuteRoom(null);
   }, [isModuleEnabled]);
 
-  const handleCloseRoomDetail = useCallback(() => setSelectedRoomId(null), []);
+  const handleCloseRoomDetail = useCallback(() => {
+    setSelectedRoomId(null);
+    setSelectedAcuteRoom(null);
+    const opener = acuteRoomOpenerRef.current;
+    acuteRoomOpenerRef.current = null;
+    if (opener) window.requestAnimationFrame(() => { if (opener.isConnected) opener.focus(); });
+  }, []);
+
+  const handleOpenAcuteRoom = useCallback((request: AcuteRequest) => {
+    if (hospitalLoading || permissionsLoading || !user || request.hospitalId !== activeHospitalId
+      || !hasModuleAccess('dashboard') || !hasModuleAccess('acute-requests')
+      || !modules.some(module => module.id === 'acute-requests' && module.is_enabled)
+      || !isActiveAcuteRequest(request) || !request.proposedRoomId
+      || !rooms.some(room => room.id === request.proposedRoomId)) return;
+    if (!selectedAcuteRoom) acuteRoomOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setSelectedAcuteRoom({ requestId: request.id, hospitalId: request.hospitalId, userId: user.id });
+    setSelectedRoomId(request.proposedRoomId);
+  }, [activeHospitalId, hasModuleAccess, hospitalLoading, modules, permissionsLoading, rooms, selectedAcuteRoom, user]);
 
   /* Hardwarové tlačítko Zpět (Android): zavře otevřený detail sálu, jinak
      nechá událost projít (mobile/main.tsx pak jde zpět v historii, případně
@@ -485,19 +561,56 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const onNativeBack = (e: Event) => {
       if (noticeComposerOpen) { e.preventDefault(); setNoticeComposerOpen(false); return; }
-      if (selectedRoomId) { e.preventDefault(); setSelectedRoomId(null); return; }
+      if (selectedRoomId) { e.preventDefault(); handleCloseRoomDetail(); return; }
       if (currentView !== defaultView) { e.preventDefault(); setCurrentView(defaultView); }
     };
     window.addEventListener('nativeBackButton', onNativeBack);
     return () => window.removeEventListener('nativeBackButton', onNativeBack);
-  }, [selectedRoomId, currentView, defaultView, noticeComposerOpen]);
+  }, [selectedRoomId, currentView, defaultView, noticeComposerOpen, handleCloseRoomDetail]);
   // Stabilní RoomDetail callbacky — používají selectedRoomId přímo (zdroj pravdy), takže
   // se NErecreatují při každém update sálů. Bez useCallbacku se po realtime updatu
   // recreate inline arrow funkce → memo na RoomDetailu by selhal a 1745řádková komponenta
   // by se zbytečně re-renderovala.
-  const handleStepChange = useCallback((index: number, stepColor?: string) => {
-    if (selectedRoomId) updateRoomStep(selectedRoomId, index, stepColor);
-  }, [selectedRoomId, updateRoomStep]);
+  const handleStepChange = useCallback(async (index: number, stepColor?: string) => {
+    if (!selectedRoomId) return false;
+    const currentRoom = roomsRef.current.find(room => room.id === selectedRoomId);
+    // Merely opening a request never writes. Only the explicitly confirmed
+    // arrival transition uses the atomic server start; all other phases retain
+    // their ordinary path, including cleaning completion on another station.
+    if (index === 1 && currentRoom?.currentStepIndex === 0 && acuteRoomEnabled) {
+      if (!activeHospitalId || !user || !acuteRoomContext || acuteCycles.loading || acuteCycles.error
+        || acuteRoomContext.cycleLink || !Number.isSafeInteger(currentRoom.stateRevision)) {
+        toast.error(acuteRoomContext?.cycleLink ? 'Tento akutní požadavek již má přiřazený cyklus. Vyberte další požadavek.'
+          : 'Akutní požadavek a aktuální stav sálu ještě nejsou ověřeny. Obnovte detail.');
+        return false;
+      }
+      if (acuteStartInFlightRef.current) return false;
+      const hospitalAtStart = activeHospitalId;
+      const userAtStart = user.id;
+      acuteStartInFlightRef.current = true;
+      try {
+        const result = await startAcuteRoomCycle(hospitalAtStart, acuteRoomContext.selectedRequest.id,
+          selectedRoomId, currentRoom.stateRevision!);
+        if (acuteScopeRef.current.hospitalId !== hospitalAtStart || acuteScopeRef.current.userId !== userAtStart) return false;
+        markRoomLocallyUpdated(selectedRoomId);
+        setRooms(previous => previous.map(room => room.id === selectedRoomId
+          && (room.stateRevision ?? -1) <= result.room.state_revision!
+          ? { ...room, ...transformSingleRoom(result.room) } : room));
+        window.dispatchEvent(new CustomEvent('acuteCycleLinked', { detail: { hospitalId: hospitalAtStart, roomId: selectedRoomId } }));
+        return true;
+      } catch (error) {
+        if (acuteScopeRef.current.hospitalId === hospitalAtStart && acuteScopeRef.current.userId === userAtStart) {
+          toast.error(error instanceof Error ? error.message : 'Akutní cyklus se nepodařilo zahájit.');
+          void refreshRooms();
+          void acuteCycles.refresh();
+        }
+        return false;
+      } finally { acuteStartInFlightRef.current = false; }
+    }
+    updateRoomStep(selectedRoomId, index, stepColor);
+    return true;
+  }, [activeHospitalId, acuteRoomContext, acuteRoomEnabled, acuteCycles.loading, acuteCycles.error, acuteCycles.refresh,
+    markRoomLocallyUpdated, refreshRooms, selectedRoomId, setRooms, updateRoomStep, user]);
 
   const handleEndTimeChange = useCallback((newTime: Date | null) => {
     if (selectedRoomId) handleUpdateRoomEndTime(selectedRoomId, newTime);
@@ -597,7 +710,7 @@ const AppContent: React.FC = () => {
         {/* Horní lišta se nezobrazuje – všechny moduly mají plnou stránku jako dashboard */}
         {/* <TopBar /> */}
 
-        <main className={`flex-1 overflow-hidden relative ${currentView === 'dashboard' ? 'pb-0' : 'pb-20'} md:pb-0`}>
+        <main className={`flex-1 overflow-hidden relative ${currentView === 'dashboard' || acuteRoomEnabled ? 'pb-0' : 'pb-20'} md:pb-0`}>
           {/* Granulární error-boundary kolem obsahu modulů — pád jednoho modulu
               neshodí celou aplikaci (sidebar/navigace zůstanou). Klíč podle
               currentView zajistí reset po přepnutí na jiný modul. */}
@@ -613,11 +726,19 @@ const AppContent: React.FC = () => {
           >
 
             {/* Dashboard — room detail */}
-            {currentView === 'dashboard' && selectedRoom && (
+            {selectedRoom && (currentView === 'dashboard' || (currentView === 'timeline' && acuteRoomEnabled)) && (
               <div className="absolute inset-0 z-50">
                 <RoomDetail
+                  key={selectedRoom.id}
                   room={selectedRoom}
                   allRooms={rooms}
+                  acuteContext={acuteRoomContext ?? undefined}
+                  acuteContextMessage={acuteRoomEnabled && !acuteRoomContext
+                    ? acuteRoom.error || acuteCycles.error ? 'Akutní požadavek a jeho cyklus se nepodařilo ověřit. Zobrazen je skutečný stav sálu.'
+                      : acuteRoom.loading || acuteCycles.loading ? 'Ověřování vybraného akutního požadavku a jeho cyklu…'
+                        : 'Požadavek již není aktivní nebo byl přiřazen jinému sálu. Zobrazen je skutečný stav sálu.'
+                    : undefined}
+                  onSelectAcuteRequest={acuteRoomEnabled ? handleOpenAcuteRoom : undefined}
                   onClose={handleCloseRoomDetail}
                   onStepChange={handleStepChange}
                   onEndTimeChange={handleEndTimeChange}
@@ -635,6 +756,7 @@ const AppContent: React.FC = () => {
               <DashboardModule
                 rooms={rooms}
                 roomsLoaded={roomsLoaded}
+                acuteByRoom={acuteByRoom}
                 onSelectRoom={setSelectedRoomId}
                 onEmergency={toggleEmergency}
                 onLock={toggleLock}
@@ -655,8 +777,19 @@ const AppContent: React.FC = () => {
                 okraj obrazovky. Mobilní odsazení řeší `pb-20` na <main> + interní
                 spodní padding v MobileTimelineView. */}
             {currentView === 'timeline' && (
-              <div className="app-module-shell w-full h-full overflow-hidden p-0 md:pb-6">
-                <TimelineModule rooms={rooms} onRefresh={refreshRooms} />
+              <div className="app-module-shell w-full h-full overflow-hidden p-0 md:pb-6" inert={acuteRoomEnabled} aria-hidden={acuteRoomEnabled || undefined}>
+                <TimelineModule rooms={rooms} onRefresh={refreshRooms} onOpenAcuteRequests={() => handleNavigate('acute-requests')}
+                  onOpenAcuteRoom={hasModuleAccess('dashboard') ? handleOpenAcuteRoom : undefined} />
+              </div>
+            )}
+
+            {currentView === 'acute-requests' && (
+              <div className="w-full h-full overflow-y-auto hide-scrollbar">
+                <div className="mobile-module-container app-module-shell w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
+                  <div className="app-module-content">
+                    <AcuteRequestsModule rooms={rooms} />
+                  </div>
+                </div>
               </div>
             )}
 

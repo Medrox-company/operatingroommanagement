@@ -185,6 +185,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         { id: 'dashboard',  name: 'Dashboard',  description: 'Operating rooms overview',     is_enabled: true, icon: 'LayoutGrid', accent_color: '#FBBF24', sort_order: 1, allowed_roles: ['aro','cos','management','primar'] },
         { id: 'flow',       name: 'Tok pacienta', description: 'Live patient flow monitoring', is_enabled: true, icon: 'Workflow',   accent_color: '#22D3EE', sort_order: 2, allowed_roles: ['admin','aro','cos','management','primar'] },
         { id: 'timeline',   name: 'Timeline',   description: 'Operations timeline',          is_enabled: true, icon: 'Calendar',   accent_color: '#A855F7', sort_order: 2, allowed_roles: ['aro','cos','management','primar'] },
+        { id: 'acute-requests', name: 'Akutní výkony', description: 'Koordinace akutních požadavků a audit změn pořadí', is_enabled: false, icon: 'Siren', accent_color: '#5B8DEF', sort_order: 3, allowed_roles: ['aro','cos','primar'] },
         { id: 'statistics', name: 'Statistics', description: 'Statistics and analytics',     is_enabled: true, icon: 'BarChart3',  accent_color: '#06B6D4', sort_order: 3, allowed_roles: ['management','primar','cos'] },
         { id: 'staff',      name: 'Staff',      description: 'Staff management',             is_enabled: true, icon: 'Users',      accent_color: '#10B981', sort_order: 4, allowed_roles: ['cos','management'] },
         { id: 'alerts',     name: 'Alerts',     description: 'Alert system',                 is_enabled: true, icon: 'Bell',       accent_color: '#EC4899', sort_order: 5, allowed_roles: ['aro','cos','management','primar'] },
@@ -457,6 +458,9 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   const hasModuleAccess = useCallback(
     (moduleId: string): boolean => {
       if (!user) return false;
+      // Nový volitelný klinický modul je skutečně vypnutý i pro superadmina.
+      // Jeho zapnutí zůstává dostupné v Nastavení; chybějící migrace přístup neotevře.
+      if (moduleId === 'acute-requests' && !modules.some(m => m.id === moduleId && m.is_enabled)) return false;
       // Superadministrátor vidí vše, a to i moduly vypnuté pro ostatní —
       // jinak by si mohl omylem odepřít přístup k nastavení, kterým je zpět
       // zapíná. Administrátor už výjimku nemá, jeho přístup řídí allowed_roles.

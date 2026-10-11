@@ -57,6 +57,12 @@ const allowed = {
   './utils': utils,
   '../../lib/timeline-operational-warnings': warningLabels,
   '../../lib/timeline-unused-minutes': unusedMinutes,
+  '../../lib/acute-cycle-links': load('../../lib/acute-cycle-links.ts', name => {
+    throw new Error(`Párování akutního cyklu nemá mít runtime závislost: ${name}`);
+  }),
+  './CompletedAcuteCycleLabel': {
+    CompletedAcuteCycleLabel: stubComponent('span'), completedAcuteCycleDescription: () => '',
+  },
 };
 
 const { TimelineRoomRow } = load('../../components/timeline/TimelineRoomRow.tsx', name => {

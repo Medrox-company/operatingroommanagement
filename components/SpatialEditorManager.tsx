@@ -25,6 +25,7 @@ import {
   mountEditor,
   type EditorHandle,
 } from '../vendor/orms-spatial-editor/src/editor.js';
+import './spatial/spatial-editor-theme.css';
 
 function EditorCanvas({
   initialProject,
@@ -153,20 +154,30 @@ export default function SpatialEditorManager({ rooms }: { rooms: OperatingRoom[]
 
   return (
     <div className="spatial-settings-module min-h-full w-full pb-8 font-sans">
-      <header className="mb-5 flex min-w-0 items-end justify-between gap-4">
+      <header className="mb-7">
         <ModulePageHeading
           icon={Cuboid}
           kicker="SPATIAL CONTROL"
           title="3D"
           mutedTitle="DISPOZICE"
-          titleClassName="truncate"
         />
-        <div className="spatial-editor-icon-bar" aria-label="Akce 3D dispozice">
+      </header>
+
+      <section className="spatial-editor-commandbar" aria-label="Ovládání 3D dispozice">
+        <div className="spatial-editor-commandbar-copy">
+          <h2>Editor dispozice</h2>
+          <p className="spatial-editor-status" data-state={error ? 'error' : dirty ? 'dirty' : 'saved'} role="status" aria-live="polite">
+            {isLoading ? 'Načítám uloženou dispozici…' : message || error?.message || (dirty ? 'Dispozice obsahuje neuložené změny.' : hasProject ? 'Dispozice je uložena.' : 'Operační blok není vytvořen.')}
+          </p>
+        </div>
+        <div className="spatial-editor-icon-bar" role="group" aria-label="Akce 3D dispozice">
           <button type="button" onClick={handleAutoLink} disabled={!hasProject || rooms.length === 0 || isLoading || saving || deleting} className="spatial-editor-icon-action" aria-label="Doplnit vazby" title="Doplnit vazby">
             <WandSparkles />
+            <span>Doplnit vazby</span>
           </button>
           <button type="button" onClick={handleReset} disabled={isLoading || saving || deleting} className="spatial-editor-icon-action" aria-label="Nová dispozice" title="Nová dispozice">
             <FilePlus2 />
+            <span>Nová dispozice</span>
           </button>
           <button
             type="button"
@@ -177,9 +188,11 @@ export default function SpatialEditorManager({ rooms }: { rooms: OperatingRoom[]
             title="Odstranit operační blok"
           >
             {deleting ? <RefreshCw className="animate-spin" /> : <Trash2 />}
+            <span>{deleting ? 'Odstraňuji…' : 'Odstranit blok'}</span>
           </button>
           <button type="button" onClick={handleReload} disabled={isLoading || saving || deleting} className="spatial-editor-icon-action" aria-label="Načíst uloženou dispozici" title="Načíst uloženou dispozici">
             <RefreshCw className={isLoading ? 'animate-spin' : ''} />
+            <span>Načíst uloženou</span>
           </button>
           <button
             type="button"
@@ -190,17 +203,14 @@ export default function SpatialEditorManager({ rooms }: { rooms: OperatingRoom[]
             title={saving ? 'Ukládám dispozici' : dirty ? 'Uložit dispozici' : hasProject && updatedAt ? `Uloženo ${new Date(updatedAt).toLocaleString('cs-CZ')}` : hasProject ? 'Dispozice je uložena' : 'Operační blok není vytvořen'}
           >
             {saving ? <RefreshCw className="animate-spin" /> : dirty || !hasProject ? <Save /> : <Check />}
+            <span>{saving ? 'Ukládám…' : dirty || !hasProject ? 'Uložit' : 'Uloženo'}</span>
           </button>
         </div>
-      </header>
+      </section>
 
-      <p className="sr-only" role="status" aria-live="polite">
-        {message || error?.message || (dirty ? 'Dispozice obsahuje neuložené změny.' : hasProject ? 'Dispozice je uložena.' : 'Operační blok není vytvořen.')}
-      </p>
-
-      <section className="spatial-editor-frame h-[max(680px,calc(100dvh-185px))] min-h-[680px] overflow-hidden rounded-xl border border-white/[0.07]">
+      <section className="spatial-editor-frame" aria-label="Prostorový editor" aria-busy={isLoading}>
         {isLoading ? (
-          <div className="grid h-full place-items-center text-sm text-white/42">Načítám prostorový editor…</div>
+          <div className="spatial-editor-loading"><RefreshCw className="animate-spin" aria-hidden="true" /><span>Načítám prostorový editor…</span></div>
         ) : hasProject ? (
           <EditorCanvas
             key={editorKey}

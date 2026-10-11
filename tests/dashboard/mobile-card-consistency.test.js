@@ -57,7 +57,10 @@ test('dark structural surfaces stay blue, while real clinical status colors are 
     assert.ok(blue > green && green > red, `${key} must be navy/blue, not green or teal`);
   }
   assert.equal(tokens['--m-card'], tokens['--m-card-solid']);
-  assert.match(tokens['--m-page-bg'], /^linear-gradient\(180deg,/);
+  assert.equal(tokens['--m-page-bg'], 'var(--app-spatial-background)', 'Dark mobile shares the actual application canvas');
+  const canvas = declarationsFor(globals, ':root')['--app-spatial-background'];
+  assert.match(canvas, /^radial-gradient\(/);
+  assert.match(canvas, /linear-gradient\(180deg, #030a28 0%, #050d2d 54%, #030922 100%\)/);
   // Surface unification must not erase per-room colors that convey live state.
   assert.match(read('components/mobile/MobileRoomOverview.tsx'), /className="mro-status-dot" style=\{\{ background:\s*phase\.color/);
   assert.match(read('components/RoomDetail.tsx'), /'--room-phase-color':\s*activeColor/);
@@ -85,12 +88,12 @@ test('shared header puts one left-aligned 28px title in the 44px top toolbar wit
 test('overview and module cards put the common title first, with a 16px content inset', () => {
   const source = read('components/mobile/MobileRoomOverview.tsx');
   assert.match(source, /className="mro-room m-unified-card"/);
-  assert.match(source, /<strong className="m-unified-card-title">\{room\.name\}<\/strong>\s*<span className="mro-phase-label"/);
+  assert.match(source, /<strong className="m-unified-card-title">\{room\.name\}<\/strong>\s*<span className="mro-phase-row">\s*<span className="mro-phase-label"/);
   assert.equal(declarationsFor(overview, '.mro-room-open').padding, 'var(--m-card-padding)');
   const shared = read('components/mobile/MobileShell.tsx');
   assert.match(shared, /className="m-unified-card mobile-header-metric min-w-0 p-4"/);
   assert.match(shared, /m-unified-card mobile-glass-card[^\n]*p-4/);
-  for (const path of ['components/mobile/MobileFlowView.tsx', 'components/mobile/MobileTimelineView.tsx']) {
+  for (const path of ['components/mobile/MobileFlowView.tsx']) {
     const module = read(path);
     assert.match(module, /m-unified-card-header/);
     assert.match(module, /m-unified-card-title/);
@@ -100,6 +103,20 @@ test('overview and module cards put the common title first, with a 16px content 
   assert.match(placeholder, /<MobileCard>\s*<h2 className="m-unified-card-title">/);
   assert.match(placeholder, /hidden md:flex/);
   assert.match(read('App.tsx'), /className="mobile-module-container/);
+});
+
+test('mobile timeline keeps the common header and palette in a flat compact table rather than large cards', () => {
+  const source = read('components/mobile/MobileTimelineView.tsx');
+  const timeline = stylesheet('components/mobile/mobile-timeline.css');
+  assert.match(source, /<MobileModuleHeader\s/);
+  assert.match(source, /className="mtl-axis"/);
+  assert.doesNotMatch(source, /m-unified-card/);
+  assert.equal(declarationsFor(timeline, '.mtl-axis').padding, '0');
+  assert.equal(declarationsFor(timeline, '.mtl-screen').background, 'var(--m-page-bg)');
+  assert.equal(declarationsFor(timeline, '.mtl-screen').color, 'var(--m-text)');
+  assert.equal(declarationsFor(timeline, '.mtl-row').background, 'transparent');
+  assert.match(source, /style=\{\{ background:\s*phase\.color/);
+  assert.match(source, /'--segment-color':\s*segment\.color/);
 });
 
 test('room detail retains shared surfaces and horizontal insets while adapting vertical density', () => {

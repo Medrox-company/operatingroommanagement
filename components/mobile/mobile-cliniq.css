@@ -1,0 +1,178 @@
+/* Optional appearance; original CSS remains intact. */
+@media(max-width:767px){html[data-app-design="cliniq"]:not(.m-dark){--m-bg:#EDF2F3;--m-page-bg:linear-gradient(180deg,#E4ECEE 0%,#F5F8F8 65%,#EEF3F4 100%);--m-card-2:#EAF0F1;--m-track:#DEE8EA;--m-border:#E1E9EB;--m-text:#29434B;--m-text-strong:#20383F;--m-muted:#526C74;--m-accent:#214E5B;--m-accent-rgb:33,78,91;--m-accent-soft:#DFEAED;--m-chip-track:#E5EDEE;--m-nav-bg:rgba(250,252,252,.94);--m-nav-fg:#5C737B;--m-nav-active:#214E5B}}
+@media (max-width: 767px) {
+  html[data-app-design="cliniq"] .dashboard-module { background: var(--m-page-bg); color: var(--m-text); font-family: var(--m-font-sans); padding: calc(18px + env(safe-area-inset-top, 0px)) var(--m-page-gutter) calc(84px + env(safe-area-inset-bottom, 0px)); }
+  html[data-app-design="cliniq"] .dashboard-module.mobile-safe-top { padding-top: calc(18px + env(safe-area-inset-top, 0px)) !important; }
+  html[data-app-design="cliniq"] .dashboard-module :is(button, input, select) { font-family: inherit; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  html[data-app-design="cliniq"] .dashboard-module.statistics-module { font-family: var(--m-font-sans); -webkit-font-smoothing: antialiased; }
+  html[data-app-design="cliniq"] .dashboard-module .dashboard-cards-layout { display: block; }
+  html[data-app-design="cliniq"] .dashboard-module .dashboard-card-content > .dashboard-room-grid { display: none; }
+  html[data-app-design="cliniq"] .dashboard-module.spatial-dashboard-module { background: var(--m-page-bg); padding-top: calc(18px + env(safe-area-inset-top, 0px)); padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+  html[data-app-design="cliniq"] .mobile-room-overview { width: 100%; max-width: 560px; margin: 0 auto; }
+  html[data-app-design="cliniq"] .mobile-spatial-module-loading h1 { color: var(--m-text-strong); font-size: 26px; font-weight: 700; margin-bottom: 18px; }
+  html[data-app-design="cliniq"] .dashboard-module .mobile-spatial-module-loading .spatial-load-state { min-height: 220px; background: var(--m-card); color: var(--m-text); }
+  html[data-app-design="cliniq"] .mro-top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: 44px; margin-bottom: 10px; }
+  html[data-app-design="cliniq"] .mro-context-label { margin-right: auto; color: var(--m-muted); font-size: 13px; font-weight: 500; }
+  html[data-app-design="cliniq"] .mro-top-actions .mobile-theme-toggle { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+  html[data-app-design="cliniq"] .mro-icon-button { width: 44px; height: 44px; display: grid; place-items: center; color: var(--m-accent); background: var(--m-card); position: relative; border-radius: 50%; box-shadow: 0 1px 4px rgba(18, 43, 73, .04); }
+  html[data-app-design="cliniq"] .mro-notice-dot { position: absolute; right: 10px; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: #EF4770; }
+  html[data-app-design="cliniq"] .mro-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+  html[data-app-design="cliniq"] .mro-heading h1 { font-size: clamp(28px, 8vw, 34px); line-height: 1.1; letter-spacing: -.035em; color: var(--m-text-strong); font-weight: 700; margin: 0 0 7px; }
+  html[data-app-design="cliniq"] .mro-heading p { font-size: 13px; line-height: 1.4; color: var(--m-muted); margin: 0; max-width: 30ch; }
+  html[data-app-design="cliniq"] .mro-date { display: flex; align-items: center; gap: 7px; color: var(--m-muted); font-size: 10px; line-height: 1.4; flex-shrink: 0; }
+  html[data-app-design="cliniq"] .mro-date svg { color: var(--m-accent); }
+  html[data-app-design="cliniq"] .mro-date time > span { display: block; text-transform: capitalize; }
+  /* Přepínač zobrazení jako dvě kruhové ikony v horní liště. Nahradil pruh
+     se třemi záložkami, který zabíral celý řádek pod hlavičkou. */
+  html[data-app-design="cliniq"] .mro-view-icons { display: flex; align-items: center; gap: 8px; }
+  html[data-app-design="cliniq"] .mro-view-icons .mro-icon-button { color: var(--m-muted); }
+  html[data-app-design="cliniq"] .mro-view-icons .mro-icon-button[aria-pressed=true] { color: var(--m-accent); background: var(--m-accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m-accent) 32%, transparent); }
+  html[data-app-design="cliniq"] .mro-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0 0 16px; padding: 14px 0; border: 1px solid var(--m-border); border-radius: 20px; background: var(--m-card); }
+  html[data-app-design="cliniq"] .mro-counts > div { display: flex; flex-direction: column; gap: 4px; padding: 0 16px; }
+  html[data-app-design="cliniq"] .mro-counts > div + div { border-left: 1px solid var(--m-separator); }
+  html[data-app-design="cliniq"] .mro-counts strong { font-size: 26px; font-weight: 650; line-height: 1.05; letter-spacing: -.035em; color: var(--m-text-strong); }
+  html[data-app-design="cliniq"] .mro-counts span { font-size: 12px; color: var(--m-muted); }
+  html[data-app-design="cliniq"] .mro-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 13px; background: var(--m-chip-track); margin: 10px 0 17px; }
+  html[data-app-design="cliniq"] .mro-filters button { min-height: 44px; border-radius: 10px; padding: 6px 4px; font-size: 13px; border: 0; color: var(--m-muted); }
+  html[data-app-design="cliniq"] .mro-filters button[aria-pressed=true] { background: var(--m-control-surface); color: var(--m-text-strong); box-shadow: 0 1px 4px rgba(0, 15, 36, .10); font-weight: 600; }
+  html[data-app-design="cliniq"] .mro-list-heading { display: flex; justify-content: space-between; padding: 0 4px 8px; color: var(--m-muted); font-size: 12px; letter-spacing: .035em; text-transform: uppercase; }
+  html[data-app-design="cliniq"] .mro-room-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
+  html[data-app-design="cliniq"] .mro-room-list:empty { display: none; }
+  html[data-app-design="cliniq"] .mro-room { position: relative; display: flex; flex-direction: column; align-items: stretch; min-width: 0; overflow: hidden; container-type: inline-size; }
+  /* Cliniq: the whole card carries a quiet phase tint, including ready rooms. */
+  html[data-app-design="cliniq"] .mro-room.m-unified-card {
+    border: 1px solid color-mix(in srgb, var(--room-phase-color) 9%, #FFFFFF);
+    border-radius: 24px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 17%, #FFFFFF), color-mix(in srgb, var(--room-phase-color) 5%, #FFFFFF));
+    box-shadow: 0 3px 12px rgba(30, 58, 65, .025);
+  }
+  html[data-app-design="cliniq"].m-dark .mro-room.m-unified-card {
+    border-color: color-mix(in srgb, var(--room-phase-color) 20%, var(--m-border));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 18%, var(--m-card-solid)), var(--m-card-solid));
+  }
+
+  /* Nouzový sál si drží červený proužek na hraně i po obarvení fází. */
+  html[data-app-design="cliniq"] .mro-room[data-emergency=true] { box-shadow: inset 3px 0 #E5484D; }
+  html[data-app-design="cliniq"] .mro-room:focus-within { outline: 2px solid var(--m-accent); outline-offset: -3px; }
+  /* Podržení karty otevírá nabídku akcí, proto se potlačuje systémové
+     označování textu a iOS callout — jinak by přes kartu vyskočila lupa. */
+  html[data-app-design="cliniq"] .mro-room-open { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: var(--m-card-padding); text-align: left; width: 100%; box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  html[data-app-design="cliniq"] .mro-status-dot { width: 8px; height: 8px; margin-top: 4px; flex-shrink: 0; border-radius: 50%; }
+  html[data-app-design="cliniq"] .mro-room-identity { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 6px; width: 100%; }
+  /* Dlouhý název se může zalomit; velikost zůstává čitelná i na úzké kartě. */
+  html[data-app-design="cliniq"] .mro-room-identity strong { color: var(--m-text-strong); font-size: clamp(11px, 7.8cqw, var(--m-card-title-size)); font-weight: var(--m-card-title-weight); min-height: 2.5em; line-height: 1.25; letter-spacing: -.025em; overflow-wrap: normal; word-break: keep-all; hyphens: none; -webkit-hyphens: none; text-wrap: balance; }
+  html[data-app-design="cliniq"] .mro-phase-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+  html[data-app-design="cliniq"] .mro-phase-label { display: flex; align-items: center; gap: 5px; flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; color: var(--m-text); }
+  html[data-app-design="cliniq"] .mro-phase-label > span, html[data-app-design="cliniq"] .mro-phase-label { line-height: 1.25; }
+  /* Název fáze musí být vlastní prvek — holý text by se jako anonymní flex
+     položka nesmrštil pod svou min-content šířku a přetekl by přes okraj. */
+  html[data-app-design="cliniq"] .mro-phase-name { min-width: 0; overflow-wrap: break-word; }
+  html[data-app-design="cliniq"] .mro-room-identity > span { font-size: 12px; line-height: 1.35; }
+  html[data-app-design="cliniq"] .mro-room-identity small { font-size: 12px; color: var(--m-muted); }
+  /* Both times share a compact inset surface; phase is also named above. */
+  html[data-app-design="cliniq"] .mro-room-time {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;
+    margin-top: auto; padding: 8px; border-radius: 12px;
+    background: rgba(255,255,255,.7); color: var(--m-text-strong);
+    font-variant-numeric: tabular-nums; min-width: 0;
+  }
+  html[data-app-design="cliniq"].m-dark .mro-room-time { background: rgba(255,255,255,.06); }
+  html[data-app-design="cliniq"] .mro-room-metric { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  html[data-app-design="cliniq"] .mro-room-metric + .mro-room-metric { border-left: 1px solid var(--m-separator); padding-left: 6px; }
+  html[data-app-design="cliniq"] .mro-room-metric > span { font-size: 10px; line-height: 1.25; color: var(--m-muted); overflow-wrap: anywhere; }
+  html[data-app-design="cliniq"] .mro-room-time strong { color: var(--m-text-strong); font-size: 15px; line-height: 1.2; font-weight: 600; white-space: nowrap; }
+  html[data-app-design="cliniq"] .mro-room-open:active { background: var(--m-accent-soft); }
+
+  /* Nabídka akcí po dlouhém stisku karty. Stejná skladba jako potvrzení
+     přechodu fáze — dva stejně velké boxy s plným barevným kruhem. */
+  html[data-app-design="cliniq"] .mrq-backdrop { position: fixed; inset: 0; z-index: 260; display: flex; align-items: center; justify-content: center; padding: 20px var(--m-page-gutter); background: color-mix(in srgb, #050D2D 55%, transparent); backdrop-filter: blur(3px); }
+  html[data-app-design="cliniq"] .mrq-dialog { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; padding: 20px 18px 16px; border: 1px solid var(--m-border); border-radius: 24px; background: var(--m-card-solid, var(--m-card)); box-shadow: var(--m-card-shadow-strong); outline: none; }
+  html[data-app-design="cliniq"] .mrq-kicker { margin: 0; color: var(--m-muted); font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; text-align: center; }
+  html[data-app-design="cliniq"] .mobile-room-overview .mrq-title, html[data-app-design="cliniq"] .mrq-title { margin: 0 !important; color: var(--m-text-strong) !important; font-size: clamp(19px, 6.4vw, 25px) !important; font-weight: 700 !important; line-height: 1.15 !important; letter-spacing: -.03em !important; text-transform: none !important; text-align: center; }
+  html[data-app-design="cliniq"] .mrq-phase { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 0 4px; color: var(--m-muted); font-size: 12.5px; }
+  html[data-app-design="cliniq"] .mrq-phase i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  html[data-app-design="cliniq"] .mrq-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  html[data-app-design="cliniq"] .mrq-box { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 9px; min-height: 124px; padding: 16px 10px; border-radius: 20px; border: 1px solid var(--mrq-color); background: color-mix(in srgb, var(--mrq-color) 10%, transparent); }
+  html[data-app-design="cliniq"] .mrq-box:active { transform: scale(.97); }
+  html[data-app-design="cliniq"] .mrq-box:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+  html[data-app-design="cliniq"] .mrq-box-icon { display: grid; place-items: center; width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; background: var(--mrq-color); color: #FFFFFF; box-shadow: 0 10px 24px -10px var(--mrq-color), inset 0 1px 0 rgba(255, 255, 255, .28); }
+  html[data-app-design="cliniq"] .mrq-box-icon svg { width: 28px; height: 28px; stroke-width: 2.2; }
+  html[data-app-design="cliniq"] .mrq-box-label { color: var(--mrq-ink); font-size: 12.5px; font-weight: 700; line-height: 1.25; text-align: center; letter-spacing: .01em; }
+  html[data-app-design="cliniq"] .mrq-box--emergency { --mrq-color: #E5484D; --mrq-ink: color-mix(in srgb, #E5484D 62%, #0B1220 38%); }
+  html[data-app-design="cliniq"] .mrq-box--lock { --mrq-color: #D18408; --mrq-ink: color-mix(in srgb, #A9660A 62%, #0B1220 38%); }
+  /* Zapnutý stav je vidět už z nabídky — ohraničení zesílí a plocha ztmavne. */
+  html[data-app-design="cliniq"] .mrq-box[data-active] { background: color-mix(in srgb, var(--mrq-color) 20%, transparent); border-width: 2px; }
+  html[data-app-design="cliniq"].m-dark .mrq-box--emergency { --mrq-ink: color-mix(in srgb, #E5484D 45%, #FFFFFF 55%); }
+  html[data-app-design="cliniq"].m-dark .mrq-box--lock { --mrq-ink: color-mix(in srgb, #F0A92B 45%, #FFFFFF 55%); }
+
+  html[data-app-design="cliniq"] .mrq-detail { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 46px; margin-top: 4px; border-radius: 14px; border: 1px solid var(--m-border); color: var(--m-accent); font-size: 14px; font-weight: 600; }
+  html[data-app-design="cliniq"] .mrq-close { min-height: 44px; color: var(--m-muted); font-size: 14px; font-weight: 500; }
+
+  html[data-app-design="cliniq"] .mobile-reference-menu { background: var(--m-card-solid) !important; color: var(--m-text); border-color: var(--m-border) !important; box-shadow: var(--m-card-shadow-strong) !important; z-index: 220; }
+  html[data-app-design="cliniq"] .mobile-reference-menu [role=menuitem] { color: var(--m-text); min-height: 44px; }
+  html[data-app-design="cliniq"] .mobile-reference-menu [role=menuitem].text-red-400 { color: #E5484D; }
+  html[data-app-design="cliniq"] .mobile-reference-menu [data-highlighted] { background: var(--m-card-2) !important; }
+  html[data-app-design="cliniq"] .mro-empty { text-align: center; color: var(--m-muted); font-size: 13px; line-height: 1.6; padding: 32px 16px; }
+  html[data-app-design="cliniq"] .mro-empty strong { color: var(--m-text); display: block; }
+  html[data-app-design="cliniq"] .mro-empty button { color: var(--m-accent); text-decoration: underline; padding: 12px; }
+  html[data-app-design="cliniq"] .mobile-room-overview button:focus-visible, html[data-app-design="cliniq"] .mro-view-icons button:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 2px; }
+}
+@media (max-width: 359px) {
+  html[data-app-design="cliniq"] .mro-date { display: none; }
+  html[data-app-design="cliniq"] .mro-room-list { gap: 10px; }
+  html[data-app-design="cliniq"] .mro-room-time { gap: 6px; }
+  html[data-app-design="cliniq"] .mro-room-time strong { font-size: 14px; }
+}
+
+/* The two arrangements share phase colors and the same functional card. */
+@media (max-width: 767px) {
+  html[data-app-design="cliniq"] .mro-counts { min-height: 98px; align-items: center; border: 0; border-radius: 26px; background: linear-gradient(125deg, #CDDDE1, #E9F0F1); }
+  html[data-app-design="cliniq"] .mro-counts > div { padding: 0 12px; }
+  html[data-app-design="cliniq"] .mro-counts .mro-count-total { position: relative; }
+  html[data-app-design="cliniq"] .mro-counts strong { color: #243F47; }
+  html[data-app-design="cliniq"] .mro-counts span { color: #4B656C; font-size: 11px; }
+  html[data-app-design="cliniq"].m-dark .mro-counts { background: linear-gradient(125deg, #1D3155, #172642); }
+  html[data-app-design="cliniq"].m-dark .mro-counts strong { color: var(--m-text-strong); }
+  html[data-app-design="cliniq"].m-dark .mro-counts span { color: var(--m-muted); }
+  html[data-app-design="cliniq"] .mro-filters { background: transparent; gap: 6px; padding: 0; }
+  html[data-app-design="cliniq"] .mro-filters button { border-radius: 999px; background: var(--m-card); }
+  html[data-app-design="cliniq"] .mro-filters button[aria-pressed=true] { color: var(--m-on-accent); background: var(--m-accent); box-shadow: none; }
+  html[data-app-design="cliniq"] .mro-list-heading { align-items: center; text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; padding: 0 0 12px; }
+  html[data-app-design="cliniq"] .mro-list-heading small { font-size: 12px; margin-left: 5px; font-weight: 400; }
+  html[data-app-design="cliniq"] .mro-layout-toggle { display: flex; gap: 2px; }
+  html[data-app-design="cliniq"] .mro-layout-toggle button { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--m-muted); }
+  html[data-app-design="cliniq"] .mro-layout-toggle button[aria-pressed=true] { color: var(--m-accent); background: var(--m-card); }
+  html[data-app-design="cliniq"] .mro-room-open { min-height: 176px; padding: 13px; gap: 10px; }
+  html[data-app-design="cliniq"] .mro-room-identity strong { font-size: clamp(11px, 7.8cqw, 13px); font-weight: 600; text-wrap: pretty; overflow-wrap: normal; word-break: keep-all; }
+  html[data-app-design="cliniq"] .mro-room-identity > span { font-size: 11px; }
+  html[data-app-design="cliniq"] .mro-status-dot { width: 6px; height: 6px; margin-top: 0; }
+  html[data-app-design="cliniq"] .mro-phase-label { align-items: baseline; }
+  html[data-app-design="cliniq"] .mro-room-chevron { display: none; }
+  html[data-app-design="cliniq"] .mro-room-list[data-layout=rows] { grid-template-columns: minmax(0, 1fr); }
+  html[data-app-design="cliniq"] .mro-room-list[data-layout=rows] .mro-room-open { min-height: 108px; padding: 14px 60px 14px 16px; gap: 8px; }
+  html[data-app-design="cliniq"] .mro-room-list[data-layout=rows] .mro-room-identity { gap: 5px; }
+  html[data-app-design="cliniq"] .mro-room-list[data-layout=rows] .mro-room-identity strong { min-height: 0; }
+  html[data-app-design="cliniq"] .mro-room-list[data-layout=rows] .mro-room-time { padding: 6px 9px; }
+  html[data-app-design="cliniq"] .mro-room-list[data-layout=rows] .mro-room-chevron { display: grid; place-items: center; position: absolute; right: 12px; top: calc(50% - 19px); width: 38px; height: 38px; border-radius: 50%; background: var(--m-card); color: var(--m-accent); }
+}
+
+@media (max-width: 767px) {
+  html[data-app-design="cliniq"] .mro-room-list[data-layout=grid] .mro-room-metric > span { min-height: 2.5em; }
+}
+
+@media (max-width: 767px) {
+  html[data-app-design="cliniq"]:not(.m-dark) .mobile-room-reference .mrd-phase-card[data-emphasized=true] {
+    border-color: color-mix(in srgb, var(--room-phase-color) 10%, #FFFFFF);
+    border-radius: 26px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 17%, #FFFFFF), color-mix(in srgb, var(--room-phase-color) 5%, #FFFFFF));
+    box-shadow: 0 3px 12px rgba(30,58,65,.025);
+  }
+  html[data-app-design="cliniq"]:not(.m-dark) .mobile-room-reference .mrd-time-card,
+  html[data-app-design="cliniq"]:not(.m-dark) .mobile-room-reference .mrd-staff { border-color: rgba(255,255,255,.9); box-shadow: none; }
+}
+
+@media(max-width:767px){
+ html[data-app-design="cliniq"] .mro-room-time { margin: auto 0 0; box-shadow: none; }
+ .mobile-heading-toolbar:has(.mobile-appearance-controls) { flex-wrap: wrap; }
+}
