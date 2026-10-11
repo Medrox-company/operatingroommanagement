@@ -1,21 +1,8 @@
-// Email utility - uses Resend API directly for reliable email delivery
-// Server-side only - this module should only be imported in API routes
+import 'server-only';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { getEmailPolicy, recipientHash } from './email-policy';
 
-import { Resend } from 'resend';
-import { logger } from './logger';
-
-let resendInstance: Resend | null | undefined;
-
-function getResendClient(): Resend | null {
-  if (resendInstance !== undefined) return resendInstance;
-  resendInstance = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-  return resendInstance;
-}
-
-// Default sender email - use Resend's test email if not configured
-const DEFAULT_FROM = process.env.EMAIL_FROM || 'Operacni Saly <onboarding@resend.dev>';
-
-export interface EmailNotification {
+interface EmailNotification {
   to: string;
   subject: string;
   html: string;
@@ -30,38 +17,52 @@ export interface EmailTemplateData {
   timestamp?: string;
 }
 
-/**
- * Send an email notification via Resend API (server-side only)
- */
-export async function sendEmailNotification(
-  notification: EmailNotification
-): Promise<{ success: boolean; error?: string; messageId?: string }> {
-  const resend = getResendClient();
+/** A provider call is impossible without an atomically claimed DB reservation. */
+export async function sendReservedEmail(
+  db: SupabaseClient,
+  reservation: { hospitalId: string; requestId: string },
+  notification: EmailNotification,
+): Promise<'sent' | 'failed' | 'unknown'> {
+  const policy = getEmailPolicy();
+  const hash = recipientHash(reservation.hospitalId, reservation.requestId, notification.to);
+  const args = { p_hospital_id: reservation.hospitalId, p_request_id: reservation.requestId, p_recipient_hash: hash };
+  const { data: claimed, error: claimError } = await db.rpc('claim_email_delivery', args);
+  if (claimError || claimed !== true) return 'unknown';
 
-  if (!resend) {
-    logger.error('[Email] Resend API key not configured (RESEND_API_KEY)');
-    return { success: false, error: 'Email service not configured - missing RESEND_API_KEY' };
-  }
-
+  let outcome: 'sent' | 'failed' | 'unknown' = 'unknown';
+  let messageId: string | null = null;
   try {
-    const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to: notification.to,
-      subject: notification.subject,
-      html: notification.html,
+    // Fixed provider URL, no redirects, bounded wait and no SDK error logging.
+    // Abort is an uncertain outcome, not proof that the provider rejected mail.
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST', redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(8_000),
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': `orm/${hash}` },
+      body: JSON.stringify({ from: policy.from, to: notification.to,
+        subject: notification.subject.replace(/[\r\n]/g, ' ').slice(0, 250), html: notification.html }),
     });
-
-    if (error) {
-      logger.error('[Email] Resend API error:', error);
-      return { success: false, error: error.message || 'Failed to send email' };
+    if (response.ok) {
+      const data = await response.json();
+      if (typeof data?.id === 'string' && data.id.length > 0 && data.id.length <= 200) {
+        outcome = 'sent';
+        messageId = data.id;
+      }
+    } else if (response.status >= 400 && response.status < 500 && response.status !== 409) {
+      outcome = 'failed';
     }
-
-    logger.info('[Email] Email sent successfully:', data?.id);
-    return { success: true, messageId: data?.id };
-  } catch (error) {
-    logger.error('[Email] Failed to send email:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    // Do not persist or log provider error bodies (may contain addresses/content).
+    if (!response.bodyUsed) await response.body?.cancel();
+  } catch {
+    // A transport error may happen after acceptance. Never log provider payloads
+    // or retry automatically; the durable claim remains consumed.
   }
+  const { data: recorded, error: recordError } = await db.rpc('finish_email_delivery', {
+    ...args, p_outcome: outcome, p_provider_id: messageId,
+  });
+  return recordError || recorded !== true ? 'unknown' : outcome;
+}
+
+function escapeHtml(value: string): string {
+  return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
 }
 
 /**
@@ -99,8 +100,8 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
       <table style="width: 100%; border-collapse: collapse; margin-top: 28px; background: #f8fafc; border-radius: 12px; overflow: hidden;">
         ${Object.entries(data.details).map(([key, value]) => `
           <tr>
-            <td style="padding: 14px 20px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0; font-weight: 500;">${key}</td>
-            <td style="padding: 14px 20px; font-size: 14px; color: #1e293b; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">${value}</td>
+            <td style="padding: 14px 20px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0; font-weight: 500;">${escapeHtml(key)}</td>
+            <td style="padding: 14px 20px; font-size: 14px; color: #1e293b; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">${escapeHtml(value)}</td>
           </tr>
         `).join('')}
       </table>
@@ -156,12 +157,12 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
 
                           <!-- Room name -->
                           <h2 style="margin: 0 0 12px 0; font-size: 26px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1.3;">
-                            ${data.roomName}
+                            ${escapeHtml(data.roomName)}
                           </h2>
 
                           <!-- Message -->
                           <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #475569;">
-                            ${data.message}
+                            ${escapeHtml(data.message)}
                           </p>
 
                           <!-- Details table -->
@@ -180,7 +181,7 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
                       Automatické oznámení ze systému Správa operačních sálů
                     </p>
                     <p style="margin: 0; font-size: 12px; color: #cbd5e1;">
-                      ${data.timestamp || new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' })}
+                      ${escapeHtml(data.timestamp || new Date().toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }))}
                     </p>
                   </td>
                 </tr>
@@ -192,53 +193,4 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
       </body>
     </html>
   `;
-}
-
-/**
- * Encode subject for email headers (handles Czech and other special characters)
- */
-function encodeEmailSubject(subject: string): string {
-  // Replace Czech characters with ASCII equivalents for subject line
-  const asciiMap: Record<string, string> = {
-    'á': 'a', 'č': 'c', 'ď': 'd', 'é': 'e', 'ě': 'e', 'í': 'i', 'ň': 'n',
-    'ó': 'o', 'ř': 'r', 'š': 's', 'ť': 't', 'ú': 'u', 'ů': 'u', 'ý': 'y', 'ž': 'z',
-    'Á': 'A', 'Č': 'C', 'Ď': 'D', 'É': 'E', 'Ě': 'E', 'Í': 'I', 'Ň': 'N',
-    'Ó': 'O', 'Ř': 'R', 'Š': 'S', 'Ť': 'T', 'Ú': 'U', 'Ů': 'U', 'Ý': 'Y', 'Ž': 'Z',
-  };
-  
-  return subject.replace(/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/g, char => asciiMap[char] || char);
-}
-
-/**
- * Batch send notifications to multiple recipients
- */
-export async function sendBatchEmailNotifications(
-  recipients: string[],
-  data: EmailTemplateData
-): Promise<{ sent: number; failed: number; errors: string[] }> {
-  const html = generateEmailTemplate(data);
-  const errors: string[] = [];
-  let sent = 0;
-  let failed = 0;
-
-  for (const recipient of recipients) {
-    const rawSubject = `[${data.type.toUpperCase()}] ${data.roomName} - ${data.message.substring(0, 30)}...`;
-    const result = await sendEmailNotification({
-      to: recipient,
-      subject: encodeEmailSubject(rawSubject),
-      html,
-    });
-
-    if (result.success) {
-      sent++;
-    } else {
-      failed++;
-      if (result.error) errors.push(`${recipient}: ${result.error}`);
-    }
-
-    // Rate limiting - wait 100ms between sends
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  return { sent, failed, errors };
 }

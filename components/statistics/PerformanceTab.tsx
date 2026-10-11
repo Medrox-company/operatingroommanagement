@@ -23,7 +23,9 @@ import {
 import type { StatisticsReport } from '../../lib/statistics-print';
 import { useStatisticsReport } from './StatisticsReportContext';
 import { Card, C } from './shared';
+import { PerformancePreloader } from './PerformancePreloader';
 import './performance-tab.css';
+import './performance-preloader.css';
 
 export interface PerformanceTabProps {
   rooms: OperatingRoom[];
@@ -121,7 +123,7 @@ function TrendChart({ months, mode, metric }: {
   );
 }
 
-export function PerformanceTab({ rooms, history, isLoading, error, loadedAt, onRefresh }: PerformanceTabProps) {
+export function PerformanceTab({ rooms, history, isLoading, error, loadedAt, loadingProgress, onRefresh }: PerformanceTabProps) {
   const [roomId, setRoomId] = useState('all');
   const [metric, setMetric] = useState<PerformanceMetricKind>('aroStart');
   const [mode, setMode] = useState<DisplayMode>('all-positive');
@@ -243,7 +245,7 @@ export function PerformanceTab({ rooms, history, isLoading, error, loadedAt, onR
 
   if (sourcesLoading && (!loadedAt || !workflowStatuses.length)) {
     return <section className="stats-performance" aria-label="Načítání výkonnosti">
-      <p className="stats-performance-description" role="status">Načítám data výkonnosti…</p>
+      <PerformancePreloader progress={loadingProgress} workflowLoading={workflowLoading} />
     </section>;
   }
 
@@ -260,7 +262,9 @@ export function PerformanceTab({ rooms, history, isLoading, error, loadedAt, onR
           <p className="stats-performance-description">Průměrné časy z doložených událostí. Vyberte ukazatel pro podrobný měsíční trend; období boxů nastavíte v panelu Výběr dat.</p>
         </div>
         <div className="stats-performance-freshness">
-          <span>{sourcesLoading ? 'Obnovuji historii…' : loadedLabel ? `Načteno ${loadedLabel}` : 'Čas načtení není k dispozici'}</span>
+          {sourcesLoading
+            ? <PerformancePreloader progress={loadingProgress} workflowLoading={workflowLoading} compact />
+            : <span>{loadedLabel ? `Načteno ${loadedLabel}` : 'Čas načtení není k dispozici'}</span>}
           <button type="button" onClick={refresh} disabled={sourcesLoading} aria-label="Obnovit data výkonnosti" title="Obnovit data výkonnosti">
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
           </button>

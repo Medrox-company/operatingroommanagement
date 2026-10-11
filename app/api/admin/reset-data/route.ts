@@ -73,6 +73,36 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin();
 
+  // Durable acute-cycle evidence references the real room/history records.
+  // A broad reset must not partly erase that history or turn an unfinished
+  // clinical cycle into a completed one via the ordinary room reset trigger.
+  // Check before ANY delete/update, including when the acute module is off.
+  try {
+    const { data: protectedCycle, error: protectedCycleError } = await admin
+      .from('acute_request_cycle_links')
+      .select('request_id')
+      .eq('hospital_id', hospitalId)
+      .limit(1)
+      .maybeSingle();
+    if (protectedCycleError && !['42P01', 'PGRST205'].includes(protectedCycleError.code)) {
+      return NextResponse.json(
+        { error: 'Ochranu historie akutních výkonů nelze ověřit. Žádná data nebyla změněna.', code: 'ACUTE_HISTORY_CHECK_FAILED' },
+        { status: 503 }
+      );
+    }
+    if (protectedCycle) {
+      return NextResponse.json(
+        { error: 'Zařízení obsahuje chráněnou historii akutních operačních cyklů. Hromadný reset není povolen; žádná data nebyla změněna.', code: 'ACUTE_HISTORY_PROTECTED' },
+        { status: 409 }
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { error: 'Ochranu historie akutních výkonů nelze ověřit. Žádná data nebyla změněna.', code: 'ACUTE_HISTORY_CHECK_FAILED' },
+      { status: 503 }
+    );
+  }
+
   const deletedCounts: Record<string, number | string> = {};
 
   // Pomocná funkce — smaže všechny řádky z tabulky a vrátí počet

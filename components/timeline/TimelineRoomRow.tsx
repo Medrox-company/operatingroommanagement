@@ -11,6 +11,8 @@ import type { CurrentRoomSpecialty } from '../../lib/room-specialty';
 import { describeTimelineOperationalWarning, type TimelineOperationalWarning } from '../../lib/timeline-operational-warnings';
 import { calculateUnusedOperatingMinutes } from '../../lib/timeline-unused-minutes';
 import { TimelineRoomSpecialtyStrip } from '../RoomSpecialtyBadge';
+import { findAcuteCycleLink, type AcuteCycleLink } from '../../lib/acute-cycle-links';
+import { CompletedAcuteCycleLabel, completedAcuteCycleDescription } from './CompletedAcuteCycleLabel';
 /** Najetí myší na výkon — sdílený tvar mezi řádkem a bublinou v rodiči. */
 export interface TimelineHoveredOp {
   room: OperatingRoom;
@@ -26,6 +28,7 @@ export interface TimelineHoveredOp {
 
 export interface TimelineRoomRowProps {
   room: OperatingRoom;
+  acuteCycleLinks?: readonly AcuteCycleLink[];
   warnings: readonly TimelineOperationalWarning[];
   roomIndex: number;
   currentTime: Date;
@@ -63,6 +66,7 @@ export interface TimelineRoomRowProps {
  */
 export function TimelineRoomRow({
   room,
+  acuteCycleLinks = [],
   warnings,
   roomIndex,
   currentTime,
@@ -162,12 +166,12 @@ export function TimelineRoomRow({
       style={{ background: `${availabilityStatus.color}1a`, border: `1px solid ${availabilityStatus.color}45` }}
       data-room-availability={room.isEmergency ? 'emergency' : room.isLocked ? 'locked' : room.isPaused ? 'paused' : isFree ? 'ready' : 'busy'}>
       <div className="flex min-h-0 items-center gap-2 px-2 py-0.5">
-        <p className="min-w-0 flex-1 truncate text-[10px] font-semibold leading-tight"
+        <p className="timeline-availability-label min-w-0 flex-1 truncate text-[10px] font-semibold leading-tight"
           style={{ color: isFree ? C.textHi : availabilityStatus.color }}>{availabilityStatus.label}</p>
         <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
           style={{ background: availabilityStatus.color }} aria-hidden="true" />
       </div>
-      <div className="border-t px-2 py-0.5 text-center text-[9px] font-medium leading-tight tabular-nums whitespace-nowrap"
+      <div className="timeline-unused-caption border-t px-2 py-0.5 text-center text-[9px] font-medium leading-tight tabular-nums whitespace-nowrap"
         style={{ borderColor: `${availabilityStatus.color}35`, color: '#B9C7D8', background: C.bgPanel }}
         title={unusedDescription} aria-hidden="true">{unusedLabel}</div>
       <div className="h-[2px] flex-shrink-0" style={{ background: unusedLineColor }}
@@ -306,7 +310,7 @@ export function TimelineRoomRow({
             <div className="min-w-0 flex-1 self-center">
               <p className="room-name-nobreak whitespace-normal text-[14px] font-semibold leading-[17px] tracking-[-0.01em]" style={{ color: `${bannerColor}cc` }}>{room.name}</p>
               {room.department && (
-                <p className="mt-1 truncate text-[7.5px] font-medium uppercase leading-[9px] tracking-[0.18em] text-white/26">
+                <p className="timeline-room-department mt-1 truncate text-[7.5px] font-medium uppercase leading-[9px] tracking-[0.18em] text-white/26">
                   {room.department}
                 </p>
               )}
@@ -380,7 +384,7 @@ export function TimelineRoomRow({
 
       {/* Colored left accent bar - Premium enhanced */}
       <div
-        className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full transition-all duration-300 z-30"
+        className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full transition-shadow duration-300 z-30"
         style={{ 
           background: isActive
             ? `linear-gradient(to bottom, ${stepColor}, ${stepColor}cc)`
@@ -469,7 +473,7 @@ export function TimelineRoomRow({
                   slovo, aby přeteklý text nezmizel za okrajem sloupce. */}
               <p className="room-name-nobreak whitespace-normal text-[14px] font-semibold leading-[17px] tracking-[-0.01em] text-white">{room.name}</p>
               {room.department && (
-                <p className="mt-1 truncate text-[7.5px] font-medium uppercase leading-[9px] tracking-[0.18em] text-white/26">
+                <p className="timeline-room-department mt-1 truncate text-[7.5px] font-medium uppercase leading-[9px] tracking-[0.18em] text-white/26">
                   {room.department}
                 </p>
               )}
@@ -904,6 +908,7 @@ export function TimelineRoomRow({
           return filteredOps.map((operation, opIdx) => {
             const opStartDate = new Date(operation.startedAt);
             const opEndDate = new Date(operation.endedAt);
+            const acuteCycleLink = findAcuteCycleLink(acuteCycleLinks, room.id, operation.startedAt, operation.endedAt);
             const exceedsDay = exceedsT24Hours(opStartDate, opEndDate);
             
             const position = getOperationPosition(opStartDate, opEndDate, currentTime);
@@ -919,7 +924,7 @@ export function TimelineRoomRow({
                 key={`completed-${opIdx}`}
                 role="button"
                 tabIndex={0}
-                aria-label={`Statistiky celého cyklu sálu ${room.name}, ${opStartDate.toLocaleString('cs-CZ')} – ${opEndDate.toLocaleString('cs-CZ')}`}
+                aria-label={`Statistiky celého cyklu sálu ${room.name}, ${opStartDate.toLocaleString('cs-CZ')} – ${opEndDate.toLocaleString('cs-CZ')}${acuteCycleLink ? `. ${completedAcuteCycleDescription(acuteCycleLink)}` : ''}`}
                 onClick={(event) => {
                   event.stopPropagation();
                   setHoveredOp(null);
@@ -954,11 +959,16 @@ export function TimelineRoomRow({
                     : isRoomReady ? `${C.cyan}16` : 'rgba(255,255,255,0.03)',
                   border: 'none',
                   boxShadow: 'none',
+                  containerType: acuteCycleLink ? 'inline-size' : undefined,
+                  containerName: acuteCycleLink ? 'acute-cycle' : undefined,
                 }}
                 onMouseEnter={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY, completed: { startedAt: operation.startedAt, endedAt: operation.endedAt, statusHistory: operation.statusHistory } })}
                 onMouseMove={(e) => setHoveredOp({ room, x: e.clientX, y: e.clientY, completed: { startedAt: operation.startedAt, endedAt: operation.endedAt, statusHistory: operation.statusHistory } })}
                 onMouseLeave={() => setHoveredOp(null)}
               >
+                  {acuteCycleLink && <div className="absolute inset-0 z-20 flex items-center px-1 pointer-events-none">
+                    <CompletedAcuteCycleLabel link={acuteCycleLink} />
+                  </div>}
                   {/* Completed operation segments with colors from database context */}
                   {operation.statusHistory && operation.statusHistory.length > 0 && (
                     <div className="absolute inset-0 flex overflow-hidden rounded-[4px]">
@@ -999,13 +1009,10 @@ export function TimelineRoomRow({
                           return (
                             <div
                               key={`seg-${idx}`}
-                              /* hover:brightness() je filtr a vytlačil by každý
-                                 segment do vlastní offscreen textury. Průhlednost
-                                 zvládne kompozitor sám. */
                               /* hover:brightness() je filtr a vytlačil by každý segment
                                  do vlastní offscreen textury. Inset stín překreslí jen
                                  ten jeden segment. */
-                              className="absolute top-0 bottom-0 cursor-pointer transition-shadow duration-150 hover:shadow-[inset_0_0_0_999px_rgba(255,255,255,0.10)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/80"
+                              className="timeline-phase-segment absolute top-0 bottom-0 cursor-pointer transition-shadow duration-150 hover:shadow-[inset_0_0_0_999px_rgba(255,255,255,0.10)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/80"
                               style={{
                                 left: `${Math.max(0, segLeftPct)}%`,
                                 width: `${Math.max(0.5, segWidthPct)}%`,
@@ -1299,7 +1306,7 @@ export function TimelineRoomRow({
                         return (
                           <div
                             key={`active-seg-${idx}`}
-                            className="cursor-pointer transition-[filter] hover:brightness-125 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/80"
+                            className="timeline-phase-segment cursor-pointer transition-shadow hover:shadow-[inset_0_0_0_999px_rgba(255,255,255,0.10)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/80"
                             style={{
                               position: 'absolute',
                               top: 0,

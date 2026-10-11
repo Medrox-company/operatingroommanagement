@@ -4,6 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE, DEFAULT_DAILY_BREAK_MINUTES } from '../types';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import { useHospital } from '../contexts/HospitalContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useAcuteRequests } from '../hooks/useAcuteRequests';
+import { useAcuteCycleLinks } from '../hooks/useAcuteCycleLinks';
+import { isActiveAcuteRequest, type AcuteRequest } from '../lib/acute-requests';
+import { AcuteProposalLane, AcuteTimelineStatusTile, acuteProposalsForWindow } from './timeline/AcuteProposalLane';
 import MobileTimelineView from './mobile/MobileTimelineView';
 import AroOvertimePopup from './AroOvertimePopup';
 import CapacityForecast from './timeline/CapacityForecast';
@@ -16,6 +21,7 @@ import TimelineHistory from './timeline/TimelineHistory';
 import { TimelineRoomRow, type TimelineHoveredOp } from './timeline/TimelineRoomRow';
 import { TimelineAxisHeader } from './timeline/TimelineAxisHeader';
 import { TimelineCommandBar } from './timeline/TimelineCommandBar';
+import './timeline/timeline-refinement.css';
 import { AlertTriangle, X, CheckCircle, Search, Crosshair } from 'lucide-react';
 
 // ========== DESIGN TOKENS, CONSTANTS & HELPERS (extrahováno do ./timeline) ==========
@@ -35,6 +41,10 @@ interface TimelineModuleProps {
   rooms: OperatingRoom[];
   /** Volitelný callback pro ruční obnovení dat (refetch). Pokud chybí, tlačítko se neukáže. */
   onRefresh?: () => Promise<void> | void;
+  /** Opens the separate intake module; no clinical room state is changed. */
+  onOpenAcuteRequests?: () => void;
+  /** Opens the standard clinical detail with the selected request as context. */
+  onOpenAcuteRoom?: (request: AcuteRequest) => void;
 }
 
 const TIMELINE_OPERATIONAL_TICK_MS = 10_000;
@@ -177,8 +187,21 @@ const TimelineMinimap: React.FC<TimelineMinimapProps> = ({ lanes, nowPct, contai
 
 import type { SortMode, StatusFilter } from './timeline/row-types';
 
-function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModuleProps) {
+function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests, onOpenAcuteRoom }: TimelineModuleProps) {
   const { activeHospitalId, tokenRevision, loading: hospitalLoading } = useHospital();
+  const { modules, hasModuleAccess, permissionsLoading } = useAuth();
+  // Superadmin may configure a disabled module, but that is not authority to
+  // load or display clinical requests in other modules while it is switched off.
+  const acuteEnabled = !permissionsLoading && !hospitalLoading
+    && modules.some(module => module.id === 'acute-requests' && module.is_enabled)
+    && hasModuleAccess('acute-requests');
+  const acute = useAcuteRequests(acuteEnabled);
+  const acuteCycles = useAcuteCycleLinks(acuteEnabled);
+  const linkedRequestIds = useMemo(() => new Set(acuteCycles.links.map(link => link.requestId)), [acuteCycles.links]);
+  const acuteRequests = useMemo(() => acuteEnabled && !acute.error
+    ? acute.requests.filter(request => isActiveAcuteRequest(request) && !linkedRequestIds.has(request.id)) : [],
+  [acuteEnabled, acute.error, acute.requests, linkedRequestIds]);
+  const unassignedAcuteCount = useMemo(() => acuteRequests.filter(request => !request.proposedRoomId).length, [acuteRequests]);
   // Tolerance pozdního startu prvního výkonu dne — z nastavení zařízení.
   const { thresholds } = useOperationalThresholds();
   const firstCaseGraceMinutes = thresholds.firstCaseGraceMinutes;
@@ -810,6 +833,10 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
   const [scrubTime, setScrubTime] = useState<number | null>(null);
 
   const dayWindowStartMs = operationalWindow.startMs;
+  const acuteProposalsByRoom = useMemo(() => new Map(displayRooms.map(room => [room.id,
+    acuteProposalsForWindow(acuteRequests, room.id, dayWindowStartMs, dayWindowStartMs + TIMELINE_HOURS * 3600_000),
+  ])), [acuteRequests, dayWindowStartMs, displayRooms, TIMELINE_HOURS]);
+  const acuteProposalRowCount = Array.from(acuteProposalsByRoom.values()).reduce((count, proposals) => count + proposals.length, 0);
 
   // Stav sálu v libovolném čase t — z dokončených operací i živé historie
   const statusAtTime = useCallback((room: OperatingRoom, t: number): { color: string; name: string } | null => {
@@ -1411,11 +1438,18 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
         currentTime={currentTime}
         stats={stats}
         onSelectRoom={openLiveRoom}
+        acuteRequests={acuteRequests}
+        acuteCycleLinks={acuteCycles.links}
+        acuteEnabled={acuteEnabled}
+        acuteError={acute.error}
+        acuteLoading={acute.loading}
+        onOpenAcuteRequests={onOpenAcuteRequests}
+        onOpenAcuteRoom={onOpenAcuteRoom}
       />
 
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
       <div
-        className="app-module-content hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden"
+        className="app-module-content timeline-desktop-workspace hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden"
       >
 
       {/* ======== Header with Title and Stats ======== */}
@@ -1469,12 +1503,12 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
 
             {/* Right: ARO Overtime indicator (zoom ovládání odstraněno — osa
                 vždy zobrazuje celý den na šířku) */}
-            <div className="flex items-center justify-end gap-2.5 min-w-0">
+            <div className="timeline-status-group flex items-center justify-end gap-2.5 min-w-0">
 
             {aroOvertimeRooms.length > 0 ? (
               <motion.button
                 onClick={() => setShowAroPopup(true)}
-                className="relative flex-shrink-0 h-12 rounded-lg px-4 py-2 overflow-hidden transition-transform duration-300 hover:scale-[1.02] cursor-pointer"
+                className="timeline-status-tile relative flex-shrink-0 h-12 rounded-lg px-4 py-2 overflow-hidden transition-colors duration-300 cursor-pointer"
                 animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 style={{
@@ -1507,7 +1541,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               </motion.button>
             ) : (
               <div
-                className="timeline-status-calm flex-shrink-0 h-12 rounded-lg px-4 py-2 flex items-center gap-2.5"
+                className="timeline-status-tile timeline-status-calm flex-shrink-0 h-12 rounded-lg px-4 py-2 flex items-center gap-2.5"
                 style={{
                   background: `linear-gradient(135deg, ${C.green}15 0%, ${C.green}05 100%)`,
                 }}
@@ -1524,6 +1558,8 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 </div>
               </div>
             )}
+            {acuteEnabled && <AcuteTimelineStatusTile count={acuteRequests.length} unassignedCount={unassignedAcuteCount}
+              error={acute.error} loading={acute.loading} onOpen={onOpenAcuteRequests} />}
             </div>
           </div>
         </div>
@@ -1602,6 +1638,10 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
             style={{
               width: `${zoom * 100}%`,
               minWidth: `${zoom * 100}%`,
+              // Dedicated proposed lanes cannot squeeze actual room rows below
+              // their established minimum. Short displays retain vertical access.
+              minHeight: density === 'auto' && acuteProposalRowCount > 0
+                ? displayRooms.length * MIN_ROW_HEIGHT + acuteProposalRowCount * 44 : undefined,
               background: 'transparent',
               transition: 'width 0.25s ease, min-width 0.25s ease',
             }}
@@ -1768,9 +1808,11 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
               </div>
             )}
             {displayRooms.map((room, roomIndex) => (
+              <React.Fragment key={room.id}>
               <TimelineRoomRow
                 key={room.id}
                 room={room}
+                acuteCycleLinks={acuteCycles.links}
                 warnings={warningsByRoom.get(room.id) ?? []}
                 roomIndex={roomIndex}
                 currentTime={currentTime}
@@ -1797,6 +1839,12 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh }: TimelineModulePro
                 setStatsRoomId={setStatsRoomId}
                 setHoveredOp={setHoveredOp}
               />
+              {(acuteProposalsByRoom.get(room.id) ?? []).map(proposal => (
+                <AcuteProposalLane key={proposal.request.id} proposal={proposal} roomName={room.name}
+                  roomWarning={room.isEmergency ? 'Sál ve stavu nouze' : room.isLocked ? 'Sál uzamčen' : undefined}
+                  onOpen={onOpenAcuteRoom ? () => onOpenAcuteRoom(proposal.request) : onOpenAcuteRequests} />
+              ))}
+              </React.Fragment>
             ))}
             </div>
           </div>

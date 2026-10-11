@@ -1,0 +1,88 @@
+/* Match the Acute/management commandbar without changing mobile or report UI. */
+.statistics-desktop .stats-commandbar {
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--stats-surface);
+  box-shadow: none;
+}
+
+.statistics-desktop .stats-section-nav {
+  border-radius: 8px;
+  background: var(--stats-surface);
+}
+
+.statistics-desktop .stats-section-tabs {
+  gap: 2px;
+  padding: 2px;
+}
+
+.statistics-desktop .stats-section-tabs [role='tab'] {
+  min-height: 44px;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.statistics-desktop .stats-section-tabs [role='tab']:hover {
+  color: var(--stats-text-strong);
+  background: var(--stats-surface-hover);
+}
+
+.statistics-desktop .stats-section-tabs [role='tab'][aria-selected='true'] {
+  color: var(--color-primary);
+  background: var(--stats-surface-active);
+}
+
+.statistics-desktop .stats-commandbar-actions {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.statistics-desktop .stats-commandbar-actions button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.statistics-desktop .stats-commandbar-actions > button:hover {
+  background: var(--stats-surface-hover);
+}
+
+/* Identical geometry for period controls and the Performance history caption. */
+.statistics-desktop .stats-commandbar-period {
+  min-height: 50px;
+}
+
+.statistics-desktop .stats-commandbar-period > div {
+  padding: 2px;
+}
+
+.statistics-desktop .stats-commandbar-period button {
+  border-radius: 6px;
+}
+
+@media screen and (max-width: 1100px) {
+  .statistics-desktop .stats-commandbar-nav {
+    flex-basis: 100%;
+  }
+
+  .statistics-desktop .stats-commandbar-actions {
+    width: 100%;
+  }
+
+  .statistics-desktop .stats-commandbar-actions > [aria-hidden] {
+    display: none;
+  }
+}

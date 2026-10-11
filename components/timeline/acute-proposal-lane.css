@@ -1,0 +1,89 @@
+.acute-proposal-lane {
+  --acute-proposal-text: var(--color-text-primary);
+  --acute-proposal-secondary: var(--color-text-secondary);
+  display: grid;
+  grid-template-columns: var(--acute-label-width) minmax(0, 1fr);
+  align-items: stretch;
+  width: 100%;
+  min-height: 44px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--acute-proposal-text);
+  text-align: left;
+  font-family: inherit;
+}
+button.acute-proposal-lane { cursor: pointer; }
+.acute-proposal-lane-label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 12px;
+  border-left: 3px solid var(--acute-proposal-color);
+  border-radius: 0;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--acute-proposal-color) 13%, transparent), color-mix(in srgb, var(--acute-proposal-color) 5%, transparent));
+}
+.acute-proposal-position { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; padding: 0 4px; border: 1px solid color-mix(in srgb, var(--acute-proposal-color) 35%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--acute-proposal-color) 9%, transparent); color: var(--acute-proposal-text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.acute-proposal-lane-copy { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+.acute-proposal-lane-label strong { font-size: 11px; line-height: 1.3; font-weight: 600; color: var(--acute-proposal-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acute-proposal-lane-label small { font-size: 9px; line-height: 1.3; color: var(--acute-proposal-secondary); }
+.acute-proposal-track { display: block; position: relative; min-width: 0; align-self: stretch; overflow: hidden; }
+.acute-proposal-block {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 1px;
+  border: 1px solid color-mix(in srgb, var(--acute-proposal-color) 45%, transparent);
+  border-radius: 6px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--acute-proposal-color) 22%, transparent), color-mix(in srgb, var(--acute-proposal-color) 9%, transparent));
+  overflow: hidden;
+  container-type: inline-size;
+}
+.acute-proposal-block-content { display: flex; flex-direction: column; justify-content: center; gap: 3px; height: 100%; min-width: 0; padding: 3px 6px; }
+.acute-proposal-block-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 8px; line-height: 1.2; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--acute-proposal-secondary); }
+.acute-proposal-block-name { display: none; }
+.acute-proposal-block-position { color: var(--acute-proposal-text); font-variant-numeric: tabular-nums; }
+.acute-proposal-block-duration { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; line-height: 1.2; font-weight: 600; color: var(--acute-proposal-text); }
+@container (min-width: 160px) {
+  .acute-proposal-block-name { display: inline; }
+}
+@container (max-width: 44px) {
+  .acute-proposal-block-content { padding-inline: 3px; }
+  .acute-proposal-block-kind { display: none; }
+  .acute-proposal-block-unit { display: none; }
+  .acute-proposal-block-duration { font-size: 9px; }
+}
+.acute-proposal-lane:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+button.acute-proposal-lane:hover { background: color-mix(in srgb, var(--acute-proposal-color) 4%, transparent); }
+.acute-timeline-summary { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; gap: 5px 12px; margin: 2px 0 6px; color: var(--color-text-secondary); font-size: 11px; }
+.acute-timeline-summary > small { color: var(--color-text-muted); font-size: 10px; }
+.acute-timeline-summary > button { min-height: 44px; padding: 0 9px; border: 0; border-radius: 8px; background: transparent; color: var(--color-info); font-family: inherit; font-size: 11px; cursor: pointer; }
+.acute-timeline-summary > button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.timeline-status-group:has(.timeline-acute-control) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 394px; justify-self: end; }
+.timeline-status-group:has(.timeline-acute-control) > .timeline-status-tile { width: 100%; min-width: 0; height: 48px; }
+.timeline-acute-control { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 8px; background: linear-gradient(135deg, color-mix(in srgb, var(--color-info) 8%, transparent), color-mix(in srgb, var(--color-info) 2%, transparent)); color: var(--color-text-primary); font-family: inherit; text-align: left; }
+button.timeline-acute-control { cursor: pointer; }
+button.timeline-acute-control:hover { border-color: var(--color-info); }
+.timeline-acute-control:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.timeline-acute-icon { display: flex; align-items: center; justify-content: center; flex: 0 0 32px; width: 32px; height: 32px; border-radius: 12px; color: var(--color-info); background: color-mix(in srgb, var(--color-info) 9%, transparent); }
+.timeline-acute-copy { display: flex; flex-direction: column; min-width: 0; }
+.timeline-acute-caption { color: var(--color-text-muted); font-size: 9px; line-height: 1.3; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.timeline-acute-count { color: var(--color-info); font-size: 14px; line-height: 1.4; font-weight: 600; }
+.timeline-acute-control[data-state='error'] .timeline-acute-count, .timeline-acute-control[data-state='error'] .timeline-acute-icon { color: var(--color-danger); }
+@media (min-width: 768px) and (max-width: 1180px) {
+  .timeline-commandbar:has(.timeline-acute-control) > .timeline-status-group { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .acute-proposal-mobile { --acute-proposal-text: var(--m-text-strong); --acute-proposal-secondary: var(--m-text); border-bottom-color: var(--m-separator); }
+  .acute-proposal-mobile .acute-proposal-lane-label { margin: 0; padding: 4px 5px; gap: 2px; }
+  .acute-proposal-mobile .acute-proposal-position { min-width: 22px; min-height: 24px; font-size: 10px; }
+  .acute-proposal-mobile .acute-proposal-lane-label strong { font-size: 9px; }
+  .acute-proposal-mobile .acute-proposal-lane-label small { font-size: 8px; }
+  .acute-summary-mobile { margin: 0; gap: 4px; justify-content: space-between; color: var(--m-muted); font-size: 10px; }
+  .acute-summary-mobile > button { min-height: 44px; color: var(--m-accent); font-size: 10px; }
+}

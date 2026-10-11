@@ -65,20 +65,22 @@ test('action geometry follows the current CSS and normalized SVG pocket', () => 
 test('continuous resize keeps touch targets separated and outside the card silhouette', () => {
   for (let width = 600; width <= 3400; width += 8) {
     for (const height of [260, 800, 1400]) {
-      const layout = calculateDashboardGridLayout({ width, height, count: 15 });
-      const w = (layout.maxWidth - (layout.columns - 1) * layout.gap) / layout.columns;
-      const h = layout.cardHeight;
-      const size = Math.min(64, Math.max(44, w * 0.12));
-      const radius = size / 2;
-      const centers = [parseFloat(emergency.left), parseFloat(lock.left)].map(left => left / 100 * w);
-      const y = h - parseFloat(control.bottom) / 100 * w - radius;
-      assert.ok(centers[1] - centers[0] - size >= 4, `${width}×${height}: at least 4px between buttons`);
-      for (const x of centers) {
-        assert.ok(x - radius >= 0 && x + radius <= w && y + radius <= h,
-          `${width}×${height}: controls stay inside their own card bounds`);
-        const clearance = Math.min(...pocketPoints(w, h).map(([px, py]) => Math.hypot(x - px, y - py) - radius));
-        assert.ok(clearance >= 4, `${width}×${height}: control clears the SVG pocket (${clearance}px)`);
-        assert.ok(y - radius > h * 590 / 750, 'controls remain below the pocket shoulder, not inside the filled card');
+      for (const minCardHeight of [280, 360]) {
+        const layout = calculateDashboardGridLayout({ width, height, count: 15, minCardHeight });
+        const w = (layout.maxWidth - (layout.columns - 1) * layout.gap) / layout.columns;
+        const h = layout.cardHeight;
+        const size = Math.min(64, Math.max(44, w * 0.12));
+        const radius = size / 2;
+        const centers = [parseFloat(emergency.left), parseFloat(lock.left)].map(left => left / 100 * w);
+        const y = h - parseFloat(control.bottom) / 100 * w - radius;
+        assert.ok(centers[1] - centers[0] - size >= 4, `${width}×${height}: at least 4px between buttons`);
+        for (const x of centers) {
+          assert.ok(x - radius >= 0 && x + radius <= w && y + radius <= h,
+            `${width}×${height}: controls stay inside their own card bounds`);
+          const clearance = Math.min(...pocketPoints(w, h).map(([px, py]) => Math.hypot(x - px, y - py) - radius));
+          assert.ok(clearance >= 4, `${width}×${height}: control clears the SVG pocket (${clearance}px)`);
+          assert.ok(y - radius > h * 590 / 750, 'controls remain below the pocket shoulder, not inside the filled card');
+        }
       }
     }
   }

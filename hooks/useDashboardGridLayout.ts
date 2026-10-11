@@ -11,7 +11,7 @@ const layoutProperties = [
 ] as const;
 
 /** Resize presentation only, without rerendering live room data on every frame. */
-export function useDashboardGridLayout(count: number, enabled: boolean) {
+export function useDashboardGridLayout(count: number, enabled: boolean, minCardHeight = 280) {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -45,7 +45,7 @@ export function useDashboardGridLayout(count: number, enabled: boolean) {
       const top = grid.getBoundingClientRect().top - module.getBoundingClientRect().top + module.scrollTop;
       const height = module.clientHeight - top
         - parseFloat(moduleStyle.paddingBottom) - parseFloat(contentStyle.paddingBottom);
-      const layout = calculateDashboardGridLayout({ width: content.clientWidth, height, count });
+      const layout = calculateDashboardGridLayout({ width: content.clientWidth, height, count, minCardHeight });
       const signature = `${layout.columns}:${layout.cardHeight}:${layout.gap}:${layout.maxWidth}:${layout.density}`;
       if (signature === previous) return;
       previous = signature;
@@ -73,7 +73,7 @@ export function useDashboardGridLayout(count: number, enabled: boolean) {
       cancelAnimationFrame(frame);
       clearLayout();
     };
-  }, [count, enabled]);
+  }, [count, enabled, minCardHeight]);
 
   return gridRef;
 }

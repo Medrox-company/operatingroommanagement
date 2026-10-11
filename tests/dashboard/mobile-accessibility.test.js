@@ -36,13 +36,18 @@ test('mobile text and active navigation meet normal-text contrast on their light
   assert.ok(contrast(tokens['--m-nav-active'], '#F4FAFF') >= 4.5);
 });
 
-test('mobile controls retain at least a 44px target and the time range has an announcement', () => {
+test('mobile navigation and time controls retain 44px targets, compact room rows retain 32px, and time ranges are announced', () => {
   const navigation = declarations(css('components/mobile/mobile-navigation.css'), '.mobile-reference-nav > button');
   const overview = declarations(css('components/mobile/mobile-overview.css'), '.mro-filters button');
-  const timeline = declarations(css('components/mobile/mobile-timeline.css'), '.mtl-time-pager button, .mtl-room-pager button');
+  const timelineCss = css('components/mobile/mobile-timeline.css');
+  const timeline = declarations(timelineCss, '.mtl-time-pager button');
+  const now = declarations(timelineCss, '.mtl-now');
+  const roomRow = declarations(timelineCss, '.mtl-row');
   assert.ok(Number.parseFloat(navigation['min-height']) >= 44);
   assert.ok(Number.parseFloat(overview['min-height']) >= 44);
   assert.ok(Number.parseFloat(timeline.width) >= 44 && Number.parseFloat(timeline.height) >= 44);
+  assert.ok(Number.parseFloat(now['min-height']) >= 44);
+  assert.ok(Number.parseFloat(roomRow['min-height']) >= 32);
   assert.match(read('components/mobile/MobileTimelineView.tsx'), /className="mtl-range-announcement" role="status"/);
 });
 

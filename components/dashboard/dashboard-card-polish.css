@@ -1,0 +1,91 @@
+/* Desktop presentation only. The SVG silhouette, responsive geometry,
+   transparent status rings and clinical action states remain authoritative. */
+@media (min-width: 768px) {
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-workspace-card-outline-path {
+    fill: rgba(159, 180, 237, 0.05);
+    stroke: rgba(203, 213, 247, 0.24);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card:hover .dashboard-workspace-card-outline-path,
+  .dashboard-cards-layout .dashboard-workspace-card:focus-visible .dashboard-workspace-card-outline-path {
+    fill: rgba(159, 180, 237, 0.075);
+    stroke: rgba(203, 213, 247, 0.42);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-workspace-card-outline-path--emergency {
+    stroke: rgba(248, 113, 113, 0.28);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-workspace-card-outline-path--locked {
+    stroke: rgba(251, 191, 36, 0.26);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card:hover .dashboard-workspace-card-outline-path--emergency,
+  .dashboard-cards-layout .dashboard-workspace-card:focus-visible .dashboard-workspace-card-outline-path--emergency {
+    stroke: rgba(248, 113, 113, 0.48);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card:hover .dashboard-workspace-card-outline-path--locked,
+  .dashboard-cards-layout .dashboard-workspace-card:focus-visible .dashboard-workspace-card-outline-path--locked {
+    stroke: rgba(251, 191, 36, 0.46);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-room-name {
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-room-department:not(.text-red-300):not(.text-amber-300) {
+    color: rgba(209, 221, 252, 0.74);
+    letter-spacing: 0.025em;
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-workspace-cycle-indicator text:not([fill]) {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-workspace-cycle-caption {
+    color: rgba(222, 231, 255, 0.7);
+    font-weight: 400;
+    letter-spacing: 0.015em;
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-workspace-specialties {
+    background: rgba(164, 184, 240, 0.025);
+    border-color: rgba(195, 211, 249, 0.09);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-specialty-slot {
+    background: transparent;
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-specialty-period {
+    color: rgba(209, 221, 252, 0.72);
+    letter-spacing: 0.08em;
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-specialty-name {
+    color: rgba(228, 236, 255, 0.92);
+    font-weight: 500;
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-specialty-divider {
+    background: rgba(195, 211, 249, 0.09);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-staff-avatar:not(.bg-red-500\/10):not(.bg-amber-500\/10):not(.bg-cyan-500\/10) {
+    background: rgba(164, 184, 240, 0.025);
+    border-color: rgba(195, 211, 249, 0.1);
+  }
+
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-staff-avatar svg:not(.text-red-400):not(.text-amber-400):not(.text-cyan-400) {
+    color: rgba(209, 221, 252, 0.68);
+  }
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: reduce) {
+  .dashboard-cards-layout .dashboard-workspace-card .dashboard-workspace-card-outline-path {
+    transition: none;
+  }
+}

@@ -78,8 +78,10 @@ function harness({ history = [], rooms = [room('a')], names = DEFAULT_NAMES, wor
     '../../contexts/WorkflowStatusesContext': { useWorkflowStatusesContext: () => workflowState },
     '../../lib/statistics-performance': model.exports,
     './StatisticsReportContext': { useStatisticsReport: (tab, payload) => { assert.equal(tab, 'vykonnost'); report = payload; } },
+    './PerformancePreloader': { PerformancePreloader: 'PerformancePreloader' },
     './shared': { Card: 'article', C: {} },
     './performance-tab.css': {},
+    './performance-preloader.css': {},
   };
   const module = { exports: {} };
   new Function('require', 'exports', 'module', componentCode)(name => {
@@ -326,10 +328,11 @@ test('closed-month summaries and minute changes are whole numbers without a sign
       ['Příjezd na sál', 60], ['Chirurgický výkon', seconds], ['Ukončení výkonu', 60], ['Odjezd ze sálu', 60], ['Úklid sálu', 60],
     ])) });
     fixture.clickBox('Chirurgický výkon');
-    const summaries = elements(fixture.tree, node => typeof node.type === 'function' && node.type.name === 'SummaryTile');
-    assert.equal(summaries.find(node => node.props.label === 'Průměr').props.value, `${Math.round(augustSeconds / 60)} min`);
-    assert.equal(summaries.find(node => node.props.label === '90. percentil').props.value, `${Math.round(augustSeconds / 60)} min`);
-    const delta = textContent(elements(fixture.tree, node => hasClass(node, 'stats-performance-month-delta'))[0]);
+    const overview = elements(fixture.tree, node => hasClass(node, 'stats-performance-overview'))[0];
+    assert.equal(textContent(elements(overview, node => hasClass(node, 'stats-performance-overview-value'))[0]), `${Math.round(augustSeconds / 60)} min`);
+    const p90 = elements(overview, node => node.type === 'div').find(node => elements(node, child => child.type === 'dt').some(child => textContent(child) === '90. percentil'));
+    assert.equal(textContent(elements(p90, node => node.type === 'dd')[0]), `${Math.round(augustSeconds / 60)} min`);
+    const delta = textContent(elements(overview, node => node.props.role === 'status')[0]);
     assert.ok(delta.includes(`: ${expectedDelta} (`), delta);
     assert.doesNotMatch(delta, /[+−]0 min|\d,\d+ min/);
   }
@@ -361,34 +364,46 @@ test('missing history or workflow sources block report registration instead of p
   assert.equal(definitions(empty).every(row => row[2] === 0), true);
 });
 
-test('initial loading has no preloader and does not publish partial statistics', () => {
-  const fixture = harness({ props: { isLoading: true, loadedAt: null } });
-  assert.equal(elements(fixture.tree, node => node.props.role === 'progressbar').length, 0);
-  assert.equal(elements(fixture.tree, node => hasClass(node, 'stats-performance-loader')).length, 0);
-  assert.match(textContent(fixture.tree), /Načítám data výkonnosti/);
+test('initial loading passes real progress to the preloader without publishing partial statistics', () => {
+  const progress = { loaded: 1000, total: 2500, complete: false };
+  const fixture = harness({ props: { isLoading: true, loadedAt: null, loadingProgress: progress } });
+  const loaders = elements(fixture.tree, node => node.type === 'PerformancePreloader');
+  assert.equal(loaders.length, 1);
+  assert.deepEqual(loaders[0].props.progress, progress);
+  assert.equal(loaders[0].props.workflowLoading, false);
+  assert.equal(Boolean(loaders[0].props.compact), false);
   assert.equal(fixture.boxes.length, 0);
   assert.equal(fixture.report, null);
 });
 
-test('refresh retains existing results without a preloader and waits before exporting', () => {
+test('refresh shows compact progress while retaining existing results and waits before exporting', () => {
   const fixture = harness({ history: [event('loaded-surgery', 'a', '2026-09-07T08:05:00Z', 'Chirurgický výkon', 90)] });
   const originalValues = values(fixture);
   const originalReport = fixture.report;
-  fixture.updateProps({ isLoading: true });
-  assert.equal(elements(fixture.tree, node => node.props.role === 'progressbar').length, 0);
-  assert.equal(elements(fixture.tree, node => hasClass(node, 'stats-performance-loader')).length, 0);
+  const progress = { loaded: 1000, total: 4000, complete: false };
+  fixture.updateProps({ isLoading: true, loadingProgress: progress });
+  const loaders = elements(fixture.tree, node => node.type === 'PerformancePreloader');
+  assert.equal(loaders.length, 1);
+  assert.deepEqual(loaders[0].props.progress, progress);
+  assert.equal(loaders[0].props.compact, true);
   assert.equal(fixture.boxes.length, 5);
   assert.deepEqual(values(fixture), originalValues);
   assert.equal(fixture.report, null);
   fixture.updateProps({ isLoading: false });
+  assert.equal(elements(fixture.tree, node => node.type === 'PerformancePreloader').length, 0);
   assert.deepEqual(values(fixture), originalValues);
   assert.deepEqual(fixture.report, originalReport);
 });
 
-test('workflow loading still prevents exporting incomplete statistics without a preloader', () => {
+test('workflow loading reaches the preloader and still prevents exporting incomplete statistics', () => {
+  const progress = { loaded: 2500, total: 2500, complete: true };
   for (const loadedAt of [null, NOW]) {
-    const fixture = harness({ workflow: { loading: true }, props: { isLoading: false, loadedAt } });
-    assert.equal(elements(fixture.tree, node => node.props.role === 'progressbar').length, 0);
+    const fixture = harness({ workflow: { loading: true }, props: { isLoading: false, loadedAt, loadingProgress: progress } });
+    const loaders = elements(fixture.tree, node => node.type === 'PerformancePreloader');
+    assert.equal(loaders.length, 1);
+    assert.deepEqual(loaders[0].props.progress, progress);
+    assert.equal(loaders[0].props.workflowLoading, true);
+    assert.equal(Boolean(loaders[0].props.compact), Boolean(loadedAt));
     assert.equal(fixture.report, null);
     assert.equal(fixture.boxes.length, loadedAt ? 5 : 0);
   }
@@ -403,7 +418,7 @@ test('history and workflow errors take precedence over progress and never hide b
       ...options,
       props: { isLoading: true, loadedAt: null, loadingProgress: { loaded: 1000, total: 2500, complete: false }, ...options.props },
     });
-    assert.equal(elements(fixture.tree, node => node.props.role === 'progressbar').length, 0);
+    assert.equal(elements(fixture.tree, node => node.type === 'PerformancePreloader').length, 0);
     assert.match(textContent(fixture.tree), /Výkonnost se nepodařilo načíst/);
     assert.match(textContent(fixture.tree), /Historie není dostupná|Statusy nejsou dostupné/);
     assert.equal(fixture.boxes.length, 0);

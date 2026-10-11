@@ -17,6 +17,8 @@ const dependencies = {
   'lucide-react': { Moon: 'Moon', Sun: 'Sun', X: 'X' },
   '../../hooks/useIsMobileDark': { useMobileTheme: () => ({ isDark: true, toggle: () => {} }) },
   './mobile-shell.css': {},
+  './mobile-cliniq.css': {},
+  '../../hooks/useAppDesign': { useAppDesign: () => ({ design: 'classic', chooseDesign: () => {} }) },
 };
 const mod = { exports: {} };
 new Function('require', 'exports', 'module', outputText)(name => {

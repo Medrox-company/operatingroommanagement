@@ -1,0 +1,180 @@
+.panel {
+  min-width: 0;
+  border: 1px solid var(--stats-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--stats-surface);
+}
+
+.scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--stats-border-hover) transparent;
+}
+
+.scroll:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  color: var(--stats-text);
+  font-size: 13px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+.caption {
+  padding: 12px 18px;
+  text-align: left;
+  color: var(--stats-muted);
+  font-size: 11px;
+  border-bottom: 1px solid var(--stats-border);
+}
+
+.table th,
+.table td {
+  padding: 16px 18px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--stats-border);
+}
+
+.table thead th {
+  padding-block: 13px;
+  color: var(--stats-muted);
+  background: var(--stats-surface-2);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.table thead th:nth-child(1) { width: 23%; }
+.table thead th:nth-child(2) { width: 14%; }
+.table thead th:nth-child(3) { width: 16%; }
+.table thead th:nth-child(4) { width: 7%; }
+.table thead th:nth-child(5) { width: 12%; }
+.table thead th:nth-child(6) { width: 7%; }
+.table thead th:nth-child(7) { width: 13%; }
+.table thead th:nth-child(8) { width: 8%; }
+
+.table tbody th {
+  font-weight: 600;
+  color: var(--stats-text-strong);
+  overflow-wrap: anywhere;
+}
+
+.table tbody tr:last-child > * { border-bottom: 0; }
+
+.table tbody tr:nth-child(even) { background: var(--stats-surface-2); }
+
+.table tbody tr:hover { background: var(--stats-surface-hover); }
+
+.table .numeric {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.operations { font-weight: 600; }
+
+.hours { white-space: nowrap; }
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.flags {
+  display: block;
+  padding-left: 14px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.utilization {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.track {
+  display: block;
+  flex: 1;
+  height: 5px;
+  min-width: 36px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--stats-ghost);
+}
+
+.track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.percent {
+  min-width: 42px;
+  text-align: right;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.unit { color: var(--stats-muted); font-size: 11px; font-weight: 400; }
+
+.empty { color: var(--stats-muted); }
+
+.overtime { font-weight: 600; }
+
+.table .emptyState {
+  padding: 32px 18px;
+  text-align: center;
+  color: var(--stats-muted);
+}
+
+/* A table-local scroll keeps tablet columns legible without widening the page.
+   An opaque identity cell preserves the room name while scrolling sideways. */
+@media (max-width: 1279px) {
+  .table .identity {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--stats-modal-bg, var(--stats-bg));
+    border-right: 1px solid var(--stats-border);
+  }
+
+  .table thead .identity { z-index: 2; }
+
+  .table th,
+  .table td { padding-inline: 14px; }
+}
+
+@media print {
+  .panel,
+  .scroll { overflow: visible; }
+
+  .table { min-width: 0; font-size: 9px; table-layout: auto; }
+  .table thead { display: table-header-group; }
+  .table tr { break-inside: avoid; }
+  .table th,
+  .table td { padding: 6px; }
+  .table .identity { position: static; }
+}

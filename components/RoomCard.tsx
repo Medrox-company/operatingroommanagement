@@ -5,6 +5,9 @@ import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext'
 import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
 import type { CurrentRoomSpecialty } from '../lib/room-specialty';
 import { useOperationalDayWindow } from '../hooks/useOperationalDayWindow';
+import { acuteDashboardDescription, type AcuteDashboardRoomSummary } from '../lib/acute-dashboard';
+import AcuteDashboardBadge from './room/AcuteDashboardBadge';
+import acuteBadgeStyles from './room/acute-dashboard-badge.module.css';
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -14,9 +17,10 @@ interface RoomCardProps {
   /** Vyplní výšku buňky mřížky (desktop fit). Mobil = fixní výška. */
   fill?: boolean;
   specialties?: CurrentRoomSpecialty[];
+  acuteSummary?: AcuteDashboardRoomSummary;
 }
 
-const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock, fill, specialties }) => {
+const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock, fill, specialties, acuteSummary }) => {
   const descriptionId = useId();
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -121,6 +125,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       Dopoledne: {specialtyDisplayName(scheduledSpecialties.morning?.name) || 'bez oboru'}.
       Odpoledne: {specialtyDisplayName(scheduledSpecialties.afternoon?.name) || 'bez oboru'}.
       Lékař: {room.staff?.doctor?.name || 'neurčen'}. Sestra: {room.staff?.nurse?.name || 'neurčena'}.
+      {acuteDashboardDescription(acuteSummary)}
     </span>
     {/* ===== MOBILE — prémiová karta sálu ===== */}
     <div
@@ -177,6 +182,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       </div>
 
       {/* Dnešní obor podle dopoledního a odpoledního rozpisu + průběh */}
+      {acuteSummary && <span className="relative z-10 mt-2 block"><AcuteDashboardBadge summary={acuteSummary} mobile /></span>}
       <div
         className="relative z-10 mt-3 overflow-hidden"
       >
@@ -255,7 +261,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       aria-label={`Otevřít detail sálu ${room.name}`}
       aria-describedby={descriptionId}
       onKeyDown={handleCardKeyDown}
-      className={`room-card-shell dashboard-workspace-card group relative hidden w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/55 md:block ${fill ? 'h-full min-h-[300px]' : 'dashboard-workspace-card--sized'}`}
+      data-has-acute={acuteSummary ? 'true' : undefined}
+      className={`room-card-shell dashboard-workspace-card group relative hidden w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/55 md:block ${fill ? 'h-full min-h-[300px]' : 'dashboard-workspace-card--sized'} ${acuteSummary ? acuteBadgeStyles.cardWithAcute : ''}`}
     >
       {/* Main Card Container */}
       <div className={`dashboard-workspace-card-surface absolute inset-0 z-0 overflow-hidden
@@ -428,6 +435,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
 
         {/* Bottom Info */}
         <div className="dashboard-workspace-card-info w-full">
+          <AcuteDashboardBadge summary={acuteSummary} />
           <div
             className="dashboard-workspace-specialties flex w-full overflow-hidden border border-white/[0.045]"
             aria-label={`Dnešní obory: ${specialtyDisplayName(scheduledSpecialties.morning?.name) || 'bez oboru'} dopoledne, ${specialtyDisplayName(scheduledSpecialties.afternoon?.name) || 'bez oboru'} odpoledne`}
@@ -505,6 +513,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   const previousSpecialties = prev.specialties ?? [];
   const nextSpecialties = next.specialties ?? [];
   return prev.room === next.room
+    && prev.acuteSummary === next.acuteSummary
     && previousSpecialties.length === nextSpecialties.length
     && previousSpecialties.every((specialty, index) => (
       specialty.departmentId === nextSpecialties[index]?.departmentId

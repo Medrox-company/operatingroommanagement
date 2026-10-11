@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Shield, ShieldCheck, Layers, Crown, AlertTriangle, Check, X, Loader2, Lock, UserCog, Info, LayoutGrid, Activity, Stethoscope, Briefcase, ClipboardList, SlidersHorizontal, Smartphone, ChevronDown } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, ShieldCheck, Layers, Crown, AlertTriangle, Check, X, Loader2, Lock, UserCog, Info, LayoutGrid, Activity, Stethoscope, Briefcase, ClipboardList, SlidersHorizontal, Smartphone, ChevronDown, Siren } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { UserRole, AppModule, AppSubmodule } from '../../contexts/AuthContext';
 import { COLORS, SURFACE, CARD, TILE, TILE_ACTIVE, TIER_COLOR } from './settings-theme';
 import { DevicesSettingsPanel } from './DevicesSettingsPanel';
 import { SETTINGS_TAB_SUBMODULE } from './settings-tabs';
+import { useConfirm } from '../ui/ConfirmDialog';
 
 // ============================================================================
 // Panel: Modules (per-role access matrix)
@@ -59,11 +60,14 @@ export const MODULE_ICON_MAP: Record<string, LucideIcon> = {
   Bell: AlertTriangle,
   Settings: SettingsIcon,
   Shield,
+  Siren,
 };
 
 export const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRoles, modules, submodules, onToggleModule, onToggleRole, onToggleSubmodule, onToggleSubmoduleRole }) => {
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState('');
+  const confirm = useConfirm();
 
   if (!isAdmin) {
     return (
@@ -78,10 +82,21 @@ export const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRo
 
   const handleGlobalToggle = async (moduleId: string, currentEnabled: boolean) => {
     if (!canManageRoles) return;
+    if (moduleId === 'acute-requests' && currentEnabled && !(await confirm({
+      title: 'Vypnout akutní výkony?',
+      description: 'Případné čekající požadavky již nebudou viditelné v pořadníku ani časové ose. Jejich vyřízení koordinujte přímo. Požadavky a historie se nesmažou a po opětovném zapnutí zůstanou dostupné.',
+      confirmLabel: 'Vypnout modul',
+    }))) return;
     const key = `g:${moduleId}`;
     setPendingKey(key);
-    await onToggleModule(moduleId, !currentEnabled);
-    setPendingKey(null);
+    setToggleError('');
+    try {
+      if (!(await onToggleModule(moduleId, !currentEnabled))) setToggleError('Změnu zapnutí modulu se nepodařilo uložit.');
+    } catch {
+      setToggleError('Změnu zapnutí modulu se nepodařilo uložit.');
+    } finally {
+      setPendingKey(null);
+    }
   };
 
   const handleSubmoduleToggle = async (submoduleId: string, currentEnabled: boolean) => {
@@ -181,6 +196,7 @@ export const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRo
 
   return (
     <div className="space-y-4">
+      {toggleError && <p role="alert" className="rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-sm text-red-200">{toggleError}</p>}
       {/* ── Záhlaví: kdo jsem + hierarchie + čísla ─────────────────────────
           Materiál (rádius, nádech okraje, vnitřní světlo) odpovídá ostatním
           sekcím Nastavení, aby panel nevypadal jako cizí prvek. */}
@@ -322,7 +338,9 @@ export const ModulesPanel: React.FC<ModulesPanelProps> = ({ isAdmin, canManageRo
                 {!mod.is_enabled && (
                   <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/[0.07] px-2.5 py-2 text-[11px] text-amber-300/80">
                     <AlertTriangle className="h-3 w-3 shrink-0" />
-                    Modul je vypnutý — role nelze nastavovat.
+                    {mod.id === 'acute-requests'
+                      ? 'Modul je vypnutý i pro superadministrátora. Požadavky a historie zůstávají uložené; role lze nastavovat až po zapnutí.'
+                      : 'Modul je vypnutý — role nelze nastavovat.'}
                   </p>
                 )}
 

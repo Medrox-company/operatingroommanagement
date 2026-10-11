@@ -19,39 +19,40 @@ function declarationsFor(stylesheet, selector) {
   return result;
 }
 
-function compile(sourceText, filename, dependencies = {}) {
+function compile(sourceText, filename, dependencies = {}, globals = {}) {
   const { outputText } = ts.transpileModule(sourceText, {
     fileName: filename,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
   });
   const mod = { exports: {} };
-  new Function('require', 'exports', 'module', outputText)(name => {
+  new Function('require', 'exports', 'module', ...Object.keys(globals), outputText)(name => {
     assert.ok(Object.hasOwn(dependencies, name), `Unexpected runtime dependency: ${name}`);
     return dependencies[name];
-  }, mod.exports, mod);
+  }, mod.exports, mod, ...Object.values(globals));
   return mod.exports;
 }
 
 const display = compile(read('lib/mobile-room-display.ts'), 'mobile-room-display.ts');
+const acute = compile(read('lib/acute-requests.ts'), 'acute-requests.ts');
+const acuteDashboard = compile(read('lib/acute-dashboard.ts'), 'acute-dashboard.ts', { './acute-requests': acute });
 const statuses = [
   { name: 'Sál připraven', color: '#00D6C4' },
   { name: 'Chirurgický výkon', color: '#EE0000', accent_color: '#B51A68' },
 ];
 const now = Date.parse('2026-09-17T10:00:00Z');
 const room = (id, extra = {}) => ({ id, name: `Sál ${id}`, department: 'Chirurgie', currentStepIndex: 0, ...extra });
-function DropdownMenu() { return null; }
-function DropdownItem() { return null; }
+function AcuteDashboardBadge() { return null; }
 
 // Execute the actual component against deterministic hook/context adapters and
 // real React elements. This is a render-tree/wiring test, not a substitute for
-// browser layout or Radix keyboard/focus verification. No backend is imported.
-function renderOverview(rooms, { loaded = true, search = '', filter = 'all' } = {}) {
+// browser layout or focus-trap verification. No backend is imported.
+function renderOverview(rooms, { loaded = true, filter = 'all', layout = 'grid', design = 'classic', acuteByRoom } = {}) {
   let stateIndex = 0;
-  const state = [search, filter];
+  const state = [layout, filter, null];
   const mutations = [];
   const calls = [];
-  const Component = compile(source, 'MobileRoomOverview.tsx', {
-    react: {
+  const storage = new Map();
+  const hooks = {
       __esModule: true,
       default: React,
       useId: () => 'test-room-search',
@@ -62,10 +63,16 @@ function renderOverview(rooms, { loaded = true, search = '', filter = 'all' } = 
       useEffect: () => {},
       useState: () => {
         const index = stateIndex++;
-        return [state[index], value => mutations.push([index, value])];
+        return [state[index], value => { state[index] = value; mutations.push([index, value]); }];
       },
-    },
-    'lucide-react': Object.fromEntries(['AlertCircle', 'Bell', 'CalendarDays', 'ChevronRight', 'Lock', 'MoreHorizontal', 'Search', 'X'].map(name => [name, name])),
+  };
+  const QuickActions = compile(read('components/mobile/MobileRoomQuickActions.tsx'), 'MobileRoomQuickActions.tsx', {
+    react: hooks,
+    'lucide-react': Object.fromEntries(['AlertCircle', 'ArrowRight', 'Lock', 'Unlock'].map(name => [name, name])),
+  }).default;
+  const Component = compile(source, 'MobileRoomOverview.tsx', {
+    react: hooks,
+    'lucide-react': Object.fromEntries(['Bell', 'CalendarDays', 'ChevronRight', 'LayoutGrid', 'Rows3'].map(name => [name, name])),
     '../../contexts/HospitalContext': { useHospital: () => ({ activeHospital: { hospital_short_name: 'Ukázkové zařízení' } }) },
     '../../contexts/AuthContext': { useAuth: () => ({ hasModuleAccess: () => true }) },
     '../../contexts/WorkflowStatusesContext': { useWorkflowStatusesContext: () => ({ workflowStatuses: statuses }) },
@@ -73,21 +80,28 @@ function renderOverview(rooms, { loaded = true, search = '', filter = 'all' } = 
     // Světlý i tmavý mobilní motiv vybírá barvu písma v barevném pruhu karty.
     // V testu držíme světlý motiv, na který jsou očekávané hodnoty psané.
     '../../hooks/useIsMobileDark': { useIsMobileDark: () => false },
-    // Nabídka rychlých akcí (dlouhý stisk karty) — v testu jen zástupný prvek.
-    './MobileRoomQuickActions': { __esModule: true, default: 'quick-actions' },
+    '../../hooks/useAppDesign': { useAppDesign: () => ({ design }) },
+    './MobileRoomQuickActions': { __esModule: true, default: QuickActions },
     '../../lib/mobile-room-display': display,
-    '../ui/DropdownMenu': { DropdownMenu, DropdownItem },
+    '../../lib/acute-dashboard': acuteDashboard,
+    '../room/AcuteDashboardBadge': { __esModule: true, default: AcuteDashboardBadge },
     './MobileShell': { MobileHeader: () => null },
     './mobile-overview.css': {},
+  }, {
+    navigator: { vibrate: () => {} },
+    localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
   }).default;
-  const tree = Component({
-    rooms, roomsLoaded: loaded,
+  const render = () => {
+    stateIndex = 0;
+    return Component({
+    rooms, roomsLoaded: loaded, acuteByRoom,
     onSelectRoom: id => calls.push(['detail', id]),
     onEmergency: id => calls.push(['emergency', id]),
     onLock: id => calls.push(['lock', id]),
     onNavigate: id => calls.push(['navigate', id]),
-  });
-  return { tree, calls, mutations };
+    });
+  };
+  return { tree: render(), render, calls, mutations, storage, QuickActions };
 }
 
 function children(node) { return React.Children.toArray(node?.props?.children); }
@@ -136,7 +150,7 @@ test('room cards form two equal columns only below the desktop breakpoint', () =
   assert.match(source, /className="mobile-room-overview md:hidden"/);
 });
 
-test('iOS cards retain common geometry and vertically stack identity, timing and footer', () => {
+test('iOS cards retain common geometry and vertically stack identity and timing band', () => {
   const card = declarationsFor(css, '.mro-room');
   assert.equal(card.display, 'flex');
   assert.equal(card['flex-direction'], 'column');
@@ -154,10 +168,47 @@ test('iOS cards retain common geometry and vertically stack identity, timing and
   const { tree } = renderOverview([room('pcho')]);
   const [renderedCard] = byClass(tree, 'mro-room');
   assert.ok(hasClass(renderedCard, 'm-unified-card'));
-  assert.deepEqual(children(renderedCard).map(node => node.props.className), ['mro-room-open', 'mro-room-footer']);
+  assert.deepEqual(children(renderedCard).map(node => node.props.className), ['mro-room-open']);
   assert.deepEqual(children(children(renderedCard)[0]).map(node => node.props.className), ['mro-room-identity', 'mro-room-time']);
   const metrics = byClass(renderedCard, 'mro-room-metric');
   assert.deepEqual(metrics.map(metric => text(children(metric)[0])), ['Uplynulo', 'Odhad konce']);
+});
+
+test('classic stays a two-column grid, while optional Cliniq exposes persisted layout controls', () => {
+  const longName = 'GYNEKOLOGIE HLAVNÍ – OPERAČNÍ SÁL';
+  const classic = renderOverview([room('one', { name: longName })], { layout: 'rows' });
+  assert.equal(byClass(classic.tree, 'mro-room-list')[0].props['data-layout'], 'grid');
+  assert.equal(byClass(classic.tree, 'mro-layout-toggle').length, 0);
+  const cliniq = renderOverview([room('one', { name: longName })], { design: 'cliniq', layout: 'rows' });
+  assert.equal(byClass(cliniq.tree, 'mro-room-list')[0].props['data-layout'], 'rows');
+  assert.equal(text(byClass(cliniq.tree, 'm-unified-card-title')[0]), longName);
+  assert.deepEqual(byClass(cliniq.tree, 'mro-room-metric').map(metric => text(children(metric)[0])), ['Od začátku', 'Odhad konce']);
+  const toggle = byClass(cliniq.tree, 'mro-layout-toggle')[0];
+  assert.equal(toggle.props.role, 'group');
+  assert.equal(toggle.props['aria-label'], 'Rozložení sálů');
+  const controls = children(toggle);
+  assert.deepEqual(controls.map(control => [control.props['aria-label'], control.props['aria-pressed']]), [
+    ['Dva sály vedle sebe', false], ['Podélné boxy', true],
+  ]);
+  controls[0].props.onClick();
+  assert.equal(byClass(cliniq.render(), 'mro-room-list')[0].props['data-layout'], 'grid');
+  assert.equal(cliniq.storage.get('or-room-card-layout'), 'grid');
+  const cliniqCss = postcss.parse(read('components/mobile/mobile-cliniq.css'));
+  const targets = declarationsFor(cliniqCss, 'html[data-app-design="cliniq"] .mro-layout-toggle button');
+  assert.equal(targets.width, '44px');
+  assert.equal(targets.height, '44px');
+  assert.equal(declarationsFor(cliniqCss, 'html[data-app-design="cliniq"] .mro-room-list[data-layout=rows]')['grid-template-columns'], 'minmax(0, 1fr)');
+});
+
+test('acute badges remain passive inside the full-room target and full request text is announced', () => {
+  const summary = { pendingRequests: [{ procedureName: 'Urgentní syntetický výkon', urgency: 'urgent', queuePosition: 3 }] };
+  const { tree } = renderOverview([room('one')], { acuteByRoom: new Map([['one', summary]]) });
+  const [open] = byClass(tree, 'mro-room-open');
+  const [badge] = findAll(open, node => node.type === AcuteDashboardBadge);
+  assert.equal(badge.props.summary, summary);
+  assert.equal(badge.props.mobile, true);
+  assert.match(open.props['aria-label'], /Čekající akutní požadavky: Pořadí 3: Urgentní syntetický výkon, Urgentní/);
+  assert.equal(findAll(open, node => node.type === 'button').length, 1);
 });
 
 test('long room names remain complete and wrap without truncation or clamping', () => {
@@ -177,60 +228,73 @@ test('long room names remain complete and wrap without truncation or clamping', 
   assert.doesNotMatch(title.props.className, /truncate|line-clamp/);
 });
 
-test('room options are an independent named 44px target and callbacks keep their room ID', () => {
-  const { tree, calls } = renderOverview([room('first'), room('second', { name: 'PCHO sál č. 2' })]);
+test('one full-card target keeps keyboard quick actions and each callback bound to its room ID', () => {
+  const { tree, render, calls, mutations, QuickActions } = renderOverview([room('first'), room('second', { name: 'PCHO sál č. 2' })]);
   const renderedCards = byClass(tree, 'mro-room');
   for (const [index, renderedCard] of renderedCards.entries()) {
     const expectedId = index === 0 ? 'first' : 'second';
     const [open] = byClass(renderedCard, 'mro-room-open');
-    const [detail] = byClass(renderedCard, 'mro-room-detail-link');
-    const [options] = byClass(renderedCard, 'mro-room-options');
     assert.equal(open.type, 'button');
-    assert.equal(detail.type, 'button');
-    assert.equal(options.type, 'button');
-    for (const button of [open, detail, options]) {
-      assert.equal(button.props.type, 'button');
-      assert.ok(button.props['aria-label'].includes(index === 0 ? 'Sál first' : 'PCHO sál č. 2'));
-      assert.equal(findAll(button, node => node.type === 'button').length, 1, 'No nested action button');
-    }
-    assert.equal(byClass(open, 'mro-room-options').length, 0);
-    assert.equal(options.props.onClick, undefined, 'Opening options must not itself select a room');
+    assert.equal(open.props.type, 'button');
+    assert.ok(open.props['aria-label'].includes(index === 0 ? 'Sál first' : 'PCHO sál č. 2'));
+    assert.match(open.props['aria-label'], /Podržením nebo klávesou nabídky/);
+    assert.equal(findAll(open, node => node.type === 'button').length, 1, 'No nested action button');
+    assert.equal(findAll(renderedCard, node => node.type === 'button').length, 1);
     open.props.onClick();
-    detail.props.onClick();
-    const actions = findAll(renderedCard, node => node.type === DropdownItem);
-    assert.deepEqual(actions.map(text), ['Vyhlásit stav nouze', 'Uzamknout sál']);
-    actions.forEach(action => action.props.onSelect());
-    assert.deepEqual(calls.slice(index * 4), [['detail', expectedId], ['detail', expectedId], ['emergency', expectedId], ['lock', expectedId]]);
+    let prevented = 0;
+    open.props.onKeyDown({ key: index === 0 ? 'ContextMenu' : 'F10', shiftKey: index === 1, preventDefault: () => prevented++ });
+    assert.equal(prevented, 1);
+    assert.deepEqual(mutations.at(-1), [2, expectedId]);
+    assert.deepEqual(calls.slice(index * 4), [['detail', expectedId]], 'Opening quick actions must not trigger a clinical action');
+    const [quickActions] = findAll(render(), node => node.type === QuickActions);
+    assert.equal(quickActions.props.room.id, expectedId);
+    const dialog = QuickActions(quickActions.props);
+    assert.equal(byClass(dialog, 'mrq-dialog')[0].props.role, 'dialog');
+    assert.equal(byClass(dialog, 'mrq-dialog')[0].props['aria-modal'], 'true');
+    const actions = byClass(dialog, 'mrq-box');
+    assert.deepEqual(actions.map(text), ['Stav nouze', 'Uzamknout sál']);
+    actions.forEach(action => action.props.onClick());
+    byClass(dialog, 'mrq-detail')[0].props.onClick();
+    assert.deepEqual(calls.slice(index * 4), [['detail', expectedId], ['emergency', expectedId], ['lock', expectedId], ['detail', expectedId]]);
   }
-  const optionsStyle = declarationsFor(css, '.mro-room-options');
-  assert.ok(parseFloat(optionsStyle.width) >= 44);
-  assert.ok(parseFloat(optionsStyle['min-height']) >= 44);
-  const detailStyle = declarationsFor(css, '.mro-room-detail-link');
-  assert.ok(parseFloat(detailStyle['min-width']) >= 44);
+  const actionStyle = declarationsFor(css, '.mrq-box');
+  assert.ok(parseFloat(actionStyle['min-height']) >= 44);
+  assert.equal(actionStyle['min-height'], '124px');
+  const detailStyle = declarationsFor(css, '.mrq-detail');
   assert.ok(parseFloat(detailStyle['min-height']) >= 44);
+  assert.ok(parseFloat(declarationsFor(css, '.mrq-close')['min-height']) >= 44);
+  assert.equal(declarationsFor(css, '.mro-room-open').width, '100%');
+  assert.match(source, /const LONG_PRESS_MS = 500;/);
+  assert.match(source, /onPointerDown=\{event => startPress\(room\.id, event\)\}/);
+  assert.match(source, /onPointerCancel=\{cancelPress\}/);
 });
 
 test('semantic phase colors and real elapsed/end times survive the layout change', () => {
   const estimate = new Date(2026, 8, 17, 12, 30).toISOString();
-  const { tree } = renderOverview([
+  const overview = renderOverview([
     room('ready'),
     room('active', { currentStepIndex: 1, operationStartedAt: '2026-09-17T08:36:00Z', estimatedEndTime: estimate }),
     room('paused', { currentStepIndex: 1, isPaused: true }),
     room('locked', { currentStepIndex: 1, isLocked: true }),
     room('emergency', { currentStepIndex: 1, isEmergency: true }),
   ]);
+  const { tree, render, QuickActions } = overview;
   const cards = byClass(tree, 'mro-room');
   assert.deepEqual(cards.map(card => byClass(card, 'mro-status-dot')[0].props.style.background), ['#00D6C4', '#B51A68', '#20ACD5', '#B88512', '#E5484D']);
   const values = card => byClass(card, 'mro-room-metric').map(metric => text(children(metric)[1]));
   assert.deepEqual(values(cards[0]), ['—', '—']);
   assert.deepEqual(values(cards[1]), ['01:24', '12:30']);
-  assert.equal(byClass(cards[2], 'mro-phase-label')[0].props.style.color, 'color-mix(in srgb, #20ACD5 65%, var(--m-text) 35%)');
+  assert.equal(text(byClass(cards[2], 'mro-phase-name')[0]), 'Pauza');
+  assert.equal(declarationsFor(css, '.mro-phase-label').color, 'var(--m-text)');
   assert.equal(cards[4].props['data-emergency'], true);
-  assert.deepEqual(findAll(cards[3], node => node.type === DropdownItem).map(text), ['Vyhlásit stav nouze', 'Odemknout sál']);
-  assert.deepEqual(findAll(cards[4], node => node.type === DropdownItem).map(text), ['Zrušit stav nouze', 'Uzamknout sál']);
+  for (const [index, labels] of [[3, ['Stav nouze', 'Odemknout sál']], [4, ['Zrušit stav nouze', 'Uzamknout sál']]]) {
+    byClass(cards[index], 'mro-room-open')[0].props.onKeyDown({ key: 'ContextMenu', preventDefault() {} });
+    const [actions] = findAll(render(), node => node.type === QuickActions);
+    assert.deepEqual(byClass(QuickActions(actions.props), 'mrq-box').map(text), labels);
+  }
 });
 
-test('loading, empty facilities and empty search keep informative states outside the grid', () => {
+test('loading, empty facilities and empty filters keep informative states outside the grid', () => {
   const loading = renderOverview([], { loaded: false }).tree;
   assert.equal(byClass(loading, 'mro-room-list').length, 0);
   assert.equal(text(byClass(loading, 'mro-empty')[0]), 'Načítám operační sály…');
@@ -239,11 +303,11 @@ test('loading, empty facilities and empty search keep informative states outside
   assert.equal(byClass(empty, 'mro-room').length, 0);
   assert.match(text(byClass(empty, 'mro-empty')[0]), /Zatím nejsou k dispozici žádné sály/);
   assert.equal(findAll(byClass(empty, 'mro-empty')[0], node => node.type === 'button').length, 0);
-  const filtered = renderOverview([room('pcho')], { search: 'nenalezeno', filter: 'active' });
+  const filtered = renderOverview([room('pcho')], { filter: 'active' });
   assert.equal(byClass(filtered.tree, 'mro-room').length, 0);
   const [message] = byClass(filtered.tree, 'mro-empty');
   assert.match(text(message), /Žádný sál neodpovídá filtru/);
   findAll(message, node => node.type === 'button')[0].props.onClick();
-  assert.deepEqual(filtered.mutations, [[0, ''], [1, 'all']]);
+  assert.deepEqual(filtered.mutations, [[1, 'all']]);
   assert.equal(declarationsFor(css, '.mro-room-list:empty').display, 'none');
 });

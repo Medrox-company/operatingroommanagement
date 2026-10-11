@@ -24,7 +24,7 @@ interface NotificationOverlayProps {
 interface CustomReasonModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (reason: string) => Promise<void>;
+  onSubmit: (reason: string) => Promise<boolean>;
   loading: boolean;
 }
 
@@ -33,8 +33,7 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
 
   const handleSubmit = async () => {
     if (reason.trim()) {
-      await onSubmit(reason.trim());
-      setReason('');
+      if (await onSubmit(reason.trim())) setReason('');
     }
   };
 
@@ -125,8 +124,10 @@ export default function NotificationOverlay({
 }: NotificationOverlayProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [customReasonOpen, setCustomReasonOpen] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const handleSendNotification = async (typeId: string) => {
+    setSendError(null);
     if (typeId === 'notify_other') {
       setCustomReasonOpen(true);
     } else {
@@ -135,7 +136,7 @@ export default function NotificationOverlay({
         await onSendNotification(typeId);
         onClose();
       } catch (error) {
-        console.error('Error sending notification:', error);
+        setSendError(error instanceof Error ? error.message : 'E-mailové odeslání nebylo potvrzeno.');
       } finally {
         setLoading(null);
       }
@@ -147,6 +148,12 @@ export default function NotificationOverlay({
 
   return (
     <>
+      {isOpen && sendError && (
+        <div role="alert" className="fixed left-1/2 top-4 z-[350] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 rounded-2xl border border-red-400/30 bg-[#17233F] p-4 text-sm text-white shadow-xl">
+          <p>{sendError}</p>
+          <button type="button" onClick={() => setSendError(null)} className="mt-2 text-xs underline">Zavřít upozornění</button>
+        </div>
+      )}
       {isOpen && (
           <div
             key="notif-mobile"
@@ -411,13 +418,16 @@ export default function NotificationOverlay({
         isOpen={customReasonOpen}
         onClose={() => setCustomReasonOpen(false)}
         onSubmit={async (reason) => {
+          setSendError(null);
           setLoading('notify_other');
           try {
             await onSendNotification('notify_other', reason);
             setCustomReasonOpen(false);
             onClose();
+            return true;
           } catch (error) {
-            console.error('Error sending custom notification:', error);
+            setSendError(error instanceof Error ? error.message : 'E-mailové odeslání nebylo potvrzeno.');
+            return false;
           } finally {
             setLoading(null);
           }

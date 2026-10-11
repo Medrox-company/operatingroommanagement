@@ -53,20 +53,16 @@ function MobileModuleHeader() { return null; }
 function MobilePillTabs() { return null; }
 
 function render(rooms, stateOverride = {}, warningsByRoom) {
-  const state = ['4', 0, 0, 3, null];
+  const state = ['4', 0, null];
   for (const [index, value] of Object.entries(stateOverride)) state[Number(index)] = value;
-  const effects = [];
   const mutations = [];
   const selected = [];
-  const ref = { current: null };
   let cursor = 0;
   const Component = compile(source, 'MobileTimelineView.tsx', {
     react: {
       __esModule: true, default: React,
       useId: () => 'qa-timeline-description',
       useMemo: compute => compute(),
-      useEffect: effect => effects.push(effect),
-      useRef: () => ref,
       useState: () => {
         const index = cursor++;
         return [state[index], next => {
@@ -80,7 +76,15 @@ function render(rooms, stateOverride = {}, warningsByRoom) {
     '../../lib/mobile-timeline': timeline,
     '../../lib/timeline-operational-warnings': operationalWarnings,
     '../../lib/timeline-unused-minutes': unusedMinutes,
+    '../../lib/acute-cycle-links': compile(read('lib/acute-cycle-links.ts'), 'acute-cycle-links.ts'),
+    '../../hooks/useAcuteCycleLinks': { useAcuteCycleLinks: () => ({ links: [] }) },
+    '../timeline/CompletedAcuteCycleLabel': { CompletedAcuteCycleLabel: () => null, completedAcuteCycleDescription: () => '' },
     './MobileShell': { MobileModuleHeader, MobilePillTabs },
+    '../timeline/AcuteProposalLane': {
+      AcuteProposalLane: () => null,
+      AcuteTimelineSummary: () => null,
+      acuteProposalsForWindow: () => [],
+    },
     './mobile-timeline.css': {},
   }).default;
   const tree = Component({
@@ -89,7 +93,8 @@ function render(rooms, stateOverride = {}, warningsByRoom) {
     warningsByRoom,
     onSelectRoom: value => selected.push(value),
   });
-  return { tree, effects, mutations, selected, ref, state };
+  assert.equal(cursor, state.length, 'Time browsing must not depend on viewport-specific room paging state');
+  return { tree, mutations, selected, state };
 }
 function findAll(node, predicate) {
   const found = [];
@@ -108,7 +113,7 @@ function text(node) {
   return React.Children.toArray(node?.props?.children).map(text).join('');
 }
 
-test('mobile timeline fits the parent viewport instead of creating page or nested chart scroll', () => {
+test('mobile timeline stays viewport-bounded with one room-list scroll fallback', () => {
   const screen = base('.mtl-screen');
   assert.equal(screen.height, '100%');
   assert.equal(screen['min-height'], '0');
@@ -121,14 +126,18 @@ test('mobile timeline fits the parent viewport instead of creating page or neste
     const rule = base(selector);
     assert.equal(rule.flex, '1');
     assert.equal(rule['min-height'], '0');
-    assert.equal(rule.overflow, 'hidden');
   }
+  assert.equal(base('.mtl-axis').overflow, 'hidden');
+  assert.equal(base('.mtl-rows')['overflow-y'], 'auto');
+  assert.equal(base('.mtl-rows')['overflow-x'], 'hidden');
+  assert.equal(base('.mtl-rows')['grid-auto-rows'], 'minmax(32px, 1fr)');
+  assert.equal(base('.mtl-row')['min-height'], '32px');
   assert.doesNotMatch(source, /overflow-[xy]-auto|MobileScreen|timeline-mobile-axis-scroll/);
-  assert.match(read('App.tsx'), /currentView === 'dashboard' \? 'pb-0' : 'pb-20'/);
+  assert.match(read('App.tsx'), /currentView === 'dashboard' \|\| acuteRoomEnabled \? 'pb-0' : 'pb-20'/);
   assert.match(read('components/TimelineModule.tsx'), /w-full h-full text-white overflow-hidden flex flex-col/);
 });
 
-test('timeline presentation stays phone-only and compacts short screens without hiding paging controls', () => {
+test('timeline presentation stays phone-only and preserves touchable time controls on short screens', () => {
   css.walkRules(rule => {
     let parent = rule.parent;
     let phoneOnly = false;
@@ -140,127 +149,150 @@ test('timeline presentation stays phone-only and compacts short screens without 
   });
   assert.ok(rulesFor('.mtl-screen').some(rule => /max-height:\s*700px/.test(rule.parent.params)));
   assert.ok(rulesFor('.mtl-screen').some(rule => /max-height:\s*500px/.test(rule.parent.params)));
-  for (const selector of ['.mtl-time-pager button', '.mtl-room-pager button']) {
+  for (const selector of ['.mtl-time-pager button']) {
     const rule = base(selector);
     assert.equal(rule.width, '44px');
     assert.equal(rule.height, '44px');
     assert.ok(rulesFor(selector).every(rule => declarations(rule).display !== 'none'));
   }
   assert.equal(base('.mtl-now')['min-height'], '44px');
-  assert.equal(base('.mtl-room-pager')['flex-shrink'], '0');
 });
 
-test('only the measured room page renders and a row still opens the correct room', () => {
-  const rooms = Array.from({ length: 15 }, (_, i) => room(i + 1, i === 0));
+for (const count of [0, 1, 15, 25]) {
+  test(`${count} rooms render together in source order without a hidden room page`, () => {
+    const rooms = Array.from({ length: count }, (_, i) => room(i + 1, i === 0));
+    const result = render(rooms);
+    const rows = byClass(result.tree, 'mtl-row');
+    assert.equal(rows.length, count);
+    assert.equal(byClass(result.tree, 'mtl-room-pager').length, 0);
+    assert.equal(byLabel(result.tree, 'Předchozí sály'), undefined);
+    assert.equal(byLabel(result.tree, 'Další sály'), undefined);
+    const countLabel = text(byClass(result.tree, 'mtl-room-count')[0]);
+    assert.match(countLabel, /[Ss]ál/);
+    assert.match(countLabel, new RegExp(`\\b${count}\\b`));
+    rows.forEach((row, index) => {
+      assert.equal(row.type, 'button');
+      assert.equal(row.props.type, 'button');
+      assert.ok(row.props['aria-label'].startsWith(`${rooms[index].name},`));
+      const heading = byClass(row, 'mtl-row-heading')[0];
+      const name = findAll(heading, node => node.type === 'strong')[0];
+      assert.equal(text(name), rooms[index].name);
+      assert.equal(name.props.title, rooms[index].name);
+      row.props.onClick();
+      assert.equal(result.selected.at(-1), rooms[index]);
+    });
+    if (count) {
+      assert.match(rows[0].props['aria-label'], /Chirurgie.*Otevřít detail sálu/);
+      assert.equal(byClass(result.tree, 'mtl-empty').length, 0);
+    } else {
+      assert.match(text(byClass(result.tree, 'mtl-empty')[0]), /Žádné operační sály/);
+    }
+  });
+}
+
+test('room-list sizing uses CSS rather than ResizeObserver or room pagination state', () => {
+  assert.doesNotMatch(source, /ResizeObserver|useEffect|useRef|mobileTimelinePageSize|pageRooms|safeFirst|firstRoom|setPageSize/);
+  const rows = byClass(render(Array.from({ length: 25 }, (_, i) => room(i + 1))).tree, 'mtl-rows')[0];
+  assert.equal(rows.props.ref, undefined);
+  assert.equal(rows.props.style?.gridTemplateRows, undefined);
+});
+
+test('each compact row has a name rail, subtle state dot and a matching miniature timeline', () => {
+  assert.equal(base('.mtl-row').display, 'grid');
+  assert.equal(base('.mtl-row')['grid-template-columns'], 'var(--mtl-label-width) minmax(0, 1fr)');
+  assert.equal(base('.mtl-ruler')['margin-left'], 'var(--mtl-label-width)');
+  assert.ok(Number.parseFloat(base('.mtl-track').height) <= 16, 'A single-line track must leave space for all rooms');
+  assert.equal(base('.mtl-row-heading > strong')['-webkit-line-clamp'], '2');
+  const rows = byClass(render([room(1, true), room(2)]).tree, 'mtl-row');
+  rows.forEach((row, index) => {
+    assert.equal(byClass(row, 'mtl-track').length, 1);
+    const phase = byClass(row, 'mtl-phase')[0];
+    assert.equal(findAll(phase, node => node.type === 'i')[0].props.style.background, statuses[index === 0 ? 1 : 0].color);
+    assert.equal(text(byClass(phase, 'sr-only')[0]), statuses[index === 0 ? 1 : 0].title);
+    assert.match(phase.props.title, /Aktuální stav:/);
+  });
+  assert.equal(base('.mtl-segment[data-kind=current]').background, 'var(--segment-color)');
+  assert.match(base('.mtl-segment[data-kind=estimate]').border, /dashed/);
+});
+
+test('shrinking room sets and long room names keep every remaining room addressable', () => {
+  const longName = 'EXTERNÍ ANESTEZIE — GASTROENTEROLOGIE, MAGNETICKÁ REZONANCE A CT';
+  const rooms = [{ ...room(1), name: longName }];
   const result = render(rooms);
   const rows = byClass(result.tree, 'mtl-row');
-  assert.equal(rows.length, 3);
-  assert.deepEqual(rows.map(node => text(byClass(node, 'mtl-row-heading')[0]).split('Chirurgický')[0].split('Sál připraven')[0]), rooms.slice(0, 3).map(item => item.name));
-  assert.match(rows[0].props['aria-label'], /Chirurgie.*Otevřít detail sálu/);
-  rows[1].props.onClick();
-  assert.equal(result.selected[0], rooms[1]);
-  assert.equal(text(byClass(result.tree, 'mtl-room-pager')[0]), '1–3 z 15 sálů');
-  assert.equal(byLabel(result.tree, 'Předchozí sály').props.disabled, true);
-  assert.equal(byLabel(result.tree, 'Další sály').props.disabled, false);
-  byLabel(result.tree, 'Další sály').props.onClick();
-  assert.deepEqual(result.mutations, [[2, 3]]);
-  assert.equal(byClass(result.tree, 'mtl-rows')[0].props.style.gridTemplateRows, 'repeat(3, minmax(0, 1fr))');
-});
-
-test('last page, shrinking room sets and empty state cannot strand the room pager', () => {
-  const rooms = Array.from({ length: 5 }, (_, i) => room(i + 1));
-  const last = render(rooms, { 2: 12 });
-  assert.equal(text(byClass(last.tree, 'mtl-room-pager')[0]), '4–5 z 5 sálů');
-  assert.equal(byClass(last.tree, 'mtl-row').length, 2);
-  assert.equal(byLabel(last.tree, 'Další sály').props.disabled, true);
-  byLabel(last.tree, 'Předchozí sály').props.onClick();
-  assert.deepEqual(last.mutations, [[2, 0]]);
-  const empty = render([], { 2: 12 });
-  assert.equal(byClass(empty.tree, 'mtl-row').length, 0);
-  assert.match(text(byClass(empty.tree, 'mtl-empty')[0]), /Žádné operační sály/);
-  assert.equal(text(byClass(empty.tree, 'mtl-room-pager')[0]), '0 sálů');
-  assert.equal(byLabel(empty.tree, 'Předchozí sály').props.disabled, true);
-  assert.equal(byLabel(empty.tree, 'Další sály').props.disabled, true);
+  assert.equal(rows.length, 1);
+  assert.ok(rows[0].props['aria-label'].includes(longName));
+  assert.equal(text(findAll(byClass(rows[0], 'mtl-row-heading')[0], node => node.type === 'strong')[0]), longName);
+  rows[0].props.onClick();
+  assert.equal(result.selected[0], rooms[0]);
+  assert.equal(byClass(render([]).tree, 'mtl-row').length, 0);
 });
 
 test('time paging anchors browsing and the current-time action resets the live window', () => {
   const result = render([room(1)]);
   byLabel(result.tree, 'Předchozí časový úsek').props.onClick();
-  assert.deepEqual(result.mutations, [[4, now], [1, -1]]);
+  assert.deepEqual(result.mutations, [[2, now], [1, -1]]);
+  byLabel(result.tree, 'Následující časový úsek').props.onClick();
+  assert.deepEqual(result.mutations.slice(-2), [[2, now], [1, 0]]);
   byLabel(result.tree, 'Zobrazit aktuální čas').props.onClick();
-  assert.deepEqual(result.mutations.slice(-2), [[1, 0], [4, null]]);
+  assert.deepEqual(result.mutations.slice(-2), [[1, 0], [2, null]]);
   const tabs = findAll(result.tree, node => node.type === MobilePillTabs)[0];
   assert.deepEqual(tabs.props.tabs.map(tab => tab.id), ['2', '4', 'day']);
   tabs.props.onChange('day');
-  assert.deepEqual(result.mutations.slice(-3), [[0, 'day'], [1, 0], [4, null]]);
+  assert.deepEqual(result.mutations.slice(-3), [[0, 'day'], [1, 0], [2, null]]);
 });
 
-test('a viewport resize normalizes room pages before moving to previous or next rooms', () => {
-  const rooms = Array.from({ length: 15 }, (_, i) => room(i + 1));
-  // The old 3-row page began at room 7. A taller screen now fits five rows,
-  // so keep that room visible by using the containing 6–10 page.
-  const taller = render(rooms, { 2: 6, 3: 5 });
-  assert.equal(text(byClass(taller.tree, 'mtl-room-pager')[0]), '6–10 z 15 sálů');
-  assert.equal(byClass(taller.tree, 'mtl-row')[0].props['aria-label'].startsWith('Operační sál 6,'), true);
-  byLabel(taller.tree, 'Předchozí sály').props.onClick();
-  assert.deepEqual(taller.mutations, [[2, 0]]);
-  byLabel(taller.tree, 'Další sály').props.onClick();
-  assert.deepEqual(taller.mutations.at(-1), [2, 10]);
-  const shorter = render(rooms, { 2: 10, 3: 3 });
-  assert.equal(text(byClass(shorter.tree, 'mtl-room-pager')[0]), '10–12 z 15 sálů');
-  byLabel(shorter.tree, 'Další sály').props.onClick();
-  assert.deepEqual(shorter.mutations, [[2, 12]]);
-});
-
-test('ResizeObserver measures available rows and disconnects on unmount', () => {
-  const result = render([room(1)]);
-  let height = 241;
-  const target = { getBoundingClientRect: () => ({ height }) };
-  result.ref.current = target;
-  const previous = globalThis.ResizeObserver;
-  let callback;
-  let observed;
-  let disconnected = false;
-  globalThis.ResizeObserver = class {
-    constructor(cb) { callback = cb; }
-    observe(element) { observed = element; }
-    disconnect() { disconnected = true; }
-  };
-  try {
-    const cleanup = result.effects[0]();
-    assert.equal(observed, target);
-    assert.deepEqual(result.mutations.at(-1), [3, 3]);
-    height = 159;
-    callback();
-    assert.deepEqual(result.mutations.at(-1), [3, 1]);
-    cleanup();
-    assert.equal(disconnected, true);
-  } finally {
-    if (previous === undefined) delete globalThis.ResizeObserver;
-    else globalThis.ResizeObserver = previous;
+test('each time scale keeps all room rows and communicates the selected time window', () => {
+  const rooms = Array.from({ length: 25 }, (_, i) => room(i + 1));
+  for (const scale of ['2', '4', 'day']) {
+    const anchor = now - 24 * 60 * 60000;
+    const result = render(rooms, { 0: scale, 1: 1, 2: anchor });
+    const window = timeline.getMobileTimelineWindow(anchor, scale === 'day' ? 'day' : Number(scale), 1);
+    const ruler = byClass(result.tree, 'mtl-ruler')[0];
+    const ticks = findAll(ruler, node => node.type === 'time');
+    assert.equal(ticks.length, 5);
+    assert.equal(Date.parse(ticks[0].props.dateTime), window.startMs);
+    assert.equal(Date.parse(ticks.at(-1).props.dateTime), window.endMs);
+    assert.equal(byClass(result.tree, 'mtl-row').length, rooms.length);
+    assert.match(text(byClass(result.tree, 'mtl-range-announcement')[0]), /Časový úsek .* až /);
+    byLabel(result.tree, 'Následující časový úsek').props.onClick();
+    assert.deepEqual(result.mutations, [[2, anchor], [1, 2]]);
   }
 });
 
 test('actual progress, estimated end and current state remain distinguishable and accessible', () => {
-  const result = render([room(1, true), room(2)]);
+  const completed = {
+    ...room(3),
+    completedOperations: [{
+      startedAt: new Date(now - 80 * 60000).toISOString(),
+      endedAt: new Date(now - 40 * 60000).toISOString(),
+      statusHistory: [{ stepIndex: 1, startedAt: new Date(now - 80 * 60000).toISOString() }],
+    }],
+  };
+  const result = render([room(1, true), room(2), completed]);
   const segments = byClass(result.tree, 'mtl-segment');
   assert.ok(segments.some(node => node.props['data-kind'] === 'current'));
   assert.ok(segments.some(node => node.props['data-kind'] === 'estimate'));
+  assert.ok(segments.some(node => node.props['data-kind'] === 'history'));
   const estimate = segments.find(node => node.props['data-kind'] === 'estimate');
   assert.match(estimate.props.title, /Odhad konce/);
-  assert.match(text(byClass(result.tree, 'sr-only')[0]), /Chirurgický výkon.*Odhad konce/);
-  const descriptionIds = byClass(result.tree, 'mtl-row').map(row => {
-    const description = byClass(row, 'sr-only')[0];
+  const rows = byClass(result.tree, 'mtl-row');
+  const intervalDescription = row => findAll(row, node => node.props.id === row.props['aria-describedby'])[0];
+  assert.match(text(intervalDescription(rows[0])), /Chirurgický výkon.*Odhad konce/);
+  assert.match(text(intervalDescription(rows[1])), /Bez záznamu/);
+  assert.match(text(intervalDescription(rows[2])), /Chirurgický výkon/);
+  const descriptionIds = rows.map(row => {
+    const description = intervalDescription(row);
     assert.equal(row.props['aria-describedby'], description.props.id);
     assert.ok(description.props.id, 'Each room needs an addressable interval summary');
     return description.props.id;
   });
   assert.equal(new Set(descriptionIds).size, descriptionIds.length, 'Room summary identifiers must be distinct');
-  assert.equal(byClass(result.tree, 'mtl-now-line').length, 2);
+  assert.equal(byClass(result.tree, 'mtl-now-line').length, 3);
   assert.equal(byClass(result.tree, 'mtl-no-record').length, 1);
-  assert.match(text(byClass(result.tree, 'mtl-no-record')[0]), /Bez záznamu/);
+  assert.match(byClass(result.tree, 'mtl-no-record')[0].props.title || text(byClass(result.tree, 'mtl-no-record')[0]), /Bez záznamu/);
   assert.equal(byLabel(result.tree, 'Časová osa provozu').type, 'section');
-  assert.equal(byLabel(result.tree, 'Stránkování sálů').type, 'nav');
+  assert.equal(byLabel(result.tree, 'Stránkování sálů'), undefined);
 });
 
 test('operational warnings appear only on affected room rows and read out all details', () => {
@@ -272,20 +304,21 @@ test('operational warnings appear only on affected room rows and read out all de
   const result = render([room(1, true), room(2)], {}, warningsByRoom);
   const rows = byClass(result.tree, 'mtl-row');
   assert.equal(byClass(rows[0], 'mtl-warning-chip').length, 1);
-  assert.equal(text(byClass(rows[0], 'mtl-warning-chip')[0]), 'Kolize');
   assert.equal(byClass(rows[0], 'mtl-warning-chip')[0].props['data-kind'], 'schedule_collision');
   assert.match(rows[0].props['aria-label'], /Upozornění:/);
   assert.ok(rows[0].props['aria-label'].includes(operationalWarnings.describeTimelineOperationalWarning(warningsByRoom.get('1')[2])));
   assert.doesNotMatch(rows[0].props['aria-label'], /Odhad konce překročen/);
-  assert.match(text(byClass(rows[0], 'mtl-unused-chip')[0]), /Nevyužito \d+ min/);
+  assert.equal(byClass(rows[0], 'mtl-unused-chip').length, 0);
+  assert.match(rows[0].props['aria-label'], /\d+ nevyužitých minut/);
   assert.equal(byClass(rows[1], 'mtl-warning-chip').length, 0);
   assert.doesNotMatch(rows[1].props['aria-label'], /Upozornění:/);
-  assert.match(text(byClass(rows[1], 'mtl-unused-chip')[0]), /Nevyužito \d+ min/);
+  assert.equal(byClass(rows[1], 'mtl-unused-chip').length, 0);
+  assert.match(rows[1].props['aria-label'], /\d+ nevyužitých minut/);
   rows[0].props.onClick();
   assert.equal(result.selected[0].id, '1');
 });
 
-test('team remains two stacked dots while unused working minutes replace overdue label', () => {
+test('team remains two stacked dots while working minutes stay accessible without visual badges', () => {
   const warningsByRoom = new Map([
     ['1', [{ type: 'overdue', roomId: '1', estimatedEndMs: now - 12 * 60_000, minutesOverdue: 12 }]],
     ['2', [{ type: 'missing_staff', roomId: '2', missingRoles: ['nurse'] }]],
@@ -295,7 +328,7 @@ test('team remains two stacked dots while unused working minutes replace overdue
   }];
   const rows = byClass(render(rooms, {}, warningsByRoom).tree, 'mtl-row');
   assert.equal(byClass(rows[0], 'mtl-warning-chip').length, 0);
-  assert.match(text(byClass(rows[0], 'mtl-unused-chip')[0]), /Nevyužito \d+ min/);
+  assert.equal(byClass(rows[0], 'mtl-unused-chip').length, 0);
   assert.equal(byClass(rows[1], 'mtl-warning-chip').length, 0);
   const dots = byClass(rows[1], 'mtl-team-dots');
   assert.equal(dots.length, 1);
@@ -306,10 +339,11 @@ test('team remains two stacked dots while unused working minutes replace overdue
   assert.doesNotMatch(rows[1].props['aria-label'], /Odhad konce překročen/);
 });
 
-test('room without configured working hours shows unavailable minutes rather than zero', () => {
+test('room without configured working hours announces unavailable minutes rather than zero', () => {
   const rows = byClass(render([room(1, false)], {}, new Map()).tree, 'mtl-row');
-  assert.match(text(byClass(rows[0], 'mtl-unused-chip')[0]), /Nevyužito \d+ min/);
+  assert.match(rows[0].props['aria-label'], /\d+ nevyužitých minut/);
   const unconfigured = byClass(render([{ ...room(1, false), weeklySchedule: undefined }], {}, new Map()).tree, 'mtl-row');
-  assert.equal(text(byClass(unconfigured[0], 'mtl-unused-chip')[0]), 'Nevyužito —');
+  assert.equal(byClass(unconfigured[0], 'mtl-unused-chip').length, 0);
   assert.match(unconfigured[0].props['aria-label'], /nelze určit/);
+  assert.doesNotMatch(unconfigured[0].props['aria-label'], /0 nevyužitých minut/);
 });

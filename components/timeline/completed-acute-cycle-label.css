@@ -1,0 +1,32 @@
+/* A small measured-cycle annotation; the configured phase surface remains visible. */
+.completed-acute-cycle-label {
+  position: relative;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-background) 58%, transparent);
+  color: var(--color-text-primary);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.completed-acute-cycle-label > i { width: 5px; height: 5px; flex: 0 0 5px; border-radius: 50%; background: var(--acute-cycle-color); }
+.completed-acute-cycle-number { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.completed-acute-cycle-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+@container acute-cycle (max-width: 130px) { .completed-acute-cycle-name { display: none; } }
+@container acute-cycle (max-width: 75px) { .completed-acute-cycle-kind { display: none; } }
+@container acute-cycle (max-width: 32px) {
+  .completed-acute-cycle-number { display: none; }
+  .completed-acute-cycle-label { padding: 2px; }
+}
+.completed-acute-cycle-label-mobile { padding: 0 2px; gap: 2px; font-size: 8px; line-height: 12px; background: var(--m-card); color: var(--m-text-strong); }
+.completed-acute-cycle-label-mobile .completed-acute-cycle-name,
+.completed-acute-cycle-label-mobile .completed-acute-cycle-kind { display: none; }

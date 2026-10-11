@@ -1,0 +1,118 @@
+.carousel {
+  /* Settings proportions, with a clinical minimum so all four actions fit. */
+  --carousel-card-width: clamp(260px, 21vw, 340px);
+  --carousel-card-height: clamp(440px, 48dvh, 500px);
+  --carousel-step: clamp(138px, 14.5vw, 250px);
+  --carousel-padding: clamp(20px, 2vw, 28px);
+  position: absolute;
+  inset: -40px -40px calc(-1 * clamp(16px, 2vh, 28px));
+  min-width: 0;
+  color: #e8edf7;
+}
+.viewport {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  /* A clipped stage cannot be silently scrolled by focus/scrollIntoView on a side card. */
+  overflow: clip;
+  perspective: 1500px;
+  touch-action: pan-y;
+}
+.viewport:focus-visible { outline: 2px solid #848bff; outline-offset: -4px; border-radius: 16px; }
+.orbit {
+  display: grid;
+  width: var(--carousel-card-width);
+  min-height: var(--carousel-card-height);
+  perspective: 1300px;
+  transform-style: preserve-3d;
+}
+.card {
+  position: relative;
+  grid-area: 1 / 1;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--carousel-card-height);
+  border-radius: 24px;
+  border: 1px solid rgba(139, 158, 193, .2);
+  background: linear-gradient(180deg, rgba(24, 39, 82, .58) 0%, rgba(9, 20, 50, .78) 100%);
+  box-shadow: 0 18px 52px rgba(4, 10, 34, .2), inset 0 1px 0 rgba(190, 205, 255, .045);
+  color: #b4bfd3;
+  transform: translate3d(calc(var(--carousel-distance) * var(--carousel-step)), calc(var(--carousel-depth) * 9px), calc(var(--carousel-depth) * -118px)) rotateY(calc(var(--carousel-distance) * -11deg)) scale(var(--carousel-scale));
+  transition: transform 700ms cubic-bezier(.2, .72, .22, 1), opacity 700ms cubic-bezier(.2, .72, .22, 1), filter 700ms cubic-bezier(.2, .72, .22, 1), border-color 700ms ease;
+  overflow-wrap: anywhere;
+}
+.card[data-selected='true'] {
+  color: #e8edf7;
+  border-color: color-mix(in srgb, var(--carousel-accent) 44%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--carousel-accent) 32%, transparent) 0%, color-mix(in srgb, var(--carousel-accent) 14%, transparent) 42%, rgba(10, 22, 54, .9) 100%);
+  box-shadow: 0 24px 70px rgba(4, 10, 34, .3), 0 0 34px color-mix(in srgb, var(--carousel-accent) 8%, transparent), inset 0 1px 0 rgba(190, 205, 255, .08);
+}
+.cardContent { display: flex; flex-direction: column; height: 100%; min-height: inherit; }
+.card[data-selected='false'] .timings, .card[data-selected='false'] .specialties, .card[data-selected='false'] .footer, .card[data-selected='false'] .notice, .card[data-selected='false'] [data-acute-dashboard-badge] { visibility: hidden; }
+.selectCard { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; cursor: pointer; }
+.main { display: flex; flex: 1; flex-direction: column; align-items: stretch; width: 100%; padding: var(--carousel-padding) var(--carousel-padding) 0; text-align: left; border-radius: 24px 24px 0 0; }
+.phase { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 9px; font-weight: 600; line-height: 1.6; letter-spacing: .2em; text-transform: uppercase; color: #aebbd0; }
+.phase i { flex: 0 0 5px; width: 5px; height: 5px; border-radius: 50%; }
+.visual { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 148px; padding-block: 12px; }
+.identity { display: flex; flex-direction: column; gap: 7px; }
+/* Fade the tucked-under neighbouring labels instead of showing them through the selected title. */
+.card[data-neighbor='left'] .identity { mask-image: linear-gradient(90deg, #000 0%, #000 40%, transparent 60%); }
+.card[data-neighbor='right'] .identity { mask-image: linear-gradient(270deg, #000 0%, #000 40%, transparent 60%); }
+.name { font-size: clamp(20px, 1.6vw, 26px); line-height: 1.05; font-weight: 400; letter-spacing: -.035em; text-transform: uppercase; color: #f1f4fa; }
+.department { font-size: 10px; line-height: 1.55; color: #a4b0c4; }
+.ring { position: relative; display: block; width: 124px; height: 124px; background: transparent; }
+.ring > svg { width: 100%; height: 100%; overflow: visible; }
+.ringOutline { stroke: var(--carousel-accent); stroke-width: .5; opacity: .18; }
+.ringTrack { stroke: rgba(206, 221, 251, .09); stroke-width: 2; }
+.ringHalo { filter: blur(6px); }
+.ringCenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; background: transparent; }
+.count { font-size: 40px; line-height: 1; font-weight: 400; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.ringCaption { max-width: 86px; color: #b4bfd3; font-size: 9px; line-height: 1.35; }
+.timings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; padding-bottom: 12px; }
+.timings > span { display: flex; flex-direction: column; gap: 4px; }
+.timings > span + span { border-left: 1px solid rgba(197, 212, 246, .1); padding-left: 12px; }
+.metricLabel { display: flex; align-items: center; gap: 5px; color: #a4b0c4; font-size: 9px; line-height: 1.4; }
+.metricValue { font-size: 22px; font-variant-numeric: tabular-nums; font-weight: 400; color: #e8edf7; }
+.metricValue small { font-size: 10px; color: #a4b0c4; }
+.specialties { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid rgba(197, 212, 246, .1); padding: 10px 0; }
+.specialties > span { display: flex; flex-direction: column; gap: 4px; padding-right: 8px; }
+.specialties > span + span { padding-left: 12px; padding-right: 0; }
+.specialties small { font-size: 8px; letter-spacing: .09em; color: #9eabc2; }
+.specialties > span > span { font-size: 10px; line-height: 1.4; color: #b4bfd3; }
+.notice { display: block; text-align: left; font-size: 11px; line-height: 1.4; color: #f3dfae; padding-bottom: 10px; }
+.footer { display: flex; align-items: center; gap: 6px; margin: 0 var(--carousel-padding); padding: 10px 0 18px; border-top: 1px solid rgba(197, 212, 246, .1); }
+.staff { display: flex; align-items: center; justify-content: flex-start; gap: 6px; min-height: 44px; flex: 1; min-width: 44px; font-size: 10px; text-align: left; color: #b4bfd3; border-radius: 8px; }
+/* Clinical buttons are usable only once the real selected card settles. */
+.action, .detail { display: flex; justify-content: center; align-items: center; flex: 0 0 44px; width: 44px; height: 44px; border: 1px solid rgba(147, 161, 189, .3); border-radius: 50%; color: #d7deea; background: rgba(11, 18, 36, .3); transition: box-shadow 180ms ease, border-color 180ms ease, color 180ms ease; }
+.emergency { --action-color: #ff3b30; }
+.lock { --action-color: #fbbf24; }
+.action:hover, .action[aria-pressed='true'] {
+  border-color: var(--action-color);
+  color: #fff;
+  background: color-mix(in srgb, var(--action-color) 8%, transparent);
+  box-shadow: inset 0 0 13px color-mix(in srgb, var(--action-color) 23%, transparent), 0 0 13px color-mix(in srgb, var(--action-color) 17%, transparent);
+}
+.detail:hover, .staff:hover { background: rgba(19, 31, 59, .9); color: #fff; }
+.carousel button:focus-visible { outline: 2px solid #848bff; outline-offset: 4px; }
+.navigation { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; pointer-events: none; padding-inline: clamp(2rem, 4vw, 4rem); }
+.navigation button { position: relative; z-index: 30; display: flex; align-items: center; justify-content: center; flex: 0 0 52px; width: 52px; height: 52px; border: 1px solid rgba(147, 161, 189, .3); border-radius: 50%; color: #d7deea; background: rgba(11, 18, 36, .7); pointer-events: auto; }
+.navigation button:hover:not(:disabled) { border-color: rgba(171, 184, 211, .6); background: rgba(19, 31, 59, .9); }
+.navigation button:disabled { opacity: .3; cursor: default; }
+.chooser { position: absolute; z-index: 30; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(660px, calc(100% - 120px)); }
+.position { font-size: 10px; letter-spacing: .09em; color: #9eabc2; text-align: center; }
+.position > span { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
+.roomList { display: flex; flex-wrap: wrap; justify-content: center; width: 100%; }
+.roomList button { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; }
+.roomList i { width: 5px; height: 5px; border-radius: 50%; opacity: .32; transition: opacity 180ms ease, width 180ms ease; }
+.roomList button[aria-pressed='true'] i { width: 20px; border-radius: 3px; opacity: .95; }
+.roomList button:hover i { opacity: .8; }
+
+@media (max-width: 839px) { .carousel { --carousel-step: clamp(92px, 14.5vw, 250px); } }
+@media (max-width: 1199px) { .staff > span { display: none; } .staff { justify-content: center; } }
+@media (max-width: 767px) { .carousel { display: none; } }
+.carousel[data-overflow='true'] { position: relative; inset: auto; height: var(--carousel-content-height); margin-inline: -24px; }
+@media (min-width: 768px) and (max-height: 699px) {
+  .carousel { position: relative; inset: auto; height: 640px; margin-inline: -24px; }
+}
+@media (prefers-reduced-motion: reduce) { .card, .action, .roomList i { transition: none; } }

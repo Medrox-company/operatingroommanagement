@@ -1,0 +1,157 @@
+/* Adapter for the Settings editor only. The live dashboard/model stay unchanged. */
+.spatial-settings-module {
+  container-type: inline-size;
+  container-name: spatial-settings;
+  --editor-surface: rgba(255, 255, 255, 0.025);
+  --editor-surface-hover: rgba(255, 255, 255, 0.06);
+  --editor-border: rgba(255, 255, 255, 0.06);
+  --editor-accent: var(--color-primary);
+  --editor-text: var(--color-text-primary);
+  --editor-muted: var(--color-text-muted);
+}
+
+.spatial-settings-module .spatial-editor-commandbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--editor-border);
+  border-radius: 12px;
+  background: var(--editor-surface);
+}
+
+.spatial-settings-module .spatial-editor-commandbar-copy { flex: 1 1 200px; min-width: 0; }
+.spatial-settings-module .spatial-editor-commandbar-copy h2 { margin: 0; color: var(--editor-text); font-size: 13px; font-weight: 600; }
+.spatial-settings-module .spatial-editor-status { margin: 5px 0 0; color: var(--editor-muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.spatial-settings-module .spatial-editor-status[data-state='dirty'] { color: var(--color-warning); }
+.spatial-settings-module .spatial-editor-status[data-state='error'] { color: var(--color-danger); }
+.spatial-settings-module .spatial-editor-icon-bar { flex-wrap: wrap; gap: 8px; max-width: 100%; }
+.spatial-settings-module .spatial-editor-icon-action {
+  display: inline-flex;
+  width: auto;
+  min-width: 44px;
+  height: auto;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid var(--editor-border);
+  border-radius: 8px;
+  background: var(--editor-surface);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: none;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.spatial-settings-module .spatial-editor-icon-action svg { width: 16px; height: 16px; flex-shrink: 0; }
+.spatial-settings-module .spatial-editor-icon-action:not(:disabled):hover { transform: none; background: var(--editor-surface-hover); border-color: var(--color-border-hover); color: var(--editor-text); }
+.spatial-settings-module .spatial-editor-icon-action.is-active,
+.spatial-settings-module .spatial-editor-icon-action.is-saved { color: var(--editor-accent); border-color: var(--color-primary-muted); background: var(--color-primary-muted); box-shadow: none; }
+.spatial-settings-module .spatial-editor-icon-action.is-danger { color: var(--color-danger); }
+.spatial-settings-module .spatial-editor-icon-action.is-danger:not(:disabled):hover { background: rgba(255, 85, 96, 0.08); border-color: rgba(255, 85, 96, 0.28); color: var(--color-danger); }
+.spatial-settings-module button:focus-visible,
+.spatial-settings-module input:focus-visible,
+.spatial-settings-module select:focus-visible { outline: 2px solid var(--editor-accent); outline-offset: 3px; }
+
+.spatial-settings-module .spatial-editor-frame {
+  container-type: inline-size;
+  height: max(600px, calc(100dvh - 250px));
+  min-height: 600px;
+  margin-inline: 0;
+  overflow: hidden;
+  border: 1px solid var(--editor-border);
+  border-radius: 12px;
+  background: var(--editor-surface);
+  box-shadow: none;
+}
+.spatial-settings-module .spatial-editor-frame .orms-editor {
+  --bg: transparent;
+  --panel: var(--editor-surface);
+  --line: var(--editor-border);
+  --text: var(--editor-text);
+  --muted: var(--editor-muted);
+  --yellow: var(--editor-accent);
+  grid-template-columns: 220px minmax(0, 1fr) 250px;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  font-family: var(--font-sans);
+}
+.spatial-settings-module .spatial-editor-frame .oe-library,
+.spatial-settings-module .spatial-editor-frame .oe-inspector { min-width: 0; padding: 18px 14px; background: var(--editor-surface); border-color: var(--editor-border); }
+.spatial-settings-module .spatial-editor-frame .oe-workspace { min-width: 0; background: transparent; }
+.spatial-settings-module .spatial-editor-frame .oe-title { flex-wrap: wrap; gap: 12px; padding: 18px 20px 12px; }
+.spatial-settings-module .spatial-editor-frame .oe-title h1 { margin: 0; font-size: 18px; font-weight: 600; }
+.spatial-settings-module .spatial-editor-frame .oe-title p { font-size: 11px; line-height: 1.5; }
+.spatial-settings-module .spatial-editor-frame .oe-demo { padding: 6px 8px; border-color: var(--editor-border); border-radius: 6px; color: var(--editor-muted); font-size: 9px; letter-spacing: 0.08em; }
+.spatial-settings-module .spatial-editor-frame .oe-toolbar { gap: 8px; padding: 0 20px 16px; }
+.spatial-settings-module .spatial-editor-frame .oe-segment { min-width: 0; max-width: 100%; padding: 2px; border-color: var(--editor-border); border-radius: 8px; background: var(--editor-surface); }
+.spatial-settings-module .spatial-editor-frame .orms-editor button {
+  min-width: 0;
+  min-height: 36px;
+  border-color: var(--editor-border);
+  border-radius: 8px;
+  background: var(--editor-surface);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.spatial-settings-module .spatial-editor-frame .orms-editor button:hover { background: var(--editor-surface-hover); border-color: var(--color-border-hover); color: var(--editor-text); }
+.spatial-settings-module .spatial-editor-frame .orms-editor button.active { background: var(--color-primary-muted); border-color: var(--color-primary-muted); color: var(--editor-accent); }
+.spatial-settings-module .spatial-editor-frame .orms-editor input,
+.spatial-settings-module .spatial-editor-frame .orms-editor select { min-height: 36px; border-color: var(--editor-border); border-radius: 8px; background: rgba(0, 0, 0, 0.12); color: var(--editor-text); }
+.spatial-settings-module .spatial-editor-frame .orms-editor label { color: var(--editor-muted); }
+.spatial-settings-module .spatial-editor-frame .orms-editor select option { background: var(--color-background); color: var(--editor-text); }
+.spatial-settings-module .spatial-editor-frame .oe-section-title { color: var(--editor-muted); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; }
+.spatial-settings-module .spatial-editor-frame .oe-envelope,
+.spatial-settings-module .spatial-editor-frame .oe-knl-boundary.is-solid { border-color: var(--editor-border); border-radius: 8px; background: var(--editor-surface); box-shadow: none; }
+.spatial-settings-module .spatial-editor-frame .oe-envelope-copy b { color: var(--color-text-secondary); letter-spacing: 0.08em; }
+.spatial-settings-module .spatial-editor-frame .oe-canvas-note,
+.spatial-settings-module .spatial-editor-frame footer { padding-inline: 20px; background: var(--editor-surface); border-color: var(--editor-border); color: var(--editor-muted); line-height: 1.5; }
+.spatial-settings-module .spatial-editor-frame footer { flex-wrap: wrap; gap: 6px; }
+.spatial-settings-module .spatial-editor-frame .oe-canvas { min-height: 280px; overflow: hidden; }
+.spatial-settings-module .spatial-editor-empty-state { background: transparent; }
+.spatial-settings-module .spatial-editor-empty-state > span { border-color: var(--editor-border); border-radius: 12px; background: var(--editor-surface); color: var(--editor-accent); }
+.spatial-settings-module .spatial-editor-empty-state p { color: var(--editor-muted); }
+.spatial-settings-module .spatial-editor-empty-state button { border-color: var(--color-primary-muted); border-radius: 8px; background: var(--color-primary-muted); color: var(--editor-accent); font-weight: 500; }
+.spatial-settings-module .spatial-editor-empty-state button:hover { transform: none; background: var(--editor-surface-hover); }
+.spatial-settings-module .spatial-editor-loading { display: flex; height: 100%; align-items: center; justify-content: center; gap: 10px; color: var(--editor-muted); font-size: 13px; }
+.spatial-settings-module .spatial-editor-loading svg { width: 18px; height: 18px; color: var(--editor-accent); }
+
+/* Respond to the available module width, not the screen behind the sidebar. */
+@container (max-width: 1000px) {
+  .spatial-settings-module .spatial-editor-frame .orms-editor { grid-template-columns: 190px minmax(0, 1fr); grid-template-rows: 600px auto; height: auto; overflow: visible; }
+  .spatial-settings-module .spatial-editor-frame .oe-inspector { grid-column: 1 / -1; border-top: 1px solid var(--editor-border); border-left: 0; }
+  .spatial-settings-module .spatial-editor-frame .oe-library { max-height: 600px; }
+  .spatial-settings-module .spatial-editor-frame .oe-objects { max-height: 180px; }
+}
+@container (max-width: 640px) {
+  .spatial-settings-module .spatial-editor-frame .orms-editor { display: flex; flex-direction: column; }
+  .spatial-settings-module .spatial-editor-frame .oe-workspace { order: -1; height: 640px; min-height: 0; flex-shrink: 0; }
+  .spatial-settings-module .spatial-editor-frame .oe-library { max-height: none; border-top: 1px solid var(--editor-border); border-right: 0; }
+  .spatial-settings-module .spatial-editor-frame .oe-title,
+  .spatial-settings-module .spatial-editor-frame .oe-toolbar { padding-inline: 14px; }
+  .spatial-settings-module .spatial-editor-frame .orms-editor button,
+  .spatial-settings-module .spatial-editor-frame .orms-editor input,
+  .spatial-settings-module .spatial-editor-frame .orms-editor select { min-height: 44px; }
+}
+@container spatial-settings (max-width: 1002px) {
+  .spatial-settings-module .spatial-editor-frame { height: auto; }
+  .spatial-settings-module .spatial-editor-host { height: auto; }
+}
+@media (max-width: 700px) {
+  .spatial-settings-module .spatial-editor-icon-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .spatial-settings-module .spatial-editor-icon-action:last-child { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spatial-settings-module button,
+  .spatial-settings-module .spatial-editor-icon-action,
+  .spatial-settings-module .spatial-editor-frame .orms-editor button,
+  .spatial-settings-module .spatial-editor-empty-state button { transition: none; }
+  .spatial-settings-module .animate-spin { animation: none; }
+}

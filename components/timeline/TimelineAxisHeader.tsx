@@ -50,22 +50,26 @@ export function TimelineAxisHeader({
     >
       <div className="flex w-full items-center">
         <div
-          className="timeline-field-soft flex h-9 w-full items-center rounded-lg p-0.5"
+          role="group"
+          aria-label="Filtrovat sály"
+          className="timeline-field-soft timeline-room-filters flex h-9 w-full items-center rounded-lg p-0.5"
         >
           {([
-            { key: 'all', label: 'Vše' },
-            { key: 'active', label: 'Akt.' },
-            { key: 'free', label: 'Vol.' },
-            { key: 'attention', label: 'Poz.' },
-          ] as const).map(({ key, label }) => {
+            { key: 'all', label: 'Vše', description: 'Všechny sály' },
+            { key: 'active', label: 'Aktivní', description: 'Aktivní sály' },
+            { key: 'free', label: 'Volné', description: 'Volné sály' },
+            { key: 'attention', label: 'Pozor', description: 'Sály vyžadující pozornost' },
+          ] as const).map(({ key, label, description }) => {
             const active = statusFilter === key;
             return (
               <button
                 key={key}
                 onClick={() => setStatusFilter(key)}
+                type="button"
+                aria-label={description}
                 aria-pressed={active}
-                title={key === 'attention' ? 'Sály vyžadující pozornost' : undefined}
-                className="h-8 min-w-0 flex-1 rounded-md px-1 text-[10px] font-semibold transition-colors"
+                title={description}
+                className="timeline-room-filter h-8 min-w-0 flex-1 rounded-md px-1 text-[10px] font-semibold transition-colors"
                 style={active ? {
                   background: `${key === 'attention' ? C.orange : C.cyan}20`,
                   color: key === 'attention' ? C.orange : C.cyan,
@@ -137,9 +141,11 @@ export function TimelineAxisHeader({
               {!isLast && showLabel && (
                 <div className="flex flex-col items-center gap-0.5">
                   <span
-                    className={`rounded-lg px-1 py-0.5 font-mono tabular-nums leading-none transition-colors ${
+                    className={`timeline-hour-label rounded-lg px-1 py-0.5 font-mono tabular-nums leading-none transition-colors ${
                       isCurrentHour ? 'font-semibold text-cyan-100 bg-cyan-300/10' : isMajorHour ? 'font-semibold text-white/75' : 'font-medium text-white/40'
                     }`}
+                    data-current={isCurrentHour}
+                    data-major={isMajorHour}
                     style={{ fontSize: labelFont }}
                   >
                     {hourLabelCompact(hour)}

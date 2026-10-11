@@ -35,6 +35,23 @@ function assertFiniteLayout(layout) {
   assert.ok(['compact', 'comfortable'].includes(layout.density));
 }
 
+test('acute request evidence raises the uniform grid minimum without hiding rooms or changing the default', () => {
+  for (const viewport of viewports) {
+    for (const count of [1, 4, 15, 40]) {
+      const withAcute = calculateDashboardGridLayout({ ...viewport, height: 200, count, minCardHeight: 360 });
+      assertFiniteLayout(withAcute);
+      assert.ok(withAcute.cardHeight >= 360, 'Every room uses the same raised minimum, including rooms without requests');
+      assert.ok(withAcute.columns * withAcute.rows >= count);
+      assert.ok(withAcute.maxWidth <= viewport.width);
+      assert.deepEqual(calculateDashboardGridLayout({ ...viewport, count, minCardHeight: 280 }), calculateDashboardGridLayout({ ...viewport, count }));
+    }
+  }
+  for (const minCardHeight of [NaN, Infinity, -1, 0]) {
+    assert.deepEqual(calculateDashboardGridLayout({ width: 800, height: 200, count: 15, minCardHeight }),
+      calculateDashboardGridLayout({ width: 800, height: 200, count: 15 }));
+  }
+});
+
 for (const viewport of viewports) {
   for (const count of [0, 1, 4, 15, 40]) {
     test(`${viewport.width} × ${viewport.height}, ${count} rooms: readable cards stay inside the available width`, () => {

@@ -1,0 +1,74 @@
+/* Only the acute-request entry path reserves a band above the clinical circles.
+   Ordinary room detail keeps its exact original layout and phase palette. */
+.room-detail-acute-message {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (min-width: 768px) {
+  .room-detail-with-acute {
+    --acute-stage-top: 260px;
+    --acute-stage-bottom: 160px;
+    --acute-current-size: clamp(180px, min(30vw, calc(100dvh - 460px)), 500px);
+  }
+  .room-detail-acute-ribbon {
+    position: absolute;
+    top: clamp(128px, 16vh, 160px);
+    left: calc(32px + max(0px, (100vw - 2568px) / 2));
+    right: clamp(9rem, 19vw, 15rem);
+    z-index: 50;
+    min-width: 0;
+  }
+  .room-detail-with-acute .room-detail-phase-stage {
+    padding-top: var(--acute-stage-top);
+    padding-bottom: var(--acute-stage-bottom);
+  }
+  .room-detail-with-acute .room-detail-circle-current {
+    width: var(--acute-current-size) !important;
+    height: var(--acute-current-size) !important;
+  }
+  .room-detail-with-acute .room-detail-circle-side {
+    width: clamp(90px, min(16vw, calc((100dvh - 460px) * .56)), 280px) !important;
+    height: clamp(90px, min(16vw, calc((100dvh - 460px) * .56)), 280px) !important;
+  }
+  .room-detail-with-acute .room-detail-time-controls {
+    top: calc(50% + (var(--acute-stage-top) - var(--acute-stage-bottom)) / 2 + var(--acute-current-size) / 2 + 8px) !important;
+  }
+  .room-detail-with-acute .room-detail-time-control {
+    width: clamp(44px, min(7vw, 7vh), 80px) !important;
+    height: clamp(44px, min(7vw, 7vh), 80px) !important;
+  }
+  .room-detail-with-acute .room-detail-time-control-icon { width: 24px; height: 24px; }
+}
+
+@media (min-width: 768px) and (max-height: 650px) {
+  .room-detail-with-acute {
+    --acute-stage-top: 260px;
+    --acute-stage-bottom: 160px;
+    --acute-current-size: 144px;
+  }
+  .room-detail-with-acute .app-module-detail-heading { top: 22px; }
+  .room-detail-acute-ribbon { top: 98px; }
+  .room-detail-with-acute [data-testid="room-detail-phase-indicator"] { bottom: 12px; gap: 6px; }
+}
+
+@media (max-width: 767px) {
+  .mobile-room-reference .room-detail-acute-message {
+    border-color: var(--m-border);
+    background: var(--m-card);
+    color: var(--m-text);
+  }
+  /* The optional context remains normal flow, including short landscape.
+     Clinical controls stay accessible via the existing overflow fallback. */
+  .room-detail-with-acute .mobile-room-reference > .mrd-scroll-content {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+}

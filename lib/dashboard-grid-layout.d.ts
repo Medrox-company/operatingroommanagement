@@ -2,6 +2,8 @@ export interface DashboardGridLayoutInput {
   width?: number;
   height?: number;
   count?: number;
+  /** Shared minimum height for additional clinical evidence across the grid. */
+  minCardHeight?: number;
 }
 
 export interface DashboardGridLayout {

@@ -5,6 +5,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Moon, Sun, X } from 'lucide-react';
 import { useMobileTheme } from '../../hooks/useIsMobileDark';
 import './mobile-shell.css';
+import './mobile-cliniq.css';
+import { useAppDesign, type AppDesign } from '../../hooks/useAppDesign';
 
 /* =============================================================================
    Mobile Shell — sdílené primitivy pro mobilní redesign modulů
@@ -72,8 +74,14 @@ export const MobileHeader: React.FC<{
 
 export const MobileThemeToggle: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { isDark, toggle } = useMobileTheme();
+  const { design, chooseDesign } = useAppDesign();
 
   return (
+    <div className="mobile-appearance-controls" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <select aria-label="Design aplikace" value={design} onChange={event => chooseDesign(event.target.value as AppDesign)} style={{ minHeight: 44, maxWidth: 104, borderRadius: 12, padding: '0 8px', fontSize: 16, color: 'var(--m-text)', background: 'var(--m-card-2)', border: '1px solid var(--m-border)' }}>
+      <option value="classic">Původní</option>
+      <option value="cliniq">Cliniq</option>
+    </select>
     <button
       type="button"
       onClick={toggle}
@@ -91,6 +99,7 @@ export const MobileThemeToggle: React.FC<{ className?: string }> = ({ className 
         ? <Sun className="w-[19px] h-[19px]" strokeWidth={1.7} />
         : <Moon className="w-[19px] h-[19px]" strokeWidth={1.7} />}
     </button>
+    </div>
   );
 };
 
