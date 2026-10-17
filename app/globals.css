@@ -1560,6 +1560,39 @@ html.capacitor-native select {
 .dashboard-room-badges { gap: 4px; }
 .dashboard-room-badges > div { padding: clamp(4px, 1.4cqw, 7px); }
 .dashboard-room-badges svg { width: clamp(12px, 3.5cqw, 17px); height: clamp(12px, 3.5cqw, 17px); }
+.dashboard-room-status-rail {
+  position: absolute;
+  z-index: 20;
+  top: calc(clamp(14px, 5cqw, 26px) + clamp(12px, 2.3cqw, 17px));
+  left: 88%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.dashboard-workspace-card .dashboard-workspace-card-header--with-indicators {
+  padding-right: 28%;
+}
+.dashboard-room-status-rail > .dashboard-room-status-indicator {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: clamp(28px, 8cqw, 38px);
+  height: clamp(28px, 8cqw, 38px);
+  padding: 0;
+  border: 1px solid rgba(var(--dashboard-indicator-rgb), 0.32);
+  border-radius: 50%;
+  background: rgba(var(--dashboard-indicator-rgb), 0.08);
+  box-shadow: inset 0 0 10px rgba(var(--dashboard-indicator-rgb), 0.08);
+  color: rgb(var(--dashboard-indicator-rgb));
+}
+.dashboard-room-status-indicator svg { width: clamp(12px, 3.5cqw, 17px); height: clamp(12px, 3.5cqw, 17px); }
+.dashboard-room-status-indicator--call { --dashboard-indicator-rgb: 96, 165, 250; }
+.dashboard-room-status-indicator--arrival { --dashboard-indicator-rgb: 52, 211, 153; }
+.dashboard-room-status-indicator--notice { --dashboard-indicator-rgb: 251, 146, 60; }
 
 /* Compact rows still retain two-line names, readable metadata and the action pocket. */
 .dashboard-room-grid[data-density='compact'] .dashboard-workspace-card-content { --dashboard-card-padding: 16px; gap: 6px; }
@@ -2114,24 +2147,30 @@ html.capacitor-native select {
   :root.m-dark { --m-faint: rgba(255, 255, 255, 0.55); }
 }
 
-/* Mobilní přihlášení: stejná struktura v obou motivech, pouze barevné tokeny. */
+/* iOS-inspired mobile login. These tokens never reach the desktop login or
+   the authenticated app; both mobile appearances share the same real form. */
 .mobile-login-page {
   color-scheme: light;
-  --login-bg: #f3f6fc;
-  --login-title: #123670;
-  --login-copy: #697b9b;
-  --login-muted: #91a0b9;
-  --login-field: rgba(255, 255, 255, 0.96);
-  --login-field-text: #14376f;
-  --login-field-border: #d6e0ef;
-  --login-field-focus: #6289c4;
-  --login-role: rgba(255, 255, 255, 0.72);
-  --login-role-border: #dce5f2;
-  --login-divider: #dce4f0;
-  --login-toggle: rgba(255, 255, 255, 0.82);
-  --login-toggle-border: #d9e2ef;
-  --login-button: linear-gradient(135deg, #123f78 0%, #1d5694 100%);
-  --login-button-shadow: 0 13px 30px rgba(20, 63, 120, 0.19);
+  --login-bg: linear-gradient(180deg, #f2f3f7 0%, #fafbfd 65%, #ffffff 100%);
+  --login-title: #172439;
+  --login-copy: #566171;
+  --login-muted: #626d7d;
+  --login-field: #ffffff;
+  --login-field-text: #172439;
+  --login-field-icon: #52657e;
+  --login-field-border: #e1e5ec;
+  --login-field-focus: #0066cc;
+  --login-role: #ffffff;
+  --login-role-border: #e1e5ec;
+  --login-role-icon: #235bb5;
+  --login-role-icon-bg: #e9f0fc;
+  --login-option-bg: #ffffff;
+  --login-divider: #dce1e9;
+  --login-toggle: #ffffff;
+  --login-toggle-border: #e1e5ec;
+  --login-button: linear-gradient(135deg, #0a69d7 0%, #005ac1 100%);
+  --login-button-shadow: 0 6px 16px rgba(0, 82, 180, 0.14);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   background: var(--login-bg);
   color: var(--login-title);
 }
@@ -2140,20 +2179,32 @@ html.capacitor-native select {
   color-scheme: dark;
   --login-bg: var(--app-spatial-background);
   --login-title: #ffffff;
-  --login-copy: rgba(231, 238, 255, 0.62);
-  --login-muted: rgba(211, 222, 248, 0.48);
-  --login-field: rgba(10, 19, 38, 0.82);
+  --login-copy: #bdc9df;
+  --login-muted: #acbbd4;
+  --login-field: #101b34;
   --login-field-text: #f7f9ff;
+  --login-field-icon: #acbbd4;
   --login-field-border: rgba(139, 152, 212, 0.24);
   --login-field-focus: #5bc8dc;
-  --login-role: rgba(16, 26, 50, 0.72);
+  --login-role: #15223d;
   --login-role-border: rgba(133, 147, 209, 0.18);
+  --login-role-icon: #9fc5ff;
+  --login-role-icon-bg: #233b62;
+  --login-option-bg: #101b34;
   --login-divider: rgba(174, 188, 230, 0.16);
   --login-toggle: rgba(16, 26, 50, 0.74);
   --login-toggle-border: rgba(151, 165, 220, 0.22);
   --login-button: linear-gradient(120deg, #237da7 0%, #5657d9 54%, #8a4ed0 100%);
   --login-button-shadow: 0 15px 34px rgba(66, 83, 205, 0.27);
 }
+
+.mobile-login-main {
+  padding: max(82px, calc(env(safe-area-inset-top) + 62px)) clamp(20px, 6vw, 28px) max(24px, env(safe-area-inset-bottom));
+}
+
+.mobile-login-header { text-align: left; }
+
+.mobile-login-content { margin-top: 30px; }
 
 .mobile-login-aurora {
   display: none;
@@ -2176,31 +2227,68 @@ html.capacitor-native select {
   color: var(--login-muted);
 }
 
+.mobile-login-label {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+.mobile-login-footer {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+
 .mobile-login-title {
   color: var(--login-title);
+  font-size: clamp(28px, 8vw, 34px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.mobile-login-product {
+  display: block;
+  margin-top: 8px;
+  color: var(--login-copy);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
 }
 
 .mobile-login-subtitle {
+  margin-top: 18px;
   color: var(--login-copy);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .mobile-login-theme-toggle {
-  border: 0;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--login-toggle-border);
+  border-radius: 22px;
   background: var(--login-toggle);
-  color: var(--login-title);
-  -webkit-backdrop-filter: blur(18px) saturate(125%);
-  backdrop-filter: blur(18px) saturate(125%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 24px rgba(27, 48, 91, 0.08);
+  color: var(--login-role-icon);
+  box-shadow: 0 2px 8px rgba(27, 48, 91, 0.035);
 }
 
 .mobile-login-field {
-  border: 0;
+  min-height: 56px;
+  border: 1px solid var(--login-field-border);
+  border-radius: 16px;
   background: var(--login-field);
   color: var(--login-field-text);
-  -webkit-backdrop-filter: blur(18px) saturate(125%);
-  backdrop-filter: blur(18px) saturate(125%);
-  box-shadow: 0 7px 22px rgba(24, 49, 91, 0.045), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(24, 49, 91, 0.025);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .mobile-login-field::placeholder {
@@ -2214,10 +2302,43 @@ html.capacitor-native select {
 }
 
 .mobile-login-field-icon {
-  color: var(--login-muted);
+  z-index: 1;
+  color: var(--login-field-icon);
+}
+
+.mobile-login-password-toggle {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 12px;
+}
+
+/* The shared desktop select intentionally uses dark options. Only the mobile
+   select inherits its actual light/dark palette, including the native menu. */
+.mobile-login-page .login-hospital-select {
+  color-scheme: inherit !important;
+}
+
+.mobile-login-page .login-hospital-select option,
+.mobile-login-page .login-hospital-select optgroup {
+  background-color: var(--login-option-bg) !important;
+  color: var(--login-field-text) !important;
+}
+
+.mobile-login-page .login-hospital-select option:checked {
+  background-color: var(--login-role-icon-bg) !important;
+  color: var(--login-field-text) !important;
+}
+
+.mobile-login-page :is(button, input, select):focus-visible {
+  outline: 3px solid var(--login-field-focus);
+  outline-offset: 3px;
 }
 
 .mobile-login-submit {
+  min-height: 56px;
+  border-radius: 16px;
   background: var(--login-button);
   color: #fff;
   box-shadow: var(--login-button-shadow);
@@ -2228,13 +2349,15 @@ html.capacitor-native select {
   transform: scale(0.985);
 }
 
-/* Přihlášení superadministrátora — tmavý podklad drží bílé logo čitelné
-   ve světlém i tmavém mobilním motivu. */
+/* Secondary system access stays separate from the five ordinary roles. */
 .mobile-login-google {
-  border: 0;
-  background: linear-gradient(135deg, #132b50 0%, #20285f 58%, #38245d 100%);
-  color: #ffffff;
-  box-shadow: 0 10px 26px rgba(18, 34, 80, 0.18);
+  min-height: 54px;
+  border: 1px solid var(--login-field-border);
+  border-radius: 16px;
+  background: var(--login-field);
+  color: var(--login-field-text);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(24, 49, 91, 0.025);
   transition: transform 150ms ease, filter 150ms ease;
 }
 
@@ -2242,38 +2365,127 @@ html.capacitor-native select {
   transform: scale(0.985);
 }
 
+.mobile-login-roles-section { margin-top: 26px; }
+
+.mobile-login-role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .mobile-login-role {
-  border: 0;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--login-role) 92%, white 8%), var(--login-role));
-  color: var(--login-copy);
-  -webkit-backdrop-filter: blur(20px) saturate(125%);
-  backdrop-filter: blur(20px) saturate(125%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px rgba(25, 47, 87, 0.07);
-  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+  display: flex;
+  min-width: 0;
+  min-height: 116px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--login-role-border);
+  border-radius: 22px;
+  background: var(--login-role);
+  color: var(--login-title);
+  text-align: left;
+  box-shadow: 0 3px 10px rgba(25, 47, 87, 0.035);
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.mobile-login-page .login-role-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--login-role-icon-bg);
+  background: color-mix(in srgb, var(--login-role-tone, var(--login-role-icon)) 12%, var(--login-role) 88%);
+  color: var(--login-role-icon);
+  opacity: 1;
+  filter: none;
+}
+
+.mobile-login-role-label {
+  max-width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .mobile-login-role:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-.mobile-login-role[aria-pressed='true'] {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--login-role) 88%, white 12%), var(--login-role));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 12px 28px rgba(25, 47, 87, 0.07);
+.mobile-login-role:active:not(:disabled) {
+  border-color: var(--login-field-focus);
 }
+
+.mobile-login-selected-role {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 26px;
+  padding: 18px;
+  border: 1px solid var(--login-role-border);
+  border-radius: 22px;
+  background: var(--login-role);
+}
+
+.mobile-login-selected-title {
+  margin-top: 3px;
+  color: var(--login-title);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.mobile-login-selected-hospital {
+  margin-top: 4px;
+  color: var(--login-copy);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.mobile-login-system { margin-top: 28px; }
 
 .mobile-login-divider {
   background: var(--login-divider);
 }
 
 .mobile-login-error {
-  border: 1px solid rgba(238, 99, 119, 0.28);
-  background: rgba(238, 99, 119, 0.09);
-  color: #dc5368;
+  border: 1px solid #eabdc3;
+  background: #fff0f1;
+  color: #a52238;
+}
+
+.m-dark .mobile-login-error {
+  border-color: #84404e;
+  background: #351c2a;
+  color: #ffc1cb;
+}
+
+@media (min-width: 540px) {
+  .mobile-login-role-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (hover: hover) {
+  .mobile-login-role:hover:not(:disabled) { border-color: var(--login-field-focus); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .mobile-login-aurora {
     animation: none !important;
+  }
+  .mobile-login-page :is(button, input, select) {
+    transition: none;
+  }
+  .mobile-login-role:active:not(:disabled),
+  .mobile-login-submit:active,
+  .mobile-login-google:active {
+    transform: none;
   }
 }
 

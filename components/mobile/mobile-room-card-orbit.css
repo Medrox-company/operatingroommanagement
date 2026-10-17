@@ -1,0 +1,106 @@
+/* Compact passive phase identity; the full orbit stays in room detail only. */
+@media (max-width: 767px) {
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit {
+    --mro-orbit-phase-ink: #FFFFFF;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 76px;
+    min-width: 0;
+    margin-inline: auto;
+    flex: 0 0 auto;
+    color: #F4F0FF;
+    pointer-events: none;
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-icon {
+    position: relative;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+    color: var(--mro-orbit-phase-ink);
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-icon > svg {
+    width: 29px;
+    height: 29px;
+    stroke-width: 1.45;
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-mask {
+    display: block;
+    width: 48px;
+    height: 48px;
+    margin: -6px;
+    background-color: currentColor;
+    -webkit-mask: var(--mro-orbit-mask) center / contain no-repeat;
+    mask: var(--mro-orbit-mask) center / contain no-repeat;
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-mask--table {
+    --mro-orbit-mask: url('/images/mobile-orbit-operating-table.png');
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-mask--scalpel {
+    --mro-orbit-mask: url('/images/mobile-orbit-scalpel.png');
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-icon > .mro-orbit-direction {
+    position: absolute;
+    right: -4px;
+    bottom: 0;
+    width: 13px;
+    height: 13px;
+    padding: 1px;
+    border-radius: 3px;
+    background: #161637;
+    stroke-width: 1.8;
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-title {
+    display: block;
+    max-width: 100%;
+    margin: 0;
+    color: #F4F0FF;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.13;
+    letter-spacing: -.025em;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+}
+
+@media (max-width: 359px) {
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-center {
+    gap: 3px;
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-title {
+    font-size: 12px;
+  }
+
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-orbit-icon {
+    width: 31px;
+    height: 31px;
+    flex-basis: 31px;
+  }
+}

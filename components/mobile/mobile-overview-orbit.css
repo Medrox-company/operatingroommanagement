@@ -1,0 +1,181 @@
+/* The selected overview belongs to the optional Cliniq appearance only. */
+@media (max-width: 767px) {
+  html[data-app-design="cliniq"] .dashboard-module:has(.mobile-room-overview-orbit) {
+    --mro-orbit-floor: #0B102C;
+    --mro-orbit-art-height: 216.1782vw;
+    --m-text: #DCD6FF;
+    --m-text-strong: #F8F7FF;
+    --m-muted: #C1BFF1;
+    --m-border: rgba(163, 153, 239, .25);
+    --m-accent: #DCD6FF;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 17px calc(125px + env(safe-area-inset-bottom, 0px));
+    padding-top: calc(24px + env(safe-area-inset-top, 0px)) !important;
+    background:
+      linear-gradient(to bottom,
+        rgba(0, 0, 0, .40) 0,
+        rgba(0, 0, 0, .40) calc(var(--mro-orbit-art-height) - 184px),
+        var(--mro-orbit-floor) calc(var(--mro-orbit-art-height) - 24px)),
+      var(--mro-orbit-floor) url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat !important;
+    background-size: 100% 100%, 100% auto !important;
+    background-attachment: local;
+    color: #F8F7FF;
+    font-family: var(--m-font-sans, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: contain;
+  }
+
+  html[data-app-design="cliniq"] .dashboard-module:has(.mobile-room-overview-orbit) > .mobile-theme-surface { display: none; }
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit { max-width: 480px; }
+  /* Counts remain on individual room cards; omit the redundant header summary. */
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-statuses { display: none !important; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-header {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: start;
+    gap: 6px;
+    min-height: 62px;
+    padding-inline: 9px;
+  }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-heading { min-width: 0; text-align: center; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-heading h1 {
+    margin: 3px 0 0;
+    color: #F8F7FF;
+    font-size: clamp(21px, 6.25vw, 27px);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -.035em;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-heading p { display: flex; justify-content: center; flex-wrap: wrap; align-items: baseline; gap: 5px 9px; margin: 7px -10px 0; font-size: 12.5px; line-height: 1.25; color: #C1BFF1; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-live { display: inline-flex; align-items: center; gap: 7px; color: #F3D18C; white-space: nowrap; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit [data-connected=true] .mro-orbit-live { color: #35E05A; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-live i { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: currentColor; }
+
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-tools { position: relative; z-index: 50; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-tools > summary,
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-header > .mro-icon-button {
+    display: grid;
+    place-items: center;
+    position: relative;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(214, 211, 255, .28);
+    border-radius: 50%;
+    color: #F6F5FF;
+    background: rgba(202, 199, 255, .12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+    cursor: pointer;
+    list-style: none;
+  }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-tools > summary::-webkit-details-marker { display: none; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-header svg { width: 23px; height: 23px; stroke-width: 1.65; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-notice-dot { top: 4px; right: 4px; width: 8px; height: 8px; background: #FF5176; box-shadow: 0 0 12px rgba(255, 68, 118, .65); }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-settings {
+    position: absolute;
+    top: 54px;
+    left: -9px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(300px, calc(100vw - 34px));
+    max-height: calc(100svh - 130px);
+    overflow-y: auto;
+    padding: 18px;
+    border: 1px solid rgba(163, 153, 239, .35);
+    border-radius: 24px;
+    color: #F8F7FF;
+    background: #171A3E;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .3);
+  }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-settings > strong { font-size: 16px; font-weight: 500; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-settings .mobile-appearance-controls { flex-wrap: wrap; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-settings :is(select, .mobile-theme-toggle) { color: #F8F7FF !important; background: #26294F !important; border-color: rgba(163, 153, 239, .35) !important; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-settings .mro-layout-toggle { display: flex; flex-wrap: wrap; gap: 7px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-settings .mro-layout-toggle button { display: inline-flex; gap: 6px; align-items: center; justify-content: center; width: auto; min-width: 44px; min-height: 44px; height: auto; padding: 7px 10px; border: 1px solid rgba(163, 153, 239, .25); border-radius: 13px; color: #DCD6FF; background: transparent; font-size: 12px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-settings .mro-layout-toggle button[aria-pressed=true] { background: #DCD6FF; color: #151044; }
+
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-statuses { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 15px; min-height: 24px; margin: 4px 4px 12px; color: #D1CCF6; font-size: 11px; line-height: 1.3; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-statuses > span { display: inline-flex; align-items: center; gap: 5px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-statuses i { width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: var(--room-phase-color); }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-statuses strong { color: #F8F7FF; font-weight: 400; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; min-height: 44px; margin: 0 4px 12px; padding: 4px; border: 1px solid rgba(163, 153, 239, .27); border-radius: 999px; background: rgba(146, 141, 190, .1); }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-filters button { min-width: 44px; min-height: 44px; padding: 5px 4px; border-radius: 999px; color: #F2EEFF; background: transparent; font-size: 13px; font-weight: 400; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-filters button[aria-pressed=true] { color: #151044; background: linear-gradient(165deg, #EEECFF, #C8C9FF 55%, #B9BFFF); box-shadow: inset 0 1px 1px #FFFFFF, 0 0 12px rgba(206, 195, 255, .18); }
+
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list { gap: 9px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Outrank the legacy html.m-dark card surface regardless of lazy CSS order.
+     Removing the theme control must not change the accepted Orbit cards. */
+  html[data-app-design="cliniq"] .mobile-room-overview.mobile-room-overview-orbit .mro-room.m-unified-card {
+    --mro-edge-padding: 12px;
+    border: 1px solid transparent;
+    border-radius: 22px;
+    background: linear-gradient(155deg, rgba(92, 90, 175, .48), rgba(18, 22, 58, .78));
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+    box-shadow: none;
+  }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room .mro-room-open { min-height: 196px; gap: 4px; padding: 12px; background: transparent; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room .mro-room-identity { flex: 0 0 auto; gap: 2px; padding-right: 0; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room .mro-room-identity .mro-orbit-room-kicker { min-height: 22px; padding-right: 27px; color: #C1BFF1; font-size: 10.5px; line-height: 1.3; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room .mro-room-identity strong { min-height: 1.18em; color: #F8F7FF; font-size: clamp(12px, 8cqw, 17px); font-weight: 400; line-height: 1.18; letter-spacing: -.03em; text-wrap: balance; word-break: normal; overflow-wrap: normal; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room .mro-room-identity small { color: #DDD5FF; font-size: 9.5px; line-height: 1.25; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room .mro-room-chevron { display: grid; place-items: center; position: absolute; top: 6px; right: 8px; width: 26px; height: 26px; border: 1px solid rgba(194, 185, 255, .3); border-radius: 50%; color: #F6F3FF; background: rgba(175, 164, 250, .1); }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-chevron svg { width: 19px; height: 19px; stroke-width: 1.7; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-status-badges { position: absolute; top: 9px; right: 40px; display: flex; gap: 2px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-call-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; color: #FFFFFF; background: #168344; border: 1px solid #58DB89; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-call-badge[data-kind=hygiene] { background: #98460D; border-color: #FFB020; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-call-badge:is([data-kind=arrival], [data-kind=pause]) { background: #2856A5; border-color: #83B4FF; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-call-badge[data-kind=message] { background: #6342A4; border-color: #C0A1FF; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-call-badge svg { width: 13px; height: 13px; stroke-width: 1.8; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit { margin-block: auto; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 7px; align-items: center; width: 100%; margin-top: auto; padding: 11px 0 8px; border-top: 1px solid rgba(163, 153, 239, .28); border-radius: 0 0 10px 10px; background: color-mix(in srgb, var(--room-surface-color, transparent) 32%, transparent); color: #F4F0FF; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer > span { display: flex; gap: 5px; align-items: center; min-width: 0; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer { box-sizing: border-box; width: calc(100% + 2 * var(--mro-edge-padding)); margin-inline: calc(-1 * var(--mro-edge-padding)); margin-bottom: calc(-1 * var(--mro-edge-padding)); padding: 11px var(--mro-edge-padding) var(--mro-edge-padding); border-radius: 0; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer > span + span { padding-left: 7px; border-left: 1px solid rgba(163, 153, 239, .25); }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer svg { width: 17px; height: 20px; flex: 0 0 17px; stroke-width: 1.5; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer > span > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 9.5px; line-height: 1.2; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer strong { display: block; color: #F8F7FF; font-size: 14px; font-weight: 400; line-height: 1.15; white-space: nowrap; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer small { color: #C1BFF1; font-size: 8.5px; white-space: nowrap; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-end > span > span { white-space: nowrap; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-team strong { font-size: 10.5px; white-space: normal; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-empty { color: #DCD6FF; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit :is(button, summary):focus-visible { outline: 2px solid #E5DDFF; outline-offset: 3px; }
+
+  /* Overview and detail share the mobile-orbit-nav component and stylesheet. */
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] { grid-template-columns: minmax(0, 1fr); }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] .mro-room-open { display: grid; grid-template-columns: minmax(0, 1fr) 112px; min-height: 156px; gap: 10px; padding: 14px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] .mro-room-identity { grid-column: 1; grid-row: 1; padding-right: 0; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] .mro-room { --mro-edge-padding: 14px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] .mro-orbit { grid-column: 2; grid-row: 1; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] .mro-orbit-card-footer { grid-column: 1 / -1; grid-row: 2; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] .mro-room-chevron { display: none; }
+}
+
+@media (max-width: 399px) {
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] .mro-orbit-card-footer svg { display: none; }
+}
+
+@media (max-width: 359px) {
+  html[data-app-design="cliniq"] .dashboard-module:has(.mobile-room-overview-orbit) { padding-inline: 12px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-header { padding-inline: 0; gap: 3px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-heading h1 { font-size: 21px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-heading p { font-size: 11px; gap: 5px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list { gap: 8px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list .mro-room { --mro-edge-padding: 9px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room .mro-room-open { padding: 9px; min-height: 186px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer { gap: 4px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer svg { display: none; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-orbit-card-footer > span + span { padding-left: 5px; }
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit .mro-room-list[data-layout=rows] .mro-room-open { grid-template-columns: minmax(0, 1fr) 104px; }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  html[data-app-design="cliniq"] .mobile-room-overview-orbit *, html[data-app-design="cliniq"] .mobile-room-overview-orbit *::before, html[data-app-design="cliniq"] .mobile-room-overview-orbit *::after { transition: none !important; animation: none !important; }
+}

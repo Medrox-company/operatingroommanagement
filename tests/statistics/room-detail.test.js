@@ -141,7 +141,8 @@ test('every room entry point forwards the calendar selection and parent shares r
   assert.match(rooms, /onRoomSelect\?\.\(room, calendarSelectionActive \? calendarDay : null\)/);
   assert.equal((rooms.match(/onClick=\{\(\) => openRoom\(/g) || []).length, 3);
   const parent = readFileSync(new URL('../../components/StatisticsModule.tsx', import.meta.url), 'utf8');
-  assert.match(parent, /history=\{roomSelection\?\.day \? allDayHistory : allStatusHistory\}/);
+  assert.match(parent, /history=\{filterStatisticsPhaseDurations\(roomSelection\?\.day \? allDayHistory : allStatusHistory, excludeShortPhases\)\}/);
+  assert.match(parent, /trendHistory=\{filterStatisticsPhaseDurations\(allDayHistory, excludeShortPhases\)\}/);
   assert.match(parent, /roomSelection\?\.hospitalId === activeHospitalId/);
   assert.match(parent, /allRooms\.find\(room => room\.id === roomSelection\?\.id\)/);
 });

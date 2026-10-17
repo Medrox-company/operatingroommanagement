@@ -10,6 +10,7 @@ import {
   AlignCenter, AlignRight, Merge, ChevronDown,
 } from 'lucide-react';
 import ModulePageHeading from './ModulePageHeading';
+import { buildCalendarPrintHtml } from '../lib/calendar-print';
 
 // ─────────────────── Types ───────────────────
 type FontSize = 'xs' | 'sm' | 'base' | 'lg';
@@ -923,90 +924,21 @@ const CalendarManager: React.FC = () => {
     if (!printWindow) return;
 
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const DAY_SHORT = ['PO','ÚT','ST','ČT','PÁ','SO','NE'];
-
-    const headerCells = days.map(d => {
-      const dw = getDayOfWeek(year, month, d);
-      const weekend = dw === 5 || dw === 6;
-      const special = specialDays.find(s => s.day === d);
-      const isHoliday = getCzechHolidays(year).some(h => h.month === month && h.day === d);
-      const bg = special ? special.color : isHoliday ? '#EAB308' : weekend ? '#374151' : '#1f2937';
-      return `<th style="background:${bg};color:${weekend||special||isHoliday?'#fff':'#9ca3af'};padding:4px 2px;text-align:center;font-size:9px;min-width:28px;border:1px solid #374151;">
-        <div>${DAY_SHORT[dw]}</div><div style="font-weight:bold;color:${weekend?'#f97316':'#fff'}">${d}</div>
-        ${special ? `<div style="font-size:7px;writing-mode:vertical-lr;transform:rotate(180deg);max-height:50px;overflow:hidden">${special.label}</div>` : ''}
-      </th>`;
-    }).join('');
-
-    const bodyRows = sortedRows.map(row => {
-      let skipUntil = 0;
-      const tds: string[] = [];
-      
-      for (let d = 1; d <= daysInMonth; d++) {
-        if (d < skipUntil) continue;
-        
-        const cell = cells[ck(row.id, d)];
-        const weekend = isWeekend(year, month, d);
-        const bg = cell ? cell.color : weekend ? '#1a1a2e' : 'transparent';
-        const text = cell?.label || '';
-        const textColor = cell?.textColor || '#fff';
-        const colspan = cell?.colspan || 1;
-        const fontSize = cell?.fontSize === 'xs' ? '8px' : cell?.fontSize === 'lg' ? '12px' : cell?.fontSize === 'base' ? '11px' : '10px';
-        
-        if (colspan > 1) skipUntil = d + colspan;
-        
-        tds.push(`<td ${colspan > 1 ? `colspan="${colspan}"` : ''} style="background:${bg};color:${textColor};text-align:center;font-size:${fontSize};font-weight:bold;padding:3px 1px;border:1px solid #2d3748;">${text}</td>`);
-      }
-      
-      return `<tr>
-        <td style="padding:4px 8px;font-size:10px;font-weight:600;color:#e2e8f0;border:1px solid #2d3748;white-space:nowrap;background:#111827;">${row.name}</td>
-        ${tds.join('')}
-      </tr>`;
-    }).join('');
-
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Kalendář — ${monthName} ${year}</title>
-  <style>
-    @page { size: A4 landscape; margin: 10mm; }
-    * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #0a0a14; color: #fff; margin: 0; padding: 10px; }
-    h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 4px; color: #fff; }
-    .subtitle { font-size: 10px; color: #6b7280; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; }
-    table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 9px; }
-    th { padding: 4px 2px; border: 1px solid #374151; }
-    td { padding: 3px 1px; border: 1px solid #2d3748; }
-    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #9ca3af; }
-    .legend-dot { width: 14px; height: 14px; border-radius: 3px; }
-    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-  <div class="subtitle">SPRÁVA KALENDÁŘE</div>
-  <h1>KALENDÁŘ <span style="color:#374151">${monthName.toUpperCase()}</span> ${year}</h1>
-  <table>
-    <colgroup>
-      <col style="width:140px">
-      ${days.map(() => '<col style="width:auto">').join('')}
-    </colgroup>
-    <thead>
-      <tr>
-        <th style="background:#111827;color:#6b7280;text-align:left;padding:4px 8px;border:1px solid #374151;font-size:9px;">ODDĚLENÍ</th>
-        ${headerCells}
-      </tr>
-    </thead>
-    <tbody>${bodyRows}</tbody>
-  </table>
-  ${quickValues.length > 0 ? `
-  <div class="legend">
-    ${quickValues.map(q => `<div class="legend-item"><div class="legend-dot" style="background:${q.color}"></div><strong style="color:${q.color}">${q.label}</strong>${q.desc ? ` — ${q.desc}` : ''}</div>`).join('')}
-  </div>` : ''}
-  <div style="margin-top:8px;font-size:8px;color:#4b5563;">Vytištěno: ${new Date().toLocaleString('cs-CZ')}</div>
-  <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
-</body>
-</html>`;
+    const holidays = getCzechHolidays(year);
+    const html = buildCalendarPrintHtml({
+      monthName,
+      year,
+      days: days.map(day => ({
+        day,
+        weekday: DAY_NAMES[getDayOfWeek(year, month, day)],
+        weekend: isWeekend(year, month, day),
+        holiday: holidays.some(holiday => holiday.month === month && holiday.day === day),
+        special: specialDays.find(special => special.day === day),
+      })),
+      rows: sortedRows.map(row => ({ ...row, cells: days.map(day => cells[ck(row.id, day)]) })),
+      quickValues,
+      generatedAt: new Date(),
+    });
 
     printWindow.document.write(html);
     printWindow.document.close();

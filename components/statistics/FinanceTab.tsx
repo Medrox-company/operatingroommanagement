@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   Wallet, Coins, Clock, TrendingUp, AlertTriangle, Check, X,
   Building2, DollarSign, Activity, Hourglass, Pencil,
@@ -15,12 +15,18 @@ import type { OperatingRoom } from '../../types';
 import {
   fetchNotificationsLog,
   fetchStatusHistory,
+  getDatabaseHospitalId,
   updateRoomHourlyOperatingCost,
   type NotificationLogRow,
   type StatusHistoryRow,
+  type StatusHistoryProgress,
 } from '../../lib/db';
 import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesContext';
 import { useStatisticsReport } from './StatisticsReportContext';
+import { useStatisticsPhaseHistory } from './StatisticsPhaseFilterContext';
+import { useHospital } from '../../contexts/HospitalContext';
+import { StatisticsPreloader } from './StatisticsPreloader';
+import { aggregateStatisticsProgress, INITIAL_STATISTICS_PROGRESS } from '../../lib/statistics-loading-progress';
 import { scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
@@ -445,10 +451,11 @@ export function FinanceTab({
   // Barvy fází bereme z nastavení workflow statusů — graf tak odpovídá tomu,
   // co personál vidí na sále.
   const { workflowStatuses } = useWorkflowStatusesContext();
-  const [history, setHistory] = useState<StatusHistoryRow[]>(providedHistory ?? []);
+  const { activeHospitalId } = useHospital();
+  const [storedHistory, setHistory] = useState<StatusHistoryRow[]>(providedHistory ?? []);
   const [historyLoading, setHistoryLoading] = useState(!providedHistory);
   const [historyReportError, setHistoryReportError] = useState(false);
-  const [notificationRows, setNotificationRows] = useState<NotificationLogRow[]>(providedNotifications ?? []);
+  const [storedNotificationRows, setNotificationRows] = useState<NotificationLogRow[]>(providedNotifications ?? []);
   const [specialtyAllocations, setSpecialtyAllocations] = useState<SpecialtyAllocation[]>([]);
   const [specialtyDepartments, setSpecialtyDepartments] = useState<SpecialtyDepartment[]>([]);
   const [delayDataLoading, setDelayDataLoading] = useState(true);
@@ -466,55 +473,83 @@ export function FinanceTab({
   const [editingValue, setEditingValue] = useState<string>('');
   const [savingRoomId, setSavingRoomId] = useState<string | null>(null);
   const [selectedCostRoomId, setSelectedCostRoomId] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const [historyScope, setHistoryScope] = useState<string | null>(null);
+  const [notificationScope, setNotificationScope] = useState<string | null>(null);
+  const [selectedDayScope, setSelectedDayScope] = useState<string | null>(null);
+  const [delayScope, setDelayScope] = useState<string | null>(null);
+  const [loadErrors, setLoadErrors] = useState<Record<string, string>>({});
+  const [recordProgress, setRecordProgress] = useState<Record<string, StatusHistoryProgress>>({});
+  const [scheduleProgress, setScheduleProgress] = useState<{ scope: string; value: StatusHistoryProgress } | null>(null);
+  const periodScopeKey = JSON.stringify([activeHospitalId, periodLabel]);
+  const dayScopeKey = JSON.stringify([activeHospitalId, periodLabel, localDateKey(calendarDay)]);
+  const delayScopeKey = JSON.stringify([activeHospitalId, periodLabel, localDateKey(calendarDay), 'schedule']);
+  const scopeRef = useRef({ hospitalId: activeHospitalId, periodScopeKey, dayScopeKey, delayScopeKey, calendarSelectionActive });
+  scopeRef.current = { hospitalId: activeHospitalId, periodScopeKey, dayScopeKey, delayScopeKey, calendarSelectionActive };
+  const history = providedHistory ?? (historyScope === periodScopeKey ? storedHistory : []);
+  const notificationRows = providedNotifications ?? (notificationScope === periodScopeKey ? storedNotificationRows : []);
+  const setLoadError = (scope: string, error: unknown) => setLoadErrors(current => ({ ...current,
+    [scope]: error instanceof Error ? error.message : String(error) }));
+  const clearLoadError = (scope: string) => setLoadErrors(current => { const next = { ...current }; delete next[scope]; return next; });
+  const updateProgress = (key: string, value: StatusHistoryProgress) => setRecordProgress(current => ({ ...current, [key]: value }));
 
-  // Načtení status history pro aktuální období (jen pokud nedostáno odshora)
+  // Supplied source snapshots are immediately usable; local fallbacks remain
+  // ineligible until their own hospital/period request succeeds.
   useEffect(() => {
-    if (providedHistory) {
-      setHistory(providedHistory);
-      setHistoryLoading(false);
-      setHistoryReportError(false);
+    if (view === 'rates') return;
+    const expectedHospital = activeHospitalId;
+    const expectedScope = periodScopeKey;
+    const progressKey = expectedScope + ':history';
+    if (providedHistory !== undefined) {
+      setHistoryLoading(false); setHistoryReportError(false);
       return;
     }
     let cancelled = false;
-    (async () => {
-      setHistoryLoading(true);
-      setHistoryReportError(false);
-      try {
-        const fromDate = new Date();
-        fromDate.setHours(fromDate.getHours() - PERIOD_HOURS[periodLabel]);
-        const data = await fetchStatusHistory({
-          fromDate,
-          limit: 5000,
-        });
-        if (!cancelled) setHistory(data ?? []);
-      } catch (err) {
-        console.error('[FinanceTab] failed to load status history', err);
-        if (!cancelled) {
-          setHistory([]);
-          setHistoryReportError(true);
-        }
-      } finally {
-        if (!cancelled) setHistoryLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [periodLabel, providedHistory]);
-
-  useEffect(() => {
-    if (providedNotifications) {
-      setNotificationRows(providedNotifications);
-      return;
-    }
-
-    let cancelled = false;
+    const active = () => !cancelled && expectedHospital !== null
+      && scopeRef.current.periodScopeKey === expectedScope && getDatabaseHospitalId() === expectedHospital;
+    setHistoryLoading(true); setHistoryReportError(false); setHistoryScope(null);
+    clearLoadError(progressKey); updateProgress(progressKey, INITIAL_STATISTICS_PROGRESS);
     void (async () => {
-      const toDate = new Date();
-      const fromDate = new Date(toDate.getTime() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000);
-      const rows = await fetchNotificationsLog({ fromDate, toDate, all: true });
-      if (!cancelled) setNotificationRows(rows ?? []);
+      try {
+        if (!active()) return;
+        const toDate = new Date();
+        const fromDate = new Date(toDate.getTime() - PERIOD_HOURS[periodLabel] * 3_600_000);
+        const data = await fetchStatusHistory({ fromDate, toDate, limit: 5000,
+          onProgress: value => { if (active()) updateProgress(progressKey, value); } });
+        if (!active()) return;
+        if (data === null) throw new Error('Historii finančních statistik se nepodařilo načíst.');
+        setHistory(data); setHistoryScope(expectedScope);
+      } catch (error) {
+        if (active()) { setHistoryReportError(true); setLoadError(progressKey, error); }
+      } finally { if (active()) setHistoryLoading(false); }
     })();
     return () => { cancelled = true; };
-  }, [periodLabel, providedNotifications]);
+  }, [activeHospitalId, periodScopeKey, periodLabel, providedHistory, reload, view]);
+
+  useEffect(() => {
+    if (view === 'rates' || providedNotifications !== null && providedNotifications !== undefined) return;
+    const expectedHospital = activeHospitalId;
+    const expectedScope = periodScopeKey;
+    const progressKey = expectedScope + ':notifications';
+    let cancelled = false;
+    const active = () => !cancelled && expectedHospital !== null
+      && scopeRef.current.periodScopeKey === expectedScope && getDatabaseHospitalId() === expectedHospital;
+    setNotificationScope(null); clearLoadError(progressKey);
+    updateProgress(progressKey, INITIAL_STATISTICS_PROGRESS);
+    void (async () => {
+      try {
+        if (!active()) return;
+        const toDate = new Date();
+        const fromDate = new Date(toDate.getTime() - PERIOD_HOURS[periodLabel] * 3_600_000);
+        const rows = await fetchNotificationsLog({ fromDate, toDate, all: true,
+          onProgress: value => { if (active()) updateProgress(progressKey, value); } });
+        if (!active()) return;
+        if (rows === null) throw new Error('Notifikace pro finanční statistiky se nepodařilo načíst.');
+        setNotificationRows(rows); setNotificationScope(expectedScope);
+      } catch (error) { if (active()) setLoadError(progressKey, error); }
+    })();
+    return () => { cancelled = true; };
+  }, [activeHospitalId, periodScopeKey, periodLabel, providedNotifications, reload, view]);
 
   const handleCalendarDayChange = useCallback((day: Date) => {
     const normalized = new Date(day);
@@ -526,55 +561,56 @@ export function FinanceTab({
   // Změna globálního období ruší denní filtr. Samotný klik v kalendáři pak
   // vždy načte přesný lokální kalendářní den přímo z databáze.
   useEffect(() => {
+    scopeRef.current.calendarSelectionActive = false;
     setCalendarSelectionActive(false);
-    setCalendarDay(operationalToday());
+    const today = operationalToday();
+    setCalendarDay(current => current.getTime() === today.getTime() ? current : today);
   }, [periodLabel]);
 
   useEffect(() => {
-    if (!calendarSelectionActive) return;
+    if (!calendarSelectionActive || view === 'rates') return;
     let cancelled = false;
+    const expectedHospital = activeHospitalId;
+    const expectedScope = dayScopeKey;
+    const active = () => !cancelled && expectedHospital !== null
+      && scopeRef.current.calendarSelectionActive && scopeRef.current.dayScopeKey === expectedScope
+      && getDatabaseHospitalId() === expectedHospital;
     const fromDate = new Date(calendarDay);
     fromDate.setHours(0, 0, 0, 0);
-    const toDate = new Date(fromDate);
-    toDate.setDate(toDate.getDate() + 1);
-    toDate.setMilliseconds(-1);
-
-    setSelectedDayLoading(true);
-    setSelectedDayReportKey(null);
-    setSelectedDayHistory([]);
-    setSelectedDayNotifications([]);
-
-    void Promise.all([
-      fetchStatusHistory({ fromDate, toDate, all: true }),
-      fetchNotificationsLog({ fromDate, toDate, all: true }),
-    ]).then(([statusRows, notifications]) => {
-      if (cancelled) return;
-      setSelectedDayHistory(statusRows ?? []);
-      setSelectedDayNotifications(notifications ?? []);
-      setSelectedDayReportKey(localDateKey(calendarDay));
-    }).catch(error => {
-      console.error('[FinanceTab] failed to load selected calendar day', error);
-      if (!cancelled) {
-        setSelectedDayHistory([]);
-        setSelectedDayNotifications([]);
-        toast.error('Statistiky vybraného dne se nepodařilo načíst.');
-      }
-    }).finally(() => {
-      if (!cancelled) setSelectedDayLoading(false);
-    });
-
+    const toDate = new Date(fromDate); toDate.setDate(toDate.getDate() + 1); toDate.setMilliseconds(-1);
+    setSelectedDayLoading(true); setSelectedDayReportKey(null); setSelectedDayScope(null);
+    setSelectedDayHistory([]); setSelectedDayNotifications([]);
+    clearLoadError(expectedScope);
+    updateProgress(expectedScope + ':history', INITIAL_STATISTICS_PROGRESS);
+    updateProgress(expectedScope + ':notifications', INITIAL_STATISTICS_PROGRESS);
+    void (async () => {
+      try {
+        if (!active()) return;
+        const [statusRows, notifications] = await Promise.all([
+          fetchStatusHistory({ fromDate, toDate, all: true, onProgress: value => { if (active()) updateProgress(expectedScope + ':history', value); } }),
+          fetchNotificationsLog({ fromDate, toDate, all: true, onProgress: value => { if (active()) updateProgress(expectedScope + ':notifications', value); } }),
+        ]);
+        if (!active()) return;
+        if (statusRows === null || notifications === null) throw new Error('Statistiky vybraného dne se nepodařilo načíst. Zkuste načtení znovu.');
+        setSelectedDayHistory(statusRows); setSelectedDayNotifications(notifications);
+        setSelectedDayReportKey(localDateKey(calendarDay)); setSelectedDayScope(expectedScope);
+      } catch (error) { if (active()) setLoadError(expectedScope, error); }
+      finally { if (active()) setSelectedDayLoading(false); }
+    })();
     return () => { cancelled = true; };
-  }, [calendarDay, calendarSelectionActive]);
+  }, [activeHospitalId, calendarDay, dayScopeKey, calendarSelectionActive, reload, view]);
 
-  const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? selectedDayHistory : history,
+  const daySnapshotMatches = selectedDayScope === dayScopeKey && selectedDayReportKey === localDateKey(calendarDay);
+
+  const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? daySnapshotMatches ? selectedDayHistory : [] : history,
     calendarSelectionActive ? statisticsDayWindow(calendarDay, 0) : statisticsPeriodWindow(periodLabel)),
-  [allRooms, selectedDayHistory, history, calendarSelectionActive, calendarDay, periodLabel]);
+  [allRooms, selectedDayHistory, history, daySnapshotMatches, calendarSelectionActive, calendarDay, periodLabel]);
   // Rates are configuration, including rooms that have not opened yet.
   const rooms = view === 'rates' ? allRooms : roomScope.rooms;
-  const calculationHistory = roomScope.history;
-  const calculationNotifications = useMemo(() => (calendarSelectionActive ? selectedDayNotifications : notificationRows)
+  const calculationHistory = useStatisticsPhaseHistory(roomScope.history);
+  const calculationNotifications = useMemo(() => (calendarSelectionActive ? daySnapshotMatches ? selectedDayNotifications : [] : notificationRows)
     .filter(row => Boolean(row.room_id && roomScope.roomIds.has(row.room_id))),
-  [calendarSelectionActive, selectedDayNotifications, notificationRows, roomScope]);
+  [calendarSelectionActive, daySnapshotMatches, selectedDayNotifications, notificationRows, roomScope]);
   const calculationPeriod: Period = calendarSelectionActive ? 'den' : periodLabel;
   const calculationAnchorDate = calendarSelectionActive ? calendarDay : undefined;
   const selectedDayStartMs = useMemo(() => {
@@ -583,57 +619,78 @@ export function FinanceTab({
     return start.getTime();
   }, [calendarDay]);
 
-  // Odbornost operatéra je určena výhradně rozpisem sálů v databázi. Rozpis
-  // načítáme pro všechny roky, do kterých zvolené období zasahuje.
+  // Count successfully decoded year responses, never elapsed time.
   useEffect(() => {
+    if (view === 'rates') return;
     let cancelled = false;
+    let failed = false;
     const controller = new AbortController();
-
+    const expectedHospital = activeHospitalId;
+    const expectedScope = delayScopeKey;
+    const active = () => !cancelled && expectedHospital !== null
+      && scopeRef.current.delayScopeKey === expectedScope && getDatabaseHospitalId() === expectedHospital;
+    const now = new Date();
+    const from = new Date(now.getTime() - PERIOD_HOURS[periodLabel] * 3_600_000);
+    const years = Array.from(new Set([from.getFullYear(), now.getFullYear(), calendarDay.getFullYear()]));
+    let completedYears = 0;
+    setDelayDataLoading(true); setDelayDataReportError(false); setDelayScope(null);
+    clearLoadError(expectedScope);
+    setScheduleProgress({ scope: expectedScope, value: { loaded: 0, total: years.length, complete: false } });
     void (async () => {
-      setDelayDataLoading(true);
-      setDelayDataReportError(false);
-      const now = new Date();
-      const from = new Date(now.getTime() - PERIOD_HOURS[periodLabel] * 60 * 60 * 1_000);
-      const years = Array.from(new Set([from.getFullYear(), now.getFullYear(), calendarDay.getFullYear()]));
-
       try {
+        if (!active()) return;
         const payloads = await Promise.all(years.map(async year => {
-          const response = await fetch(`/api/room-specialty-allocations?year=${year}`, {
-            credentials: 'include',
-            cache: 'no-store',
-            signal: controller.signal,
+          const response = await fetch('/api/room-specialty-allocations?year=' + year, {
+            credentials: 'include', cache: 'no-store', signal: controller.signal,
           });
           if (!response.ok) throw new Error('Rozpis odborností se nepodařilo načíst.');
-          return response.json() as Promise<{
-            allocations?: SpecialtyAllocation[];
-            departments?: SpecialtyDepartment[];
-          }>;
+          const payload = await response.json() as { allocations?: SpecialtyAllocation[]; departments?: SpecialtyDepartment[] };
+          if (!payload || !Array.isArray(payload.allocations) || !Array.isArray(payload.departments)) throw new Error('Rozpis odborností nevrátil úplná data.');
+          if (active() && !failed) {
+            completedYears += 1;
+            setScheduleProgress({ scope: expectedScope, value: { loaded: completedYears, total: years.length, complete: false } });
+          }
+          return payload;
         }));
-
-        if (cancelled) return;
-        const allocations = payloads.flatMap(payload => payload.allocations ?? []);
+        if (!active()) return;
         const departments = new Map<string, SpecialtyDepartment>();
         payloads.flatMap(payload => payload.departments ?? []).forEach(department => departments.set(department.id, department));
-        setSpecialtyAllocations(allocations);
+        setSpecialtyAllocations(payloads.flatMap(payload => payload.allocations ?? []));
         setSpecialtyDepartments(Array.from(departments.values()));
+        setDelayScope(expectedScope);
+        setScheduleProgress({ scope: expectedScope, value: { loaded: years.length, total: years.length, complete: true } });
       } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
-        console.error('[FinanceTab] failed to load specialty schedule', error);
-        if (!cancelled) {
-          setSpecialtyAllocations([]);
-          setSpecialtyDepartments([]);
-          setDelayDataReportError(true);
-        }
-      } finally {
-        if (!cancelled) setDelayDataLoading(false);
-      }
+        failed = true;
+        if (!active() || error instanceof DOMException && error.name === 'AbortError') return;
+        setDelayDataReportError(true); setLoadError(expectedScope, error);
+        controller.abort();
+      } finally { if (active()) setDelayDataLoading(false); }
     })();
+    return () => { cancelled = true; controller.abort(); };
+  }, [activeHospitalId, calendarDay, delayScopeKey, periodLabel, reload, view]);
 
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [calendarDay, periodLabel]);
+  const periodLoadError = (providedHistory === undefined ? loadErrors[periodScopeKey + ':history'] : undefined)
+    ?? (providedNotifications === null || providedNotifications === undefined ? loadErrors[periodScopeKey + ':notifications'] : undefined);
+  const selectedDayLoadError = loadErrors[dayScopeKey];
+  const scheduleLoadError = loadErrors[delayScopeKey];
+  const periodDataReady = (providedHistory !== undefined || historyScope === periodScopeKey && !historyLoading && !historyReportError)
+    && (providedNotifications !== null && providedNotifications !== undefined || notificationScope === periodScopeKey);
+  const selectedDayDataReady = daySnapshotMatches && !selectedDayLoading && !selectedDayLoadError;
+  const delayDataReady = delayScope === delayScopeKey && !delayDataLoading && !delayDataReportError;
+  const financeLoadReady = (calendarSelectionActive ? selectedDayDataReady : periodDataReady) && delayDataReady;
+  const financeLoadError = (calendarSelectionActive ? selectedDayLoadError : periodLoadError) ?? scheduleLoadError;
+  const selectedRecordKey = calendarSelectionActive ? dayScopeKey : periodScopeKey;
+  const financeRecordProgress = aggregateStatisticsProgress([
+    !calendarSelectionActive && providedHistory !== undefined
+      ? { loaded: providedHistory.length, total: providedHistory.length, complete: true }
+      : recordProgress[selectedRecordKey + ':history'] ?? INITIAL_STATISTICS_PROGRESS,
+    !calendarSelectionActive && providedNotifications !== null && providedNotifications !== undefined
+      ? { loaded: providedNotifications.length, total: providedNotifications.length, complete: true }
+      : recordProgress[selectedRecordKey + ':notifications'] ?? INITIAL_STATISTICS_PROGRESS,
+  ]);
+  financeRecordProgress.complete = calendarSelectionActive ? selectedDayDataReady : Boolean(periodDataReady);
+  const financeScheduleProgress = scheduleProgress?.scope === delayScopeKey
+    ? { ...scheduleProgress.value, complete: delayDataReady } : INITIAL_STATISTICS_PROGRESS;
 
   // ── Per-room hodiny provozu spočítané z reálných duration_seconds ─────
   const roomBusyHours = useMemo(() => {
@@ -1310,7 +1367,7 @@ export function FinanceTab({
   const reportScope = calendarSelectionActive
     ? `Kalendářní den ${calendarDay.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}, od 00:00 do 24:00. Filtr vybírá události podle času záznamu; délky fází se omezují na pracovní dobu sálu, nikoli na hranici kalendářního dne.`
     : `Vybrané období: ${periodLabel}. Výpočty používají načtenou historii tohoto období a nastavenou pracovní dobu sálů.`;
-  const financeReportReady = !delayDataLoading && !delayDataReportError && (
+  const financeReportReady = financeLoadReady && !financeLoadError && !delayDataLoading && !delayDataReportError && (
     calendarSelectionActive
       ? !selectedDayLoading && selectedDayReportKey === localDateKey(calendarDay)
       : !historyLoading && !historyReportError
@@ -1348,6 +1405,7 @@ export function FinanceTab({
       },
     ],
   } : !financeReportReady ? null : {
+    periodLabel: calendarSelectionActive ? reportScope : undefined,
     context: [
       reportScope,
       STATISTICS_ROOM_SCOPE_NOTE,
@@ -1544,6 +1602,27 @@ export function FinanceTab({
       </div>
     );
   }
+
+  // Keep the date selection available while every required local source is
+  // still pending or failed; no incomplete values are presented as zero costs.
+  if (!financeLoadReady || financeLoadError) return <div className="flex flex-col gap-4">
+    <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <GlassCalendar value={calendarDay} onChange={handleCalendarDayChange} heat={financeCalendarHeat} accent={C.accent} today={operationalToday()} />
+      <div className="flex flex-col gap-4">
+        <Card title={calendarSelectionActive ? 'Finance vybraného dne' : 'Finanční statistiky'}>
+          <p className="text-xs" style={{ color: C.muted }}>Výsledky se zobrazí po načtení historie, notifikací a rozpisu odborností.</p>
+          {calendarSelectionActive && <button type="button" className="mt-3 min-h-11 rounded-lg border px-3 text-xs" style={{ color: C.text, borderColor: C.border }}
+            onClick={() => setCalendarSelectionActive(false)}>Zpět na období: {periodLabel}</button>}
+        </Card>
+        {financeLoadError ? <Card><p role="alert" className="text-sm" style={{ color: C.red }}>{financeLoadError}</p>
+          <button type="button" className="mt-3 min-h-11 rounded-lg border px-3 text-xs" style={{ color: C.text, borderColor: C.border }} onClick={() => setReload(value => value + 1)}>Zkusit znovu</button>
+        </Card> : <>
+          {!(calendarSelectionActive ? selectedDayDataReady : periodDataReady) && <StatisticsPreloader progress={financeRecordProgress} label={calendarSelectionActive ? 'Načítám finanční data vybraného dne…' : 'Načítám finanční data období…'} />}
+          {!delayDataReady && <StatisticsPreloader compact progress={financeScheduleProgress} label="Načítám rozpis odborností…" unitName="ročních rozpisů" />}
+        </>}
+      </div>
+    </div>
+  </div>;
 
   // ─────────────────────────────────────────────────────────────────────
   return (

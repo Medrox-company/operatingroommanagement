@@ -131,6 +131,7 @@ function financeData(overrides = {}) {
     savingRoomId: null, editingRoomId: null, calendarDay: new Date(2026, 8, 12), calendarSelectionActive: false,
     historyLoading: false, historyReportError: false, delayDataLoading: false, delayDataReportError: false,
     selectedDayLoading: false, selectedDayReportKey: null,
+    financeLoadReady: true, financeLoadError: undefined,
     ...overrides,
   };
 }
@@ -171,7 +172,7 @@ test('Finance custom days require matching committed data; loading and errors re
   for (const state of [{ selectedDayLoading: true }, { selectedDayReportKey: null }, { selectedDayReportKey: '2026-09-11' }, { delayDataLoading: true }, { delayDataReportError: true }]) {
     assert.equal(capture('FinanceTab', { ...selected, ...state }).report, null, JSON.stringify(state));
   }
-  for (const state of [{ historyLoading: true }, { historyReportError: true }]) {
+  for (const state of [{ historyLoading: true }, { historyReportError: true }, { financeLoadReady: false }, { financeLoadError: 'History read failed' }]) {
     assert.equal(capture('FinanceTab', financeData(state)).report, null);
   }
   assert.notEqual(capture('FinanceTab', financeData({ view: 'rates', historyLoading: true, delayDataLoading: true })).report, null,
@@ -193,6 +194,7 @@ test('Sály exports every sorted room and phase with selected operational-day co
     phaseRings: Array.from({ length: 7 }, (_, index) => ({ label: `Fáze ${index + 1}`, detail: '60 min', percent: 14.3 })),
     insights: [],
   };
+  data.roomsData = data.sortedRooms;
   const { tab, report } = capture('RoomsTab', data);
   assert.equal(tab, 'saly');
   assert.equal(report.requiredHistoryFrom, data.selectedDayBounds.start.toISOString());
@@ -202,12 +204,14 @@ test('Sály exports every sorted room and phase with selected operational-day co
   assert.equal(section(report, 'Výkonnost všech operačních sálů').rows[0][0], 'Sál 8');
   assert.equal(section(report, 'Výkonnost všech operačních sálů').rows[0][3], '—');
   assert.equal(section(report, 'Čas naměřených provozních fází').rows.length, 7);
-  assert.match(section(report, 'Aktuální stav sálů').description, /není historickým snímkem/);
+  assert.equal(metric(report, 'Sálů se zaznamenaným provozem'), 8);
+  assert.equal(report.sections.some(item => item.title === 'Aktuální stav sálů'), false);
+  assert.doesNotMatch(JSON.stringify(report), /Aktuální stav|Volný|Obsazený/);
   assert.match(capture('RoomsTab', { ...data, calendarSelectionActive: false }).report.context, /Vybrané období: rok/);
   validateTables(report);
 });
 
-test('Fáze keeps all aggregate rows, cumulative time and current assignments with truthful date scope', () => {
+test('Fáze keeps all historical aggregate rows and cumulative time without current assignments', () => {
   const workflowSteps = Array.from({ length: 7 }, (_, index) => ({ title: `Fáze ${index + 1}`, organizer: 'Personál' }));
   const data = {
     calendarSelectionActive: true, calendarDay: new Date(2026, 8, 12), periodLabel: 'rok',
@@ -222,7 +226,8 @@ test('Fáze keeps all aggregate rows, cumulative time and current assignments wi
   const table = section(report, 'Úplný přehled fází operačního cyklu');
   assert.equal(table.rows.length, 7);
   assert.equal(table.rows[6][4], '70 min');
-  assert.match(section(report, 'Aktuální rozložení sálů v cyklu').rows[0][2], /Sál 8/);
+  assert.equal(report.sections.some(item => item.title === 'Aktuální rozložení sálů v cyklu'), false);
+  assert.doesNotMatch(JSON.stringify(report), /Aktuální rozložení|Sál 8/);
   assert.match(capture('PhasesTab', { ...data, calendarSelectionActive: false }).report.context, /Vybrané období: rok/);
   validateTables(report);
 });

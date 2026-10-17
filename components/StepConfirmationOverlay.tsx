@@ -79,11 +79,7 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
 
   return (
     <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="step-confirm-title"
-        aria-describedby={isShortInterval ? 'step-short-interval-warning' : undefined}
-        className="absolute inset-0 z-[200] flex items-center justify-center overflow-hidden"
+        className="step-confirm-overlay absolute inset-0 z-[200] flex items-center justify-center overflow-hidden"
       >
         {/* Průsvitné sklo ponechá čitelnou atmosféru detailu sálu pod dialogem. */}
         <div className="absolute inset-0 step-confirm-bg mobile-theme-surface" />
@@ -100,7 +96,13 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
         />
 
         {/* ── Mobil: dialog uprostřed obrazovky, akce ve dvou boxech ─────── */}
-        <div className="msc-dialog md:hidden">
+        <div
+          className="msc-dialog md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="step-confirm-title-mobile"
+          aria-describedby={isShortInterval ? 'step-short-interval-warning-mobile' : undefined}
+        >
           <p className="msc-kicker">Potvrzení přechodu</p>
           <h2 id="step-confirm-title-mobile" className="msc-title room-name-nobreak">
             {isReset ? 'Nový cyklus' : pendingStep?.name || 'Další fáze'}
@@ -144,7 +146,13 @@ const StepConfirmationOverlay: React.FC<StepConfirmationOverlayProps> = ({
         </div>
 
         {/* ── Desktop: původní dva disky ──────────────────────────────────── */}
-        <div className="hidden md:flex flex-col items-center relative z-10 px-4 w-full">
+        <div
+          className="hidden md:flex flex-col items-center relative z-10 px-4 w-full"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="step-confirm-title"
+          aria-describedby={isShortInterval ? 'step-short-interval-warning' : undefined}
+        >
 
           {/* Záhlaví */}
           <div className="text-center">

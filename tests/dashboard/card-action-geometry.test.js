@@ -18,6 +18,7 @@ function declarations(selector) {
 const control = declarations('.dashboard-workspace-card-corner-control');
 const emergency = declarations('.dashboard-workspace-card-emergency');
 const lock = declarations('.dashboard-workspace-card-lock');
+const statusRail = declarations('.dashboard-room-status-rail');
 
 test('emergency and lock retain the same subtle neon glow and white icon on hover and activation', () => {
   for (const [name, rgb] of [['emergency', '239, 68, 68'], ['lock', '245, 158, 11']]) {
@@ -60,6 +61,21 @@ test('action geometry follows the current CSS and normalized SVG pocket', () => 
     'hover must not move controls into the card outline');
   assert.ok(read('components/RoomCard.tsx').includes('V 508 A 82 82 0 0 1 898 590 H 760 A 84 84 0 0 0 676 674 A 76 76 0 0 1 600 750'),
     'update geometric verification if the visible SVG pocket changes');
+});
+
+test('patient and notification circles sit slightly right of the lower action centerline without clipping', () => {
+  const actionMidpoint = (parseFloat(emergency.left) + parseFloat(lock.left)) / 2;
+  assert.ok(parseFloat(statusRail.left) > actionMidpoint);
+  assert.equal(statusRail.left, '88%');
+  for (const width of [250, 280, 320, 480, 700]) {
+    const badgeSize = Math.min(38, Math.max(28, width * 0.08));
+    const rightEdge = width * parseFloat(statusRail.left) / 100 + badgeSize + 2;
+    assert.ok(rightEdge <= width, `${width}px card keeps two badges inside its right edge`);
+  }
+  assert.match(statusRail.top, /clamp\(14px, 5cqw, 26px\)/);
+  assert.equal(statusRail['pointer-events'], 'none', 'read-only badges do not intercept room opening');
+  assert.equal(declarations('.dashboard-workspace-card .dashboard-workspace-card-header--with-indicators')['padding-right'], '28%');
+  assert.equal(declarations('.dashboard-room-status-rail > .dashboard-room-status-indicator')['border-radius'], '50%');
 });
 
 test('continuous resize keeps touch targets separated and outside the card silhouette', () => {

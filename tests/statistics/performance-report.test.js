@@ -66,7 +66,7 @@ function harness({ history = [], rooms = [room('a')], names = DEFAULT_NAMES, wor
   let report;
   let tree;
   const workflowState = { workflowStatuses: names.map(name => ({ name })), loading: false, error: null, refreshStatuses: () => {}, ...workflow };
-  const react = { ...React, useMemo: factory => factory(), useState(initial) {
+  const react = { ...React, useMemo: factory => factory(), useEffect: () => {}, useRef: value => ({ current: value }), useState(initial) {
     const index = cursor++;
     if (!(index in state)) state[index] = typeof initial === 'function' ? initial() : initial;
     return [state[index], next => { state[index] = typeof next === 'function' ? next(state[index]) : next; }];
@@ -76,9 +76,12 @@ function harness({ history = [], rooms = [room('a')], names = DEFAULT_NAMES, wor
     'lucide-react': Object.fromEntries(['AlertCircle', 'RefreshCw', ...METRIC_ICONS].map(name => [name, name])),
     recharts: Object.fromEntries(['CartesianGrid', 'Line', 'LineChart', 'ResponsiveContainer', 'Tooltip', 'XAxis', 'YAxis'].map(name => [name, name])),
     '../../contexts/WorkflowStatusesContext': { useWorkflowStatusesContext: () => workflowState },
+    '../../contexts/HospitalContext': { useHospital: () => ({ activeHospitalId: 'hospital-a' }) },
+    '../../lib/db': { fetchStatusHistory: async () => history },
     '../../lib/statistics-performance': model.exports,
     './StatisticsReportContext': { useStatisticsReport: (tab, payload) => { assert.equal(tab, 'vykonnost'); report = payload; } },
     './PerformancePreloader': { PerformancePreloader: 'PerformancePreloader' },
+    './AppCharts': { GlassCalendar: 'GlassCalendar' },
     './shared': { Card: 'article', C: {} },
     './performance-tab.css': {},
     './performance-preloader.css': {},
@@ -319,23 +322,14 @@ test('a tiny positive duration displays zero whole minutes with a count, while u
   assert.equal(definitions(fixture)[1][2], 0);
 });
 
-test('closed-month summaries and minute changes are whole numbers without a signed rounded zero', () => {
-  for (const [julySeconds, augustSeconds, expectedDelta] of [[30, 120, '+2 min'], [120, 30, '−2 min'], [89, 90, '0 min']]) {
-    const fixture = harness({ history: [
-      ['july', '2026-07-07T08:05:00Z', julySeconds],
-      ['august', '2026-08-07T08:05:00Z', augustSeconds],
-    ].flatMap(([id, start, seconds]) => cycle(id, 'a', start, [
-      ['Příjezd na sál', 60], ['Chirurgický výkon', seconds], ['Ukončení výkonu', 60], ['Odjezd ze sálu', 60], ['Úklid sálu', 60],
-    ])) });
-    fixture.clickBox('Chirurgický výkon');
-    const overview = elements(fixture.tree, node => hasClass(node, 'stats-performance-overview'))[0];
-    assert.equal(textContent(elements(overview, node => hasClass(node, 'stats-performance-overview-value'))[0]), `${Math.round(augustSeconds / 60)} min`);
-    const p90 = elements(overview, node => node.type === 'div').find(node => elements(node, child => child.type === 'dt').some(child => textContent(child) === '90. percentil'));
-    assert.equal(textContent(elements(p90, node => node.type === 'dd')[0]), `${Math.round(augustSeconds / 60)} min`);
-    const delta = textContent(elements(overview, node => node.props.role === 'status')[0]);
-    assert.ok(delta.includes(`: ${expectedDelta} (`), delta);
-    assert.doesNotMatch(delta, /[+−]0 min|\d,\d+ min/);
-  }
+test('sidebar begins with data selection and the shared calendar while all five metric boxes remain', () => {
+  const fixture = harness();
+  assert.equal(elements(fixture.tree, node => hasClass(node, 'stats-performance-overview')).length, 0);
+  assert.equal(fixture.boxes.length, 5);
+  const sidebar = elements(fixture.tree, node => node.type === 'aside')[0];
+  const children = React.Children.toArray(sidebar.props.children);
+  assert.equal(children[0].props.title, 'Výběr dat');
+  assert.equal(elements(children[1], node => node.type === 'GlassCalendar').length, 1);
 });
 
 test('synthetic-only database history never appears as measured values in boxes or exported report', () => {
@@ -401,7 +395,7 @@ test('workflow loading reaches the preloader and still prevents exporting incomp
     const fixture = harness({ workflow: { loading: true }, props: { isLoading: false, loadedAt, loadingProgress: progress } });
     const loaders = elements(fixture.tree, node => node.type === 'PerformancePreloader');
     assert.equal(loaders.length, 1);
-    assert.deepEqual(loaders[0].props.progress, progress);
+    assert.deepEqual(loaders[0].props.progress, { ...progress, complete: false });
     assert.equal(loaders[0].props.workflowLoading, true);
     assert.equal(Boolean(loaders[0].props.compact), Boolean(loadedAt));
     assert.equal(fixture.report, null);

@@ -57,10 +57,10 @@ export function RoomMetricsTable({ rows }: { rows: RoomMetricsRow[] }) {
                 <td>
                   {row.utilization === null ? <span className={styles.empty}>—</span> : (
                     <span className={styles.utilization}>
+                      <span className={styles.percent} style={{ color: row.utilizationColor }}>{row.utilization}<span className={styles.unit}> %</span></span>
                       <span className={styles.track} aria-hidden="true">
                         <span style={{ width: `${Math.max(0, Math.min(100, row.utilization))}%`, background: row.utilizationColor }} />
                       </span>
-                      <span className={styles.percent} style={{ color: row.utilizationColor }}>{row.utilization}<span className={styles.unit}> %</span></span>
                     </span>
                   )}
                 </td>
@@ -69,7 +69,7 @@ export function RoomMetricsTable({ rows }: { rows: RoomMetricsRow[] }) {
                 <td className={styles.numeric}>
                   {row.pausedMinutes > 0 ? <span style={{ color: C.yellow }}>{row.pausedMinutes}<span className={styles.unit}> min</span></span> : <span className={styles.empty}>—</span>}
                 </td>
-                <td className={styles.numeric}>
+                <td className={`${styles.numeric} ${styles.capacity}`}>
                   {row.activeMinutes}<span className={styles.unit}> / </span>{row.capacityMinutes ?? '—'}<span className={styles.unit}> min</span>
                 </td>
                 <td className={styles.numeric}>

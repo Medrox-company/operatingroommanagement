@@ -16,6 +16,7 @@ import {
 } from './shared';
 import { GlassCalendar } from './AppCharts';
 import { useStatisticsReport } from './StatisticsReportContext';
+import { useStatisticsPhaseHistory } from './StatisticsPhaseFilterContext';
 import { scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -273,7 +274,7 @@ export function PhasesTab({
     calendarSelectionActive ? statisticsDayWindow(calendarDay) : statisticsPeriodWindow(periodLabel)),
   [allRooms, allStatusHistory, calendarHistory, calendarSelectionActive, calendarDay, periodLabel]);
   const rooms = roomScope.rooms;
-  const statusHistory = roomScope.history;
+  const statusHistory = useStatisticsPhaseHistory(roomScope.history);
 
   const selectedDayHistory = useMemo(() => {
     if (!calendarSelectionActive) return [];
@@ -407,13 +408,14 @@ export function PhasesTab({
     : periodLabel;
 
   useStatisticsReport('faze', {
+    periodLabel: calendarSelectionActive ? `${activePeriodLabel} · provozní den 07:00–07:00` : undefined,
     requiredHistoryFrom: calendarSelectionActive ? statisticsDayWindow(calendarDay).start.toISOString() : undefined,
     context: [
       STATISTICS_ROOM_SCOPE_NOTE,
       calendarSelectionActive
         ? `Provozní den ${activePeriodLabel}, od 07:00 do 07:00 následujícího dne. Denní filtr používá čas záznamu události v již načtené historii; délky fází nejsou oříznuté na hranici dne.`
         : `Vybrané období: ${periodLabel}.`,
-      'Klidový stav Sál připraven je z operačního cyklu vynechán. Průměrný cyklus je součet průměrných délek fází; počty a přiřazení sálů jsou aktuální stav při sestavení reportu.',
+      'Klidový stav Sál připraven je z operačního cyklu vynechán. Průměrný cyklus je součet průměrných délek doložených fází.',
     ].join(' '),
     metrics: [
       { label: 'Průměrný cyklus', value: `${formatNumber(Math.round(avgCycleDuration))} min`, detail: 'Součet průměrných délek fází' },
@@ -421,7 +423,6 @@ export function PhasesTab({
       { label: 'Nejrychlejší fáze', value: `${formatNumber(Math.round(avgStepDurations[shortestPhaseIdx] || 0))} min`, detail: workflowSteps[shortestPhaseIdx]?.title || 'Bez dat' },
       { label: 'Fází cyklu', value: cyclePhaseIndices.length },
       { label: 'Operačních sálů', value: rooms.length },
-      { label: 'Aktuálně obsazených fází cyklu', value: cyclePhaseIndices.filter(index => roomsPerPhase[index] > 0).length },
     ],
     sections: [
       {
@@ -447,17 +448,6 @@ export function PhasesTab({
               : duration > 0 && index === shortestPhaseIdx ? 'Nejkratší fáze' : 'Standardní průběh',
           ];
         }),
-        emptyMessage: 'Nejsou nastavené žádné fáze operačního cyklu.',
-      },
-      {
-        title: 'Aktuální rozložení sálů v cyklu',
-        description: 'Počty sálů vycházejí z jejich aktuální fáze; nejde o historické rozložení ve vybraném dni nebo období.',
-        columns: [{ label: 'Fáze' }, { label: 'Počet sálů', align: 'right' }, { label: 'Operační sály' }],
-        rows: cyclePhaseIndices.map(index => [
-          workflowSteps[index].title,
-          roomsPerPhase[index],
-          rooms.filter(room => room.currentStepIndex === index).map(room => room.name).join(', ') || '—',
-        ]),
         emptyMessage: 'Nejsou nastavené žádné fáze operačního cyklu.',
       },
     ],

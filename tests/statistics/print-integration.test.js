@@ -36,6 +36,10 @@ const tabLabelMap = loadExpression(initializer('tabLabelMap'));
 const periodLabelMap = loadExpression(initializer('periodLabelMap'));
 const labels = ['Přehled', 'Finance', 'Sazby', 'Sály', 'Fáze', 'Výkonnost', 'Notifikace', 'Zařízení'];
 const payload = marker => ({ context: marker, metrics: [], sections: [] });
+const phaseFilter = {};
+new Function('exports', ts.transpileModule(readFileSync(new URL('../../lib/statistics-phase-filter.ts', import.meta.url), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText)(phaseFilter);
 
 function printer(overrides = {}) {
   const opened = [];
@@ -64,6 +68,15 @@ function printer(overrides = {}) {
   const exportCsv = loadExpression(initializer('handleExportCsv'), scope);
   return { print, exportCsv, opened, exported, errors, reports, overview, overviewBuilds: () => overviewBuilds };
 }
+
+test('the exact local calendar filter labels both PDF and CSV instead of the outer rolling period', () => {
+  const fixture = printer({ tab: 'vykonnost' });
+  fixture.reports.vykonnost.periodLabel = '7. září 2026 · Europe/Prague · kalendářní den';
+  fixture.print();
+  fixture.exportCsv();
+  assert.equal(fixture.opened[0][1].periodLabel, fixture.reports.vykonnost.periodLabel);
+  assert.equal(fixture.exported[0][1].periodLabel, fixture.reports.vykonnost.periodLabel);
+});
 
 test('registry cleanup cannot remove a newer report or another tab', () => {
   const reportData = { current: {} };
@@ -142,9 +155,10 @@ test('source errors block only dependent tabs, so missing Devices permission can
     const reportSourceErrors = { statusHistory: null, dayHistory: null, notifications: null, devices: null };
     reportSourceErrors[failedSource] = `Zdroj ${failedSource} se nepodařilo načíst.`;
     for (const tab of Object.keys(tabLabelMap)) {
-      const statisticsError = loadExpression(initializer('statisticsError'), { reportSources, reportSourceErrors, tab });
+      const needsWorkflow = loadExpression(initializer('needsWorkflow'), { tab });
+      const statisticsError = loadExpression(initializer('statisticsError'), { reportSources, reportSourceErrors, tab, needsWorkflow, workflowError: null });
       const blocked = blockedTabs.includes(tab);
-      assert.equal(statisticsError, blocked ? reportSourceErrors[failedSource] : undefined, `${failedSource} → ${tab}`);
+      assert.equal(statisticsError, blocked ? reportSourceErrors[failedSource] : null, `${failedSource} → ${tab}`);
       const fixture = printer({ tab, statisticsError });
       fixture.print();
       assert.equal(fixture.opened.length, blocked ? 0 : 1, `${tab} print eligibility after ${failedSource} failure`);
@@ -152,7 +166,33 @@ test('source errors block only dependent tabs, so missing Devices permission can
     }
   }
   const reportSourceErrors = Object.fromEntries(Object.keys(affectedTabs).map(key => [key, 'Nedostupný zdroj']));
-  assert.equal(loadExpression(initializer('statisticsError'), { reportSources, reportSourceErrors, tab: 'sazby' }), undefined);
+  assert.equal(loadExpression(initializer('statisticsError'), { reportSources, reportSourceErrors, tab: 'sazby', needsWorkflow: false, workflowError: null }), null);
+});
+
+test('workflow loading and failures block only reports that depend on phase definitions', () => {
+  const reportSources = loadExpression(initializer('reportSources'));
+  const reportSourceErrors = { statusHistory: null, dayHistory: null, notifications: null, devices: null };
+  const reportSourceLoading = { statusHistory: false, dayHistory: false, notifications: false, devices: false };
+  for (const tab of Object.keys(tabLabelMap)) {
+    const needsWorkflow = loadExpression(initializer('needsWorkflow'), { tab });
+    const blocked = ['prehled', 'saly', 'faze'].includes(tab);
+    assert.equal(needsWorkflow, blocked);
+    const statisticsError = loadExpression(initializer('statisticsError'), {
+      reportSources, reportSourceErrors, tab, needsWorkflow, workflowError: 'Definice fází se nepodařilo načíst.',
+    });
+    assert.equal(statisticsError, blocked ? 'Definice fází se nepodařilo načíst.' : null);
+    const isStatisticsLoading = loadExpression(initializer('isStatisticsLoading'), {
+      reportSources, reportSourceLoading, tab, needsWorkflow, workflowLoading: true,
+    });
+    assert.equal(isStatisticsLoading, blocked);
+    for (const state of [{ statisticsError }, { isStatisticsLoading }]) {
+      const fixture = printer({ tab, ...state });
+      fixture.print();
+      fixture.exportCsv();
+      assert.equal(fixture.opened.length, blocked ? 0 : 1, `${tab}: print requires its own workflow definitions only`);
+      assert.equal(fixture.exported.length, blocked ? 0 : 1, `${tab}: CSV uses the same readiness gate`);
+    }
+  }
 });
 
 test('loading, source errors, missing reports and null reports block preview creation', () => {
@@ -221,6 +261,7 @@ function overviewFixture(overrides = {}) {
   };
   const scope = {
     metricsDay, period: 'týden', periodLabelMap, rooms, dayRooms: rooms, dayHistory, statusHistory,
+    statisticsPhaseFilterNote: phaseFilter.statisticsPhaseFilterNote, excludeShortPhases: false,
     STATISTICS_ROOM_SCOPE_NOTE: roomScope.STATISTICS_ROOM_SCOPE_NOTE,
     dayBounds: day => {
       assert.equal(day, metricsDay);
@@ -252,8 +293,50 @@ function overviewFixture(overrides = {}) {
     overviewInsights: [{ title: 'Zjištění', text: 'Doporučení' }],
     ...overrides,
   };
+  scope.dayPhaseNote = overrides.dayPhaseNote ?? loadExpression(initializer('dayPhaseNote'), {
+    dayPhaseSummary: { withoutWorkingHours: false },
+  });
   return { report: loadExpression(initializer('buildOverviewReport'), scope)(), scope, dayCalls, periodCalls, durationInputs };
 }
+
+test('Overview summary and historical report share clipped phase shares with a 100 percent total', () => {
+  const dayPhases = {};
+  new Function('exports', ts.transpileModule(readFileSync(new URL('../../lib/statistics-day-phases.ts', import.meta.url), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText)(dayPhases);
+  const start = new Date(2026, 8, 10, 7);
+  const end = new Date(2026, 8, 11, 7);
+  const room = { id: 'measured-room' };
+  const history = [
+    { id: 'phase-a', operating_room_id: room.id, event_type: 'step_change', timestamp: new Date(2026, 8, 10, 8).toISOString(), duration_seconds: 3600, step_name: 'A' },
+    { id: 'phase-b', operating_room_id: room.id, event_type: 'step_change', timestamp: new Date(2026, 8, 10, 9).toISOString(), duration_seconds: 3600, step_name: 'B' },
+    { id: 'phase-c', operating_room_id: room.id, event_type: 'step_change', timestamp: new Date(2026, 8, 11, 8).toISOString(), duration_seconds: 7200, step_name: 'C' },
+    { id: 'idle', operating_room_id: room.id, event_type: 'step_change', timestamp: new Date(2026, 8, 10, 7).toISOString(), duration_seconds: 86400, step_name: 'Sál připraven' },
+  ];
+  const memo = fn => fn();
+  const summary = loadExpression(initializer('dayPhaseSummary'), {
+    useMemo: memo, statisticsDayPhaseSummary: (...args) => dayPhases.statisticsDayPhaseSummary(...args, { now: end }),
+    dayHistory: history, dayRooms: [room], WORKFLOW_STEPS: [], dayBounds: () => ({ start, end }), metricsDay: start,
+  });
+  // A known completion can end after the selected day, while only its overlap counts.
+  // Allow that completion's timestamp in the shared helper's clock.
+  const completeSummary = dayPhases.statisticsDayPhaseSummary(history, [room], [], { start, end }, { now: new Date(2026, 8, 11, 12) });
+  assert.equal(summary.totalMilliseconds, 7200000);
+  assert.equal(completeSummary.totalMilliseconds, 10800000);
+  const rings = loadExpression(initializer('dayPhaseRings'), {
+    useMemo: memo, dayPhaseSummary: completeSummary, fmtDurationMin: min => `${min} min`,
+  });
+  const note = loadExpression(initializer('dayPhaseNote'), { dayPhaseSummary: completeSummary });
+  const { report } = overviewFixture({ dayPhaseRings: rings, dayPhaseNote: note });
+  const section = report.sections.find(item => item.title === 'Fáze operačního cyklu ve vybraném dni');
+  assert.equal(rings.reduce((total, phase) => total + phase.percent, 0), 100);
+  assert.deepEqual(section.rows, rings.map(phase => [phase.label, phase.detail, `${phase.percent} %`]));
+  assert.match(section.description, /součet 100 %/);
+  assert.equal(section.description, note);
+  assert.doesNotMatch(section.description, /nemusí/);
+  assert.match(note, /bez určené pracovní doby/);
+  assert.match(source, /\{dayPhaseNote\}/, 'The visible summary uses the same explanation as the report');
+});
 
 test('Overview forwards the selected day and period separately and preserves minute units', () => {
   const { report, scope, dayCalls, periodCalls, durationInputs } = overviewFixture();
@@ -273,7 +356,9 @@ test('Overview forwards the selected day and period separately and preserves min
   assert.equal(new Set(dayCalls).size, 15);
   const period = section(`Souhrn za období: ${periodLabelMap['týden']}`);
   assert.equal(period.rows.length, 15);
-  assert.deepEqual(period.rows[0], ['Sál č. 1', 12, '77 %', 'Aktuální stav 0']);
+  assert.deepEqual(period.rows[0], ['Sál č. 1', 12, '77 %']);
+  assert.equal(period.columns.length, 3);
+  assert.equal(period.columns.some(column => column.label === 'Aktuální stav'), false);
   assert.equal(new Set(periodCalls).size, 15);
   assert.deepEqual(section('Fáze operačního cyklu ve vybraném dni').rows, [['Řez → Šití', '2 h 10 min', '25,5 %']]);
   assert.deepEqual(section('Fáze vybraného výkonu: Výkon 15').rows, [['Anestezie', '2 min'], ['Operace', '60 min']]);
@@ -294,7 +379,7 @@ test('Overview includes all departments, available daily history and weekday row
   assert.equal(report.sections.some(item => item.title.startsWith('Fáze vybraného výkonu:')), false);
 });
 
-test('Overview qualifies daily utilization and distinguishes current emergency rooms from historical events', () => {
+test('Overview qualifies daily utilization and excludes current emergency rooms from historical exports', () => {
   const { report } = overviewFixture({
     period: 'den',
     overviewInsights: [
@@ -307,10 +392,25 @@ test('Overview qualifies daily utilization and distinguishes current emergency r
   assert.match(period.description, /aktuálnímu provoznímu dni od 07:00, nikoli k posuvným 24 hodinám/);
   const insights = report.sections.find(item => item.title === 'Provozní doporučení').rows;
   assert.deepEqual(insights[0], ['Využití vybraného dne', 'Keep the actual day insight']);
-  assert.equal(insights.length, 2);
-  assert.equal(insights[1][0], 'Aktuální nouzový režim');
-  assert.match(insights[1][1], /^0 sálů/);
-  assert.match(insights[1][1], /okamžiku vytvoření reportu/);
+  assert.equal(insights.length, 1);
+  assert.doesNotMatch(JSON.stringify(report), /Aktuální nouzový režim|Historical event count|Historical period advice|okamžiku vytvoření reportu/);
+});
+
+test('Overview report callback has no current clinical-state access and documents the active measurement filter', () => {
+  const callback = initializer('buildOverviewReport');
+  const forbidden = new Set(['status', 'isEmergency', 'isLocked', 'isPaused', 'currentStepIndex', 'staff', 'currentPatient']);
+  const accesses = [];
+  function visit(node) {
+    if (ts.isPropertyAccessExpression(node) && forbidden.has(node.name.text)) accesses.push(node.getText(parsed));
+    if (ts.isCallExpression(node) && ['roomStatusLabel', 'roomStatusColor'].includes(node.expression.getText(parsed))) accesses.push(node.getText(parsed));
+    ts.forEachChild(node, visit);
+  }
+  visit(callback);
+  assert.deepEqual(accesses, []);
+  for (const excludeShortPhases of [false, true]) {
+    const { report } = overviewFixture({ excludeShortPhases, roomStatusLabel: () => assert.fail('A historical report must not read the current status') });
+    assert.ok(report.context.includes(phaseFilter.statisticsPhaseFilterNote(excludeShortPhases)));
+  }
 });
 
 test('print shortcut routes Ctrl/Cmd+P to the latest handler without hijacking unrelated keys', () => {

@@ -24,6 +24,7 @@ import {
 import { GlassCalendar, InsightPanel } from './AppCharts';
 import type { InsightItem } from './AppCharts';
 import { useStatisticsReport } from './StatisticsReportContext';
+import { useStatisticsPhaseHistory } from './StatisticsPhaseFilterContext';
 import { hasStatisticsRoomCapacity, scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -262,7 +263,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
     calendarSelectionActive ? statisticsDayWindow(calendarDay) : statisticsPeriodWindow(periodLabel)),
   [allRooms, calendarHistory, statusHistory, calendarSelectionActive, calendarDay, periodLabel]);
   const rooms = roomScope.rooms;
-  const analysisHistory = roomScope.history;
+  const analysisHistory = useStatisticsPhaseHistory(roomScope.history);
   const calendarMinDate = useMemo(() => {
     const day = operationalToday();
     day.setDate(day.getDate() - 30);
@@ -315,7 +316,8 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
           && timestamp < selectedDayBounds.end.getTime();
       });
       const opDurations = roomHistory
-        .filter(h => h.step_name === 'Operace' || h.step_name === 'Zákrok')
+        .filter(h => h.event_type === 'step_change' && (h.step_name === 'Operace' || h.step_name === 'Zákrok')
+          && typeof h.duration_seconds === 'number' && Number.isFinite(h.duration_seconds) && h.duration_seconds > 0)
         .map(h => h.duration_seconds ?? 0);
       const avgOpTime = opDurations.length > 0
         ? (opDurations.reduce((a, b) => a + b, 0) / opDurations.length) / 60
@@ -530,13 +532,14 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
     : busyCount;
 
   useStatisticsReport('saly', {
+    periodLabel: calendarSelectionActive ? `${selectedDayLabel} · provozní den 07:00–07:00` : undefined,
     requiredHistoryFrom: calendarSelectionActive ? selectedDayBounds.start.toISOString() : undefined,
     context: [
       STATISTICS_ROOM_SCOPE_NOTE,
       calendarSelectionActive
         ? `Provozní den ${selectedDayLabel}, od 07:00 do 07:00 následujícího dne.`
         : `Vybrané období: ${periodLabel}.`,
-      'Využití a výkony respektují nastavenou pracovní dobu sálů. Status, fronta, provozní příznaky a sazba zachycují aktuální stav při sestavení reportu.',
+      'Využití a výkony respektují nastavenou pracovní dobu sálů. Sazba vychází ze současné konfigurace, není historickou sazbou.',
       !calendarSelectionActive && periodLabel === 'den' ? 'Počty výkonů používají posledních 24 hodin; využití se vztahuje k aktuálnímu provoznímu dni od 07:00.' : '',
       `Řazení sálů: ${sortBy === 'utilization' ? 'podle využití' : sortBy === 'operations' ? 'podle počtu výkonů' : 'abecedně'}.`,
     ].join(' '),
@@ -544,10 +547,7 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
       { label: 'Operační sály', value: rooms.length },
       { label: 'Průměrné vytížení', value: sortedRooms.some(room => room.hasCapacity !== false) ? formatPercent(avgUtilization, 0) : '—' },
       { label: 'Výkonů celkem', value: totalOps },
-      { label: 'Sálů v provozu', value: roomsInOperation, detail: calendarSelectionActive ? 'Sály s výkonem nebo využitím ve vybraném dni' : 'Aktuálně obsazené sály včetně přípravy' },
-      { label: 'Aktuálně volno', value: freeCount },
-      { label: 'Aktuálně úklid', value: cleanCount },
-      { label: 'Aktuálně mimo provoz', value: maintCount },
+      { label: 'Sálů se zaznamenaným provozem', value: roomsData.filter(item => item.operations > 0 || item.utilization > 0).length },
     ],
     sections: [
       {
@@ -566,23 +566,6 @@ export const RoomsTab: React.FC<RoomsTabProps> = memo(({
           operations,
           avgOpTime === null ? '—' : formatMinutes(avgOpTime),
           room.hourlyOperatingCost ? `${formatNumber(room.hourlyOperatingCost, 0)} Kč/h` : '—',
-        ]),
-        emptyMessage: 'Žádné sály k zobrazení.',
-      },
-      {
-        title: 'Aktuální stav sálů',
-        description: 'Aktuální provozní stav není historickým snímkem vybraného dne.',
-        columns: [
-          { label: 'Sál' },
-          { label: 'Status' },
-          { label: 'Fronta', align: 'right' },
-          { label: 'Provozní příznaky' },
-        ],
-        rows: sortedRooms.map(({ room }) => [
-          room.name,
-          ({ volny: 'Volný', obsazeny: 'Obsazený', uklid: 'Úklid', udrzba: 'Údržba', priprava: 'Příprava' } as Record<string, string>)[room.status ?? 'volny'] ?? room.status ?? 'Neznámý',
-          `${room.queueCount ?? 0} pac.`,
-          [room.isSeptic ? 'Septický' : '', room.isEmergency ? 'Urgentní' : ''].filter(Boolean).join(', ') || '—',
         ]),
         emptyMessage: 'Žádné sály k zobrazení.',
       },

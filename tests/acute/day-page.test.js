@@ -54,11 +54,12 @@ const GlassCalendar = () => null;
 const AcuteCircularTimeline = () => null;
 const AcuteReorderDialog = () => null;
 const AcuteRequestFormDialog = () => null;
-const imports = react => ({
+const imports = (react, mobile = () => false) => ({
   ...(react ? { react } : {}),
   '../hooks/useAcuteRequests': { useAcuteRequests: () => assert.fail('QA must not call the live request hook') },
   '../hooks/useAcuteCycleLinks': { useAcuteCycleLinks: () => assert.fail('QA must not call the live cycle hook') },
   '../hooks/useSharedClock': { useNowMinuteMs: () => NOW },
+  '../hooks/useMediaQuery': { useMediaQuery: mobile },
   '../lib/acute-module-cycles': cycles,
   '../lib/acute-day-view': days,
   '../lib/acute-circular-timeline': timeline,
@@ -90,7 +91,7 @@ const find = (tree, predicate) => {
   assert.ok(element, 'Expected control exists');
   return element;
 };
-function harness(changes = {}) {
+function harness(changes = {}, mobile = () => false) {
   let cursor = 0;
   const state = [];
   const refs = [];
@@ -107,13 +108,45 @@ function harness(changes = {}) {
       return refs[index] ??= { current: initial };
     },
   };
-  const component = load('components/AcuteRequestsModule.tsx', imports(react));
+  const component = load('components/AcuteRequestsModule.tsx', imports(react, mobile));
   let currentProps = props(changes);
   return {
     render(next = {}) { currentProps = { ...currentProps, ...next }; cursor = 0; return component.AcuteRequestsView(currentProps); },
   };
 }
 const clickTab = (tree, name) => find(tree, element => element.props.id === `acute-tab-${name}`).props.onClick();
+
+test('mobile shows today without calendar controls and restores the desktop selected day', () => {
+  let mobile = true;
+  const requests = [request('today'), request('yesterday', { receivedAt: '2026-10-08T09:00:00Z' })];
+  const app = harness({ selectedDayKey: '2026-10-08', controller: controller({ requests }) }, () => mobile);
+  let tree = app.render();
+  const requestIds = node => [...elements(node)].filter(element => element.props.request).map(element => element.props.request.id);
+  assert.deepEqual(requestIds(tree), ['today']);
+  assert.equal([...elements(tree)].some(element => element.type === DayNavigator || element.type === GlassCalendar), false);
+  assert.ok([...elements(tree)].some(element => element.props.className === 'acute-other-day-note'));
+  mobile = false;
+  tree = app.render();
+  assert.deepEqual(requestIds(tree), ['yesterday']);
+  assert.ok(find(tree, element => element.type === GlassCalendar));
+  mobile = true;
+  tree = app.render({ now: Date.parse('2026-10-09T22:01:00Z'), controller: controller({ requests: [...requests, request('tomorrow', { receivedAt: '2026-10-09T22:00:00Z' })] }) });
+  assert.deepEqual(requestIds(tree), ['tomorrow'], 'Mobile day follows Prague midnight');
+});
+
+test('mobile live query uses today even when desktop supplied a historical selection', () => {
+  const captured = [];
+  const react = { ...React, useMemo: compute => compute(), useState: initial => [typeof initial === 'function' ? initial() : initial, () => {}] };
+  const live = load('components/AcuteRequestsModule.tsx', {
+    ...imports(react, () => true),
+    '../hooks/useAcuteRequests': { useAcuteRequests: () => controller() },
+    '../hooks/useAcuteCycleLinks': { useAcuteCycleLinks: (...args) => { captured.push(args); return {}; } },
+  });
+  const entry = live.default({ rooms: [], now: NOW, selectedDayKey: '2026-09-01' });
+  const view = entry.type(entry.props);
+  assert.equal(view.props.selectedDayKey, '2026-10-09');
+  assert.deepEqual(captured[0][1], days.acuteDayCycleQueryWindow(NOW, '2026-10-09', 30));
+});
 
 test('default Requests day follows Prague midnight rather than the browser time zone', () => {
   const previousZone = process.env.TZ;

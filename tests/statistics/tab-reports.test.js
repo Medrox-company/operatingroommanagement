@@ -9,6 +9,11 @@ import { roomScope } from './load-room-scope.js';
 // Data-registration tests with synchronous hooks. These do not exercise React
 // lifecycle, network requests, browser rendering, or PDF pagination.
 const require = createRequire(import.meta.url);
+const HOSPITAL_ID = 'hospital-a';
+const progressHelpers = {};
+new Function('exports', ts.transpileModule(readFileSync(new URL('../../lib/statistics-loading-progress.ts', import.meta.url), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText)(progressHelpers);
 const sources = Object.fromEntries(['NotificationsTab', 'DevicesTab'].map(name => {
   const source = readFileSync(new URL(`../../components/statistics/${name}.tsx`, import.meta.url), 'utf8');
   return [name, ts.transpileModule(source, {
@@ -31,6 +36,7 @@ function captureReport(name, props, stateOverrides = {}) {
     useMemo: factory => factory(),
     useCallback: callback => callback,
     useEffect: () => {},
+    useRef: initial => ({ current: initial }),
     useState: initial => {
       const index = stateIndex++;
       return [Object.hasOwn(stateOverrides, index)
@@ -41,6 +47,8 @@ function captureReport(name, props, stateOverrides = {}) {
   const noFetch = () => assert.fail('Report registration must not fetch data');
   const imports = {
     '../../lib/statistics-room-scope': roomScope,
+    '../../lib/statistics-loading-progress': progressHelpers,
+    '../../contexts/HospitalContext': { useHospital: () => ({ activeHospitalId: HOSPITAL_ID, loading: false }) },
     react: reactStub,
     'react-dom': { createPortal: () => assert.fail('No notification detail is selected') },
     'lucide-react': require('lucide-react'),
@@ -55,8 +63,9 @@ function captureReport(name, props, stateOverrides = {}) {
       }).format(value),
     },
     './AppCharts': { GlassCalendar: () => null },
+    './StatisticsPreloader': { StatisticsPreloader: () => null },
     './StatisticsReportContext': { useStatisticsReport: (tab, report) => reports.push({ tab, report }) },
-    '../../lib/db': { fetchNotificationsLog: noFetch, fetchStatusHistory: noFetch },
+    '../../lib/db': { fetchNotificationsLog: noFetch, fetchStatusHistory: noFetch, getDatabaseHospitalId: () => HOSPITAL_ID },
   };
   const moduleStub = { exports: {} };
   new Function('require', 'exports', 'module', sources[name])(
@@ -114,7 +123,11 @@ test('notification reports retain every filtered record and every room beyond UI
 test('notification reports use the selected day and never leak the global-period rows', () => {
   const globalRow = notification('global');
   const selectedRow = notification('selected', 'selected-room', { created_at: '2026-09-12T11:00:00', custom_reason: 'Pouze vybraný den' });
-  const dayState = { 0: new Date('2026-09-12T00:00:00'), 1: true, 2: [selectedRow], 7: '2026-09-12' };
+  const selectedScope = JSON.stringify([HOSPITAL_ID, 'Celý měsíc', '2026-09-12']);
+  const dayState = {
+    0: new Date('2026-09-12T00:00:00'), 1: true, 2: [selectedRow], 7: '2026-09-12',
+    9: selectedScope, 10: JSON.stringify([HOSPITAL_ID, 'notifications-calendar-90']),
+  };
   const props = { notifications: [globalRow], rooms: scheduledRooms([globalRow, selectedRow]), periodLabel: 'Celý měsíc' };
   const { report } = captureReport('NotificationsTab', props, dayState);
   assert.match(report.context, /Vybraný den: 12\. září 2026/);
@@ -129,6 +142,11 @@ test('notification reports use the selected day and never leak the global-period
     'Even an empty previous-day response must not be published under a new date');
   assert.equal(captureReport('NotificationsTab', props, { ...dayState, 7: null }).report, null,
     'Partially loaded or failed selected-day data is not a printable report');
+  for (const wrongScope of [null, JSON.stringify(['other-hospital', 'Celý měsíc', '2026-09-12']), JSON.stringify([HOSPITAL_ID, 'Jiné období', '2026-09-12'])]) {
+    assert.equal(captureReport('NotificationsTab', props, { ...dayState, 9: wrongScope }).report, null,
+      'A matching date alone never certifies the current hospital and period');
+  }
+  assert.equal(captureReport('NotificationsTab', props, { ...dayState, 11: { [selectedScope]: 'History read failed' } }).report, null);
   const confirmedEmpty = captureReport('NotificationsTab', props, { ...dayState, 2: [] }).report;
   assert.equal(metric(confirmedEmpty, 'Odeslané notifikace'), '0');
 });
@@ -148,27 +166,49 @@ test('selected-day report readiness requires both fetches to succeed, including 
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   });
   for (const [rows, history] of [[null, []], [[], null], [null, null], [[], []]]) {
-    const state = { reportDate: 'old-date', loading: false };
+    const state = { reportDate: 'old-date', reportScope: 'old-scope', loading: false, progress: {}, errors: {} };
     let fetches = 0;
+    const dayScopeKey = JSON.stringify([HOSPITAL_ID, 'Celý měsíc', '2026-09-12']);
     const scope = {
       calendarSelectionActive: true, calendarDay: new Date('2026-09-12T12:00:00'),
+      activeHospitalId: HOSPITAL_ID, hospitalLoading: false, dayScopeKey,
+      scopeRef: { current: { dayScopeKey, calendarSelectionActive: true } },
+      getDatabaseHospitalId: () => HOSPITAL_ID,
+      INITIAL_STATISTICS_PROGRESS: progressHelpers.INITIAL_STATISTICS_PROGRESS,
+      updateProgress: (key, value) => { state.progress[key] = value; },
+      clearError: key => { delete state.errors[key]; },
+      rememberError: (key, error) => { state.errors[key] = String(error); },
       localDateKey: () => '2026-09-12',
       setSelectedDayLoading: value => { state.loading = value; },
       setSelectedDayReportDate: value => { state.reportDate = value; },
+      setSelectedDayScope: value => { state.reportScope = value; },
       setSelectedDayNotifications: value => { state.notifications = value; },
       setSelectedDayStatusHistory: value => { state.history = value; },
-      fetchNotificationsLog: async () => { fetches += 1; return rows; },
-      fetchStatusHistory: async () => { fetches += 1; return history; },
+      fetchNotificationsLog: async options => {
+        fetches += 1;
+        if (rows !== null) options.onProgress({ loaded: rows.length, total: rows.length, complete: true });
+        return rows;
+      },
+      fetchStatusHistory: async options => {
+        fetches += 1;
+        if (history !== null) options.onProgress({ loaded: history.length, total: history.length, complete: true });
+        return history;
+      },
     };
     const exports = {};
     new Function('exports', ...Object.keys(scope), outputText)(exports, ...Object.values(scope));
     const cleanup = exports.effect();
     assert.equal(state.reportDate, null, 'A new request immediately invalidates previous report readiness');
+    assert.equal(state.reportScope, null);
     assert.equal(state.loading, true);
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(fetches, 2, 'Readiness adds no requests');
     assert.equal(state.loading, false);
     assert.equal(state.reportDate, rows !== null && history !== null ? '2026-09-12' : null);
+    assert.equal(state.reportScope, rows !== null && history !== null ? dayScopeKey : null);
+    assert.equal(Boolean(state.errors[dayScopeKey]), rows === null || history === null);
+    assert.equal(state.progress[dayScopeKey + ':notifications'].complete, rows !== null);
+    assert.equal(state.progress[dayScopeKey + ':history'].complete, history !== null);
     assert.deepEqual(state.notifications, []);
     assert.deepEqual(state.history, []);
     cleanup();
@@ -188,7 +228,11 @@ test('notification impacts keep zero distinct from unavailable and label overlap
   const statusHistory = rooms.map(room => ({
     operating_room_id: room.id, timestamp: '2026-09-14T10:00:00', event_type: 'emergency_off',
   }));
-  const { report } = captureReport('NotificationsTab', { notifications, statusHistory, rooms, periodLabel: '14. září' });
+  // This fixture is Monday 14September, not the weekday on which the test runs.
+  const { report } = captureReport('NotificationsTab', { notifications, statusHistory, rooms, periodLabel: '14. září' }, {
+    0: new Date('2026-09-14T00:00:00'), 1: true, 2: notifications, 4: statusHistory,
+    7: '2026-09-14', 9: JSON.stringify([HOSPITAL_ID, '14. září', '2026-09-14']),
+  });
   const impacts = section(report, 'Finanční dopady jednotlivých notifikací');
   assert.deepEqual(impacts.rows.map(row => row[4]), ['600 Kč', '0 Kč', 'Nevyčíslitelné']);
   assert.equal(metric(report, 'Vyčíslitelné dopady'), '2 / 3');

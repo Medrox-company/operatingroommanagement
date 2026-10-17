@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ArrowLeft, ArrowRight, Hospital, LayoutGrid, Rows3 } from 'lucide-react';
 import MobileRoomOverview from '../../components/mobile/MobileRoomOverview';
-import { MobileThemeToggle } from '../../components/mobile/MobileShell';
+import { MobileDesignSelector } from '../../components/mobile/MobileShell';
 import { RoomStatus, type OperatingRoom } from '../../types';
 import { mobileRoomPhase, mobileElapsed, mobileEndTime } from '../../lib/mobile-room-display';
 import { statuses } from './contexts';
@@ -16,7 +16,7 @@ function Phone() {
  const room=rooms.find(r=>r.id===selected),phase=room?mobileRoomPhase(room,statuses):null;
  const change=(id:string,key:'isEmergency'|'isLocked')=>setRooms(list=>list.map(r=>r.id===id?{...r,[key]:!r[key]}:r));
  return <><div className="fixture-note">DESIGNOVÝ NÁHLED · UKÁZKOVÁ DATA</div>{room&&phase?<div className="fixture-detail">
-   <header><button aria-label="Zpět na přehled" onClick={()=>setSelected(null)}><ArrowLeft size={19}/></button><span>Detail sálu · ukázka</span><MobileThemeToggle/></header>
+   <header><button aria-label="Zpět na přehled" onClick={()=>setSelected(null)}><ArrowLeft size={19}/></button><span>Detail sálu · ukázka</span><MobileDesignSelector/></header>
    <h1>{room.name}</h1><p>Centrální sály</p>
    <section className="fixture-phase" style={{'--phase':phase.color} as React.CSSProperties}><span>AKTUÁLNÍ FÁZE</span><div className="fixture-ring" style={{borderColor:phase.color}}><Hospital size={28}/><h2>{phase.title}</h2><strong>{mobileElapsed(room.operationStartedAt,Date.now())}</strong></div><p>Fáze {room.currentStepIndex+1} z {statuses.length}</p></section>
    <div className="fixture-times"><span>Od začátku<strong>{mobileElapsed(room.operationStartedAt,Date.now())}</strong></span><span>Předpokládaný konec<strong>{mobileEndTime(room.estimatedEndTime)}</strong></span></div>

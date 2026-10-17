@@ -8,8 +8,10 @@ import { OperatingRoom, WeeklySchedule } from '../types';
 import { useHospital } from '../contexts/HospitalContext';
 import ModulePageHeading from './ModulePageHeading';
 import { useAuth } from '../contexts/AuthContext';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { MobileHeader } from './mobile/MobileShell';
 import './mobile/mobile-settings.css';
+import './mobile/mobile-settings-orbit.css';
 
 const OperatingRoomsManager = dynamic(() => import('./OperatingRoomsManager'), { ssr: false });
 const DepartmentsManager = dynamic(() => import('./DepartmentsManager'), { ssr: false });
@@ -66,16 +68,27 @@ interface SettingsPageProps {
   resetTrigger?: number;
 }
 
+// Stable component identity keeps search focus and scroll position while filtering.
+const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="app-module-shell settings-module-wrapper w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
+    <ErrorBoundary fallback={<div className="flex flex-col items-center justify-center py-20 gap-4"><p className="text-white/50">Modul se nepodařilo načíst</p></div>}>
+      <div className="app-module-content">{children}</div>
+    </ErrorBoundary>
+  </div>
+);
+
 const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, onScheduleUpdate, onStaffChange, resetTrigger = 0 }) => {
   const { activeHospitalId } = useHospital();
   const { hasSubmoduleAccess } = useAuth();
-  const canViewSpatial = hasSubmoduleAccess('dashboard.spatial');
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const canViewSpatial = isDesktop && hasSubmoduleAccess('dashboard.spatial');
   const canViewSystemSettings = SETTINGS_SYSTEM_SUBMODULES.some(hasSubmoduleAccess);
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(1440);
   const [landingView, setLandingView] = useState<LandingView>('carousel');
+  const effectiveLandingView = isDesktop ? landingView : 'grid';
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState<ModuleGroup>('all');
   const pointerStartX = useRef<number | null>(null);
@@ -191,6 +204,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       accentColor: '#94A3B8',
     },
   ].filter(item => {
+    if (item.id === 'spatial') return canViewSpatial;
     if (item.id === 'settings') return canViewSystemSettings;
     const permissionId = SETTINGS_MODULE_PERMISSIONS[item.id];
     return permissionId ? hasSubmoduleAccess(permissionId) : false;
@@ -208,14 +222,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
   }, []);
 
   useEffect(() => {
-    if (selectedModule || landingView !== 'carousel' || carouselPaused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!isDesktop || selectedModule || landingView !== 'carousel' || carouselPaused || settings.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const autoplay = window.setInterval(() => {
       setActiveModuleIndex(current => (current + 1) % settings.length);
     }, 5200);
 
     return () => window.clearInterval(autoplay);
-  }, [carouselPaused, landingView, selectedModule, settings.length]);
+  }, [isDesktop, carouselPaused, landingView, selectedModule, settings.length]);
 
   const goToModule = (index: number) => {
     setActiveModuleIndex((index + settings.length) % settings.length);
@@ -245,7 +259,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
   }, [group, query, settings]);
 
   /** Přepínač zobrazení rozcestníku — karusel nebo mřížka modulů. */
-  const viewToggle = (
+  const viewToggle = isDesktop ? (
     <div className="settings-view-toggle flex items-center gap-1" role="group" aria-label="Zobrazení modulů nastavení">
       {([
         ['carousel', 'Karusel', GalleryHorizontalEnd],
@@ -268,29 +282,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         </button>
       ))}
     </div>
-  );
+  ) : null;
 
   const carouselStep = Math.min(250, Math.max(viewportWidth < 840 ? 92 : 138, viewportWidth * 0.145));
 
-  // Module wrapper with error boundary
-  const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="app-module-shell settings-module-wrapper w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10">
-      <ErrorBoundary
-        fallback={
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <p className="text-white/50">Modul se nepodařilo načíst</p>
-          </div>
-        }
-      >
-        <div className="app-module-content">{children}</div>
-      </ErrorBoundary>
-    </div>
-  );
-
   return (
-    // Rozcestník vždy přesně vyplní dostupný viewport bez stránkového scrollu.
-    // Delší obsah vybraných administračních modulů roluje pouze uvnitř této plochy.
-    <div className={`settings-page-root relative h-full min-h-0 w-full ${selectedModule || landingView === 'grid' ? 'hide-scrollbar overflow-y-auto' : 'overflow-hidden'}`} data-settings-landing={selectedModule ? undefined : landingView}>
+    // Grid and administration modules scroll inside the available viewport.
+    <div className={`settings-page-root relative h-full min-h-0 w-full ${selectedModule || effectiveLandingView === 'grid' ? 'hide-scrollbar overflow-y-auto' : 'overflow-hidden'}`} data-settings-landing={selectedModule ? undefined : effectiveLandingView}>
       {selectedModule === 'rooms' ? (
         <ModuleWrapper>
           <OperatingRoomsManager 
@@ -353,13 +351,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         <ModuleWrapper>
           <SystemSettingsModule />
         </ModuleWrapper>
-      ) : landingView === 'grid' ? (
+      ) : effectiveLandingView === 'grid' ? (
         <ModuleWrapper>
           {/* Alternativa ke karuselu — stejná skladba jako Rozpis sálů nebo
               Operační obory: nadpis, vodorovná lišta, mřížka karet. */}
           <div className="settings-landing-grid statistics-module min-h-full w-full pb-10 font-sans">
             <div className="settings-mobile-heading md:hidden">
-              <MobileHeader kicker="Konfigurace systému" title="Nastavení" right={viewToggle} />
+              <MobileHeader kicker="Konfigurace systému" title="Nastavení" description="Správa provozu, personálu a systému" showDesignSelector={false} />
             </div>
             <header className="mb-7 hidden md:block">
               <ModulePageHeading
@@ -372,7 +370,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
             </header>
 
             <section className="settings-grid-commandbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
-              <div className="flex min-w-max items-center gap-2.5">
+              <div className="settings-grid-commandbar-content flex min-w-max items-center gap-2.5">
                 {([
                   { label: 'Moduly celkem', value: settings.length, suffix: 'modulů', icon: LayoutGrid, color: '#38BDF8' },
                   { label: 'Provoz', value: groupCounts.provoz, suffix: 'modulů', icon: Building2, color: '#A855F7' },
@@ -393,14 +391,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                   </div>
                 ))}
 
-                <div className="ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
+                <div className="settings-grid-divider ml-1 h-10 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />
 
-                <div className="w-[104px] shrink-0">
+                <div className="settings-grid-summary w-[104px] shrink-0">
                   <h2 className="text-[11px] font-semibold leading-tight text-white/92">Rozcestník</h2>
                   <p className="mt-1 text-[8px] leading-tight text-white/38">Moduly nastavení</p>
                 </div>
 
-                <div className="settings-grid-filters grid shrink-0 grid-cols-4 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
+                <div role="group" aria-label="Kategorie modulů" className="settings-grid-filters grid shrink-0 grid-cols-4 rounded-lg border border-white/[0.055] bg-white/[0.025] p-0.5">
                   {(['all', 'provoz', 'personal', 'system'] as ModuleGroup[]).map(value => (
                     <button
                       key={value}
@@ -421,7 +419,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                     onChange={event => setQuery(event.target.value)}
                     placeholder="Hledat modul"
                     aria-label="Hledat modul nastavení"
-                    className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white/88 outline-none placeholder:font-normal placeholder:text-white/28"
+                    className="min-w-0 flex-1 bg-transparent text-[11px] font-semibold text-white/88 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D5D0FF] placeholder:font-normal placeholder:text-white/28"
                   />
                 </label>
               </div>
@@ -433,7 +431,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
                 <p className="mt-4 text-sm font-semibold text-white/65">Žádný modul neodpovídá filtru.</p>
               </section>
             ) : (
-              <section className="grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
+              <section aria-label="Moduly nastavení" className="settings-module-grid grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
                 {visibleModules.map(setting => {
                   const Icon = setting.icon;
                   const color = setting.accentColor;

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import './mobile/mobile-room-notifications.css';
 import {
   X,
   Loader2,
@@ -41,7 +42,7 @@ const CustomReasonModal: React.FC<CustomReasonModalProps> = ({ isOpen, onClose, 
 
   return (
         <div
-          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4"
+          className="room-notification-reason fixed inset-0 bg-black/90 backdrop-blur-md z-[300] flex items-center justify-center p-4"
           onClick={onClose}
         >
           <div
@@ -157,21 +158,22 @@ export default function NotificationOverlay({
       {isOpen && (
           <div
             key="notif-mobile"
-            className="md:hidden fixed inset-0 z-[200] flex flex-col overflow-hidden"
+            className="room-notifications md:hidden fixed inset-0 z-[200] flex flex-col overflow-hidden"
             style={{ background: 'var(--m-bg)' }}
           >
             {/* Content */}
             <div
               className="relative z-10 flex flex-col h-full px-5 overflow-y-auto hide-scrollbar"
               style={{
-                paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)',
+                paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
                 paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
               }}
             >
               {/* Header — zpět · název + podtitul (stejný vzor jako detail sálu) */}
-              <div className="flex items-center gap-3.5 mb-6">
+              <div className="room-notification-header mb-6">
                 <button
                   onClick={onClose}
+                  aria-label="Zpět do detailu sálu"
                   className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center outline-none select-none"
                   style={{ background: 'var(--m-card)', boxShadow: '0 6px 18px rgba(23,43,99,0.10)' }}
                 >
@@ -205,7 +207,7 @@ export default function NotificationOverlay({
                       key={notif.id}
                       onClick={() => handleSendNotification(notif.id)}
                       disabled={loading !== null}
-                      className="w-full flex items-center gap-4 rounded-[20px] p-4 outline-none select-none disabled:opacity-60"
+                      className="room-notification-action w-full flex items-center gap-4 rounded-[20px] p-4 outline-none select-none disabled:opacity-60"
                       style={{
                         background: 'var(--m-card)',
                         boxShadow: '0 8px 20px rgba(23,43,99,0.06)',

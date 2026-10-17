@@ -16,7 +16,16 @@ function loadHelper(windowStub = {}) {
   new Function('exports', 'module', 'window', outputText)(moduleStub.exports, moduleStub, windowStub);
   return moduleStub.exports;
 }
-const { buildStatisticsPrintHtml } = loadHelper();
+const { buildStatisticsPrintHtml, OPERATINGROOM_REPORT_LOGO } = loadHelper();
+function withoutTrustedLogo(html) {
+  const images = html.match(/<img\b[^>]*>/gi) ?? [];
+  assert.equal(images.length, 1, 'Only the supplied static report logo is an allowed image');
+  assert.match(images[0], /class="report-logo"/);
+  assert.ok(images[0].includes(`src="${OPERATINGROOM_REPORT_LOGO}"`));
+  assert.match(images[0], /alt="Operatingroom Management System"/);
+  assert.doesNotMatch(images[0], /\son[a-z]+\s*=/i);
+  return html.replace(images[0], '');
+}
 const labels = ['Přehled', 'Finance', 'Sazby', 'Sály', 'Fáze', 'Výkonnost', 'Notifikace', 'Zařízení'];
 const metadata = (tabLabel = 'Přehled') => ({
   tabLabel,
@@ -89,15 +98,17 @@ test('all dynamic text contexts escape markup and event-handler payloads', () =>
     assert.ok(html.includes(`${field}:${escaped}`), `Unescaped or missing ${field}`);
   }
   assert.equal(html.includes(attack), false);
-  assert.doesNotMatch(html, /<(?:script|img)\b/i);
+  assert.doesNotMatch(withoutTrustedLogo(html), /<(?:script|img)\b/i);
   assert.doesNotMatch(html, /<[^>]+\son(?:error|mouseover)=/i);
 });
 
-test('the document is self-contained and uses no charts, external assets, or app tokens', () => {
+test('the document is self-contained, with only the supplied embedded logo and no app tokens', () => {
   const html = buildStatisticsPrintHtml(report(), metadata());
-  assert.doesNotMatch(html, /<(?:script|link|img|iframe|object|embed|video|audio|svg|canvas)\b/i);
+  const content = withoutTrustedLogo(html);
+  assert.match(OPERATINGROOM_REPORT_LOGO, /^data:image\/svg\+xml;base64,[A-Za-z0-9+/]+=*$/);
+  assert.doesNotMatch(content, /<(?:script|link|img|iframe|object|embed|video|audio|svg|canvas)\b/i);
   assert.doesNotMatch(html, /@import\b|url\s*\(|var\(--(?:stats|m)-/i);
-  assert.doesNotMatch(html, /(?:src|href)\s*=/i);
+  assert.doesNotMatch(content, /(?:src|href)\s*=/i);
   assert.ok(html.includes('<article aria-label="Statistický report">'));
   assert.ok(html.includes('Nemocnice Žďár nad Sázavou'));
 });
@@ -134,7 +145,7 @@ test('print styles preserve repeated scoped column headers, page numbering, and 
   assert.doesNotMatch(printCss, /(?:table|tbody|\.report-section)\s*\{[^}]*display:\s*none/);
 });
 
-function popupFixture() {
+function popupFixture({ logoComplete = true } = {}) {
   let resolveFonts;
   let rejectFonts;
   const ready = new Promise((resolve, reject) => { resolveFonts = resolve; rejectFonts = reject; });
@@ -143,10 +154,17 @@ function popupFixture() {
   const elements = new Map();
   const writes = [];
   const calls = [];
+  const imageListeners = new Map();
+  const image = {
+    complete: logoComplete, naturalWidth: logoComplete ? 830 : 0,
+    addEventListener: (event, callback) => imageListeners.set(event, callback),
+    removeEventListener: event => imageListeners.delete(event),
+  };
   const preview = {
     opener: { owner: true }, closed: false, printCount: 0, closeCount: 0,
     document: {
       fonts: { ready },
+      images: [image],
       open: () => calls.push('document.open'),
       write: html => { writes.push(html); calls.push('document.write'); },
       close: () => calls.push('document.close'),
@@ -165,8 +183,17 @@ function popupFixture() {
     print: () => assert.fail('Only the report window may print'),
   };
   const helper = loadHelper(windowStub);
-  return { helper, preview, frames, listeners, elements, writes, calls, resolveFonts, rejectFonts };
+  const settleLogo = event => {
+    const callback = imageListeners.get(event);
+    assert.equal(typeof callback, 'function', `The pending logo must register a ${event} listener`);
+    image.complete = true;
+    image.naturalWidth = event === 'load' ? 830 : 0;
+    callback();
+  };
+  return { helper, preview, frames, listeners, elements, writes, calls, resolveFonts, rejectFonts, settleLogo };
 }
+
+const flushReadiness = () => new Promise(resolve => setImmediate(resolve));
 
 test('blocked popups produce a Czech actionable error without accessing the app document', () => {
   const helper = loadHelper({
@@ -187,7 +214,7 @@ test('successful popup writes the standalone report and prints after font readin
   assert.equal(fixture.preview.printCount, 0);
   assert.equal(fixture.frames.length, 0);
   fixture.resolveFonts();
-  await Promise.resolve();
+  await flushReadiness();
   assert.equal(fixture.frames.length, 1);
   fixture.frames.shift()();
   assert.equal(fixture.preview.printCount, 0);
@@ -200,7 +227,7 @@ test('returning from a print dialog keeps the preview available for retry or exp
   const fixture = popupFixture();
   fixture.helper.openStatisticsPrintReport(report(), metadata());
   fixture.resolveFonts();
-  await Promise.resolve();
+  await flushReadiness();
   while (fixture.frames.length) fixture.frames.shift()();
   // A returning native print() cannot distinguish printing from cancellation.
   // Neither outcome should auto-close the preview or require app cleanup.
@@ -220,7 +247,7 @@ test('closing the preview at any deferred stage prevents a late automatic print'
     fixture.helper.openStatisticsPrintReport(report(), metadata());
     if (stage === 'fonts') fixture.listeners.get('report-close:click')();
     fixture.resolveFonts();
-    await Promise.resolve();
+    await flushReadiness();
     if (stage === 'first-frame') fixture.listeners.get('report-close:click')();
     if (stage === 'second-frame') {
       fixture.frames.shift()();
@@ -236,7 +263,10 @@ test('font-readiness rejection still attempts the self-contained report without 
   const fixture = popupFixture();
   fixture.helper.openStatisticsPrintReport(report(), metadata());
   fixture.rejectFonts(new Error('Font readiness unavailable'));
-  await new Promise(resolve => setImmediate(resolve));
+  await flushReadiness();
+  assert.equal(fixture.preview.printCount, 0);
+  assert.equal(fixture.frames.length, 1);
+  while (fixture.frames.length) fixture.frames.shift()();
   assert.equal(fixture.preview.printCount, 1);
   assert.equal(fixture.frames.length, 0);
   assert.equal(fixture.preview.closed, false);
@@ -247,7 +277,7 @@ test('automatic print exceptions leave actionable help and a working manual retr
   fixture.preview.print = () => { throw new Error('Native print is temporarily unavailable'); };
   fixture.helper.openStatisticsPrintReport(report(), metadata());
   fixture.resolveFonts();
-  await Promise.resolve();
+  await flushReadiness();
   while (fixture.frames.length) assert.doesNotThrow(() => fixture.frames.shift()());
   assert.match(fixture.elements.get('report-help').textContent, /Automatický tisk není.*Použijte tlačítko Tisk \/ Uložit PDF/);
   assert.equal(fixture.preview.closed, false);
@@ -255,4 +285,46 @@ test('automatic print exceptions leave actionable help and a working manual retr
   fixture.listeners.get('report-print:click')();
   assert.equal(fixture.preview.printCount, 1);
   assert.equal(fixture.preview.closeCount, 0);
+});
+
+test('automatic print waits for the embedded logo and settles safely on either load or error', async () => {
+  for (const event of ['load', 'error']) {
+    const fixture = popupFixture({ logoComplete: false });
+    fixture.helper.openStatisticsPrintReport(report(), metadata());
+    fixture.resolveFonts();
+    await flushReadiness();
+    assert.equal(fixture.frames.length, 0, 'No layout frames before the pending logo settles');
+    assert.equal(fixture.preview.printCount, 0);
+    fixture.settleLogo(event);
+    await flushReadiness();
+    assert.equal(fixture.frames.length, 1);
+    while (fixture.frames.length) fixture.frames.shift()();
+    assert.equal(fixture.preview.printCount, 1);
+    assert.equal(fixture.preview.closed, false);
+  }
+});
+
+test('closing while a logo is pending prevents any later automatic print', async () => {
+  const fixture = popupFixture({ logoComplete: false });
+  fixture.helper.openStatisticsPrintReport(report(), metadata());
+  fixture.resolveFonts();
+  fixture.listeners.get('report-close:click')();
+  fixture.settleLogo('load');
+  await flushReadiness();
+  while (fixture.frames.length) fixture.frames.shift()();
+  assert.equal(fixture.preview.printCount, 0);
+  assert.equal(fixture.preview.closeCount, 1);
+});
+
+test('unavailable font readiness does not bypass a still-loading logo', async () => {
+  const fixture = popupFixture({ logoComplete: false });
+  fixture.helper.openStatisticsPrintReport(report(), metadata());
+  fixture.rejectFonts(new Error('Font readiness unavailable'));
+  await flushReadiness();
+  assert.equal(fixture.preview.printCount, 0);
+  assert.equal(fixture.frames.length, 0);
+  fixture.settleLogo('error');
+  await flushReadiness();
+  while (fixture.frames.length) fixture.frames.shift()();
+  assert.equal(fixture.preview.printCount, 1);
 });

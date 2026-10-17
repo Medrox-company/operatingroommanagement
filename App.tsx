@@ -7,6 +7,8 @@ import Sidebar from './components/Sidebar';
 import RoomNoticeComposer from './components/RoomNoticeComposer';
 import MobileNav from './components/MobileNav';
 import PlaceholderView from './components/PlaceholderView';
+import './components/mobile/mobile-auth-loading.css';
+import './components/mobile/mobile-alerts-orbit.css';
 
 // ── Lazy-load těžkých modulů (nejsou výchozí pohled) → menší úvodní bundle,
 //    rychlejší a stabilnější start. Načtou se až při přepnutí na daný modul. ──
@@ -657,14 +659,14 @@ const AppContent: React.FC = () => {
   if (appAccessLoading) {
     return (
       <div
-        className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#050a21] text-white"
+        className="mobile-auth-loading relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#050a21] text-white"
         role="status"
         aria-live="polite"
         aria-label="Ověřuji přihlášení"
       >
         <div className="app-module-background absolute inset-0" />
-        <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-white/75" />
+        <div className="mobile-auth-loading-panel relative z-10 flex flex-col items-center gap-4">
+          <div aria-hidden="true" className="mobile-auth-loading-spinner h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-white/75" />
           <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/45">
             Ověřuji přihlášení
           </p>
@@ -695,7 +697,8 @@ const AppContent: React.FC = () => {
             onNavigate={handleNavigate}
             onSendMessage={() => setNoticeComposerOpen(true)}
           />
-      <MobileNav currentView={currentView} onNavigate={handleNavigate} />
+      <MobileNav currentView={currentView} onNavigate={handleNavigate}
+        roomDetail={Boolean(selectedRoom && (currentView === 'dashboard' || (currentView === 'timeline' && acuteRoomEnabled)))} />
 
       {/* Admin → odeslání informační zprávy na konkrétní sál */}
       {noticeComposerOpen && isAdmin && hasModuleAccess('alerts') && (
@@ -710,7 +713,7 @@ const AppContent: React.FC = () => {
         {/* Horní lišta se nezobrazuje – všechny moduly mají plnou stránku jako dashboard */}
         {/* <TopBar /> */}
 
-        <main className={`flex-1 overflow-hidden relative ${currentView === 'dashboard' || acuteRoomEnabled ? 'pb-0' : 'pb-20'} md:pb-0`}>
+        <main className={`flex-1 overflow-hidden relative ${currentView === 'dashboard' || acuteRoomEnabled ? 'pb-0' : 'pb-20'} md:pb-0 ${currentView === 'timeline' ? 'mobile-plan-host' : ''}`}>
           {/* Granulární error-boundary kolem obsahu modulů — pád jednoho modulu
               neshodí celou aplikaci (sidebar/navigace zůstanou). Klíč podle
               currentView zajistí reset po přepnutí na jiný modul. */}
@@ -784,7 +787,7 @@ const AppContent: React.FC = () => {
             )}
 
             {currentView === 'acute-requests' && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar">
+              <div className="acute-mobile-shell w-full h-full overflow-y-auto hide-scrollbar">
                 <div className="mobile-module-container app-module-shell w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
                   <div className="app-module-content">
                     <AcuteRequestsModule rooms={rooms} />
@@ -817,7 +820,7 @@ const AppContent: React.FC = () => {
 
   {/* Alerts */}
             {currentView === 'alerts' && (
-              <div className="w-full h-full">
+              <div className="mobile-alerts-host w-full h-full">
                 <PlaceholderView
                   title="Upozornění"
                   description="Centrální upozornění a notifikace z operačních sálů budou zobrazeny zde."

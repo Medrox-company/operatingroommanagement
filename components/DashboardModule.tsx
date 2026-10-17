@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { preloadSpatialProject } from '../hooks/useSpatialProject';
 import SpatialLoadingBar from './spatial/SpatialLoadingBar';
 import { useDashboardGridLayout } from '../hooks/useDashboardGridLayout';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import type { AcuteDashboardRoomSummary } from '../lib/acute-dashboard';
 import { resolveDashboardView, type DashboardView } from '../lib/dashboard-carousel';
 import DashboardCarousel from './dashboard/DashboardCarousel';
@@ -67,7 +68,9 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
 }) => {
   const { activeHospitalId } = useHospital();
   const { hasSubmoduleAccess } = useAuth();
-  const canViewSpatial = hasSubmoduleAccess('dashboard.spatial');
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  // Mobile always uses room cards; keep the saved desktop selection intact.
+  const canViewSpatial = isDesktop && hasSubmoduleAccess('dashboard.spatial');
   // Modul je client-only; uložený pohled musí platit už při návratovém renderu.
   const [dashboardView, setDashboardView] = useState<DashboardView>(() => readDashboardView(activeHospitalId, canViewSpatial));
   const [spatialMounted, setSpatialMounted] = useState(dashboardView === 'spatial');
@@ -162,40 +165,12 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   const spatialMode = canViewSpatial && dashboardView === 'spatial';
   const carouselMode = dashboardView === 'carousel';
   const gridRef = useDashboardGridLayout(rooms.length, roomsLoaded && !spatialMode && !carouselMode && rooms.length > 0, acuteByRoom?.size ? 360 : 280);
-  // Na mobilu jsou zobrazení jen dvě kruhové ikony v horní liště vedle zvonku.
-  // Pruh se třemi záložkami (Karty / 3D pohled / Půdorys) zabíral celý řádek
-  // a půdorys se na telefonu stejně nepoužíval.
-  const mobileViewControls = canViewSpatial ? (
-    <div className="mro-view-icons" role="group" aria-label="Zobrazení operačních sálů">
-      {([
-        ['cards', 'Karty sálů', LayoutGrid],
-        ['spatial', '3D pohled', Cuboid],
-      ] as const).map(([value, label, Icon]) => (
-        <button
-          type="button"
-          key={value}
-          className="mro-icon-button"
-          aria-label={label}
-          title={label}
-          aria-pressed={value === 'cards' ? !spatialMode : spatialMode}
-          onPointerEnter={value === 'spatial' ? warmSpatialView : undefined}
-          onPointerDown={value === 'spatial' ? warmSpatialView : undefined}
-          onClick={() => {
-            if (value === 'spatial') setCameraMode('spatial');
-            changeDashboardView(value);
-          }}
-        >
-          <Icon size={20} strokeWidth={1.7} aria-hidden />
-        </button>
-      ))}
-    </div>
-  ) : null;
 
   return (
     <div className={`app-module-shell dashboard-module statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top ${spatialMode ? 'spatial-dashboard-module' : ''} ${carouselMode ? 'dashboard-carousel-module' : ''}`}>
       <div aria-hidden className="mobile-theme-surface fixed inset-0 -z-10 md:hidden" />
       <div className={`app-module-content ${spatialMode ? 'flex h-full min-h-0 flex-col' : 'dashboard-cards-layout'}`}>
-        {!spatialMode && <MobileRoomOverview rooms={rooms} roomsLoaded={roomsLoaded} viewControls={mobileViewControls} onSelectRoom={onSelectRoom} onEmergency={onEmergency} onLock={onLock} onNavigate={onNavigate} acuteByRoom={acuteByRoom} />}
+        {!spatialMode && <MobileRoomOverview rooms={rooms} roomsLoaded={roomsLoaded} onSelectRoom={onSelectRoom} onEmergency={onEmergency} onLock={onLock} onNavigate={onNavigate} acuteByRoom={acuteByRoom} />}
 
         {/* Hlavička karet se přizpůsobuje dostupné šířce; 3D má vlastní layout. */}
         <header className="dashboard-page-header mb-7 hidden min-w-0 flex-shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-[clamp(1rem,3vw,3rem)] md:grid md:pr-2">
@@ -226,7 +201,6 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
             <div className={`${spatialMode ? 'flex' : 'hidden md:flex'} flex-col items-center justify-center md:py-32 gap-3`}>
               {spatialMode && <div className="md:hidden w-full">
                 <MobileHeader kicker="Operační sály" title="Operační blok" />
-                {mobileViewControls}
               </div>}
               <div className="w-7 h-7 border-2 border-[#C7D4E8] border-t-[#2952C8] md:border-white/20 md:border-t-white/70 rounded-full animate-spin" />
               <p className="text-sm text-[#7C8AA5] md:text-white/40">Načítám operační sály…</p>
@@ -239,7 +213,6 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
                     rooms={rooms}
                     onSelectRoom={onSelectRoom}
                     onSwitchToCards={() => changeDashboardView('cards')}
-                    mobileViewControls={mobileViewControls}
                     cameraMode={cameraMode}
                     onCameraModeChange={setCameraMode}
                   />

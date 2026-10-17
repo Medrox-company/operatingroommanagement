@@ -74,6 +74,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   
   const radius = 38;
   const center = 56;
+  const hasRoomStatusIndicators = Boolean(room.patientCalledAt || room.patientArrivedAt || room.noticeMessage);
 
   const handleAction = (e: React.MouseEvent, action?: (e: React.MouseEvent) => void) => {
     e.stopPropagation();
@@ -125,6 +126,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       Dopoledne: {specialtyDisplayName(scheduledSpecialties.morning?.name) || 'bez oboru'}.
       Odpoledne: {specialtyDisplayName(scheduledSpecialties.afternoon?.name) || 'bez oboru'}.
       Lékař: {room.staff?.doctor?.name || 'neurčen'}. Sestra: {room.staff?.nurse?.name || 'neurčena'}.
+      {room.patientArrivedAt ? 'Pacient na sále.' : room.patientCalledAt ? 'Pacient přivolán.' : ''}
+      {room.noticeMessage ? 'Čeká notifikační zpráva pro sál.' : ''}
       {acuteDashboardDescription(acuteSummary)}
     </span>
     {/* ===== MOBILE — prémiová karta sálu ===== */}
@@ -169,8 +172,10 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         <div className="flex items-center gap-1 shrink-0">
           {room.noticeMessage && (
           <span
-            className="relative w-6 h-6 rounded-[9px] flex items-center justify-center shrink-0"
-            style={{ background: 'rgba(var(--m-accent-rgb),0.10)' }}
+            role="img"
+            aria-label="Čeká notifikační zpráva pro sál"
+            className="relative w-6 h-6 rounded-full border flex items-center justify-center shrink-0"
+            style={{ background: 'rgba(var(--m-accent-rgb),0.10)', borderColor: 'rgba(var(--m-accent-rgb),0.25)' }}
             title="Čeká zpráva — otevři detail sálu"
           >
             <Megaphone className="w-3 h-3" style={{ color: 'var(--m-accent)' }} />
@@ -227,8 +232,8 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
 
         <div className="flex items-center gap-1.5 shrink-0">
           {room.isSeptic && <Biohazard role="img" aria-label="Septický režim" className="w-3.5 h-3.5" style={{ color: '#E5484D' }} />}
-          {room.patientCalledAt && !room.patientArrivedAt && <Phone role="img" aria-label="Pacient přivolán" className="w-3.5 h-3.5" style={{ color: 'var(--m-accent)' }} />}
-          {room.patientArrivedAt && <BedDouble role="img" aria-label="Pacient na sále" className="w-3.5 h-3.5" style={{ color: '#10B981' }} />}
+          {room.patientCalledAt && !room.patientArrivedAt && <span role="img" aria-label="Pacient přivolán" title="Pacient přivolán" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border" style={{ color: 'var(--m-accent)', borderColor: 'rgba(var(--m-accent-rgb),0.3)', background: 'rgba(var(--m-accent-rgb),0.10)' }}><Phone aria-hidden="true" className="h-3.5 w-3.5" /></span>}
+          {room.patientArrivedAt && <span role="img" aria-label="Pacient na sále" title="Pacient na sále" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/10 text-emerald-400"><BedDouble aria-hidden="true" className="h-3.5 w-3.5" /></span>}
           <button
             type="button"
             onClick={(e) => handleAction(e, onEmergency)}
@@ -315,11 +320,31 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
         <Lock className="dashboard-workspace-card-corner-icon" aria-hidden="true" />
       </button>
 
+      {hasRoomStatusIndicators && (
+        <div className="dashboard-room-status-rail" aria-label="Stav pacienta a zprávy pro sál">
+          {room.patientCalledAt && !room.patientArrivedAt && (
+            <span role="img" aria-label="Pacient přivolán" title="Pacient přivolán" className="dashboard-room-status-indicator dashboard-room-status-indicator--call">
+              <Phone aria-hidden="true" />
+            </span>
+          )}
+          {room.patientArrivedAt && (
+            <span role="img" aria-label="Pacient na sále" title="Pacient na sále" className="dashboard-room-status-indicator dashboard-room-status-indicator--arrival">
+              <BedDouble aria-hidden="true" />
+            </span>
+          )}
+          {room.noticeMessage && (
+            <span role="img" aria-label="Čeká notifikační zpráva pro sál" title="Čeká notifikační zpráva — otevřít detail sálu" className="dashboard-room-status-indicator dashboard-room-status-indicator--notice">
+              <Megaphone aria-hidden="true" />
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Content Container */}
       <div className="dashboard-workspace-card-content relative z-10 h-full w-full">
 
         {/* Horní ovládací kruhy byly přesunuty do spodní vlny; název má celou šířku. */}
-        <div className="dashboard-workspace-card-header flex min-w-0 items-center pr-2">
+        <div className={`dashboard-workspace-card-header flex min-w-0 items-center pr-2 ${hasRoomStatusIndicators ? 'dashboard-workspace-card-header--with-indicators' : ''}`}>
           <div className="min-w-0 w-full">
             <h3 className={`dashboard-room-name room-name-nobreak max-w-full whitespace-normal font-semibold uppercase leading-[1.15] tracking-tight
               ${(room.isEmergency || room.isLocked) ? 'text-white' : 'text-white/92 group-hover:text-white'}
@@ -478,20 +503,6 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
               {room.isSeptic && (
                 <div role="img" aria-label="Septický režim" title="Septický režim" className="rounded-lg border border-red-500/14 bg-red-500/10 p-1 sm:p-1.5">
                   <Biohazard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500/70" />
-                </div>
-              )}
-
-              {/* Patient called indicator */}
-              {room.patientCalledAt && !room.patientArrivedAt && (
-                <div role="img" aria-label="Pacient přivolán" title="Pacient přivolán" className="rounded-lg border border-blue-400/16 bg-blue-500/10 p-1 sm:p-2">
-                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
-                </div>
-              )}
-
-              {/* Patient arrived indicator */}
-              {room.patientArrivedAt && (
-                <div role="img" aria-label="Pacient na sále" title="Pacient na sále" className="rounded-lg border border-green-400/16 bg-green-500/10 p-1 sm:p-2">
-                  <BedDouble className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
                 </div>
               )}
 

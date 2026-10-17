@@ -232,6 +232,10 @@
 .acute-duration-input:focus-visible + .acute-duration-option { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 .acute-duration-picker:disabled .acute-duration-option { opacity: .6; cursor: not-allowed; }
 .acute-duration-picker > .acute-field-help { margin-top: 6px; font-size: 11px; }
+@media (max-width: 767px) {
+  .acute-form[data-intake-new="true"] .acute-duration-prompt,
+  .acute-form[data-intake-new="true"] .acute-duration-explanation { display: none; }
+}
 @media (hover: hover) { .acute-duration-input:not(:disabled) + .acute-duration-option:hover { border-color: var(--color-primary); color: var(--acute-text); } }
 .acute-room-picker { min-width: 0; padding: 0; margin: 0; border: 0; }
 .acute-room-picker legend { padding: 0; margin-bottom: 10px; font-size: 13px; font-weight: 500; }

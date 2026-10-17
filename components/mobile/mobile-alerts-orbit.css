@@ -1,0 +1,33 @@
+/* Same shared frosted surface as the compact mobile timeline. */
+@media (max-width: 767px) {
+  html[data-app-design='cliniq'] .mobile-alerts-host {
+    --m-text: #d3ceff;
+    --m-text-strong: #f8f7ff;
+    --m-muted: #c1bff1;
+    --m-border: rgba(171, 164, 255, .23);
+    --m-card: linear-gradient(155deg, rgba(92, 90, 175, .32), rgba(18, 22, 58, .72));
+    --m-card-shadow: inset 0 1px 1px rgba(238, 235, 255, .055);
+    background: linear-gradient(to bottom, #00000066 0, #00000066 calc(216.1782vw - 184px), #0b102c calc(216.1782vw - 24px)),
+      #0b102c url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat;
+    color: var(--m-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    color-scheme: dark;
+  }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-ios-screen { background: transparent; }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-ios-screen > div { padding-inline: 16px; gap: 14px; padding-top: calc(24px + env(safe-area-inset-top, 0px)) !important; }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-heading-toolbar { display: grid; grid-template-columns: 76px minmax(0, 1fr) 76px; gap: 8px; min-height: 44px; }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-heading-toolbar h1 { grid-column: 2; grid-row: 1; text-align: center; }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-heading-actions { grid-column: 3; grid-row: 1; }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-appearance-controls select { width: 76px; max-width: 100% !important; padding-inline: 6px !important; }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-heading-toolbar h1 {
+    font-size: clamp(20px, 6vw, 28px); font-weight: 300; letter-spacing: -.035em; color: var(--m-text-strong);
+  }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-glass-card {
+    border-radius: 18px; padding: 20px;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+  html[data-app-design='cliniq'] .mobile-alerts-host .m-unified-card-title { color: var(--m-text-strong); font-size: 16px; font-weight: 500; }
+  html[data-app-design='cliniq'] .mobile-alerts-host .mobile-appearance-controls select {
+    border-radius: 999px !important; background: rgba(185, 181, 255, .12) !important; color: var(--m-text) !important;
+  }
+}

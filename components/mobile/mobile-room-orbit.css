@@ -1,0 +1,692 @@
+/* Selected mobile reference. Artwork is a real raster asset; only the ordered,
+   live workflow is drawn by the functional SVG/chart markers in RoomDetail. */
+@media (max-width: 767px) {
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit,
+  .mobile-room-orbit ~ .step-confirm-overlay {
+    --mrd-orbit-ink: #F8F7FF;
+    --mrd-orbit-muted: #C1BFF1;
+    --mrd-orbit-glass-surface: rgba(146, 141, 190, .08);
+    --mrd-orbit-glass-border: .7px solid rgba(163, 153, 239, .25);
+    --mrd-orbit-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+    --mrd-orbit-control-ink: #D3CEFF;
+    --mrd-orbit-action-surface: linear-gradient(165deg, #EEECFF 0%, #C8C9FF 48%, #B9BFFF 100%);
+    --mrd-orbit-action-ink: #100C62;
+    --mrd-orbit-action-border: 1px solid rgba(246, 243, 255, .85);
+    --mrd-orbit-action-shadow: inset 0 1px 0 rgba(255, 255, 255, .65), 0 6px 18px rgba(8, 6, 35, .16);
+    --mrd-orbit-floor: #0B102C;
+  }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit {
+    --mrd-orbit-accent: var(--mrd-orbit-phase-color, #7890A8);
+    --mrd-orbit-phase-ink: #D3CEFF;
+    /* The 853×1844 artwork stays width-scaled; feather into the same floor
+       before its bottom edge, including a small allowance for scrollbars. */
+    --mrd-orbit-art-height: 216.1782vw;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    container: room-orbit / inline-size;
+    /* Keep this detail close to the bright reference artwork; the overview
+       and other modules retain their stronger 40% dark veil. */
+    background:
+      linear-gradient(to bottom,
+        rgba(0, 0, 0, .12) 0,
+        rgba(0, 0, 0, .12) calc(var(--mrd-orbit-art-height) - 184px),
+        var(--mrd-orbit-floor) calc(var(--mrd-orbit-art-height) - 24px)),
+      var(--mrd-orbit-floor) url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat !important;
+    background-size: 100% 100%, 100% auto !important;
+    background-attachment: local;
+    color: var(--mrd-orbit-ink);
+    font-family: var(--m-font-sans, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    scrollbar-width: thin;
+    scrollbar-color: #7772BE transparent;
+  }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit[data-hygiene='true'],
+  .mobile-room-orbit[data-hygiene='true'] ~ .step-confirm-overlay {
+    --mrd-orbit-floor: #241208;
+  }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit[data-hygiene='true'] {
+    /* Recolor the existing artwork only: foreground controls and phase colors
+       stay untouched, and the same lower feather prevents a raster seam. */
+    background:
+      linear-gradient(to bottom,
+        rgba(0, 0, 0, .24) 0,
+        rgba(0, 0, 0, .24) calc(var(--mrd-orbit-art-height) - 184px),
+        var(--mrd-orbit-floor) calc(var(--mrd-orbit-art-height) - 24px)),
+      #7A390D url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat !important;
+    background-size: 100% 100%, 100% auto !important;
+    background-blend-mode: normal, luminosity;
+  }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-header {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: start;
+    gap: 5px;
+    width: 100%;
+    max-width: 480px;
+    min-height: 96px;
+    margin: 0 auto;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 20px 0;
+    flex: 0 0 auto;
+  }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-back,
+  .mobile-room-reference.mobile-room-orbit .mrd-icon-button {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid rgba(214, 211, 255, .28);
+    border-radius: 50%;
+    color: #F6F5FF;
+    background: rgba(202, 199, 255, .12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-back svg,
+  .mobile-room-reference.mobile-room-orbit .mrd-icon-button svg {
+    width: 23px;
+    height: 23px;
+    stroke-width: 1.65;
+  }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-room-name {
+    grid-column: auto;
+    grid-row: auto;
+    margin: 2px 0 0;
+    padding: 0;
+    text-align: center;
+    container-type: normal;
+    min-width: 0;
+  }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit .mrd-room-name h1 {
+    margin: 0;
+    color: #F8F7FF;
+    font-size: clamp(18px, 6.05vw, 24px);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -.035em;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    -webkit-hyphens: none;
+    text-wrap: balance;
+  }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-room-name .mrd-live-context {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 7px;
+    row-gap: 1px;
+    margin: 6px -12px 0;
+    color: var(--mrd-orbit-muted);
+    font-size: 11.5px;
+    line-height: 1.35;
+    overflow-wrap: normal;
+  }
+
+  .mobile-room-orbit .mrd-live-state { display: inline-flex; align-items: center; gap: 7px; color: #F3D18C; white-space: nowrap; }
+  .mobile-room-orbit .mrd-live-state i { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: currentColor; }
+  .mobile-room-orbit .mrd-live-context[data-connected=true] .mrd-live-state { color: #35E05A; }
+  .mobile-room-orbit .mrd-live-separator { opacity: .6; }
+  .mobile-room-orbit .mrd-notification-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #FF5176; box-shadow: 0 0 12px rgba(255, 68, 118, .65); }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit > .mrd-scroll-content {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    max-width: 480px;
+    min-height: 0;
+    margin: 0 auto;
+    padding: 0 20px calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+    overflow: visible;
+  }
+
+  .mobile-room-orbit .mrd-orbit-viewport { display: contents; }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit .mrd-phase-card.mrd-orbit-stage {
+    position: relative;
+    display: block;
+    width: calc(100% + 40px);
+    min-width: 0;
+    min-height: 0;
+    aspect-ratio: 390 / 350;
+    margin: 18px -20px 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .mobile-room-orbit .mrd-orbit-dial { position: absolute; left: 50%; top: 50%; width: 65.641%; height: auto; aspect-ratio: 1; transform: translate(-50%, -50%); opacity: .3; filter: grayscale(1); pointer-events: none; }
+  /* Lift only the outer tick marks; keep the inner dial and phase arc quiet. */
+  .mobile-room-orbit .mrd-orbit-stage::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 65.641%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    background: url('/images/mobile-orbit-dial.png') center / contain no-repeat;
+    opacity: .1;
+    filter: grayscale(1);
+    -webkit-mask-image: radial-gradient(circle closest-side, transparent 89%, #000 90%);
+    mask-image: radial-gradient(circle closest-side, transparent 89%, #000 90%);
+    pointer-events: none;
+  }
+  .mobile-room-orbit .mrd-orbit-chart { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .mobile-room-orbit .mrd-orbit-chart circle { fill: none; }
+  .mobile-room-orbit .mrd-orbit-track { stroke: rgba(178, 169, 247, .46); stroke-width: .75; }
+  .mobile-room-orbit .mrd-orbit-progress { stroke: #B6ADFF; stroke-width: 2.1; stroke-linecap: round; }
+  .mobile-room-orbit .mrd-orbit-active-segment { stroke: var(--mrd-orbit-accent); stroke-width: 6; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--mrd-orbit-accent)); }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-phase-steps.mrd-orbit-steps {
+    position: absolute;
+    display: block;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps li { position: absolute; inset: 0; margin: 0; padding: 0; min-width: 0; color: #D2CCFC; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps li::after { display: none; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps .mrd-step-marker {
+    position: absolute;
+    left: var(--orbit-marker-x);
+    top: var(--orbit-marker-y);
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: .8px solid #BFB6FF;
+    border-radius: 50%;
+    background: rgba(111, 97, 192, .75);
+    outline: none;
+    box-shadow: none;
+    transform: translate(-50%, -50%);
+  }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps .is-complete .mrd-step-marker { background: #E0DAFF; box-shadow: 0 0 12px rgba(187, 171, 255, .22); }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps .is-current .mrd-step-marker { width: 25px; height: 25px; border: 1px solid #E8E8FF; background: var(--mrd-orbit-accent); box-shadow: 0 0 4px 2px var(--mrd-orbit-accent), 0 0 18px var(--mrd-orbit-accent); }
+  .mobile-room-orbit .mrd-orbit-steps .is-current .mrd-step-marker > span { width: 8px; height: 8px; border-radius: 50%; background: #F9FBFF; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps .mrd-step-name {
+    position: absolute;
+    display: block;
+    left: var(--orbit-label-x);
+    top: var(--orbit-label-y);
+    width: clamp(66px, 22vw, 92px);
+    height: auto;
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    font-size: clamp(10px, 3.12vw, 14px);
+    font-weight: 400;
+    line-height: 1.24;
+    text-align: center;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    clip-path: none;
+    transform: translate(-50%, -50%);
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps .is-current .mrd-step-name { color: #FFFFFF; }
+  .mobile-room-orbit .mrd-orbit-steps [data-label-side='right'] .mrd-step-name { width: min(82px, calc(100% - var(--orbit-label-x) - 8px)); text-align: left; transform: translateY(-50%); }
+  .mobile-room-orbit .mrd-orbit-steps [data-label-side='left'] .mrd-step-name { width: min(82px, calc(var(--orbit-label-x) - 8px)); text-align: right; transform: translate(-100%, -50%); }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit .mrd-phase-advance.mrd-orbit-current {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    left: 50%;
+    top: 50%;
+    width: 160px;
+    height: 132px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 18px;
+    color: var(--mrd-orbit-ink);
+    background: transparent;
+    box-shadow: none;
+    transform: translate(-50%, -55%);
+    z-index: 1;
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-current:disabled { opacity: 1; }
+  .mobile-room-orbit .mrd-orbit-phase-icon { position: relative; display: grid; place-items: center; width: 64px; height: 64px; flex: 0 0 64px; color: var(--mrd-orbit-phase-ink); }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-phase-icon > svg { width: 36px; height: 36px; color: inherit; stroke-width: 1.35; }
+  .mobile-room-orbit .mrd-orbit-phase-mask { display: block; width: 64px; height: 64px; background-color: currentColor; mask: var(--mrd-orbit-phase-mask) center / contain no-repeat; -webkit-mask: var(--mrd-orbit-phase-mask) center / contain no-repeat; }
+  .mobile-room-orbit .mrd-orbit-phase-mask--table { --mrd-orbit-phase-mask: url('/images/mobile-orbit-operating-table.png'); }
+  .mobile-room-orbit .mrd-orbit-phase-mask--scalpel { --mrd-orbit-phase-mask: url('/images/mobile-orbit-scalpel.png'); }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-phase-icon > .mrd-orbit-phase-cue { position: absolute; right: 0; bottom: 8px; width: 17px; height: 17px; padding: 2px; border-radius: 4px; background: #111637; stroke-width: 1.6; }
+  .mobile-room-orbit .mrd-orbit-phase-state { position: absolute; right: 0; top: 0; display: grid; place-items: center; width: 21px; height: 21px; border: 1px solid currentColor; border-radius: 50%; color: #FFF2CD; background: #111637; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-phase-state > svg { width: 12px; height: 12px; }
+  .mobile-room-orbit .mrd-orbit-phase-title { max-width: 160px; color: #FAF9FF; font-size: clamp(21px, 6.1vw, 28px); font-weight: 400; line-height: 1.12; letter-spacing: -.035em; overflow-wrap: normal; word-break: normal; text-wrap: balance; }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-time-adjustments.mrd-orbit-adjustments { position: absolute; inset: 0; display: block; margin: 0; overflow: visible; border-radius: 0; background: none; pointer-events: none; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-adjustments button {
+    position: absolute;
+    top: 89.14%;
+    display: grid;
+    place-items: center;
+    width: 62px;
+    height: 62px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    border: .7px solid rgba(165, 155, 255, .55);
+    border-radius: 50%;
+    color: #FFFFFF;
+    background: rgba(176, 167, 255, .13);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-adjustments button:first-child { left: 17.05%; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-adjustments button:last-child { left: 83.33%; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-adjustments button::before { display: none; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-adjustments button svg { width: 34px; height: 34px; stroke-width: 1.45; }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-state-flags { justify-content: center; gap: 5px 10px; margin: 6px 0 0; position: relative; z-index: 2; padding: 6px; border: 1px solid rgba(220, 213, 255, .2); border-radius: 14px; background: rgba(14, 15, 48, .8); }
+  .mobile-room-reference.mobile-room-orbit .mrd-state-flags span { color: #F3E9FF; font-size: 11px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-state-flags [data-emergency=true] { color: #FF8884; }
+  .mobile-room-reference.mobile-room-orbit .mrd-notice { position: relative; margin-top: 6px; background: #2C244B; border-color: #E5B16B; color: #FFF1D1; }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-timing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 0; min-height: 70px; margin-top: 50px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-time-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: center;
+  }
+  .mobile-room-orbit .mrd-time-card + .mrd-time-card::before { content: ''; position: absolute; top: 12px; bottom: 10px; left: 0; width: .6px; background: rgba(129, 121, 230, .45); }
+  .mobile-room-reference.mobile-room-orbit .mrd-time-value { order: 1; margin: 0; color: #FFFFFF; font-size: clamp(33px, 10.2vw, 48px); font-weight: 300; line-height: 1.1; letter-spacing: -.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mobile-room-reference.mobile-room-orbit .mrd-time-label { order: 2; margin: 0; color: #F5F1FF; font-size: 13px; font-weight: 400; line-height: 1.35; letter-spacing: -.025em; }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin: 14px 12px 0; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+    min-width: 44px;
+    min-height: 78px;
+    margin: 0;
+    padding: 7px 2px;
+    border: var(--mrd-orbit-action-border);
+    border-radius: 22px;
+    color: var(--mrd-orbit-action-ink);
+    background: var(--mrd-orbit-action-surface);
+    box-shadow: var(--mrd-orbit-action-shadow);
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-action svg { width: 29px; height: 29px; color: inherit; stroke-width: 1.5; }
+  .mobile-room-orbit .mrd-action-hygiene-icon { display: block; width: 45px; height: 45px; margin: -8px 0; background-color: currentColor; mask: url('/images/mobile-orbit-hygiene.png') center / contain no-repeat; -webkit-mask: url('/images/mobile-orbit-hygiene.png') center / contain no-repeat; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action > span { color: inherit; font-size: 13.5px; font-weight: 400; line-height: 1.2; letter-spacing: -.025em; overflow-wrap: normal; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action small { margin-top: 2px; color: inherit; font-size: 9px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action:disabled { opacity: 1; color: #51496F; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action[data-action="call"] { --mrd-orbit-action-tint: var(--color-success, #20C997); }
+  .mobile-room-reference.mobile-room-orbit .mrd-action[data-action="arrival"],
+  .mobile-room-reference.mobile-room-orbit .mrd-action[data-action="pause"] { --mrd-orbit-action-tint: var(--color-info, #5B8DEF); }
+  .mobile-room-reference.mobile-room-orbit .mrd-action[data-action="hygiene"] { --mrd-orbit-action-tint: var(--color-warning, #FFB020); }
+  .mobile-room-reference.mobile-room-orbit .mrd-action.is-active {
+    border-color: color-mix(in srgb, var(--mrd-orbit-action-tint) 45%, rgba(220, 214, 255, .9));
+    background:
+      linear-gradient(135deg,
+        color-mix(in srgb, var(--mrd-orbit-action-tint) 28%, transparent) 0%,
+        color-mix(in srgb, var(--mrd-orbit-action-tint) 62%, transparent) 55%,
+        color-mix(in srgb, var(--mrd-orbit-action-tint) 84%, transparent) 100%),
+      var(--mrd-orbit-action-surface);
+    box-shadow: var(--mrd-orbit-action-shadow);
+    color: var(--mrd-orbit-action-ink);
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-action.is-active:disabled { opacity: 1; color: var(--mrd-orbit-action-ink); }
+  .mobile-room-reference.mobile-room-orbit .mrd-action.is-active svg,
+  .mobile-room-reference.mobile-room-orbit .mrd-action.is-active .mrd-action-hygiene-icon {
+    color: color-mix(in srgb, var(--mrd-orbit-action-tint) 55%, #07152B);
+    stroke-width: 1.8;
+  }
+
+  .mobile-room-reference.mobile-room-orbit .mrd-staff { margin-top: 14px; padding: 0 10px; border: var(--mrd-orbit-glass-border); border-radius: 32px; background: var(--mrd-orbit-glass-surface); box-shadow: var(--mrd-orbit-glass-shadow); }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-width: 44px; min-height: 54px; padding: 5px 6px; text-align: left; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row + .mrd-staff-row::before { top: 13px; bottom: 13px; left: 0; width: .6px; background: rgba(129, 121, 230, .45); }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row .mrd-staff-icon { display: block; flex: 0 0 40px; width: 40px; height: 42px; object-fit: contain; transform: scale(1.4); }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row > span { flex: 0 1 auto; min-width: 0; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row strong { color: var(--mrd-orbit-control-ink); font-size: 13px; font-weight: 400; line-height: 1.2; letter-spacing: -.025em; white-space: nowrap; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row > span > span { max-width: 104px; margin-top: 3px; color: #C0BBDD; font-size: 10px; line-height: 1.15; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action-feedback { margin: 8px 0 0; color: #E8E2FF; font-size: 12px; }
+  .mobile-room-orbit > .mrd-scroll-content > .room-detail-acute-message { margin-top: 8px; border-color: rgba(204, 197, 255, .3); background: rgba(18, 20, 55, .88); color: #F1ECFF; }
+
+  .mobile-room-reference.mobile-room-orbit button:focus-visible { outline: 2px solid #E5DDFF; outline-offset: 3px; }
+  .mobile-room-reference.mobile-room-orbit button:disabled { cursor: not-allowed; }
+
+  /* The confirmation is a glass layer over this actual room, not a separate
+     page/theme. Its backdrop therefore follows blue and hygiene orange. */
+  .mobile-room-orbit ~ .step-confirm-overlay {
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    color: var(--mrd-orbit-ink);
+    font-family: var(--m-font-sans, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
+    -webkit-font-smoothing: antialiased;
+  }
+  .mobile-room-orbit ~ .step-confirm-overlay .step-confirm-bg {
+    background: rgba(0, 0, 0, .32) !important;
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+  }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-dialog {
+    position: relative;
+    inset: auto;
+    flex: 0 1 auto;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 400px;
+    max-height: calc(100svh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    min-height: 0;
+    margin: auto;
+    padding: 24px 20px 20px;
+    gap: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: var(--mrd-orbit-glass-border);
+    border-radius: 32px;
+    background: linear-gradient(var(--mrd-orbit-glass-surface), var(--mrd-orbit-glass-surface)), color-mix(in srgb, var(--mrd-orbit-floor) 78%, transparent);
+    box-shadow: var(--mrd-orbit-glass-shadow), 0 20px 60px rgba(0, 0, 0, .22);
+    -webkit-backdrop-filter: blur(28px);
+    backdrop-filter: blur(28px);
+  }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-dialog > * { flex-shrink: 0; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-kicker { color: var(--mrd-orbit-muted); font-size: 10px; font-weight: 400; letter-spacing: .08em; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-title {
+    color: var(--mrd-orbit-ink) !important;
+    font-size: clamp(22px, 6.05vw, 28px) !important;
+    font-weight: 400 !important;
+    line-height: 1.15 !important;
+    letter-spacing: -.035em !important;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-route {
+    gap: 8px;
+    padding: 12px 10px;
+    border: var(--mrd-orbit-glass-border);
+    border-radius: 20px;
+    background: var(--mrd-orbit-glass-surface);
+    color: var(--mrd-orbit-muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-route-item { flex: 1 1 90px; justify-content: center; text-align: center; overflow-wrap: normal; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-route-item--target { color: var(--mrd-orbit-ink); font-weight: 400; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-route-arrow { color: var(--mrd-orbit-control-ink); }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-warning { margin: 0; border-color: color-mix(in srgb, var(--color-warning, #FFB020) 35%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--color-warning, #FFB020) 10%, transparent); }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-warning p { color: var(--mrd-orbit-control-ink); font-size: 12px; line-height: 1.5; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-warning strong { color: var(--mrd-orbit-ink); }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-warning .msc-warning-value { color: #FFD38A; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-warning-icon { color: #FFD38A; border-color: color-mix(in srgb, var(--color-warning, #FFB020) 35%, transparent); }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 0; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-box {
+    --msc-tint: var(--color-success, #20C997);
+    min-width: 44px;
+    min-height: 74px;
+    padding: 10px 8px;
+    gap: 5px;
+    border: var(--mrd-orbit-glass-border);
+    border-color: color-mix(in srgb, var(--msc-tint) 45%, rgba(220, 214, 255, .65));
+    border-radius: 22px;
+    background: linear-gradient(color-mix(in srgb, var(--msc-tint) 16%, transparent), color-mix(in srgb, var(--msc-tint) 16%, transparent)), var(--mrd-orbit-glass-surface);
+    box-shadow: var(--mrd-orbit-glass-shadow);
+    color: var(--mrd-orbit-ink);
+  }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-box--cancel { --msc-tint: var(--color-danger, #FF5560); }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-box:active { transform: none; opacity: .85; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-box:focus-visible { outline: 2px solid #E5DDFF; outline-offset: 3px; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-box-icon { width: 29px; height: 29px; background: transparent; color: inherit; box-shadow: none; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-box-icon svg { width: 29px; height: 29px; stroke-width: 1.5; }
+  .mobile-room-orbit ~ .step-confirm-overlay .msc-box-label { color: inherit; font-size: 13.5px; font-weight: 400; line-height: 1.2; letter-spacing: -.025em; text-transform: none; }
+
+  /* The interval warning keeps its original detection/dismissal. Only the
+     popup inside this room inherits the same glass palette and hygiene floor. */
+  .mobile-room-orbit .rapid-surgery-modal {
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+    background: rgba(0, 0, 0, .32) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+    backdrop-filter: blur(18px) !important;
+    color: var(--mrd-orbit-ink);
+    font-family: var(--m-font-sans, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
+    -webkit-font-smoothing: antialiased;
+  }
+  .mobile-room-orbit .rapid-surgery-card {
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 400px;
+    max-height: calc(100svh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    min-height: 0;
+    margin: auto;
+    padding: 24px 20px 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: var(--mrd-orbit-glass-border) !important;
+    border-radius: 32px;
+    background: linear-gradient(var(--mrd-orbit-glass-surface), var(--mrd-orbit-glass-surface)), color-mix(in srgb, var(--mrd-orbit-floor) 78%, transparent) !important;
+    box-shadow: var(--mrd-orbit-glass-shadow), 0 20px 60px rgba(0, 0, 0, .22) !important;
+    -webkit-backdrop-filter: blur(28px);
+    backdrop-filter: blur(28px);
+  }
+  .mobile-room-orbit .rapid-surgery-card > * { flex-shrink: 0; }
+  .mobile-room-orbit .rapid-surgery-close {
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border: var(--mrd-orbit-glass-border) !important;
+    border-radius: 50%;
+    background: var(--mrd-orbit-glass-surface) !important;
+    box-shadow: var(--mrd-orbit-glass-shadow) !important;
+    color: var(--mrd-orbit-control-ink) !important;
+  }
+  .mobile-room-orbit .rapid-surgery-close svg { width: 23px; height: 23px; stroke-width: 1.5; }
+  .mobile-room-orbit .rapid-surgery-icon {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto;
+    border: 1px solid color-mix(in srgb, var(--color-warning, #FFB020) 35%, transparent) !important;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-warning, #FFB020) 10%, transparent) !important;
+    color: #FFD38A !important;
+  }
+  .mobile-room-orbit .rapid-surgery-icon svg { width: 24px; height: 24px; stroke-width: 1.5; }
+  .mobile-room-orbit .rapid-surgery-kicker { margin: 0; color: #FFD38A !important; font-size: 10px; font-weight: 400; letter-spacing: .08em; text-align: center; }
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit .rapid-surgery-title {
+    margin: 0 !important;
+    padding: 0;
+    color: var(--mrd-orbit-ink) !important;
+    font-size: clamp(22px, 6.05vw, 28px) !important;
+    font-weight: 400 !important;
+    line-height: 1.15;
+    letter-spacing: -.035em;
+    text-align: center;
+    text-transform: none;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+  .mobile-room-orbit .rapid-surgery-description { margin: 0; color: var(--mrd-orbit-control-ink); font-size: 13px; line-height: 1.5; text-align: center; }
+  .mobile-room-orbit .rapid-surgery-interval {
+    min-height: 74px;
+    margin: 0;
+    padding: 16px 12px;
+    gap: 8px;
+    border: var(--mrd-orbit-glass-border) !important;
+    border-radius: 20px;
+    background: var(--mrd-orbit-glass-surface) !important;
+    box-shadow: var(--mrd-orbit-glass-shadow) !important;
+  }
+  .mobile-room-orbit .rapid-surgery-duration { color: #FFD38A !important; font-size: clamp(38px, 10.2vw, 48px); font-weight: 300; line-height: 1.1; letter-spacing: -.045em; }
+  .mobile-room-orbit .rapid-surgery-unit { margin: 0; color: var(--mrd-orbit-muted); font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+  .mobile-room-orbit .rapid-surgery-acknowledge {
+    width: 100%;
+    min-width: 44px;
+    height: auto;
+    min-height: 74px;
+    margin: 0;
+    padding: 10px 8px;
+    border: var(--mrd-orbit-glass-border) !important;
+    border-color: color-mix(in srgb, var(--color-warning, #FFB020) 45%, rgba(220, 214, 255, .65)) !important;
+    border-radius: 22px;
+    background: linear-gradient(color-mix(in srgb, var(--color-warning, #FFB020) 16%, transparent), color-mix(in srgb, var(--color-warning, #FFB020) 16%, transparent)), var(--mrd-orbit-glass-surface) !important;
+    box-shadow: var(--mrd-orbit-glass-shadow) !important;
+    color: var(--mrd-orbit-ink) !important;
+    font-size: 13.5px;
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -.025em;
+  }
+  .mobile-room-orbit .rapid-surgery-close:active,
+  .mobile-room-orbit .rapid-surgery-acknowledge:active { transform: none; opacity: .85; }
+  .mobile-room-orbit .rapid-surgery-close:focus-visible,
+  .mobile-room-orbit .rapid-surgery-acknowledge:focus-visible { outline: 2px solid #E5DDFF; outline-offset: 3px; }
+}
+
+@media (max-width: 359px) {
+  .mobile-room-reference.mobile-room-orbit .mrd-header { padding-left: 14px; padding-right: 14px; gap: 3px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-room-name .mrd-live-context { font-size: 10px; column-gap: 4px; }
+  .mobile-room-orbit .mrd-live-separator { display: none; }
+  .mobile-room-reference.mobile-room-orbit .mrd-timing { margin-top: 38px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action { border-radius: 19px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action > span { font-size: 12px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row { gap: 6px; padding-inline: 4px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row strong { font-size: 12px; }
+}
+
+/* Short phones: give the diagram the space left AFTER the real header,
+   controls and dock. Never scale clinical touch targets or clip warnings.
+   Exceptional content / enlarged text can still use the root scroll fallback. */
+@media (max-width: 767px) and (max-height: 900px) {
+  .mobile-room-reference.mobile-room-orbit .mrd-header {
+    min-height: 0;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 6px;
+    align-items: center;
+  }
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit .mrd-room-name h1 {
+    font-size: clamp(17px, 5vw, 22px);
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-room-name .mrd-live-context {
+    margin-top: 3px;
+    font-size: 10px;
+  }
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit > .mrd-scroll-content {
+    flex: 1 0 auto;
+    padding: 0 20px calc(84px + 2.98svh + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .mobile-room-orbit .mrd-orbit-viewport {
+    position: relative;
+    display: block;
+    flex: 1 0 200px;
+    min-height: 200px;
+    width: calc(100% + 40px);
+    margin: 2px -20px 0;
+    container: orbit-viewport / size;
+  }
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit .mrd-phase-card.mrd-orbit-stage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(100cqw, 111.4286cqh);
+    margin: 0;
+    transform: translate(-50%, -50%);
+    container-type: inline-size;
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps .mrd-step-name {
+    width: 24%;
+    font-size: clamp(10px, 3.12cqw, 13px);
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-phase-advance.mrd-orbit-current {
+    width: 43%;
+    height: 42%;
+  }
+  .mobile-room-orbit .mrd-orbit-phase-icon {
+    width: clamp(40px, 16cqw, 64px);
+    height: clamp(40px, 16cqw, 64px);
+    flex-basis: clamp(40px, 16cqw, 64px);
+  }
+  .mobile-room-orbit .mrd-orbit-phase-mask { width: 100%; height: 100%; }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-phase-icon > svg {
+    width: clamp(28px, 9cqw, 36px);
+    height: clamp(28px, 9cqw, 36px);
+  }
+  .mobile-room-orbit .mrd-orbit-phase-title { font-size: clamp(17px, 6cqw, 26px); }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-adjustments button {
+    width: clamp(44px, 16cqw, 58px);
+    height: clamp(44px, 16cqw, 58px);
+  }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-adjustments button svg { width: 28px; height: 28px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-timing { min-height: 52px; margin-top: 4px; flex-shrink: 0; }
+  .mobile-room-reference.mobile-room-orbit .mrd-time-value { font-size: clamp(28px, 8vw, 38px); }
+  .mobile-room-reference.mobile-room-orbit .mrd-time-label { font-size: 12px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-actions { margin: 8px 0 0; flex-shrink: 0; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action { min-height: 60px; padding: 5px 2px; gap: 3px; border-radius: 18px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action svg { width: 24px; height: 24px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-action > span { font-size: 12px; }
+  .mobile-room-orbit .mrd-action-hygiene-icon { width: 40px; height: 40px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff { margin-top: 8px; padding: 0 6px; flex-shrink: 0; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row { min-height: 44px; padding: 4px; gap: 6px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row .mrd-staff-icon { width: 28px; height: 34px; flex-basis: 28px; }
+  .mobile-room-reference.mobile-room-orbit .mrd-staff-row strong { font-size: 12px; }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .mobile-room-orbit *, .mobile-room-orbit *::before, .mobile-room-orbit *::after { transition: none !important; animation: none !important; }
+  .mobile-room-orbit ~ .step-confirm-overlay *, .mobile-room-orbit ~ .step-confirm-overlay *::before, .mobile-room-orbit ~ .step-confirm-overlay *::after { transition: none !important; animation: none !important; }
+}

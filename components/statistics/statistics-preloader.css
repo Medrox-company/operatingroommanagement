@@ -1,0 +1,2 @@
+/* Share the existing statistics loader geometry and theme-aware text tokens. */
+.stats-statistics-loader { --performance-median: var(--stats-accent, var(--color-primary, #06b6d4)); }

@@ -11,6 +11,10 @@ dist/
 build/
 
 # Local visual QA evidence is not part of the deployed application.
+/.claude/
+/.codex/
+/.agents/
+/.21st/
 /design-qa*.png
 /design-qa*.jpg
 /design-ref-*.png

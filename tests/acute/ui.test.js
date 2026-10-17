@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
+import postcss from 'postcss';
 
 const require = createRequire(import.meta.url);
 const compiled = source => ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
@@ -29,6 +30,7 @@ const ui = load('../../components/AcuteRequestsModule.tsx', {
   '../lib/acute-day-view': dayDisplay,
   '../lib/acute-circular-timeline': {},
   '../hooks/useSharedClock': { useNowMinuteMs: () => NOW },
+  '../hooks/useMediaQuery': { useMediaQuery: () => false },
   './ModulePageHeading': heading,
   './statistics/AppCharts': { DayNavigator: () => null, GlassCalendar: () => null },
   './acute/display': display,
@@ -52,6 +54,25 @@ const dialogs = load('../../components/acute/AcuteDialogs.tsx', {
   '../../lib/acute-requests': { ACUTE_INPUT_LIMITS: { durationMin: 1, durationMax: 1440 } },
   '../../lib/acute-module-cycles': cycleDisplay,
   './display': display,
+});
+
+test('new mobile intake hides only the requested duration help and retains selected estimates', () => {
+  const css = postcss.parse(readFileSync(new URL('../../components/acute/acute-requests.css', import.meta.url), 'utf8'));
+  let matched = false;
+  css.walkRules(rule => {
+    if (!rule.selector.includes('data-intake-new')) return;
+    matched = true;
+    assert.equal(rule.parent.name, 'media');
+    assert.equal(rule.parent.params, '(max-width: 767px)');
+    assert.deepEqual(rule.selectors, ['.acute-form[data-intake-new="true"] .acute-duration-prompt', '.acute-form[data-intake-new="true"] .acute-duration-explanation']);
+    assert.ok(rule.nodes.some(node => node.prop === 'display' && node.value === 'none'));
+  });
+  assert.ok(matched);
+  const source = readFileSync(new URL('../../components/acute/AcuteDialogs.tsx', import.meta.url), 'utf8');
+  assert.match(source, /data-intake-new=\{!request\}/);
+  const picker = renderToStaticMarkup(React.createElement(dialogs.AcuteDurationPicker, { id: 'qa-duration', band: 'over-60', minutes: '120', disabled: false, onBandChange() {} }));
+  assert.doesNotMatch(picker, /acute-duration-prompt/);
+  assert.match(picker, /Odhad pro časovou osu: 120 min/);
 });
 
 test('duration bands preserve saved minutes until changed and map over-60 selection to the approved 120-minute estimate', () => {

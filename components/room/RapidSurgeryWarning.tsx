@@ -176,7 +176,7 @@ const RapidSurgeryWarningComponent = ({
          nasvícenou shora, uvnitř karty s rádiusem 16. Jantarová zůstává, ale
          nese ji ikona, popisek a číslo — ne barevný pruh přes celou hlavu. */
       <div
-        className="fixed inset-0 z-[120] flex items-center justify-center p-5"
+        className="rapid-surgery-modal fixed inset-0 z-[120] flex items-center justify-center p-5"
         role="dialog"
         aria-modal="true"
         aria-labelledby="rapid-surgery-warning-title"
@@ -192,7 +192,7 @@ const RapidSurgeryWarningComponent = ({
         }}
       >
         <section
-          className="relative w-full max-w-[380px] overflow-hidden rounded-[30px] p-6"
+          className="rapid-surgery-card relative w-full max-w-[380px] overflow-hidden rounded-[30px] p-6"
           style={{
             background: 'linear-gradient(160deg, rgba(108,132,236,0.20) 0%, rgba(58,66,138,0.11) 34%, rgba(14,18,34,0.62) 72%, rgba(9,11,21,0.72) 100%)',
             border: '1px solid rgba(190,206,255,0.10)',
@@ -202,7 +202,7 @@ const RapidSurgeryWarningComponent = ({
           <button
             type="button"
             onClick={() => setDismissedEventKey(transition.eventKey)}
-            className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-[13px] transition-colors active:scale-95"
+            className="rapid-surgery-close absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-[13px] transition-colors active:scale-95"
             style={{
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.07)',
@@ -215,7 +215,7 @@ const RapidSurgeryWarningComponent = ({
           </button>
 
           <div
-            className="grid h-12 w-12 place-items-center rounded-[16px]"
+            className="rapid-surgery-icon grid h-12 w-12 place-items-center rounded-[16px]"
             style={{
               background: 'rgba(245,158,11,0.13)',
               border: '1px solid rgba(245,158,11,0.22)',
@@ -226,26 +226,26 @@ const RapidSurgeryWarningComponent = ({
           </div>
 
           <p
-            className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em]"
+            className="rapid-surgery-kicker mt-5 text-[10px] font-semibold uppercase tracking-[0.22em]"
             style={{ color: 'rgba(245,158,11,0.80)' }}
           >
             Upozornění na časový interval
           </p>
           <h2
             id="rapid-surgery-warning-title"
-            className="mt-2.5 pr-10 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-white"
+            className="rapid-surgery-title mt-2.5 pr-10 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-white"
           >
             Interval kratší než 5 minut
           </h2>
           <p
             id="rapid-surgery-warning-description"
-            className="mt-3 text-[13px] leading-relaxed text-white/50"
+            className="rapid-surgery-description mt-3 text-[13px] leading-relaxed text-white/50"
           >
             Od příjezdu pacienta na sál do zahájení chirurgického výkonu uplynulo pouze
           </p>
 
           <div
-            className="mt-5 flex items-baseline justify-center rounded-[16px] py-5"
+            className="rapid-surgery-interval mt-5 flex items-baseline justify-center rounded-[16px] py-5"
             style={{
               background: 'rgba(245,158,11,0.07)',
               border: '1px solid rgba(245,158,11,0.16)',
@@ -253,10 +253,10 @@ const RapidSurgeryWarningComponent = ({
             }}
             aria-label={`Naměřený interval ${transition.formattedDuration}`}
           >
-            <strong className="text-[38px] font-light tabular-nums leading-none tracking-[-0.04em]" style={{ color: '#FBBF24' }}>
+            <strong className="rapid-surgery-duration text-[38px] font-light tabular-nums leading-none tracking-[-0.04em]" style={{ color: '#FBBF24' }}>
               {transition.formattedDuration}
             </strong>
-            <span className="ml-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+            <span className="rapid-surgery-unit ml-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
               min
             </span>
           </div>
@@ -265,7 +265,7 @@ const RapidSurgeryWarningComponent = ({
             type="button"
             autoFocus
             onClick={() => setDismissedEventKey(transition.eventKey)}
-            className="mt-5 h-12 w-full rounded-[16px] text-[13px] font-semibold tracking-[0.01em] transition-colors active:scale-[0.98]"
+            className="rapid-surgery-acknowledge mt-5 h-12 w-full rounded-[16px] text-[13px] font-semibold tracking-[0.01em] transition-colors active:scale-[0.98]"
             style={{
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.09)',

@@ -207,6 +207,32 @@ test('accessible descriptions prioritize emergency, lock, and pause states', () 
   }
 });
 
+test('dashboard patient and message indicators use circles backed by real room state', () => {
+  for (const [roomState, expected, absent] of [
+    [{ patientCalledAt: '2026-09-14T09:00:00Z', patientArrivedAt: null, noticeMessage: 'Zpráva' }, ['Pacient přivolán', 'Čeká notifikační zpráva pro sál'], ['Pacient na sále']],
+    [{ patientCalledAt: '2026-09-14T09:00:00Z', patientArrivedAt: '2026-09-14T09:10:00Z' }, ['Pacient na sále'], ['Pacient přivolán', 'Čeká notifikační zpráva pro sál']],
+  ]) {
+    const { cards } = render({ room: { ...baseRoom, ...roomState } });
+    for (const card of cards) {
+      const badges = elements(card, node => node.props.role === 'img');
+      for (const label of expected) {
+        const badge = badges.find(node => node.props['aria-label'] === label);
+        assert.ok(badge, `${label} shown in both dashboard layouts`);
+        assert.match(badge.props.className, /rounded-full|dashboard-room-status-indicator/);
+      }
+      for (const label of absent) assert.equal(badges.some(node => node.props['aria-label'] === label), false);
+    }
+    const desktop = cards[1];
+    const [rail] = elements(desktop, node => node.props.className === 'dashboard-room-status-rail');
+    assert.ok(rail, 'desktop indicators share the title-aligned right rail');
+    assert.equal(elements(rail, node => node.props.role === 'img').length, expected.length);
+    const [header] = elements(desktop, node => node.props.className?.includes('dashboard-workspace-card-header--with-indicators'));
+    assert.ok(header, 'room title reserves space for its status circles');
+    const [footer] = elements(desktop, node => node.props.className?.includes('dashboard-workspace-card-footer'));
+    assert.equal(elements(footer, node => node.props.className?.includes('dashboard-room-status-indicator')).length, 0);
+  }
+});
+
 test('AM and PM assignments render in their corresponding visible specialty fields', () => {
   const { cards } = render({ specialties: [
     { departmentId: 'urology', name: 'Urologie', dayPart: 'PM' },

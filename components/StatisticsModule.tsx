@@ -33,12 +33,21 @@ import { C, DEPT_COLORS } from './statistics/statistics-theme';
 import { roomStatusColor, roomStatusLabel, Card, SectionLabel, EmptyState } from './statistics/StatisticsPrimitives';
 import { RoomDetailPanel } from './statistics/RoomActivityPanels';
 import { RoomMetricsTable } from './statistics/RoomMetricsTable';
-const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false });
-const RoomsTab = dynamic(() => import('./statistics/RoomsTab').then((module) => module.RoomsTab), { ssr: false });
-const PhasesTab = dynamic(() => import('./statistics/PhasesTab').then((module) => module.PhasesTab), { ssr: false });
-const PerformanceTab = dynamic(() => import('./statistics/PerformanceTab').then((module) => module.PerformanceTab), { ssr: false });
-const NotificationsTab = dynamic(() => import('./statistics/NotificationsTab').then((module) => module.NotificationsTab), { ssr: false });
-const DevicesTab = dynamic(() => import('./statistics/DevicesTab').then((module) => module.DevicesTab), { ssr: false });
+import { OverviewMetricList } from './statistics/OverviewMetricList';
+import { OverviewWorkingHours } from './statistics/OverviewWorkingHours';
+import StatisticsExportDialog from './statistics/StatisticsExportDialog';
+import { StatisticsPhaseFilterContext } from './statistics/StatisticsPhaseFilterContext';
+import { filterStatisticsPhaseDurations, statisticsPhaseFilterNote } from '../lib/statistics-phase-filter';
+import { StatisticsPreloader } from './statistics/StatisticsPreloader';
+import { aggregateStatisticsProgress } from '../lib/statistics-loading-progress';
+import { statisticsDayPhaseSummary } from '../lib/statistics-day-phases';
+const loadingStatisticsTab = () => <StatisticsPreloader label="Připravuji záložku…" hint="Načítám její grafické prvky. Počet datových záznamů se teprve zjišťuje." />;
+const FinanceTab = dynamic(() => import('./statistics/FinanceTab').then((module) => module.FinanceTab), { ssr: false, loading: loadingStatisticsTab });
+const RoomsTab = dynamic(() => import('./statistics/RoomsTab').then((module) => module.RoomsTab), { ssr: false, loading: loadingStatisticsTab });
+const PhasesTab = dynamic(() => import('./statistics/PhasesTab').then((module) => module.PhasesTab), { ssr: false, loading: loadingStatisticsTab });
+const PerformanceTab = dynamic(() => import('./statistics/PerformanceTab').then((module) => module.PerformanceTab), { ssr: false, loading: loadingStatisticsTab });
+const NotificationsTab = dynamic(() => import('./statistics/NotificationsTab').then((module) => module.NotificationsTab), { ssr: false, loading: loadingStatisticsTab });
+const DevicesTab = dynamic(() => import('./statistics/DevicesTab').then((module) => module.DevicesTab), { ssr: false, loading: loadingStatisticsTab });
 
 interface StatisticsModuleProps { rooms?: OperatingRoom[]; }
 const EMPTY_ROOMS: OperatingRoom[] = [];
@@ -53,7 +62,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const { activeHospital, activeHospitalId } = useHospital();
   const isMobileViewport = useMediaQuery('(max-width: 767px)');
   // Get workflow statuses from database context - already filtered and sorted
-  const { workflowStatuses } = useWorkflowStatusesContext();
+  const { workflowStatuses, loading: workflowLoading, error: workflowError, refreshStatuses } = useWorkflowStatusesContext();
   
   // workflowStatuses is already filtered (active, non-special) and sorted by context
   // Map to WORKFLOW_STEPS format
@@ -71,6 +80,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const allRooms = propRooms ?? EMPTY_ROOMS;
   const [period, setPeriod] = useState<Period>('den');
   const [tab,    setTab]    = useState<Tab>('prehled');
+  const [excludeShortPhases, setExcludeShortPhases] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [roomSelection, setRoomSelection] = useState<{ id: string; day: Date | null; hospitalId: string | null } | null>(null);
   const selectedRoom = roomSelection?.hospitalId === activeHospitalId
     ? allRooms.find(room => room.id === roomSelection?.id) : undefined;
@@ -78,14 +89,10 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     setRoomSelection({ id: room.id, day, hospitalId: activeHospitalId });
   }, [activeHospitalId]);
   const performance = useStatisticsPerformance(tab === 'vykonnost');
-  const { statusHistory: allStatusHistory, dayHistory: allDayHistory, notifications, devices, isReportLoading: isStatisticsLoading, reportSourceErrors, dayHistoryCoverageStart } = useStatisticsData(period);
+  const { statusHistory: allStatusHistory, dayHistory: allDayHistory, notifications, devices, reportSourceErrors, dayHistoryCoverageStart, progressBySource, reportSourceLoading, refresh: refreshStatistics } = useStatisticsData(period);
   const periodScope = useMemo(() => scopeStatisticsRooms(allRooms, allStatusHistory, statisticsPeriodWindow(period)), [allRooms, allStatusHistory, period]);
   const rooms = periodScope.rooms;
-  const performanceRooms = useMemo(
-    () => scopeStatisticsRooms(allRooms, performance.history, statisticsPeriodWindow('rok')).rooms,
-    [allRooms, performance.history],
-  );
-  const statusHistory = periodScope.history;
+  const statusHistory = useMemo(() => filterStatisticsPhaseDurations(periodScope.history, excludeShortPhases), [periodScope.history, excludeShortPhases]);
   const dbStats = useMemo(() => aggregateRoomStatistics(statusHistory), [statusHistory]);
   // A failure in a module the user is not printing must not block an otherwise
   // complete report (e.g. a missing Devices permission must not block Rates).
@@ -99,7 +106,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     notifikace: ['notifications', 'statusHistory'],
     zarizeni: ['devices'],
   };
-  const statisticsError = reportSources[tab].map(source => reportSourceErrors[source]).find(Boolean);
+  const needsWorkflow = ['prehled', 'saly', 'faze'].includes(tab);
+  const statisticsError = reportSources[tab].map(source => reportSourceErrors[source]).find(Boolean) || (needsWorkflow ? workflowError : null);
+  const isStatisticsLoading = reportSources[tab].some(source => reportSourceLoading[source]) || (needsWorkflow && workflowLoading);
+  const statisticsProgress = aggregateStatisticsProgress([
+    ...reportSources[tab].map(source => progressBySource[source]),
+    ...(needsWorkflow ? [{ loaded: workflowLoading ? 0 : workflowStatuses.length, total: workflowLoading ? null : workflowStatuses.length, complete: !workflowLoading && !workflowError }] : []),
+  ]);
+  const statisticsLoadError = statisticsError ? <Card className="p-6"><p role="alert" style={{ color: C.red }}>{statisticsError}</p><button type="button" className="mt-3 min-h-11 rounded-lg px-4 py-2 text-sm" style={{ color: C.accent, border: `1px solid ${C.border}` }} onClick={() => { void refreshStatistics(); if (needsWorkflow) void refreshStatuses(); }}>Zkusit načtení znovu</button></Card> : null;
 
   /* ── Provozní metriky sálů po dnech ────────────────────────────────────────
      Sekce „Jednotlivé sály" umí listovat po dnech dozadu, proto potřebuje
@@ -109,7 +123,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const [metricsDay, setMetricsDay] = useState<Date>(() => operationalToday());
   const dayScope = useMemo(() => scopeStatisticsRooms(allRooms, allDayHistory, statisticsDayWindow(metricsDay)), [allRooms, allDayHistory, metricsDay]);
   const dayRooms = dayScope.rooms;
-  const dayHistory = dayScope.history;
+  const dayHistory = useMemo(() => filterStatisticsPhaseDurations(dayScope.history, excludeShortPhases), [dayScope.history, excludeShortPhases]);
   /** Režim hero panelu: primárně orbitální rozpad po sálech, souhrn dne na klik */
   const [heroMode, setHeroMode] = useState<'summary' | 'orbit'>('orbit');
   // Each mounted tab publishes its own already-filtered data. A report is a
@@ -122,6 +136,11 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
       if (reportData.current[reportTab] === report) delete reportData.current[reportTab];
     };
   }, []);
+  useEffect(() => {
+    setRoomSelection(null);
+    setPrintError(null);
+    setExportOpen(false);
+  }, [activeHospitalId]);
 
   // Lokalizovaný popis aktuálního období pro print-only hlavičku reportu
   const periodLabelMap: Record<Period, string> = {
@@ -486,34 +505,19 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     });
   }, [dayRooms, dayHistory, metricsDay]);
 
-  /** Fáze operačního cyklu pro vybraný den (podíl času jednotlivých statusů). */
-  const dayPhaseRings = useMemo(() => {
-    const { start, end } = dayBounds(metricsDay);
-    const totals: Record<string, { ms: number; color: string }> = {};
-    WORKFLOW_STEPS.forEach(s => { totals[s.title] = { ms: 0, color: s.color }; });
-
-    dayHistory
-      .filter(e => e.event_type === 'step_change' && e.duration_seconds && e.timestamp)
-      .forEach(e => {
-        const t = new Date(e.timestamp).getTime();
-        if (t < start.getTime() || t >= end.getTime()) return;
-        if (e.step_name && totals[e.step_name]) {
-          totals[e.step_name].ms += (e.duration_seconds || 0) * 1000;
-        }
-      });
-
-    const total = Object.values(totals).reduce((a, b) => a + b.ms, 0);
-    if (total === 0) return [];
-    return Object.entries(totals)
-      .filter(([name, v]) => v.ms > 0 && !isIdleStatusName(name))
-      .map(([name, v]) => ({
-        label: name,
-        percent: (v.ms / total) * 100,
-        detail: fmtDurationMin(v.ms / 60000),
-        color: v.color,
-      }))
-      .sort((a, b) => b.percent - a.percent);
-  }, [dayHistory, metricsDay, WORKFLOW_STEPS]);
+  /** Selected day's measured cycle time, separate from utilization/capacity. */
+  const dayPhaseSummary = useMemo(() => statisticsDayPhaseSummary(
+    dayHistory, dayRooms, WORKFLOW_STEPS, dayBounds(metricsDay),
+  ), [dayHistory, dayRooms, metricsDay, WORKFLOW_STEPS]);
+  const dayPhaseRings = useMemo(() => dayPhaseSummary.phases.map(phase => ({
+    label: phase.label, percent: phase.percent, color: phase.color,
+    detail: fmtDurationMin(phase.milliseconds / 60000),
+  })), [dayPhaseSummary]);
+  const dayPhaseNote = 'Podíly doložených dokončených fází ve vybraném pracovním dni. '
+    + 'Bez stavu Sál připraven; při známém rozvrhu pouze průnik s pracovní dobou sálu. '
+    + 'Procenta jsou zaokrouhlena tak, aby měla součet 100 %. '
+    + (dayPhaseSummary.withoutWorkingHours
+      ? 'U sálů bez určené pracovní doby je zachován skutečně zaznamenaný čas pouze ve vybraném provozním dni.' : '');
 
   /** Doporučení pro hero panel Přehledu — odvozená z reálných čísel. */
   const overviewInsights = useMemo<InsightItem[]>(() => {
@@ -544,8 +548,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     // Nejdelší fáze dne — kandidát na zkrácení
     const longest = dayPhaseRings[0];
     if (longest && longest.percent >= 10) {
-      out.push({ tone: 'info', title: `Zkrať: ${longest.label}`,
-        text: `Status „${longest.label}" zabral ${longest.detail} (${Math.round(longest.percent)} % dne). Standardizace tohoto kroku přinese nejrychlejší zlepšení.` });
+      out.push({ tone: 'info', title: `Nejdelší fáze: ${longest.label}`,
+        text: `Status „${longest.label}“ zabral ${longest.detail} (${longest.percent} % naměřeného času cyklu ve vybraném dni). Podíl fáze není vytížení sálu vůči pracovní kapacitě.` });
     }
 
     if (emergCnt > 0) {
@@ -675,8 +679,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   const buildOverviewReport = (): StatisticsReport => {
     const dayLabel = metricsDay.toLocaleDateString('cs-CZ', { dateStyle: 'long' });
     return {
+      periodLabel: `${periodLabelMap[period]} · denní detail: ${dayLabel}`,
       requiredHistoryFrom: dayBounds(metricsDay).start.toISOString(),
-      context: `Vybraný provozní den: ${dayLabel}, 07:00 až 06:59 následujícího dne. Souhrn dne a denní metriky respektují kalendář. Samostatná tabulka za období používá filtr ${periodLabelMap[period].toLowerCase()}.${orbitRoom ? ` Detail sálu: ${orbitRoom.name}.` : ''} ${STATISTICS_ROOM_SCOPE_NOTE}`,
+      context: `Vybraný provozní den: ${dayLabel}, 07:00 až 06:59 následujícího dne. Souhrn dne a denní metriky respektují kalendář. Samostatná tabulka za období používá filtr ${periodLabelMap[period].toLowerCase()}.${orbitRoom ? ` Detail sálu: ${orbitRoom.name}.` : ''} ${STATISTICS_ROOM_SCOPE_NOTE} ${statisticsPhaseFilterNote(excludeShortPhases)}`,
       metrics: [
         { label: 'Výkony ve vybraném dni', value: dayStats.totalOps },
         { label: 'Průměrné vytížení dne', value: dayStats.openRooms > 0 ? `${dayStats.avgUtil} %` : '—', detail: 'Z provozně otevřených sálů' },
@@ -700,26 +705,26 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         },
         {
           title: 'Fáze operačního cyklu ve vybraném dni',
-          description: 'Stejný rozpad jako v souhrnu dne. Klidové fáze nejsou uvedeny; podíly jsou vůči všem naměřeným fázím, a nemusí proto dát součet 100 %.',
+          description: dayPhaseNote,
           columns: [{ label: 'Fáze' }, { label: 'Naměřený čas', align: 'right' }, { label: 'Podíl času', align: 'right' }],
           rows: dayPhaseRings.map(phase => [phase.label, phase.detail, `${phase.percent.toLocaleString('cs-CZ', { maximumFractionDigits: 1 })} %`]),
         },
         ...(orbitRoom ? [{
           title: `Výkony vybraného sálu: ${orbitRoom.name}`,
-          description: `Detail pro provozní den ${dayLabel}. Rozpracované a neukončené výkony jsou výslovně označeny.`,
+          description: `Zaznamenané výkony pro provozní den ${dayLabel}. Výkony bez doloženého konce jsou výslovně označeny; živý stav rozpracovaných výkonů se netiskne.`,
           columns: [{ label: 'Čas výkonu' }, { label: 'Naměřená délka' }, { label: 'Stav záznamu' }],
-          rows: roomOperationRings.map(operation => [operation.label, operation.centerLabel ?? '', operation.detail ?? '']),
+          rows: roomOperationRings.filter(operation => operation.detail !== 'právě běží').map(operation => [operation.label, operation.centerLabel ?? '', operation.detail ?? '']),
         }] : []),
-        ...(selectedOp ? [{
+        ...(selectedOp && selectedOp.detail !== 'právě běží' ? [{
           title: `Fáze vybraného výkonu: ${selectedOp.label}`,
           columns: [{ label: 'Fáze' }, { label: 'Doba trvání' }],
           rows: selectedOpPhases.map(phase => [phase.label, fmtDurationMin(phase.ms / 60000)]),
         }] : []),
         {
           title: `Souhrn za období: ${periodLabelMap[period]}`,
-          description: `Výkony v pracovní době za zvolené období. ${period === 'den' ? 'Využití v denním režimu se vztahuje k aktuálnímu provoznímu dni od 07:00, nikoli k posuvným 24 hodinám.' : 'Využití odpovídá zvolenému období.'} Stav sálu je aktuální v okamžiku exportu, nikoli historický.`,
-          columns: [{ label: 'Operační sál' }, { label: 'Výkony', align: 'right' }, { label: 'Využití', align: 'right' }, { label: 'Aktuální stav' }],
-          rows: rooms.map(room => [room.name, countOperationsInWorkingHours(room, statusHistory, period), getRoomTotalWorkingMinutes(room, period) > 0 ? `${calculateRoomUtilization(room, statusHistory, period)} %` : '—', roomStatusLabel(room)]),
+          description: `Výkony v pracovní době za zvolené období. ${period === 'den' ? 'Využití v denním režimu se vztahuje k aktuálnímu provoznímu dni od 07:00, nikoli k posuvným 24 hodinám.' : 'Využití odpovídá zvolenému období.'}`,
+          columns: [{ label: 'Operační sál' }, { label: 'Výkony', align: 'right' }, { label: 'Využití', align: 'right' }],
+          rows: rooms.map(room => [room.name, countOperationsInWorkingHours(room, statusHistory, period), getRoomTotalWorkingMinutes(room, period) > 0 ? `${calculateRoomUtilization(room, statusHistory, period)} %` : '—']),
         },
         {
           title: 'Výkony podle oddělení',
@@ -744,7 +749,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           columns: [{ label: 'Zjištění' }, { label: 'Doporučení pro vybraný den' }],
           rows: [
             ...overviewInsights.filter(insight => !insight.title.startsWith('Nouzový režim:') && insight.title !== 'Bez mimořádností').map(insight => [insight.title, insight.text]),
-            ['Aktuální nouzový režim', `${rooms.filter(room => room.isEmergency).length} sálů v nouzovém režimu v okamžiku vytvoření reportu; nejde o počet historických událostí.`],
           ],
         },
       ],
@@ -774,9 +778,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     return report;
   };
 
-  const reportMetadata = (generatedAt: Date) => ({
+  const reportMetadata = (generatedAt: Date, report?: StatisticsReport) => ({
     tabLabel: tabLabelMap[tab],
-    periodLabel: tab === 'vykonnost' ? 'Posledních 12 kalendářních měsíců' : periodLabelMap[period],
+    periodLabel: report?.periodLabel ?? (tab === 'vykonnost' ? 'Posledních 12 kalendářních měsíců' : periodLabelMap[period]),
     hospitalName: activeHospital?.hospital_name ?? activeHospital?.hospital_short_name ?? undefined,
     generatedAt,
     filename: `Statistiky_${tab}_${generatedAt.toISOString().slice(0, 10)}`,
@@ -786,7 +790,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     const report = resolveReport('export');
     if (!report) return;
     try {
-      downloadStatisticsCsv(report, reportMetadata(new Date()));
+      downloadStatisticsCsv(report, reportMetadata(new Date(), report));
     } catch (error) {
       setPrintError(error instanceof Error ? error.message : 'Export se nepodařilo vytvořit.');
     }
@@ -797,7 +801,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
     if (!report) return;
     const generatedAt = new Date();
     try {
-      openStatisticsPrintReport(report, reportMetadata(generatedAt));
+      openStatisticsPrintReport(report, reportMetadata(generatedAt, report));
     } catch (error) {
       setPrintError(error instanceof Error ? error.message : 'Report se nepodařilo otevřít. Zkuste tisk znovu.');
     }
@@ -818,7 +822,9 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
   }, []);
 
   return(
+    <StatisticsPhaseFilterContext.Provider value={excludeShortPhases}>
     <StatisticsReportContext.Provider value={registerReport}>
+      <StatisticsExportDialog open={exportOpen} onClose={() => setExportOpen(false)} rooms={allRooms} hospitalId={activeHospitalId} hospitalName={activeHospital?.hospital_name ?? activeHospital?.hospital_short_name ?? undefined} excludeShortPhases={excludeShortPhases} />
       {printError && <div role="alert" className="fixed bottom-20 right-6 z-50 max-w-md rounded-xl border border-red-300/30 bg-slate-900 p-4 text-sm text-white shadow-xl"><p>{printError}</p><button type="button" onClick={() => setPrintError(null)} className="mt-2 underline">Zavřít upozornění</button></div>}
       {/* Mobile background — unified with RoomDetail / Timeline / Staff */}
       <div
@@ -900,6 +906,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </button>
           </div>
 
+          <button type="button" onClick={() => setExportOpen(true)} className="min-h-11 rounded-xl px-4 py-2 text-sm font-medium" style={{ background: C.surface, color: C.text, border: `1px solid ${C.border}` }}><FileDown className="mr-2 inline h-4 w-4" />Export všech statistik za období</button>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-4 py-2 text-sm" style={{ color: C.text, background: C.surface }}>
+            <input type="checkbox" checked={excludeShortPhases} onChange={event => setExcludeShortPhases(event.target.checked)} className="h-4 w-4 accent-cyan-400" />
+            Vynechat fáze kratší než 1 minutu
+          </label>
+
           {/* Period toggle */}
           {tab !== 'vykonnost' && <div className="print-hide">
             <MobileSectionLabel className="mb-2">Období</MobileSectionLabel>
@@ -920,7 +932,8 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             <StatisticsNavigation value={tab} onChange={setTab} compact />
           </div>
 
-          <div id={`statistics-panel-${tab}`} role="tabpanel" aria-labelledby={`statistics-tab-${tab}`} tabIndex={0} className="stats-tab-panel min-w-0">
+          <div key={activeHospitalId ?? 'none'} id={`statistics-panel-${tab}`} role="tabpanel" aria-labelledby={`statistics-tab-${tab}`} tabIndex={0} className="stats-tab-panel min-w-0">
+          {tab !== 'vykonnost' && statisticsError ? statisticsLoadError : tab !== 'vykonnost' && isStatisticsLoading ? <StatisticsPreloader progress={statisticsProgress} label={`Načítání: ${tabLabelMap[tab]}`} /> : <>
           {/* ── Přehled ── (vždy renderováno při tisku, bez page-breaks) */}
           {(tab === 'prehled') && (
             <div className="flex flex-col gap-3 print-section">
@@ -1016,12 +1029,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           {(tab === 'vykonnost') && (
             <div className="flex flex-col gap-3 print-section">
               <PerformanceTab
-                rooms={performanceRooms}
+                rooms={allRooms}
                 history={performance.history}
                 isLoading={performance.isLoading || performance.isRefreshing}
                 error={performance.error}
                 loadedAt={performance.loadedAt}
                 loadingProgress={performance.progress}
+                excludeShortPhases={excludeShortPhases}
+                onExcludeShortPhasesChange={setExcludeShortPhases}
                 onRefresh={() => { void performance.refresh(); }}
               />
             </div>
@@ -1086,6 +1101,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
               />
             </div>
           )}
+          </>}
           </div>
         </div>
       </div>
@@ -1163,12 +1179,22 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             <Sheet className="w-4 h-4" />
             CSV
           </button>
+          <button type="button" onClick={() => setExportOpen(true)} className="flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[12px] font-medium" style={{ color: C.text, background: C.surface, border: `1px solid ${C.border}` }}><FileDown className="h-4 w-4" />Export období</button>
         </div>
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 print-hide">
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm" style={{ color: C.text }}>
+          <input type="checkbox" checked={excludeShortPhases} onChange={event => setExcludeShortPhases(event.target.checked)} className="h-4 w-4 accent-cyan-400" />
+          Vynechat fáze kratší než 1 minutu
+        </label>
+        <span className="text-xs" style={{ color: C.muted }}>Filtr nemění počty výkonů ani uložené záznamy.</span>
       </div>
 
       {/* ── Tab content ──
           Obrazovka zůstává nezávislá na samostatném tiskovém reportu. */}
-      <div id={`statistics-panel-${tab}`} role="tabpanel" aria-labelledby={`statistics-tab-${tab}`} tabIndex={0} className="stats-tab-panel min-w-0">
+      <div key={activeHospitalId ?? 'none'} id={`statistics-panel-${tab}`} role="tabpanel" aria-labelledby={`statistics-tab-${tab}`} tabIndex={0} className="stats-tab-panel min-w-0">
+        {tab !== 'vykonnost' && statisticsError ? statisticsLoadError : tab !== 'vykonnost' && isStatisticsLoading ? <StatisticsPreloader progress={statisticsProgress} label={`Načítání: ${tabLabelMap[tab]}`} /> : <>
         {(tab==='prehled') && (
           <div key="prehled" className="space-y-5 print-section">
 
@@ -1311,7 +1337,12 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
                       {/* Fáze operačního cyklu — podíl času jednotlivých statusů */}
                       <div className="w-full mt-8 pt-7" style={{ borderTop: `1px solid ${C.border}` }}>
-                        <StatSectionLabel className="mb-6">Fáze operačního cyklu</StatSectionLabel>
+                        <StatSectionLabel className="mb-3">Fáze operačního cyklu</StatSectionLabel>
+                        {dayPhaseRings.length > 0 && (
+                          <p className="mb-6 text-center text-[12px] leading-relaxed" style={{ color: C.muted }}>
+                            {dayPhaseNote}
+                          </p>
+                        )}
                         <RingRow
                           items={dayPhaseRings}
                           emptyText="Pro vybraný den nejsou zaznamenané fáze."
@@ -1437,9 +1468,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
 
             {/* Row 2: Ops per room + Dept + 7-day trend */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <Card className="p-5">
-                <SectionLabel>Výkony / sál (24 h)</SectionLabel>
-                <BarList
+              <OverviewMetricList title="Výkony / sál (24 h)"
                   ranked
                   items={[...roomBarData]
                     .sort((a, b) => b.ops - a.ops)
@@ -1447,10 +1476,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                     .map(d => ({ label: d.name, value: d.ops, color: d.color }))}
                   emptyText="Za posledních 24 h bez výkonů."
                 />
-              </Card>
-              <Card className="p-5">
-                <SectionLabel>Oddělení — výkony / 24 h</SectionLabel>
-                <BarList
+              <OverviewMetricList title="Oddělení — výkony / 24 h"
                   items={deptMap.slice(0, 7).map(([dept, count]) => ({
                     label: dept,
                     value: count,
@@ -1458,7 +1484,6 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
                   }))}
                   emptyText="Za posledních 24 h bez výkonů."
                 />
-              </Card>
               <Card className="p-5">
                 <SectionLabel>Trend výkonů — 7 dní</SectionLabel>
                 {opsTrend.length > 0 ? (
@@ -1507,61 +1532,24 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
             </div>
 
             {/* Row 4: Working hours overview per room */}
-            <Card className="p-5">
+            <div className="space-y-3">
               <SectionLabel>Přehled pracovních dob sálů (dnešní den)</SectionLabel>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-4">
-                {rooms.map(r => {
+              <OverviewWorkingHours rows={rooms.map(r => {
                   const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
                   const hours = getRoomWorkingHours(r, todayIndex);
                   const workingMins = getRoomWorkingMinutes(r, todayIndex);
                   const opsInHours = countOperationsInWorkingHours(r, statusHistory, period);
                   const util = calculateRoomUtilization(r, statusHistory, period);
                   
-                  return (
-                    <div key={r.id} className="p-3 rounded-lg" style={{ background: C.ghost, border: `1px solid ${C.border}` }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ background: roomStatusColor(r) }} />
-                          <span className="text-xs font-bold" style={{ color: C.text }}>{r.name}</span>
-                        </div>
-                      </div>
-                      <p className="text-[10px] mb-2" style={{ color: C.faint }}>{r.department}</p>
-                      
-                      {/* Working hours */}
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <Clock className="w-3 h-3" style={{ color: hours.enabled ? C.accent : C.faint }} />
-                        <span className="text-xs font-bold" style={{ color: hours.enabled ? C.text : C.faint }}>
-                          {hours.enabled 
-                            ? `${hours.startHour.toString().padStart(2,'0')}:${hours.startMinute.toString().padStart(2,'0')} – ${hours.endHour.toString().padStart(2,'0')}:${hours.endMinute.toString().padStart(2,'0')}`
-                            : 'Zavřeno'}
-                        </span>
-                        {hours.enabled && (
-                          <span className="text-[10px] ml-auto" style={{ color: C.muted }}>
-                            ({Math.round(workingMins / 60)}h {workingMins % 60}m)
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Stats row */}
-                      <div className="flex items-center justify-between pt-2" style={{ borderTop: `1px solid ${C.border}` }}>
-                        <div>
-                          <p className="text-[8px]" style={{ color: C.ghost }}>Operace</p>
-                          <p className="text-sm font-bold" style={{ color: C.accent }}>{opsInHours}</p>
-                        </div>
-                        <div>
-                          <p className="text-[8px]" style={{ color: C.ghost }}>Využití</p>
-                          <p className="text-sm font-bold" style={{ color: util >= 80 ? C.green : util >= 50 ? C.yellow : C.orange }}>{getRoomTotalWorkingMinutes(r, period) > 0 ? `${util}%` : '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[8px]" style={{ color: C.ghost }}>Fronta</p>
-                          <p className="text-sm font-bold" style={{ color: r.queueCount > 0 ? C.yellow : C.green }}>{r.queueCount}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
+                  return { id: r.id, name: r.name, department: r.department, statusColor: roomStatusColor(r), statusLabel: roomStatusLabel(r),
+                    enabled: hours.enabled,
+                    workingHours: hours.enabled
+                      ? `${hours.startHour.toString().padStart(2,'0')}:${hours.startMinute.toString().padStart(2,'0')} – ${hours.endHour.toString().padStart(2,'0')}:${hours.endMinute.toString().padStart(2,'0')}`
+                      : 'Zavřeno',
+                    workingMinutes: workingMins, operations: opsInHours,
+                    utilization: getRoomTotalWorkingMinutes(r, period) > 0 ? util : null, queue: r.queueCount };
+                })} />
+            </div>
 
           </div>
         )}
@@ -1632,12 +1620,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         {(tab==='vykonnost') && (
           <div key="vykonnost" className="space-y-5 print-section">
             <PerformanceTab
-              rooms={performanceRooms}
+              rooms={allRooms}
               history={performance.history}
               isLoading={performance.isLoading || performance.isRefreshing}
               error={performance.error}
               loadedAt={performance.loadedAt}
               loadingProgress={performance.progress}
+              excludeShortPhases={excludeShortPhases}
+              onExcludeShortPhasesChange={setExcludeShortPhases}
               onRefresh={() => { void performance.refresh(); }}
             />
           </div>
@@ -1666,6 +1656,7 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
         </div>
         )}
 
+        </>}
         </div>
 
       </div>
@@ -1678,13 +1669,14 @@ const StatisticsModule: React.FC<StatisticsModuleProps> = ({ rooms: propRooms })
           workflowSteps={WORKFLOW_STEPS}
           period={period}
           selectedDay={roomSelection?.day ?? null}
-          history={roomSelection?.day ? allDayHistory : allStatusHistory}
-          trendHistory={allDayHistory}
+          history={filterStatisticsPhaseDurations(roomSelection?.day ? allDayHistory : allStatusHistory, excludeShortPhases)}
+          trendHistory={filterStatisticsPhaseDurations(allDayHistory, excludeShortPhases)}
           loading={isStatisticsLoading}
           error={reportSourceErrors.statusHistory || reportSourceErrors.dayHistory}
         />
       )}
     </StatisticsReportContext.Provider>
+    </StatisticsPhaseFilterContext.Provider>
   );
 };
 

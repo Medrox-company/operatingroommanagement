@@ -26,9 +26,9 @@ test('Settings presentation rules are phone-only and do not override carousel tr
   });
 });
 
-test('both mobile landing modes reuse MobileHeader and selected administration modules are excluded', () => {
-  assert.equal((source.match(/<MobileHeader kicker="Konfigurace systému" title="Nastavení" right=\{viewToggle\} \/>/g) || []).length, 2);
-  assert.match(source, /data-settings-landing=\{selectedModule \? undefined : landingView\}/);
+test('mobile uses grid header and selected administration modules are excluded', () => {
+  assert.match(source, /title="Nastavení" description="Správa provozu, personálu a systému" showDesignSelector=\{false\}/);
+  assert.match(source, /data-settings-landing=\{selectedModule \? undefined : effectiveLandingView\}/);
   assert.match(source, /<header className="mb-7 hidden md:block">/);
   const wrapper = declarationsFor('.settings-page-root[data-settings-landing="grid"] > .settings-module-wrapper');
   assert.equal(wrapper.padding, 'calc(18px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px))');
