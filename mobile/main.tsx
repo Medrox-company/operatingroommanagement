@@ -19,7 +19,7 @@ try {
   document.documentElement.classList.add('m-dark');
 }
 
-try{document.documentElement.dataset.appDesign=localStorage.getItem('or-app-design')==='cliniq'?'cliniq':'classic'}catch(e){}
+document.documentElement.dataset.appDesign='cliniq';
 
 installNativeApiBridge();
 

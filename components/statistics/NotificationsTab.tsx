@@ -10,7 +10,7 @@
  */
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState, memo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef, memo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Bell, AlertTriangle, Clock, Users, Mail, TrendingUp, Calendar,
@@ -24,9 +24,12 @@ import { useStatisticsReport, type StatisticsReport } from './StatisticsReportCo
 import { scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 import {
   fetchNotificationsLog, fetchStatusHistory,
-  type NotificationLogRow, type StatusHistoryRow,
+  getDatabaseHospitalId, type NotificationLogRow, type StatusHistoryRow, type StatusHistoryProgress,
 } from '../../lib/db';
 import type { OperatingRoom } from '../../types';
+import { useHospital } from '../../contexts/HospitalContext';
+import { StatisticsPreloader } from './StatisticsPreloader';
+import { aggregateStatisticsProgress, INITIAL_STATISTICS_PROGRESS } from '../../lib/statistics-loading-progress';
 
 interface NotificationsTabProps {
   notifications: NotificationLogRow[] | null;
@@ -184,6 +187,7 @@ const CompactColumnChart: React.FC<{
 export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
   notifications, statusHistory = [], calendarHistory, rooms: allRooms, periodLabel,
 }) => {
+  const { activeHospitalId } = useHospital();
   const [calendarDay, setCalendarDay] = useState(() => {
     const day = new Date();
     day.setHours(0, 0, 0, 0);
@@ -198,6 +202,29 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
   // A successful empty response is printable; a failed or previous-day response
   // is not. Keep the confirmed date separate from the UI's fallback arrays.
   const [selectedDayReportDate, setSelectedDayReportDate] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const [selectedDayScope, setSelectedDayScope] = useState<string | null>(null);
+  const [calendarScope, setCalendarScope] = useState<string | null>(null);
+  const [loadErrors, setLoadErrors] = useState<Record<string, string>>({});
+  const [recordProgress, setRecordProgress] = useState<Record<string, StatusHistoryProgress>>({});
+  const dayScopeKey = JSON.stringify([activeHospitalId, periodLabel, localDateKey(calendarDay)]);
+  const calendarScopeKey = JSON.stringify([activeHospitalId, 'notifications-calendar-90']);
+  const scopeRef = useRef({ dayScopeKey, calendarScopeKey, calendarSelectionActive });
+  scopeRef.current = { dayScopeKey, calendarScopeKey, calendarSelectionActive };
+  const daySnapshotMatches = selectedDayScope === dayScopeKey && selectedDayReportDate === localDateKey(calendarDay);
+  const calendarReady = calendarScope === calendarScopeKey && !loadErrors[calendarScopeKey];
+  const selectedDayError = loadErrors[dayScopeKey];
+  const selectedDayPending = calendarSelectionActive && !selectedDayError && (selectedDayLoading || !daySnapshotMatches);
+  const calendarError = loadErrors[calendarScopeKey];
+  const updateProgress = (key: string, value: StatusHistoryProgress) => setRecordProgress(current => ({ ...current, [key]: value }));
+  const clearError = (scope: string) => setLoadErrors(current => { const next = { ...current }; delete next[scope]; return next; });
+  const rememberError = (scope: string, error: unknown) => setLoadErrors(current => ({ ...current,
+    [scope]: error instanceof Error ? error.message : String(error) }));
+  const dayProgress = aggregateStatisticsProgress([
+    recordProgress[dayScopeKey + ':history'] ?? INITIAL_STATISTICS_PROGRESS,
+    recordProgress[dayScopeKey + ':notifications'] ?? INITIAL_STATISTICS_PROGRESS,
+  ]);
+  dayProgress.complete = daySnapshotMatches && !selectedDayLoading && !selectedDayError;
 
   useEffect(() => {
     if (!expandedNotificationId) return;
@@ -216,7 +243,8 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    setCalendarDay(today);
+    scopeRef.current.calendarSelectionActive = false;
+    setCalendarDay(current => current.getTime() === today.getTime() ? current : today);
     setCalendarSelectionActive(false);
     setSelectedDayNotifications([]);
     setSelectedDayStatusHistory([]);
@@ -226,20 +254,26 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
 
   useEffect(() => {
     let cancelled = false;
+    const expectedHospital = activeHospitalId;
+    const expectedScope = calendarScopeKey;
+    const active = () => !cancelled && expectedHospital !== null
+      && scopeRef.current.calendarScopeKey === expectedScope && getDatabaseHospitalId() === expectedHospital;
     const toDate = new Date();
-    const fromDate = new Date(toDate);
-    fromDate.setHours(0, 0, 0, 0);
-    fromDate.setDate(fromDate.getDate() - 89);
-
-    void fetchNotificationsLog({ fromDate, toDate, all: true }).then(rows => {
-      if (!cancelled) setCalendarNotifications(rows ?? []);
-    }).catch(error => {
-      console.error('[NotificationsTab] Nepodařilo se načíst data kalendáře', error);
-      if (!cancelled) setCalendarNotifications([]);
-    });
-
+    const fromDate = new Date(toDate); fromDate.setHours(0, 0, 0, 0); fromDate.setDate(fromDate.getDate() - 89);
+    setCalendarScope(null); setCalendarNotifications([]); clearError(expectedScope);
+    updateProgress(expectedScope, INITIAL_STATISTICS_PROGRESS);
+    void (async () => {
+      try {
+        if (!active()) return;
+        const rows = await fetchNotificationsLog({ fromDate, toDate, all: true,
+          onProgress: value => { if (active()) updateProgress(expectedScope, value); } });
+        if (!active()) return;
+        if (rows === null) throw new Error('Notifikace pro kalendář se nepodařilo načíst.');
+        setCalendarNotifications(rows); setCalendarScope(expectedScope);
+      } catch (error) { if (active()) rememberError(expectedScope, error); }
+    })();
     return () => { cancelled = true; };
-  }, []);
+  }, [activeHospitalId, calendarScopeKey, reload]);
 
   const handleCalendarDayChange = useCallback((day: Date) => {
     const normalized = new Date(day);
@@ -251,48 +285,45 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
   useEffect(() => {
     if (!calendarSelectionActive) return;
     let cancelled = false;
-    const fromDate = new Date(calendarDay);
-    fromDate.setHours(0, 0, 0, 0);
-    const toDate = new Date(fromDate);
-    toDate.setDate(toDate.getDate() + 1);
-    toDate.setMilliseconds(-1);
-
-    setSelectedDayLoading(true);
-    setSelectedDayReportDate(null);
-    setSelectedDayNotifications([]);
-    setSelectedDayStatusHistory([]);
-    void Promise.all([
-      fetchNotificationsLog({ fromDate, toDate, all: true }),
-      fetchStatusHistory({ fromDate, toDate, all: true }),
-    ]).then(([rows, history]) => {
-      if (!cancelled) {
-        setSelectedDayNotifications(rows ?? []);
-        setSelectedDayStatusHistory(history ?? []);
-        if (rows !== null && history !== null) setSelectedDayReportDate(localDateKey(calendarDay));
-      }
-    }).catch(error => {
-      console.error('[NotificationsTab] Nepodařilo se načíst notifikace vybraného dne', error);
-      if (!cancelled) {
-        setSelectedDayNotifications([]);
-        setSelectedDayStatusHistory([]);
-      }
-    }).finally(() => {
-      if (!cancelled) setSelectedDayLoading(false);
-    });
-
+    const expectedHospital = activeHospitalId;
+    const expectedScope = dayScopeKey;
+    const active = () => !cancelled && expectedHospital !== null
+      && scopeRef.current.calendarSelectionActive && scopeRef.current.dayScopeKey === expectedScope
+      && getDatabaseHospitalId() === expectedHospital;
+    const fromDate = new Date(calendarDay); fromDate.setHours(0, 0, 0, 0);
+    const toDate = new Date(fromDate); toDate.setDate(toDate.getDate() + 1); toDate.setMilliseconds(-1);
+    setSelectedDayLoading(true); setSelectedDayReportDate(null); setSelectedDayScope(null);
+    setSelectedDayNotifications([]); setSelectedDayStatusHistory([]); clearError(expectedScope);
+    updateProgress(expectedScope + ':history', INITIAL_STATISTICS_PROGRESS);
+    updateProgress(expectedScope + ':notifications', INITIAL_STATISTICS_PROGRESS);
+    void (async () => {
+      try {
+        if (!active()) return;
+        const [rows, history] = await Promise.all([
+          fetchNotificationsLog({ fromDate, toDate, all: true, onProgress: value => { if (active()) updateProgress(expectedScope + ':notifications', value); } }),
+          fetchStatusHistory({ fromDate, toDate, all: true, onProgress: value => { if (active()) updateProgress(expectedScope + ':history', value); } }),
+        ]);
+        if (!active()) return;
+        if (rows === null || history === null) throw new Error('Notifikace vybraného dne se nepodařilo načíst. Zkuste načtení znovu.');
+        setSelectedDayNotifications(rows); setSelectedDayStatusHistory(history);
+        setSelectedDayReportDate(localDateKey(calendarDay)); setSelectedDayScope(expectedScope);
+      } catch (error) { if (active()) rememberError(expectedScope, error); }
+      finally { if (active()) setSelectedDayLoading(false); }
+    })();
     return () => { cancelled = true; };
-  }, [calendarDay, calendarSelectionActive]);
+  }, [activeHospitalId, calendarDay, dayScopeKey, calendarSelectionActive, reload]);
 
-  const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? selectedDayStatusHistory : statusHistory,
+  const roomScope = useMemo(() => scopeStatisticsRooms(allRooms, calendarSelectionActive ? daySnapshotMatches ? selectedDayStatusHistory : [] : statusHistory,
     calendarSelectionActive ? statisticsDayWindow(calendarDay, 0) : statisticsPeriodWindow(periodLabel)),
-  [allRooms, selectedDayStatusHistory, statusHistory, calendarSelectionActive, calendarDay, periodLabel]);
+  [allRooms, selectedDayStatusHistory, statusHistory, daySnapshotMatches, calendarSelectionActive, calendarDay, periodLabel]);
   const rooms = roomScope.rooms;
-  const displayedNotifications = useMemo(() => (calendarSelectionActive ? selectedDayNotifications : notifications)
+  const displayedNotifications = useMemo(() => (calendarSelectionActive ? daySnapshotMatches ? selectedDayNotifications : [] : notifications)
     ?.filter(row => Boolean(row.room_id && roomScope.roomIds.has(row.room_id))) ?? null,
-  [calendarSelectionActive, selectedDayNotifications, notifications, roomScope]);
+  [calendarSelectionActive, daySnapshotMatches, selectedDayNotifications, notifications, roomScope]);
   const displayedStatusHistory = roomScope.history;
 
   const calendarHeat = useMemo(() => {
+    if (!calendarReady) return {};
     const counts = new Map<string, number>();
     const dayRoomIds = new Map<string, Set<string>>();
     for (const notification of calendarNotifications) {
@@ -308,7 +339,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
     const maximum = Math.max(0, ...counts.values());
     if (maximum === 0) return {};
     return Object.fromEntries(Array.from(counts.entries()).map(([key, count]) => [key, count / maximum]));
-  }, [calendarNotifications, allRooms, calendarHistory, statusHistory]);
+  }, [calendarNotifications, calendarReady, allRooms, calendarHistory, statusHistory]);
 
   const notificationImpacts = useMemo(() => {
     const result = new Map<string, {
@@ -512,7 +543,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
     : periodLabel;
 
   const report = useMemo<StatisticsReport | null>(() => {
-    if (!notifications || !stats || !displayedNotifications || (calendarSelectionActive && selectedDayLoading)) return null;
+    if (!notifications || !stats || !displayedNotifications || (calendarSelectionActive && (selectedDayLoading || !daySnapshotMatches || selectedDayError))) return null;
     if (calendarSelectionActive && selectedDayReportDate !== localDateKey(calendarDay)) return null;
     // A changed calendar selection can render once before its fetch effect
     // clears the previous day's rows. Do not publish those rows under a new date.
@@ -551,6 +582,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
       context: (calendarSelectionActive
         ? `Vybraný den: ${activePeriodLabel} (00:00–23:59 místního času). Report zahrnuje všechny načtené notifikace tohoto dne a jejich příjemce.`
         : `Vybrané období: ${activePeriodLabel}. Report zahrnuje všechny načtené notifikace aktuálního filtru a jejich příjemce.`) + ` ${STATISTICS_ROOM_SCOPE_NOTE}`,
+      periodLabel: activePeriodLabel,
       metrics: [
         { label: 'Odeslané notifikace', value: formatNumber(stats.total) },
         { label: 'Příjemci celkem', value: formatNumber(stats.totalRecipients), detail: 'Součet doručení, nikoli unikátní osoby' },
@@ -617,27 +649,32 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
         },
       ],
     };
-  }, [activePeriodLabel, calendarDay, calendarSelectionActive, displayedNotifications, notificationImpacts, notifications, rooms, selectedDayLoading, selectedDayReportDate, stats]);
+  }, [activePeriodLabel, calendarDay, calendarSelectionActive, displayedNotifications, daySnapshotMatches, selectedDayError, notificationImpacts, notifications, rooms, selectedDayLoading, selectedDayReportDate, stats]);
   useStatisticsReport('notifikace', report);
 
-  if (!notifications) {
-    return (
-      <Card>
-        <div className="flex items-center gap-3 py-6 px-4">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-            style={{ background: C.surface2 }}>
-            <Clock size={16} color={C.muted} strokeWidth={2.2} />
-          </div>
-          <div>
-            <p className="text-sm font-medium" style={{ color: C.text }}>Načítání dat…</p>
-            <p className="text-[11px] mt-0.5" style={{ color: C.muted }}>
-              Načítá se z tabulky <code>notifications_log</code>.
-            </p>
-          </div>
-        </div>
-      </Card>
-    );
-  }
+  const calendarPanel = <div className="print-hide space-y-3">
+    <GlassCalendar value={calendarDay} onChange={handleCalendarDayChange} heat={calendarReady ? calendarHeat : {}} accent={C.blue} />
+    {calendarError ? <Card><p role="alert" className="text-xs" style={{ color: C.red }}>{calendarError}</p>
+      <button type="button" className="mt-2 min-h-11 rounded-lg border px-3 text-xs" style={{ color: C.text, borderColor: C.border }} onClick={() => setReload(value => value + 1)}>Zkusit znovu</button></Card>
+      : !calendarReady ? <StatisticsPreloader compact progress={{ ...(recordProgress[calendarScopeKey] ?? INITIAL_STATISTICS_PROGRESS), complete: false }} label="Načítám podklady kalendáře…" /> : null}
+  </div>;
+
+  if (calendarSelectionActive && (selectedDayPending || selectedDayError)) return <div className="flex flex-col gap-4">
+    <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
+      {calendarPanel}
+      <div className="flex flex-col gap-4">
+        <Card><h2 className="text-base font-semibold" style={{ color: C.text }}>Notifikace vybraného dne</h2>
+          <p className="mt-1 text-xs" style={{ color: C.muted }}>{activePeriodLabel}</p>
+          <button type="button" className="mt-3 min-h-11 rounded-lg border px-3 text-xs" style={{ color: C.text, borderColor: C.border }} onClick={() => setCalendarSelectionActive(false)}>Zobrazit celé období</button>
+        </Card>
+        {selectedDayError ? <Card><p role="alert" className="text-sm" style={{ color: C.red }}>{selectedDayError}</p>
+          <button type="button" className="mt-3 min-h-11 rounded-lg border px-3 text-xs" style={{ color: C.text, borderColor: C.border }} onClick={() => setReload(value => value + 1)}>Zkusit znovu</button>
+        </Card> : <StatisticsPreloader progress={dayProgress} label="Načítám notifikace a historii vybraného dne…" />}
+      </div>
+    </div>
+  </div>;
+
+  if (!notifications) return <StatisticsPreloader label="Načítám notifikace…" />;
 
   if (!stats) return null;
 
@@ -1004,14 +1041,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
             </div>
           </Card>
 
-          <div className="print-hide">
-            <GlassCalendar
-              value={calendarDay}
-              onChange={handleCalendarDayChange}
-              heat={calendarHeat}
-              accent={C.blue}
-            />
-          </div>
+          {calendarPanel}
 
         </div>
       </div>

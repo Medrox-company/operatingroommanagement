@@ -1099,6 +1099,8 @@ export async function fetchStatusHistory(
     onProgress?: (progress: StatusHistoryProgress) => void;
   }
 ): Promise<StatusHistoryRow[] | null> {
+  // Capture before observing progress; every page stays in this tenant.
+  const historyHospitalId = activeHospitalId || 'default';
   // Progress is observational: a UI subscriber must never fail a data load.
   const reportProgress = (progress: StatusHistoryProgress) => {
     try { options?.onProgress?.(progress); } catch { /* Keep loading the history. */ }
@@ -1123,10 +1125,6 @@ export async function fetchStatusHistory(
     const pageSize = Math.min(1_000, requestedLimit);
     const rows: StatusHistoryRow[] = [];
     let total: number | null = null;
-    // Keep every page in one tenant even if the user switches hospitals while
-    // this history request is still in flight.
-    const historyHospitalId = activeHospitalId || 'default';
-
     while (rows.length < requestedLimit) {
       const currentPageSize = Math.min(pageSize, requestedLimit - rows.length);
       const table = supabase.from('room_status_history');
@@ -1613,37 +1611,60 @@ export interface NotificationLogRow {
 }
 
 export async function fetchNotificationsLog(
-  options?: { fromDate?: Date; toDate?: Date; limit?: number; all?: boolean }
+  options?: {
+    fromDate?: Date;
+    toDate?: Date;
+    limit?: number;
+    all?: boolean;
+    onProgress?: (progress: StatusHistoryProgress) => void;
+  }
 ): Promise<NotificationLogRow[] | null> {
+  const notificationsHospitalId = activeHospitalId || 'default';
+  const reportProgress = (progress: StatusHistoryProgress) => {
+    try { options?.onProgress?.(progress); } catch { /* Progress never interrupts loading. */ }
+  };
+  reportProgress({ loaded: 0, total: null, complete: false });
   if (!isSupabaseConfigured || !supabase) return null;
   try {
     const requestedLimit = options?.all
       ? Number.MAX_SAFE_INTEGER
       : Math.max(0, options?.limit ?? 1_000);
-    if (requestedLimit === 0) return [];
+    if (requestedLimit === 0) {
+      reportProgress({ loaded: 0, total: 0, complete: true });
+      return [];
+    }
 
     const pageSize = Math.min(1_000, requestedLimit);
     const rows: NotificationLogRow[] = [];
+    let total: number | null = null;
 
     while (rows.length < requestedLimit) {
       const currentPageSize = Math.min(pageSize, requestedLimit - rows.length);
-      let query = supabase
-        .from('notifications_log')
-        .select('*')
-        .eq('hospital_id', activeHospitalId || 'default')
+      const table = supabase.from('notifications_log');
+      const selection = options?.onProgress && rows.length === 0
+        ? table.select('*', { count: 'exact' })
+        : table.select('*');
+      let query = selection
+        .eq('hospital_id', notificationsHospitalId)
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .range(rows.length, rows.length + currentPageSize - 1);
 
       if (options?.fromDate) query = query.gte('created_at', options.fromDate.toISOString());
       if (options?.toDate) query = query.lte('created_at', options.toDate.toISOString());
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (error) throw error;
+      if (rows.length === 0 && typeof count === 'number' && Number.isFinite(count) && count >= 0) {
+        total = Math.min(count, requestedLimit);
+      }
       const page = (data ?? []) as NotificationLogRow[];
       rows.push(...page);
+      reportProgress({ loaded: rows.length, total, complete: false });
       if (page.length < currentPageSize) break;
     }
 
+    reportProgress({ loaded: rows.length, total: rows.length, complete: true });
     return rows;
   } catch (error) {
     console.error('[DB] Failed to fetch notifications_log:', error);

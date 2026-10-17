@@ -11,6 +11,11 @@
   }
 
   .settings-landing-grid { padding-bottom: 0; font-family: var(--m-font-sans); }
+  .settings-module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settings-grid-commandbar-content { min-width: 0; flex-wrap: wrap; }
+  .settings-grid-metric, .settings-grid-divider, .settings-grid-summary { display: none; }
+  .settings-grid-filters, .settings-grid-search { width: 100%; }
+  .settings-grid-search { order: -1; }
   .settings-mobile-heading { margin-bottom: 16px; }
   .settings-view-toggle { gap: 2px; }
   .settings-mobile-heading .settings-view-toggle button {
@@ -51,8 +56,8 @@
   .settings-grid-search input::placeholder { color: var(--m-muted); }
 
   .settings-grid-card-stripe { display: none; }
-  .settings-grid-card-row { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: start; gap: 12px; }
-  .settings-grid-card-copy { grid-column: 1; grid-row: 1; }
+  .settings-grid-card-row { display: flex; flex-direction: column; align-items: start; gap: 12px; }
+  .settings-grid-card-copy { min-width: 0; }
   .settings-grid-card-copy > p { color: var(--m-muted); font-size: 11px; letter-spacing: .03em; }
   .settings-grid-card-icon { grid-column: 2; grid-row: 1; width: 44px; height: 44px; border-radius: 12px; }
   .settings-grid-card-open { display: none; }

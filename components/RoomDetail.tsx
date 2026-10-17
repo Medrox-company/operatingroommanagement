@@ -8,24 +8,26 @@ import {
   MessageSquare, Layout, Thermometer, Edit3,
   ChevronRight, Pause, Play, AlertTriangle, Lock,
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone,
-  Utensils, Check,
+  Utensils, Check, BedSingle, LogIn, LogOut, HeartPulse, ClipboardCheck, ClipboardList, HandHelping, Broom, CircleHelp,
 } from 'lucide-react';
 import { recordStatusEvent } from '../lib/db';
 import StaffPickerModal, { StaffRole } from './StaffPickerModal';
 import StepConfirmationOverlay from './StepConfirmationOverlay';
 import NotificationOverlay from './NotificationOverlay';
 import { useHospital } from '../contexts/HospitalContext';
+import { useRealtimeContext } from '../contexts/RealtimeContext';
 import { useTutorial } from '../contexts/TutorialContext';
 import { useOperationalThresholds } from '../hooks/useOperationalThresholds';
-import { MobileThemeToggle } from './mobile/MobileShell';
 import { RapidSurgeryWarning } from './room/RapidSurgeryWarning';
 import { useNowMs } from '../hooks/useSharedClock';
 import ModulePageHeading from './ModulePageHeading';
 import type { AcuteRequest } from '../lib/acute-requests';
 import type { AcuteRoomContext } from '../lib/acute-room-context';
+import { mobileRoomPhaseVisual, type MobileRoomPhaseVisualKind } from '../lib/mobile-room-phase-visual';
 import AcuteRoomQueueRibbon from './room/AcuteRoomQueueRibbon';
 import './mobile/mobile-room-detail.css';
 import './room/room-acute-detail.css';
+import './mobile/mobile-room-orbit.css';
 
 // Formát uplynulého času: do 1 h jako mm:ss, od 1 h výše jako hh:mm.
 const formatElapsed = (totalSeconds: number): string => {
@@ -52,6 +54,22 @@ const contrastText = (hex: string): string => {
 };
 
 const CLEANING_WARNING_VISIBLE_MS = 10 * 1000;
+const MOBILE_PATIENT_FEEDBACK_MS = 2_000;
+
+// Presentation only: hospital phase names/colors remain the source of truth.
+// The two reference-specific instruments use real alpha-mask artwork; all
+// other operational symbols come from the installed matching line-icon set.
+const MOBILE_PHASE_ICONS = {
+  arrival: BedSingle,
+  anesthesia: Syringe,
+  'anesthesia-end': HeartPulse,
+  'surgery-end': ClipboardCheck,
+  departure: BedSingle,
+  handover: HandHelping,
+  cleaning: Broom,
+  documentation: ClipboardList,
+  unknown: CircleHelp,
+} satisfies Partial<Record<MobileRoomPhaseVisualKind, typeof BedSingle>>;
 
 // Dvouslovné názvy hlavních provozních fází držíme v kruhové grafice vždy
 // na dvou vyvážených řádcích. U ostatních, uživatelsky definovaných fází
@@ -118,6 +136,7 @@ const usePrevious = (value: number) => {
 
 const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, onStepChange, onEndTimeChange, onEnhancedHygieneToggle, onPauseChange, onStaffChange, onPatientStatusChange, onClearNotice, acuteContext, acuteContextMessage, onSelectAcuteRequest }) => {
   const { activeHospitalId } = useHospital();
+  const { connected: realtimeConnected } = useRealtimeContext();
   // Interaktivní nápověda běží nad vymyšleným sálem — události ani notifikace
   // se z ní nesmí zapsat do databáze.
   const { isTutorial } = useTutorial();
@@ -170,6 +189,29 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   const [showPatientCalledText, setShowPatientCalledText] = useState(false);
   const [showPatientArrivedText, setShowPatientArrivedText] = useState(false);
   const patientCallTimerRef = useRef<number | null>(null);
+  const [mobilePatientFeedback, setMobilePatientFeedback] = useState<'call' | 'arrival' | null>(null);
+  const mobilePatientFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mobilePatientFeedbackVersionRef = useRef(0);
+  const showMobilePatientFeedback = useCallback((kind: 'call' | 'arrival') => {
+    const version = ++mobilePatientFeedbackVersionRef.current;
+    if (mobilePatientFeedbackTimeoutRef.current !== null) clearTimeout(mobilePatientFeedbackTimeoutRef.current);
+    setMobilePatientFeedback(kind);
+    mobilePatientFeedbackTimeoutRef.current = setTimeout(() => {
+      if (mobilePatientFeedbackVersionRef.current !== version) return;
+      mobilePatientFeedbackTimeoutRef.current = null;
+      setMobilePatientFeedback(null);
+    }, MOBILE_PATIENT_FEEDBACK_MS);
+  }, []);
+  useEffect(() => {
+    const invalidateFeedback = () => {
+      mobilePatientFeedbackVersionRef.current += 1;
+      if (mobilePatientFeedbackTimeoutRef.current !== null) clearTimeout(mobilePatientFeedbackTimeoutRef.current);
+      mobilePatientFeedbackTimeoutRef.current = null;
+    };
+    invalidateFeedback();
+    setMobilePatientFeedback(null);
+    return invalidateFeedback;
+  }, [room.id, activeHospitalId]);
   // Informační zpráva administrátora — popup vyžadující zavření
   const [dismissedNoticeAt, setDismissedNoticeAt] = useState<string | null>(null);
   const showNotice = !!room.noticeMessage && room.noticeAt !== dismissedNoticeAt;
@@ -395,6 +437,8 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     : (room.isLocked 
         ? '#FBBF24' 
         : (isPaused ? '#06b6d4' : (currentStep?.color || '#6B7280')));
+  const mobilePhaseVisual = mobileRoomPhaseVisual(currentStep);
+  const MobilePhaseIcon = MOBILE_PHASE_ICONS[mobilePhaseVisual.kind as keyof typeof MOBILE_PHASE_ICONS] ?? CircleHelp;
 
   const changeStep = async (newIndex: number) => {
     if (isInteractionBlocked) return;
@@ -613,6 +657,26 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
     endTimeTimeoutRef.current = window.setTimeout(() => setShowEndTime(false), 2000);
   };
 
+  // The orbit is an ordered view of the hospital's configured workflow, not
+  // a separate clinical model. Its markers are deliberately noninteractive.
+  const orbitPhases = useMemo(() => activeDbStatuses.map((step, index) => {
+    const angle = -Math.PI / 2 + (index / Math.max(activeDbStatuses.length, 1)) * Math.PI * 2;
+    return {
+      step,
+      index,
+      markerX: (195 + Math.cos(angle) * 112) / 390 * 100,
+      markerY: (175 + Math.sin(angle) * 112) / 350 * 100,
+      labelX: (195 + Math.cos(angle) * 112 + (Math.cos(angle) > .2 ? 20 : Math.cos(angle) < -.2 ? -20 : 0)) / 390 * 100,
+      labelY: (175 + Math.sin(angle) * 148) / 350 * 100,
+      labelSide: Math.cos(angle) > .2 ? 'right' : Math.cos(angle) < -.2 ? 'left' : 'center',
+    };
+  }), [activeDbStatuses]);
+  const orbitCircumference = 2 * Math.PI * 112;
+  const orbitCompletedLength = orbitCircumference * Math.max(0, safeStepIndex) / Math.max(activeDbStatuses.length, 1);
+  const mobileCenterKind = mobilePatientFeedback || (isPaused ? 'pause' : mobilePhaseVisual.kind);
+  const MobileCenterStateIcon = mobilePatientFeedback === 'call' ? Phone : mobilePatientFeedback === 'arrival' ? BedSingle : isPaused ? Pause : null;
+  const mobileCenterTitle = mobilePatientFeedback === 'call' ? 'Volání pacienta' : mobilePatientFeedback === 'arrival' ? 'Příjezd pacienta' : isPaused ? 'Pauza' : renderPhaseTitle(currentStep?.title || currentStep?.name || 'Status');
+
   return (
     <motion.div 
       className={`fixed inset-0 z-50 bg-black text-white font-sans overflow-hidden${acuteContext || acuteContextMessage ? ' room-detail-with-acute' : ''}`}
@@ -629,7 +693,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[300] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md"
+            className="room-notice-overlay absolute inset-0 z-[300] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.92, y: 20 }}
@@ -666,29 +730,31 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
         )}
       </AnimatePresence>
 
-      {/* ========== MOBILE LAYOUT — operating-room reference, real controls ========== */}
+      {/* ========== MOBILE LAYOUT — live workflow over the selected orbit artwork ========== */}
       <div
-        className="mobile-room-detail mobile-room-reference flex md:hidden w-full h-full flex-col relative overflow-hidden"
-        style={{ '--room-phase-color': activeColor, '--room-phase-on-color': contrastText(activeColor) } as React.CSSProperties}
+        className="mobile-room-detail mobile-room-reference mobile-room-orbit flex md:hidden w-full h-full flex-col relative overflow-hidden"
+        style={{ '--room-phase-color': activeColor, '--room-phase-on-color': contrastText(activeColor), '--mrd-orbit-phase-color': mobilePhaseVisual.color } as React.CSSProperties}
         data-testid="mobile-room-detail"
+        data-emergency={room.isEmergency || undefined}
+        data-locked={room.isLocked || undefined}
+        data-paused={isPaused || undefined}
+        data-hygiene={room.isEnhancedHygiene || undefined}
       >
         <header className="mrd-header">
-          <div className="mrd-header-tools">
-            <button ref={acuteMobileBackRef} type="button" className="mrd-back" onClick={onClose} aria-label={acuteContext || acuteContextMessage ? 'Zpět na časovou osu' : 'Zpět na přehled sálů'}>
-              <ArrowLeft aria-hidden="true" />
-              <span>{acuteContext || acuteContextMessage ? 'Časová osa' : 'Operační sály'}</span>
-            </button>
-            <div className="mrd-header-actions">
-              <MobileThemeToggle />
-              <button type="button" className="mrd-icon-button" onClick={() => setNotificationOverlayOpen(true)} aria-label="Otevřít notifikace">
-                <Bell aria-hidden="true" />
-              </button>
-            </div>
-          </div>
+          <button ref={acuteMobileBackRef} type="button" className="mrd-back" onClick={onClose} aria-label={acuteContext || acuteContextMessage ? 'Zpět na časovou osu' : 'Zpět na přehled sálů'}>
+            <ArrowLeft aria-hidden="true" />
+          </button>
           <div className="mrd-room-name">
             <h1>{room.name}</h1>
-            {room.department && <p>{room.department}</p>}
+            <p className="mrd-live-context" data-connected={realtimeConnected || undefined}>
+              <span className="mrd-live-state"><i aria-hidden="true" />{realtimeConnected ? 'Živě' : 'Připojování…'}</span>
+              {room.department && <><span className="mrd-live-separator" aria-hidden="true">–</span><span>{room.department}</span></>}
+            </p>
           </div>
+          <button type="button" className="mrd-icon-button" onClick={() => setNotificationOverlayOpen(true)} aria-label="Otevřít notifikace">
+            <Bell aria-hidden="true" />
+            {(room.noticeMessage || room.isEmergency) && <span className="mrd-notification-dot" aria-hidden="true" />}
+          </button>
         </header>
 
         <div className="mrd-scroll-content">
@@ -699,81 +765,89 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             : acuteContextMessage ? <p className="room-detail-acute-message" role="status">{acuteContextMessage}</p> : null}
           <RapidSurgeryWarning room={room} statuses={activeDbStatuses} />
 
-          {/* Celý box aktuální fáze je aktivní plocha — personál v rukavicích
-              nemusí trefit malé kolečko se šipkou. Kolečko zůstává jako
-              vizuální vodítko a zastavuje probublání, aby se fáze neposunula
-              dvakrát. */}
+          <div className="mrd-orbit-viewport">
           <section
-            className="mrd-phase-card"
+            className="mrd-phase-card mrd-orbit-stage"
             aria-label="Aktuální fáze"
             data-emphasized={activeDbStatuses.length > 0 ? 'true' : undefined}
-            data-advanceable={isInteractionBlocked ? undefined : 'true'}
-            role={isInteractionBlocked ? undefined : 'button'}
-            tabIndex={isInteractionBlocked ? undefined : 0}
-            onClick={isInteractionBlocked ? undefined : handleNextStep}
-            onKeyDown={isInteractionBlocked ? undefined : (event) => {
-              if (event.key !== 'Enter' && event.key !== ' ') return;
-              if (event.target !== event.currentTarget) return;
-              event.preventDefault();
-              handleNextStep();
-            }}
+            data-phase-count={activeDbStatuses.length}
           >
-            <div className="mrd-phase-meta">
-              <p className="mrd-eyebrow">Aktuální fáze</p>
-              {activeDbStatuses.length > 0 && <span className="mrd-phase-count" aria-label={`Fáze ${safeStepIndex + 1} z ${activeDbStatuses.length}`}>
-                <span aria-hidden="true" />{safeStepIndex + 1}/{activeDbStatuses.length}
-              </span>}
-            </div>
-            <div className="mrd-phase-top">
-              <div className="mrd-phase-copy">
-                <h2>{currentStep?.title || currentStep?.name || 'Status'}</h2>
-                <p className="mrd-phase-runtime">
-                  Uplynulo <strong>{elapsedTime}</strong>
-                  {isPaused && <span> · Pauza {pauseElapsedTime}</span>}
-                </p>
-                <p className="mrd-phase-next">
-                  {isInteractionBlocked
-                    ? (room.isLocked && isFinalStep ? 'Sál uzamčen' : 'Nejprve pokračujte ve fázi')
-                    : <>Klepnutím na kartu → <strong>{isFinalStep ? 'Nový cyklus' : (nextStep?.title || nextStep?.name || 'další fáze')}</strong></>}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="mrd-phase-advance"
-                style={{ color: contrastText(activeColor) }}
-                onClick={(event) => { event.stopPropagation(); handleNextStep(); }}
-                disabled={isInteractionBlocked}
-                aria-label={isFinalStep ? 'Potvrdit nový cyklus' : 'Přejít na další fázi'}
-              >
-                {room.isLocked && isFinalStep ? <Lock aria-hidden="true" /> : isPaused ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-              </button>
-            </div>
-
-            {(room.isEmergency || room.isLocked || room.isEnhancedHygiene || isPauseActive) && (
-              <div className="mrd-state-flags" role="status">
-                {room.isEmergency && <span><AlertTriangle aria-hidden="true" />Stav nouze</span>}
-                {room.isLocked && <span><Lock aria-hidden="true" />Uzamčeno</span>}
-                {room.isEnhancedHygiene && <span><ShieldAlert aria-hidden="true" />Zvýšený hygienický režim</span>}
-                {isPauseActive && <span><Pause aria-hidden="true" />{isPaused ? 'Pauza' : currentStep?.name}</span>}
-              </div>
-            )}
-
-            <ol ref={mobilePhaseStepsRef} className="mrd-phase-steps" aria-label="Pořadí fází">
-              {activeDbStatuses.map((step, index) => (
+            {activeDbStatuses.length > 0 && <span className="mrd-phase-count sr-only" aria-label={`Fáze ${safeStepIndex + 1} z ${activeDbStatuses.length}`}>
+              {safeStepIndex + 1}/{activeDbStatuses.length}
+            </span>}
+            <img className="mrd-orbit-dial" src="/images/mobile-orbit-dial.png" alt="" aria-hidden="true" width="512" height="512" />
+            <svg className="mrd-orbit-chart" viewBox="0 0 390 350" aria-hidden="true" focusable="false">
+              <circle className="mrd-orbit-track" cx="195" cy="175" r="112" />
+              <circle className="mrd-orbit-progress" cx="195" cy="175" r="112"
+                strokeDasharray={`${orbitCompletedLength} ${orbitCircumference}`}
+                transform="rotate(-90 195 175)" />
+              {safeStepIndex > 0 && <circle className="mrd-orbit-active-segment" cx="195" cy="175" r="112"
+                strokeDasharray={`${orbitCircumference / Math.max(activeDbStatuses.length, 1)} ${orbitCircumference * (1 - 1 / Math.max(activeDbStatuses.length, 1))}`}
+                strokeDashoffset={-orbitCircumference * (safeStepIndex - 1) / Math.max(activeDbStatuses.length, 1)}
+                transform="rotate(-90 195 175)" />}
+            </svg>
+            <ol ref={mobilePhaseStepsRef} className="mrd-phase-steps mrd-orbit-steps" aria-label="Pořadí fází">
+              {orbitPhases.map(({ step, index, markerX, markerY, labelX, labelY, labelSide }) => (
                 <li
                   key={step.id || index}
                   className={index < safeStepIndex ? 'is-complete' : index === safeStepIndex ? 'is-current' : ''}
                   aria-current={index === safeStepIndex ? 'step' : undefined}
+                  data-label-side={labelSide}
+                  style={{
+                    '--orbit-marker-x': `${markerX}%`, '--orbit-marker-y': `${markerY}%`,
+                    '--orbit-label-x': `${labelX}%`, '--orbit-label-y': `${labelY}%`,
+                  } as React.CSSProperties}
                 >
-                  <span className="mrd-step-marker" aria-hidden="true">
-                    {index < safeStepIndex ? <Check /> : <span />}
-                  </span>
+                  <span className="mrd-step-marker" aria-hidden="true"><span /></span>
                   <span className="mrd-step-name">{step.title || step.name}</span>
                 </li>
               ))}
             </ol>
-          </section>
 
+            <button
+              type="button"
+              className="mrd-phase-advance mrd-orbit-current"
+              onClick={handleNextStep}
+              disabled={isInteractionBlocked}
+              aria-label={isPaused ? 'Pauza' : isFinalStep ? 'Potvrdit nový cyklus' : 'Přejít na další fázi'}
+              title={isInteractionBlocked
+                ? (room.isLocked && isFinalStep ? 'Sál uzamčen' : 'Nejprve pokračujte ve fázi')
+                : `${currentStep?.title || currentStep?.name || 'Status'} → ${isFinalStep ? 'Nový cyklus' : nextStep?.title || nextStep?.name || 'další fáze'}`}
+            >
+              <span className="mrd-orbit-phase-icon" data-phase-icon={mobileCenterKind} aria-hidden="true">
+                {MobileCenterStateIcon ? <MobileCenterStateIcon aria-hidden="true" /> : <>
+                  {mobilePhaseVisual.kind === 'ready' || mobilePhaseVisual.kind === 'preparation'
+                    ? <span className="mrd-orbit-phase-mask mrd-orbit-phase-mask--table" />
+                    : mobilePhaseVisual.kind === 'surgery'
+                      ? <span className="mrd-orbit-phase-mask mrd-orbit-phase-mask--scalpel" />
+                      : <MobilePhaseIcon aria-hidden="true" />}
+                  {mobilePhaseVisual.kind === 'arrival' && <LogIn className="mrd-orbit-phase-cue" aria-hidden="true" />}
+                  {mobilePhaseVisual.kind === 'departure' && <LogOut className="mrd-orbit-phase-cue" aria-hidden="true" />}
+                </>}
+                {room.isLocked && isFinalStep && <span className="mrd-orbit-phase-state">
+                  <Lock aria-hidden="true" />
+                </span>}
+              </span>
+              <span className="mrd-orbit-phase-title" aria-live="polite" aria-atomic="true">{mobileCenterTitle}</span>
+            </button>
+
+            <div className="mrd-time-adjustments mrd-orbit-adjustments" role="group" aria-label="Úprava odhadovaného konce">
+              <button type="button" onClick={handleDecreaseTime} disabled={isInteractionBlocked || !estimatedEndTime} aria-label="Zkrátit odhadovaný čas o 15 minut">
+                <Minus aria-hidden="true" />
+              </button>
+              <button type="button" onClick={handleIncreaseTime} disabled={isInteractionBlocked} aria-label="Prodloužit odhadovaný čas o 15 minut">
+                <Plus aria-hidden="true" />
+              </button>
+            </div>
+          </section>
+          </div>
+
+          {(room.isEmergency || room.isLocked) && (
+            <div className="mrd-state-flags" role="status">
+              {room.isEmergency && <span data-emergency="true"><AlertTriangle aria-hidden="true" />Stav nouze</span>}
+              {room.isLocked && <span><Lock aria-hidden="true" />Uzamčeno</span>}
+            </div>
+          )}
           {showCleaningWarning && (
             <p className="mrd-notice" role="alert"><AlertTriangle aria-hidden="true" />Úklid sálu přesahuje {thresholds.cleaningWarningMinutes} minut. Tento krok bude automaticky ukončen.</p>
           )}
@@ -782,8 +856,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
             <div className="mrd-time-card mrd-time-card--elapsed">
               <p className="mrd-time-label">Uplynulý čas</p>
               <strong className="mrd-time-value">{elapsedTime}</strong>
-              <p className="mrd-time-caption">Aktuální fáze · {liveNowMs - phaseStartTime.getTime() >= 3_600_000 ? 'h : min' : 'min : s'}</p>
-              {isPaused && <p className="mrd-pause-runtime">Pauza {pauseElapsedTime}</p>}
+              <span className="sr-only">Aktuální fáze · {liveNowMs - phaseStartTime.getTime() >= 3_600_000 ? 'h : min' : 'min : s'}</span>
             </div>
             <div className="mrd-time-card mrd-time-card--estimate">
               <p className="mrd-time-label">Odhad konce</p>
@@ -792,46 +865,84 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   ? estimatedEndTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
                   : '—'}
               </strong>
-              <div className="mrd-time-adjustments">
-                <button type="button" onClick={handleDecreaseTime} disabled={isInteractionBlocked || !estimatedEndTime} aria-label="Zkrátit odhadovaný čas o 15 minut">
-                  <Minus aria-hidden="true" /><span>15 min</span>
-                </button>
-                <button type="button" onClick={handleIncreaseTime} disabled={isInteractionBlocked} aria-label="Prodloužit odhadovaný čas o 15 minut">
-                  <Plus aria-hidden="true" /><span>15 min</span>
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="mrd-staff" aria-labelledby="mrd-staff-title">
-            <div className="mrd-section-heading">
-              <h2 id="mrd-staff-title">Personál</h2>
-              <span aria-label="Počet obsazených rolí">{[room.staff?.doctor?.name, room.staff?.nurse?.name].filter(Boolean).length} / 2</span>
-            </div>
-            <div className="mrd-staff-list">
-              {([
-                { role: 'doctor' as const, label: 'ARO lékař', name: room.staff?.doctor?.name, fallback: 'Vybrat lékaře' },
-                { role: 'nurse' as const, label: 'ARO sestra', name: room.staff?.nurse?.name, fallback: 'Vybrat sestru' },
-              ]).map(({ role, label, name, fallback }) => (
-                <button
-                  type="button"
-                  key={role}
-                  className="mrd-staff-row"
-                  onClick={() => { setStaffPickerRole(role); setStaffPickerOpen(true); }}
-                  aria-label={`${label}: ${name || fallback}`}
-                >
-                  {role === 'doctor' ? <Stethoscope className="mrd-staff-icon" aria-hidden="true" /> : <User className="mrd-staff-icon" aria-hidden="true" />}
-                  <span><strong>{label}</strong><span>{name || fallback}</span></span>
-                  <ChevronRight aria-hidden="true" />
-                </button>
-              ))}
             </div>
           </section>
 
           <section className="mrd-actions" aria-label="Akce sálu">
             <button
               type="button"
+              className={`mrd-action${patientCalledTime ? ' is-active' : ''}`}
+              data-action="call"
+              disabled={Boolean(patientCalledTime)}
+              aria-label="Volat pacienta"
+              onClick={async () => {
+                if (!patientCalledTime) {
+                  const now = new Date();
+                  setPatientCalledTime(now);
+                  showMobilePatientFeedback('call');
+                  setShowPatientCalledText(true);
+                  setTimeout(() => setShowPatientCalledText(false), 5000);
+                  onPatientStatusChange?.(now.toISOString(), null);
+                  await recordEvent({
+                    operating_room_id: room.id,
+                    event_type: 'patient_call',
+                    step_index: currentStepIndex,
+                    step_name: currentStep?.name || 'Status',
+                  });
+                }
+              }}
+            >
+              <Phone aria-hidden="true" />
+              <span>Volat</span>
+            </button>
+            <button
+              type="button"
+              className={`mrd-action${patientArrivedTime ? ' is-active' : ''}`}
+              data-action="arrival"
+              disabled={!patientCalledTime || Boolean(patientArrivedTime)}
+              aria-label="Potvrdit příjezd pacienta"
+              onClick={async () => {
+                if (patientCalledTime && !patientArrivedTime) {
+                  const now = new Date();
+                  setPatientArrivedTime(now);
+                  showMobilePatientFeedback('arrival');
+                  setShowPatientArrivedText(true);
+                  onPatientStatusChange?.(patientCalledTime.toISOString(), now.toISOString());
+                  await recordEvent({
+                    operating_room_id: room.id,
+                    event_type: 'patient_arrived',
+                    step_index: currentStepIndex,
+                    step_name: currentStep?.name || 'Status',
+                  });
+                  setTimeout(() => setShowPatientArrivedText(false), 5000);
+                }
+              }}
+            >
+              <BedSingle aria-hidden="true" /><span>Příjezd</span>
+            </button>
+            <button
+              type="button"
+              className={`mrd-action${room.isEnhancedHygiene ? ' is-active' : ''}`}
+              data-action="hygiene"
+              aria-label={room.isEnhancedHygiene ? 'Vypnout hygienický režim' : 'Zapnout hygienický režim'}
+              aria-pressed={Boolean(room.isEnhancedHygiene)}
+              onClick={async () => {
+                const newH = !room.isEnhancedHygiene;
+                onEnhancedHygieneToggle?.(newH);
+                await recordEvent({
+                  operating_room_id: room.id,
+                  event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
+                  step_index: currentStepIndex,
+                  step_name: currentStep?.name || 'Status',
+                });
+              }}
+            >
+              <span className="mrd-action-hygiene-icon" aria-hidden="true" /><span>Hygiena</span>
+            </button>
+            <button
+              type="button"
               className={`mrd-action${isPaused ? ' is-active' : ''}`}
+              data-action="pause"
               disabled={Boolean(room.isLocked && isFinalStep)}
               aria-label={isPaused ? 'Pokračovat ve fázi' : 'Pozastavit fázi'}
               aria-pressed={isPaused}
@@ -852,77 +963,33 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               }}
             >
               {isPaused ? <Play aria-hidden="true" /> : <Pause aria-hidden="true" />}
-              <span>{isPaused ? 'Pokračovat' : 'Pauza'}</span>
-            </button>
-            <button
-              type="button"
-              className={`mrd-action${room.isEnhancedHygiene ? ' is-active' : ''}`}
-              aria-label={room.isEnhancedHygiene ? 'Vypnout hygienický režim' : 'Zapnout hygienický režim'}
-              aria-pressed={Boolean(room.isEnhancedHygiene)}
-              onClick={async () => {
-                const newH = !room.isEnhancedHygiene;
-                onEnhancedHygieneToggle?.(newH);
-                await recordEvent({
-                  operating_room_id: room.id,
-                  event_type: newH ? 'enhanced_hygiene_on' : 'enhanced_hygiene_off',
-                  step_index: currentStepIndex,
-                  step_name: currentStep?.name || 'Status',
-                });
-              }}
-            >
-              <ShieldAlert aria-hidden="true" /><span>Hygiena</span>
-            </button>
-            <button
-              type="button"
-              className={`mrd-action${patientCalledTime ? ' is-active' : ''}`}
-              disabled={Boolean(patientCalledTime)}
-              aria-label="Volat pacienta"
-              onClick={async () => {
-                if (!patientCalledTime) {
-                  const now = new Date();
-                  setPatientCalledTime(now);
-                  setShowPatientCalledText(true);
-                  setTimeout(() => setShowPatientCalledText(false), 5000);
-                  onPatientStatusChange?.(now.toISOString(), null);
-                  await recordEvent({
-                    operating_room_id: room.id,
-                    event_type: 'patient_call',
-                    step_index: currentStepIndex,
-                    step_name: currentStep?.name || 'Status',
-                  });
-                }
-              }}
-            >
-              <Phone aria-hidden="true" />
-              <span>Volat{patientCalledTime && <small>{patientCallElapsedTime}</small>}</span>
-            </button>
-            <button
-              type="button"
-              className={`mrd-action${patientArrivedTime ? ' is-active' : ''}`}
-              disabled={!patientCalledTime || Boolean(patientArrivedTime)}
-              aria-label="Potvrdit příjezd pacienta"
-              onClick={async () => {
-                if (patientCalledTime && !patientArrivedTime) {
-                  const now = new Date();
-                  setPatientArrivedTime(now);
-                  setShowPatientArrivedText(true);
-                  onPatientStatusChange?.(patientCalledTime.toISOString(), now.toISOString());
-                  await recordEvent({
-                    operating_room_id: room.id,
-                    event_type: 'patient_arrived',
-                    step_index: currentStepIndex,
-                    step_name: currentStep?.name || 'Status',
-                  });
-                  setTimeout(() => setShowPatientArrivedText(false), 5000);
-                }
-              }}
-            >
-              <BedDouble aria-hidden="true" /><span>Příjezd{patientArrivedTime && <small>Potvrzeno</small>}</span>
+              <span>Pauza</span>
             </button>
           </section>
-          {(showPatientCalledText || showPatientArrivedText) && (
-            <p className="mrd-action-feedback" role="status">{showPatientArrivedText ? 'Příjezd pacienta potvrzen' : 'Volání pacienta zaznamenáno'}</p>
-          )}
+
+          <section className="mrd-staff" aria-labelledby="mrd-staff-title">
+            <div className="mrd-section-heading sr-only">
+              <h2 id="mrd-staff-title">Personál</h2>
+              <span aria-label="Počet obsazených rolí">{[room.staff?.doctor?.name, room.staff?.nurse?.name].filter(Boolean).length} / 2</span>
+            </div>
+            <div className="mrd-staff-list">
+              {([
+                { role: 'doctor' as const, label: 'ARO lékař', name: room.staff?.doctor?.name, fallback: 'Vybrat lékaře' },
+                { role: 'nurse' as const, label: 'ARO sestra', name: room.staff?.nurse?.name, fallback: 'Vybrat sestru' },
+              ]).map(({ role, label, name, fallback }) => (
+                <button
+                  type="button"
+                  key={role}
+                  className="mrd-staff-row"
+                  onClick={() => { setStaffPickerRole(role); setStaffPickerOpen(true); }}
+                  aria-label={`${label}: ${name || fallback}`}
+                >
+                  <img className="mrd-staff-icon" src={role === 'doctor' ? '/images/mobile-orbit-doctor.png' : '/images/mobile-orbit-nurse.png'} alt="" aria-hidden="true" width="48" height="48" />
+                  <span><strong>{label}</strong>{name && <span title={name}>{name}</span>}</span>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
 
       </div>

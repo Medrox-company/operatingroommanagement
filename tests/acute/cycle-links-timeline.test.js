@@ -144,7 +144,7 @@ test('mobile annotates the actual compact room track, hides an already-linked es
     '../../lib/timeline-operational-warnings': warnings, '../../lib/timeline-unused-minutes': unused,
     '../../lib/acute-cycle-links': cycleLinks, '../../hooks/useAcuteCycleLinks': { useAcuteCycleLinks: () => ({ links: [] }) },
     '../timeline/CompletedAcuteCycleLabel': labels, '../timeline/AcuteProposalLane': proposals,
-    './MobileShell': { MobileModuleHeader: () => null, MobilePillTabs: () => null }, './mobile-timeline.css': {},
+    './MobileShell': { MobileModuleHeader: () => null, MobilePillTabs: () => null }, './mobile-timeline.css': {}, './mobile-timeline-orbit.css': {},
   }).default;
   const request = { id: 'req-1', hospitalId: 'hospital-1', proposedRoomId: room.id, status: 'acknowledged',
     urgency: 'urgent', procedureName: 'Renamed later', receivedAt: at(0), estimatedDurationMinutes: 120, queuePosition: 9 };

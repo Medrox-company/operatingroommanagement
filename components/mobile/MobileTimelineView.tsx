@@ -15,6 +15,7 @@ import { useAcuteCycleLinks } from '../../hooks/useAcuteCycleLinks';
 import { CompletedAcuteCycleLabel, completedAcuteCycleDescription } from '../timeline/CompletedAcuteCycleLabel';
 import { AcuteProposalLane, AcuteTimelineSummary, acuteProposalsForWindow } from '../timeline/AcuteProposalLane';
 import './mobile-timeline.css';
+import './mobile-timeline-orbit.css';
 
 interface Props {
   rooms: OperatingRoom[];

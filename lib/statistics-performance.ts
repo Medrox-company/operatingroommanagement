@@ -9,6 +9,8 @@ export type PerformanceAvailability = 'available' | 'no_data' | 'not_recorded';
 export interface PerformanceOptions {
   anesthesiaStartEnabled: boolean;
   anesthesiaEndEnabled: boolean;
+  /** Filter measured endpoints only; keep full history for cycle reconstruction. */
+  endpointRange?: { from: Date; to: Date };
 }
 export interface PerformanceQuality {
   missingDuration: number;
@@ -85,6 +87,22 @@ function pragueLocalInstant(year: number, month: number, day: number, hour = 0, 
 }
 function pragueMonthStart(year: number, month: number): number {
   return pragueLocalInstant(year, month, 1);
+}
+
+/** A Prague calendar day, including 23/25-hour daylight-saving days. */
+export function performanceDayRange(key: string): { from: Date; to: Date } {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!match) throw new RangeError('Neplatné datum výkonnosti.');
+  const [year, month, day] = match.slice(1).map(Number);
+  const calendar = new Date(Date.UTC(year, month - 1, day));
+  if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() + 1 !== month || calendar.getUTCDate() !== day) {
+    throw new RangeError('Neplatné datum výkonnosti.');
+  }
+  const next = new Date(Date.UTC(year, month - 1, day + 1));
+  return {
+    from: new Date(pragueLocalInstant(year, month, day)),
+    to: new Date(pragueLocalInstant(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate())),
+  };
 }
 
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -302,14 +320,26 @@ function interval(start: number | null | undefined, end: number | null | undefin
   return (end - start) / 1_000;
 }
 
-/** Twelve Prague calendar months; every KPI is booked at its measured endpoint. */
+/** Default: twelve Prague months. Optional ranges filter measured endpoints only. */
 export function buildMonthlyPerformance(
   history: StatusHistoryRow[], rooms: OperatingRoom[], now = new Date(),
   options: PerformanceOptions = { anesthesiaStartEnabled: false, anesthesiaEndEnabled: false },
 ): MonthlyPerformanceReport {
   const nowMs = now.getTime();
   const current = pragueParts(nowMs);
-  const definitions = Array.from({ length: 12 }, (_, index) => {
+  const rangeFrom = options.endpointRange?.from.getTime();
+  const rangeTo = options.endpointRange?.to.getTime();
+  if (options.endpointRange && (!Number.isFinite(rangeFrom) || !Number.isFinite(rangeTo) || rangeTo! <= rangeFrom!)) {
+    throw new RangeError('Neplatné období výkonnosti.');
+  }
+  const first = rangeFrom === undefined ? null : pragueParts(rangeFrom);
+  const last = rangeTo === undefined ? null : pragueParts(rangeTo - 1);
+  const rangeMonthCount = first && last ? (last.year - first.year) * 12 + last.month - first.month + 1 : 12;
+  const definitions = Array.from({ length: rangeMonthCount }, (_, index) => {
+    if (first) {
+      const date = new Date(Date.UTC(first.year, first.month - 1 + index, 1));
+      return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 };
+    }
     const date = new Date(Date.UTC(current.year, current.month - 12 + index, 1));
     return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 };
   });
@@ -355,6 +385,7 @@ export function buildMonthlyPerformance(
   }
   const add = (roomId: string, kind: PerformanceMetricKind, at: number, seconds: number | null) => {
     if (!Number.isFinite(at) || at > nowMs) return;
+    if ((rangeFrom !== undefined && at < rangeFrom) || (rangeTo !== undefined && at >= rangeTo)) return;
     const key = monthKey(at);
     const shared = pooled.get(key);
     const roomSamples = perRoom.get(roomId)?.get(key);

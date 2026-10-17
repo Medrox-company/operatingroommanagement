@@ -42,6 +42,7 @@ const uiImports = {
   '../hooks/useAcuteRequests': { useAcuteRequests: () => { throw new Error('QA must not call live request API'); } },
   '../hooks/useAcuteCycleLinks': { useAcuteCycleLinks: () => { throw new Error('QA must not call live cycle API'); } },
   '../hooks/useSharedClock': { useNowMinuteMs: () => NOW },
+  '../hooks/useMediaQuery': { useMediaQuery: () => false },
   '../lib/acute-module-cycles': cycles,
   '../lib/acute-day-view': days,
   '../lib/acute-circular-timeline': {},

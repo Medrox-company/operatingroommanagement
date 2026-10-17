@@ -5,7 +5,7 @@ import { useWorkflowStatusesContext } from '../../contexts/WorkflowStatusesConte
 import { AlertTriangle, Check, CheckCircle2, ChevronLeft, Clock, Flag, Lightbulb, Stethoscope, Timer, TrendingUp, Users, X } from 'lucide-react';
 import { C } from './constants';
 import { getReadableTextColor } from './utils';
-import { MobileThemeToggle } from '../mobile/MobileShell';
+import { MobileDesignSelector } from '../mobile/MobileShell';
 import { RapidSurgeryWarning } from '../room/RapidSurgeryWarning';
 import { useNowMs } from '../../hooks/useSharedClock';
 import { cyclePhaseMinutes } from '../../lib/timeline-cycle-statistics';
@@ -210,7 +210,7 @@ const RoomDetailPopup: React.FC<RoomDetailPopupProps> = ({ room, onClose, cycleE
                 {room.department || 'Operační sál'}
               </p>
             </div>
-            <MobileThemeToggle />
+            <MobileDesignSelector />
           </div>
         </div>
 

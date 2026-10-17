@@ -15,7 +15,6 @@ const dependencies = {
   react: { __esModule: true, default: React, useEffect: () => {}, useId: () => 'header-test' },
   'framer-motion': { motion: {}, AnimatePresence: () => null, useReducedMotion: () => true },
   'lucide-react': { Moon: 'Moon', Sun: 'Sun', X: 'X' },
-  '../../hooks/useIsMobileDark': { useMobileTheme: () => ({ isDark: true, toggle: () => {} }) },
   './mobile-shell.css': {},
   './mobile-cliniq.css': {},
   '../../hooks/useAppDesign': { useAppDesign: () => ({ design: 'classic', chooseDesign: () => {} }) },
@@ -25,10 +24,18 @@ new Function('require', 'exports', 'module', outputText)(name => {
   assert.ok(Object.hasOwn(dependencies, name), `Unexpected dependency: ${name}`);
   return dependencies[name];
 }, mod.exports, mod);
-const { MobileHeader, MobileModuleHeader, MobileThemeToggle } = mod.exports;
+const { MobileHeader, MobileModuleHeader, MobileDesignSelector } = mod.exports;
 const children = node => React.Children.toArray(node?.props?.children);
 const text = node => typeof node === 'string' || typeof node === 'number' ? String(node) : children(node).map(text).join('');
 const byClass = (node, name) => children(node).find(child => child.props?.className?.split(/\s+/).includes(name));
+
+test('appearance control offers design selection without a light/dark toggle', () => {
+  const controls = MobileDesignSelector({});
+  assert.deepEqual(children(controls).map(child => child.type), ['select']);
+  assert.equal(children(controls)[0].props['aria-label'], 'Design aplikace');
+  assert.doesNotMatch(source, /useMobileTheme|Přepnout na světlý|Přepnout na tmavý/);
+  assert.doesNotMatch(read('components/LoginPage.tsx'), /toggleMobileTheme|Přepnout do světlého|Přepnout do tmavého/);
+});
 
 test('mobile heading puts the actual page title first, in the same top row as actions', () => {
   for (const [kicker, title] of [['Operační blok', 'Přehled sálů'], ['Živý operační program', 'Tok pacienta'], ['Konfigurace systému', 'Nastavení']]) {
@@ -40,7 +47,7 @@ test('mobile heading puts the actual page title first, in the same top row as ac
     assert.equal(text(heading), title);
     assert.equal(actions.props.className, 'mobile-heading-actions');
     assert.equal(children(actions)[0].props['aria-label'], 'Upozornění');
-    assert.equal(children(actions)[1].type, MobileThemeToggle);
+    assert.equal(children(actions)[1].type, MobileDesignSelector);
     assert.equal(text(header), title, 'Legacy kicker must not remain visible or duplicated');
     assert.equal(children(header).length, 1, 'No empty second heading row');
   }
@@ -55,7 +62,7 @@ test('hospital context and the date stay below the title without introducing ano
 });
 
 test('the title-only variant creates neither an empty utility row nor an empty metadata row', () => {
-  const header = MobileHeader({ title: 'Rozpis', showThemeToggle: false });
+  const header = MobileHeader({ title: 'Rozpis', showDesignSelector: false });
   assert.equal(children(header).length, 1);
   const toolbar = byClass(header, 'mobile-heading-toolbar');
   assert.equal(children(toolbar).length, 1);

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import './login-orbit.css';
+import * as HospitalMenu from '@radix-ui/react-dropdown-menu';
 import { useAuth } from '../contexts/AuthContext';
 import NativeGoogleAuthOverlay from './NativeGoogleAuthOverlay';
 import {
@@ -15,15 +17,14 @@ import {
   BriefcaseBusiness,
   Building2,
   ChevronDown,
+  Check,
   ClipboardList,
   Eye,
   EyeOff,
   Loader2,
   Lock,
-  Moon,
   Shield,
   Stethoscope,
-  Sun,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -46,7 +47,7 @@ interface LoginHospital {
  * Navíc má od scripts/22 každá role v každé nemocnici vlastní heslo, takže
  * jedna zapsaná hodnota už ani nemůže platit.
  *
- * Kliknutí na roli proto jen předvyplní přihlašovací jméno a vyžádá heslo.
+ * Kliknutí na roli proto určí přihlašovací účet a vyžádá heslo.
  *
  * Superadministrátor tu není vůbec — přihlašuje se přes Google
  * s dvoufázovým ověřením.
@@ -77,7 +78,6 @@ const GoogleMark: React.FC<{ className?: string }> = ({ className }) => (
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,7 +90,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   // below restores the persisted value after mount.
   const [selectedHospitalId, setSelectedHospitalId] = useState('');
   const [hospitalsLoading, setHospitalsLoading] = useState(true);
-  const [mobileDarkMode, setMobileDarkMode] = useState(true);
   const [googleEnabled, setGoogleEnabled] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [nativeGoogleOpen, setNativeGoogleOpen] = useState(false);
@@ -100,7 +99,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const activeRole = QUICK_ROLES.find(role => role.id === selectedRole) ?? null;
 
   useEffect(() => {
-    setMobileDarkMode(document.documentElement.classList.contains('m-dark'));
 
     // A system-browser callback can cold-start the WebView. In that case the
     // callback was persisted by mobile/main.tsx before React mounted.
@@ -237,20 +235,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    void submitCredentials(email, password);
+    if (!activeRole || !password || isLoading) return;
+    void submitCredentials(activeRole.email, password);
   };
 
   /** Návrat k výběru role — z tlačítka, z klávesy Escape i opětovným klikem na dlaždici. */
   const resetQuickRole = () => {
     setSelectedRole(null);
-    setEmail('');
     setPassword('');
     setShowPassword(false);
     setError(null);
   };
 
   /**
-   * Výběr role předvyplní přihlašovací jméno a zpřístupní pouze pole hesla.
+   * Výběr role určí přihlašovací účet a zpřístupní pouze pole hesla.
    * Heslo se liší podle zvoleného zařízení, takže ho nelze předvyplnit.
    */
   const handleRoleSelect = (roleId: QuickRoleId) => {
@@ -258,27 +256,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     if (!role) return;
 
     setError(null);
-    setEmail(role.email);
     setPassword('');
     setSelectedRole(roleId);
 
     window.setTimeout(() => {
       const field = document.getElementById('mobile-role-password')
-        ?? document.getElementById('desktop-role-password')
-        ?? document.getElementById('login-password');
+        ?? document.getElementById('desktop-role-password');
       (field as HTMLInputElement | null)?.focus();
     }, 60);
-  };
-
-  const toggleMobileTheme = () => {
-    const nextDarkMode = !mobileDarkMode;
-    setMobileDarkMode(nextDarkMode);
-    document.documentElement.classList.toggle('m-dark', nextDarkMode);
-    try {
-      localStorage.setItem('or-mobile-theme', nextDarkMode ? 'dark' : 'light');
-    } catch {
-      // Motiv zůstane přepnutý i v prohlížeči, který blokuje lokální úložiště.
-    }
   };
 
   const renderGoogleButton = (variant: 'mobile' | 'desktop') => {
@@ -303,13 +288,35 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     );
   };
 
-  const hospitalOptions = hospitals.length === 0
-    ? <option value="">Žádné zařízení není dostupné</option>
-    : hospitals.map(hospital => (
-        <option key={hospital.id} value={hospital.id}>
-          {hospital.hospital_name}{hospital.hospital_short_name ? ` (${hospital.hospital_short_name})` : ''}
-        </option>
-      ));
+  const renderHospitalPicker = (id: string, className: string) => {
+    const selectedHospital = hospitals.find(hospital => hospital.id === selectedHospitalId);
+    return (
+      <HospitalMenu.Root>
+        <HospitalMenu.Trigger asChild>
+          <button id={id} type="button" disabled={hospitalsLoading || hospitals.length === 0}
+            className={`login-hospital-trigger ${className}`}>
+            <Building2 aria-hidden="true" className="login-hospital-leading" strokeWidth={1.6} />
+            <span>{hospitalsLoading ? 'Načítání zařízení…' : selectedHospital?.hospital_name || 'Žádné zařízení není dostupné'}</span>
+            {hospitalsLoading ? <Loader2 aria-hidden="true" className="animate-spin" /> : <ChevronDown aria-hidden="true" />}
+          </button>
+        </HospitalMenu.Trigger>
+        <HospitalMenu.Portal>
+          <HospitalMenu.Content className="login-hospital-menu" align="start" sideOffset={8} collisionPadding={16} aria-label="Zdravotnické zařízení">
+            <HospitalMenu.Label className="login-hospital-menu-title">Vyberte zdravotnické zařízení</HospitalMenu.Label>
+            <HospitalMenu.RadioGroup value={selectedHospitalId} onValueChange={value => { setSelectedHospitalId(value); setError(null); }} data-picker-id={id}>
+              {hospitals.map(hospital => (
+                <HospitalMenu.RadioItem key={hospital.id} value={hospital.id} className="login-hospital-option" textValue={hospital.hospital_name}>
+                  <Building2 aria-hidden="true" size={20} strokeWidth={1.5} />
+                  <span>{hospital.hospital_name}{hospital.hospital_short_name && <small>{hospital.hospital_short_name}</small>}</span>
+                  <HospitalMenu.ItemIndicator><Check size={18} aria-hidden="true" /></HospitalMenu.ItemIndicator>
+                </HospitalMenu.RadioItem>
+              ))}
+            </HospitalMenu.RadioGroup>
+          </HospitalMenu.Content>
+        </HospitalMenu.Portal>
+      </HospitalMenu.Root>
+    );
+  };
 
   return (
     <>
@@ -324,19 +331,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         window.location.reload();
       }}
     />
-    <div className="mobile-login-page relative min-h-[100dvh] w-full overflow-x-hidden md:hidden">
+    <div className="login-orbit mobile-login-page relative min-h-[100dvh] w-full overflow-x-hidden md:hidden">
       <div aria-hidden className="login-aurora-flow mobile-login-aurora pointer-events-none fixed" />
       <div aria-hidden className="login-aurora-vignette mobile-login-vignette pointer-events-none fixed inset-0" />
-
-      <button
-        type="button"
-        onClick={toggleMobileTheme}
-        className="mobile-login-theme-toggle fixed right-5 z-30 grid h-11 w-11 place-items-center rounded-2xl"
-        style={{ top: 'max(18px, env(safe-area-inset-top))' }}
-        aria-label={mobileDarkMode ? 'Přepnout do světlého režimu' : 'Přepnout do tmavého režimu'}
-      >
-        {mobileDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-      </button>
 
       {selectedRole && (
         <button
@@ -350,19 +347,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </button>
       )}
 
-      <main className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col px-[clamp(18px,7vw,42px)] pb-[max(28px,env(safe-area-inset-bottom))] pt-[max(68px,calc(env(safe-area-inset-top)+54px))]">
-        <header className="flex flex-col items-center text-center">
-          <h1 className="mobile-login-title mt-5 max-w-[380px] text-balance text-[clamp(1.85rem,8.5vw,2.8rem)] font-semibold leading-[0.98] tracking-[-0.055em]">
-            Operatingroom management system
+      <main className="mobile-login-main relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col">
+        <header className="mobile-login-header">
+          <h1 className="mobile-login-brand">
+            <img src="/images/mobile-login-logo.webp" width="440" height="740"
+              alt="Operating Room manager application" fetchPriority="high" decoding="async" />
           </h1>
-          <p className="mobile-login-subtitle mt-4 max-w-[370px] text-[11.5px] font-medium leading-[1.55]">
-            Systém pro správu a monitoring operačních sálů v reálném čase. Propojuje živý přehled, tok pacienta, časovou osu, personál, upozornění a provozní statistiky.
-          </p>
         </header>
 
-        <section className="mt-8 sm:mt-10">
+        <section className="mobile-login-content">
           {error && (
-            <div className="mobile-login-error mb-5 flex items-start gap-2.5 rounded-2xl px-4 py-3.5">
+            <div role="alert" className="mobile-login-error mb-5 flex items-start gap-2.5 rounded-2xl px-4 py-3.5">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span className="text-[12px] font-semibold leading-snug">{error}</span>
             </div>
@@ -370,8 +365,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
           {selectedRole && (
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="mobile-login-selected-role">
+                <span className="login-role-icon" aria-hidden="true">
+                  {activeRole && <activeRole.icon className="h-6 w-6" strokeWidth={2} />}
+                </span>
+                <div className="min-w-0">
+                  <p className="mobile-login-label">Přihlášení jako</p>
+                  <p className="mobile-login-selected-title">{activeRole?.label}</p>
+                  <p className="mobile-login-selected-hospital">{hospitals.find(hospital => hospital.id === selectedHospitalId)?.hospital_name}</p>
+                </div>
+              </div>
               <div>
-                <label htmlFor="mobile-role-password" className="mobile-login-label mb-2.5 block text-[10px] font-extrabold uppercase tracking-[0.2em]">Heslo</label>
+                <label htmlFor="mobile-role-password" className="mobile-login-label mb-2.5 block">Heslo</label>
                 <div className="relative">
                   <Lock className="mobile-login-field-icon pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" strokeWidth={1.8} />
                   <input
@@ -382,12 +387,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     onChange={event => setPassword(event.target.value)}
                     placeholder="Zadejte heslo"
                     required
-                    className="mobile-login-field h-[58px] w-full rounded-[17px] pl-12 pr-12 text-[15px] font-semibold outline-none"
+                    className="mobile-login-field h-[58px] w-full rounded-[17px] pl-12 pr-12 text-[15px] font-semibold"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(value => !value)}
-                    className="mobile-login-field-icon absolute right-4 top-1/2 -translate-y-1/2"
+                    className="mobile-login-field-icon mobile-login-password-toggle absolute right-1.5 top-1/2 -translate-y-1/2"
                     aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -404,91 +409,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </form>
           )}
 
-          {!selectedRole && <form onSubmit={handleSubmit} className="space-y-5">
+          {!selectedRole && <div className="space-y-5">
             <div>
-              <label htmlFor="login-hospital" className="mobile-login-label mb-2.5 block text-[10px] font-extrabold uppercase tracking-[0.2em]">Nemocniční zařízení</label>
-              <div className="relative">
-                <Building2 className="mobile-login-field-icon absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" strokeWidth={1.8} />
-                <select
-                  id="login-hospital"
-                  value={selectedHospitalId}
-                  onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }}
-                  disabled={hospitalsLoading || hospitals.length === 0}
-                  required
-                  className="login-hospital-select mobile-login-field h-[58px] w-full appearance-none rounded-[17px] pl-12 pr-12 text-[15px] font-bold outline-none disabled:opacity-50"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  {hospitalOptions}
-                </select>
-                {hospitalsLoading
-                  ? <Loader2 className="mobile-login-field-icon absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin" />
-                  : <ChevronDown className="mobile-login-field-icon pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2" />}
-              </div>
+              <label htmlFor="login-hospital" className="sr-only">Zdravotnické zařízení</label>
+              {renderHospitalPicker('login-hospital', 'mobile-login-field w-full disabled:opacity-50')}
             </div>
 
-            <div>
-              <label htmlFor="login-email" className="mobile-login-label mb-2.5 block text-[10px] font-extrabold uppercase tracking-[0.2em]">Uživatelské jméno</label>
-              <input
-                id="login-email"
-                type="text"
-                inputMode="email"
-                autoCapitalize="none"
-                autoComplete="username"
-                value={email}
-                onChange={event => setEmail(event.target.value)}
-                placeholder="jmeno.prijmeni"
-                required
-                className="mobile-login-field h-[58px] w-full rounded-[17px] px-4 text-[15px] font-semibold outline-none"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="login-password" className="mobile-login-label mb-2.5 block text-[10px] font-extrabold uppercase tracking-[0.2em]">Heslo</label>
-              <div className="relative">
-                <input
-                  id="login-password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={event => setPassword(event.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="mobile-login-field h-[58px] w-full rounded-[17px] px-4 pr-12 text-[15px] font-semibold outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(value => !value)}
-                  className="mobile-login-field-icon absolute right-4 top-1/2 -translate-y-1/2"
-                  aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading || !selectedHospitalId}
-              className="mobile-login-submit mt-1 flex h-[58px] w-full items-center justify-center gap-2 rounded-full text-[16px] font-extrabold disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isLoading ? <><Loader2 className="h-5 w-5 animate-spin" /> Přihlašování…</> : 'Přihlásit se'}
-            </button>
-          </form>}
-
-          {googleEnabled && !selectedRole && (
-            <>
-              <div className="my-6 flex items-center gap-3">
-                <span className="mobile-login-divider h-px flex-1" />
-                <span className="mobile-login-label text-[8px] font-extrabold uppercase tracking-[0.22em]">Správa systému</span>
-                <span className="mobile-login-divider h-px flex-1" />
-              </div>
-              {renderGoogleButton('mobile')}
-            </>
-          )}
+          </div>}
 
           {!selectedRole && (
-            <>
-              <div className="mt-6 grid grid-cols-2 gap-[clamp(10px,3vw,14px)] min-[390px]:grid-cols-3">
+            <div className="mobile-login-roles-section">
+              <div className="mobile-login-role-grid">
                 {QUICK_ROLES.map(role => {
                   const Icon = role.icon;
                   return (
@@ -497,24 +428,35 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type="button"
                       onClick={() => handleRoleSelect(role.id)}
                       disabled={isLoading || !selectedHospitalId}
-                      className="mobile-login-role flex aspect-square min-w-0 flex-col items-center justify-center gap-2 rounded-[clamp(18px,5vw,24px)] px-2 disabled:opacity-40"
+                      className="mobile-login-role disabled:opacity-40"
                       style={{ '--login-role-tone': role.tone } as React.CSSProperties}
                     >
-                      <span className="login-role-icon grid h-12 w-12 place-items-center">
-                        <Icon className="h-[30px] w-[30px]" strokeWidth={2.05} />
+                      <span className="login-role-icon" aria-hidden="true">
+                        <Icon className="h-6 w-6" strokeWidth={2} />
                       </span>
-                      <span className="block w-full truncate text-center text-[10px] font-extrabold">{role.label}</span>
+                      <span className="mobile-login-role-label">{role.label}</span>
                     </button>
                   );
                 })}
               </div>
 
-            </>
+            </div>
+          )}
+
+          {googleEnabled && !selectedRole && (
+            <div className="mobile-login-system">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="mobile-login-divider h-px flex-1" />
+                <span className="mobile-login-label">Správa systému</span>
+                <span className="mobile-login-divider h-px flex-1" />
+              </div>
+              {renderGoogleButton('mobile')}
+            </div>
           )}
         </section>
 
         <footer className="mt-auto pt-10 text-center">
-          <p className="mobile-login-footer text-[8px] font-extrabold uppercase tracking-[0.25em]">MEDROX Czech Republic and Canada</p>
+          <p className="mobile-login-footer"><strong>MEDROX</strong><span>Czech Republic and Canada</span></p>
         </footer>
       </main>
     </div>
@@ -525,7 +467,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     {/* Rozměry uvnitř počítají i s výškou okna, takže se obsah vejde bez
         rolování. `overflow-y: auto` je jen pojistka pro extrémně nízké okno —
         tam je lepší nechat odrolovat než tlačítko oříznout a znepřístupnit. */}
-    <div className="app-module-background relative hidden h-[100dvh] w-full overflow-x-hidden overflow-y-auto text-white md:flex md:flex-col">
+    <div className="login-desktop-page app-module-background relative hidden h-[100dvh] w-full overflow-x-hidden overflow-y-auto text-white md:flex md:flex-col">
       {/* Dekorace v ořezávající vrstvě.
           Aurora má záporný inset, aby při pohybu nikde neodhalila okraj —
           tím ale přesahovala pod spodní hranu okna o stovky pixelů a dělala
@@ -589,23 +531,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               className="mx-auto mt-[clamp(10px,2.2vh,28px)] max-w-[760px] transition-opacity duration-300"
               style={{ opacity: selectedRole ? 0.4 : 1 }}
             >
-              <label htmlFor="desktop-role-hospital" className="mb-2.5 block text-[8px] font-semibold uppercase tracking-[0.34em] text-white/24">Zdravotnické zařízení</label>
-              <div className="relative">
-                <Building2 className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#64B9CD]" />
-                <select
-                  id="desktop-role-hospital"
-                  value={selectedHospitalId}
-                  onChange={event => { setSelectedHospitalId(event.target.value); setError(null); }}
-                  disabled={hospitalsLoading || hospitals.length === 0}
-                  className="login-hospital-select login-glass-field h-[58px] w-full appearance-none rounded-[20px] pl-14 pr-12 text-[14px] font-semibold text-white/86 outline-none transition-colors disabled:opacity-50"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  {hospitalOptions}
-                </select>
-                {hospitalsLoading
-                  ? <Loader2 className="absolute right-5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-white/30" />
-                  : <ChevronDown className="pointer-events-none absolute right-5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/32" />}
-              </div>
+              <label htmlFor="desktop-role-hospital" className="sr-only">Zdravotnické zařízení</label>
+              {renderHospitalPicker('desktop-role-hospital', 'login-glass-field w-full disabled:opacity-50')}
             </div>
 
             <div className="mx-auto mt-[clamp(12px,2.6vh,34px)] w-full max-w-[930px]">

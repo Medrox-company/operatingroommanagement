@@ -67,8 +67,8 @@ export function AcuteDurationPicker({ id, band, minutes, disabled, onBandChange 
       <input className="acute-duration-input" id={`${id}-${option.value}`} name={id} type="radio" value={option.value} checked={band === option.value} required onChange={() => onBandChange(option.value)} aria-label={option.label} />
       <label className="acute-duration-option" htmlFor={`${id}-${option.value}`}><span>{option.label}</span><span className="acute-duration-check" aria-hidden>{band === option.value && <Check size={12} />}</span></label>
     </div>)}</div>
-    <p className="acute-duration-value acute-field-help" aria-live="polite">{band ? `Odhad pro časovou osu: ${minutes} min` : 'Vyberte časový rozsah.'}</p>
-    <p id={`${id}-help`} className="acute-field-help">Volba nad 60 min používá předpokládanou délku 120 min. Nejde o skutečně naměřený čas.</p>
+    <p className={`acute-duration-value acute-field-help${!band ? ' acute-duration-prompt' : ''}`} aria-live="polite">{band ? `Odhad pro časovou osu: ${minutes} min` : 'Vyberte časový rozsah.'}</p>
+    <p id={`${id}-help`} className="acute-field-help acute-duration-explanation">Volba nad 60 min používá předpokládanou délku 120 min. Nejde o skutečně naměřený čas.</p>
   </fieldset>;
 }
 
@@ -145,7 +145,7 @@ export function AcuteRequestFormDialog({ open, rooms, request, revision, control
   const id = (name: string) => `${uid}-${name}`;
 
   return <AcuteDialog open={open} title={request ? 'Upravit akutní požadavek' : 'Nový akutní požadavek'} description="Naléhavost určuje lékař. Pořadí je provozní rozhodnutí koordinátora." onClose={onClose} onCloseAutoFocus={onCloseAutoFocus} intake>
-    <form className="acute-form" onSubmit={async event => {
+    <form className="acute-form" data-intake-new={!request} onSubmit={async event => {
       event.preventDefault(); setError('');
       try {
         if (!draft.urgency) throw new Error('Vyberte naléhavost stanovenou lékařem.');
@@ -162,7 +162,7 @@ export function AcuteRequestFormDialog({ open, rooms, request, revision, control
             <div className="acute-field"><label htmlFor={id('procedure')}>Název chirurgického výkonu</label><input autoComplete="off" id={id('procedure')} value={draft.procedureName} onChange={event => set('procedureName', event.target.value)} required maxLength={ACUTE_INPUT_LIMITS.procedureName} /></div>
             <AcuteDurationPicker id={id('duration')} band={durationBand} minutes={durationMinutes} disabled={controller.busy || !controller.canManage} onBandChange={band => { setDurationBand(band); setDraft(current => ({ ...current, estimatedDurationMinutes: selectAcuteDuration(current.estimatedDurationMinutes, band) })); }} />
           </div>
-          <p className="acute-field-help">Odhad pouze chirurgického výkonu, bez anestezie, odjezdu a úklidu.</p>
+          <p className="acute-field-help acute-duration-explanation">Odhad pouze chirurgického výkonu, bez anestezie, odjezdu a úklidu.</p>
           <AcuteRoomPicker id={id('room')} rooms={rooms} value={draft.proposedRoomId ?? ''} department={draft.department} disabled={controller.busy || !controller.canManage} required={!request || Boolean(draft.proposedRoomId)} onChange={room => setDraft(current => selectAcuteRoom(current, room))} onClear={request ? () => setDraft(current => ({ ...current, proposedRoomId: '' })) : undefined} />
           <div className={`acute-intake-notes${request ? ' acute-intake-notes-edit' : ''}`}>
             <div className="acute-field"><label htmlFor={id('description')}>Popis / požadavky na koordinaci</label><textarea id={id('description')} value={draft.description} onChange={event => set('description', event.target.value)} rows={2} maxLength={ACUTE_INPUT_LIMITS.description} aria-describedby={id('privacy')} /></div>

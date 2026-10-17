@@ -38,9 +38,10 @@ function chosen(tree) {
 
 // Execute the actual client component with bounded hooks: render first, then
 // flush only layout effects before its simulated paint. No provider/backend IO.
-function harness(storage, initialHospital = 'hospital-a', initialPermission = true) {
+function harness(storage, initialHospital = 'hospital-a', initialPermission = true, initialDesktop = true) {
   let hospital = initialHospital;
   let permission = initialPermission;
+  let desktop = initialDesktop;
   let slots = [];
   let cursor = 0;
   let pending = [];
@@ -75,6 +76,10 @@ function harness(storage, initialHospital = 'hospital-a', initialPermission = tr
     './mobile/MobileShell': { MobileHeader: Placeholder }, './ModulePageHeading': Placeholder,
     '../contexts/HospitalContext': { useHospital: () => ({ activeHospitalId: hospital }) },
     '../contexts/AuthContext': { useAuth: () => ({ hasSubmoduleAccess: () => permission }) },
+    '../hooks/useMediaQuery': { useMediaQuery: query => {
+      assert.equal(query, '(min-width: 768px)');
+      return desktop;
+    } },
     '../hooks/useCurrentRoomSpecialties': { useCurrentRoomSpecialties: () => ({ currentByRoom: new Map() }) },
     '../hooks/useTimelineCompletedOperations': { useTimelineCompletedOperations: () => ({ completedOperationsByRoom: new Map() }) },
     '../lib/completed-operations': { mergeCompletedOperations: () => [] },
@@ -100,6 +105,7 @@ function harness(storage, initialHospital = 'hospital-a', initialPermission = tr
     remount: () => { slots = []; return render(); },
     hospital: value => { hospital = value; },
     permission: value => { permission = value; },
+    desktop: value => { desktop = value; },
     storage,
   };
 }
@@ -170,6 +176,32 @@ test('manual selection persists under the original facility key and restores on 
     assert.equal(stored.get('or-dashboard-view:hospital-a'), 'carousel');
     assert.equal(chosen(app.remount()), 'Carousel');
   });
+});
+test('mobile ignores saved 3D without mounting it or erasing the desktop preference', () => {
+  withStorage({ 'or-dashboard-view:hospital-a': 'spatial' }, ({ storage, stored }) => {
+    const app = harness(storage, 'hospital-a', true, false);
+    const checkMobile = tree => {
+      assert.equal(chosen(tree), 'Karty');
+      assert.equal(elements(tree, element => element.props['aria-label']?.includes('3D')).length, 0);
+      assert.equal(elements(tree, element => 'onCameraModeChange' in element.props).length, 0);
+      assert.equal(elements(tree, element => 'viewControls' in element.props).length, 0);
+    };
+    checkMobile(app.render());
+    checkMobile(app.paint());
+    app.desktop(true);
+    assert.equal(chosen(app.paint()), '3D dispozice');
+    app.desktop(false);
+    checkMobile(app.paint());
+    assert.equal(stored.get('or-dashboard-view:hospital-a'), 'spatial');
+  });
+});
+
+test('mobile settings remove the 3D entry and guard an already selected editor', () => {
+  const source = read('components/SettingsPage.tsx');
+  assert.match(source, /useMediaQuery\('\(min-width: 768px\)'\)/);
+  assert.match(source, /canViewSpatial = isDesktop && hasSubmoduleAccess\('dashboard.spatial'\)/);
+  assert.match(source, /if \(item.id === 'spatial'\) return canViewSpatial/);
+  assert.match(source, /selectedModule === 'spatial' && canViewSpatial/);
 });
 test('blocked storage does not crash initial render or manual selection', () => {
   withStorage({}, ({ storage }) => {

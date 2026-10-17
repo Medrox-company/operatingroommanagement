@@ -1,0 +1,154 @@
+/* The same authenticated module, with the optional mobile room-detail appearance.
+   Portalled dialogs are scoped separately; desktop and classic stay untouched. */
+@media (max-width: 767px) {
+  html[data-app-design='cliniq'] .acute-mobile-shell {
+    background:
+      linear-gradient(to bottom, #00000066 0, #00000066 calc(216.1782vw - 184px), #0b102c calc(216.1782vw - 24px)),
+      #0b102c url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat;
+    background-size: 100% 100%, 100% auto;
+    color-scheme: dark;
+  }
+  html[data-app-design='cliniq'] .acute-mobile-shell > .app-module-shell {
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(130px + env(safe-area-inset-bottom, 0px));
+    background: transparent;
+  }
+  html[data-app-design='cliniq'] .acute-module.statistics-settings,
+  html[data-app-design='cliniq'] .acute-dialog.timeline-popup-panel {
+    --acute-text: #f8f7ff;
+    --acute-muted: #d3ceff;
+    --acute-faint: #c1bff1;
+    --acute-border: rgba(171, 164, 255, .23);
+    --acute-rule: rgba(171, 164, 255, .18);
+    --acute-card: rgba(100, 94, 164, .16);
+    --acute-field: rgba(13, 16, 44, .55);
+    --color-primary: #c8c2ff;
+    --color-primary-muted: rgba(185, 181, 255, .16);
+    --stats-surface: var(--acute-card);
+    --stats-surface-2: var(--acute-field);
+    --stats-border: var(--acute-border);
+    color: var(--acute-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    color-scheme: dark;
+  }
+  html[data-app-design='cliniq'] .acute-page-header { margin-bottom: 24px; }
+  html[data-app-design='cliniq'] .acute-page-header .module-page-heading { width: 100%; text-align: center; }
+  html[data-app-design='cliniq'] .acute-page-header .module-page-heading > div { justify-content: center; }
+  html[data-app-design='cliniq'] .acute-page-header .app-module-kicker-row { justify-content: center; color: #c1bff1; }
+  html[data-app-design='cliniq'] .acute-page-header .app-module-title {
+    color: #f8f7ff; font-size: 30px; font-weight: 300; letter-spacing: -.035em; line-height: 1.15; text-transform: none;
+  }
+  html[data-app-design='cliniq'] .acute-page-header .app-module-title-muted { color: #d3ceff; }
+  html[data-app-design='cliniq'] .acute-toolbar { padding: 0; border: 0; background: transparent; gap: 14px; }
+  html[data-app-design='cliniq'] .acute-metric-rail { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  html[data-app-design='cliniq'] .acute-metric {
+    min-height: 76px; padding: 12px 8px; border-radius: 20px;
+    background: rgba(185, 181, 255, .1); border-color: var(--acute-border);
+  }
+  html[data-app-design='cliniq'] .acute-metric span { font-size: 9px; letter-spacing: 0; text-transform: none; }
+  html[data-app-design='cliniq'] .acute-metric strong { font-size: 27px; font-weight: 300; }
+  html[data-app-design='cliniq'] .acute-tabs {
+    flex-basis: 100%; max-width: none; border-radius: 999px; padding: 4px;
+    background: rgba(185, 181, 255, .1); border-color: var(--acute-border);
+  }
+  html[data-app-design='cliniq'] .acute-tabs button { border-radius: 999px; padding: 8px 4px; font-size: 12px; color: var(--acute-muted); }
+  html[data-app-design='cliniq'] .acute-tabs button[aria-selected='true'] {
+    color: #100c62; background: linear-gradient(165deg, #eeecff, #c8c9ff 48%, #b9bfff);
+    box-shadow: inset 0 1px 4px #fff;
+  }
+  html[data-app-design='cliniq'] .acute-toolbar-actions { width: 100%; margin: 0; }
+  html[data-app-design='cliniq'] .acute-toolbar-actions > button { flex: 1; }
+  html[data-app-design='cliniq'] :is(.acute-module, .acute-dialog) .acute-button {
+    min-height: 46px; border-radius: 999px; padding: 10px 16px; font-size: 13px;
+  }
+  html[data-app-design='cliniq'] :is(.acute-module, .acute-dialog) .acute-button-primary {
+    background: linear-gradient(165deg, #eeecff, #c8c9ff 48%, #b9bfff);
+    color: #100c62; border-color: #e6e2ff; box-shadow: inset 0 1px 4px #fff;
+  }
+  html[data-app-design='cliniq'] :is(.acute-module, .acute-dialog) .acute-button-primary:hover:not(:disabled) { background: #eeecff; }
+  html[data-app-design='cliniq'] :is(.acute-module, .acute-dialog) .acute-button-quiet { background: rgba(185, 181, 255, .1); color: var(--acute-muted); }
+  html[data-app-design='cliniq'] .acute-day-bar { padding: 16px 0 4px; }
+  html[data-app-design='cliniq'] .acute-day-navigator { color: var(--acute-muted); }
+  html[data-app-design='cliniq'] .acute-day-navigator :is(button, label),
+  html[data-app-design='cliniq'] .acute-cycle-period select { border-radius: 999px; background: rgba(185, 181, 255, .1); color: #d3ceff; border-color: var(--acute-border); }
+  html[data-app-design='cliniq'] .acute-day-navigator input,
+  html[data-app-design='cliniq'] .acute-cycle-period select { color-scheme: dark; }
+  html[data-app-design='cliniq'] .acute-card-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  html[data-app-design='cliniq'] .acute-card {
+    --acute-muted: #d3ceff; --acute-faint: #c1bff1; --acute-rule: rgba(171, 164, 255, .18);
+    border: 0; border-radius: 22px; overflow: hidden;
+    background: linear-gradient(155deg, rgba(92, 90, 175, .48), rgba(18, 22, 58, .78));
+    -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+  }
+  html[data-app-design='cliniq'] .acute-card-main { padding: 17px 18px 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  html[data-app-design='cliniq'] .acute-card-main::before,
+  html[data-app-design='cliniq'] .acute-card-main::after,
+  html[data-app-design='cliniq'] .acute-card-footer::before,
+  html[data-app-design='cliniq'] .acute-card-footer::after { display: none; }
+  html[data-app-design='cliniq'] .acute-card-rank { padding-right: 48px; gap: 5px 8px; }
+  html[data-app-design='cliniq'] .acute-card-rank strong { font-size: 13px; font-weight: 400; }
+  html[data-app-design='cliniq'] .acute-card-rank > svg { margin-left: 0; color: #d3ceff; }
+  html[data-app-design='cliniq'] .acute-card-received { margin-left: 0; }
+  html[data-app-design='cliniq'] .acute-card-title { margin: 12px 0 0; }
+  html[data-app-design='cliniq'] .acute-card-title h2 { font-size: 22px; font-weight: 400; }
+  html[data-app-design='cliniq'] .acute-card-title > p { font-size: 13px; margin-bottom: 10px; }
+  html[data-app-design='cliniq'] .acute-card-metrics { margin: 12px 0 0; padding: 12px 0 16px; }
+  html[data-app-design='cliniq'] .acute-card-metrics > div + div { padding-left: 18px; }
+  html[data-app-design='cliniq'] .acute-card-metrics dt { font-size: 12px; }
+  html[data-app-design='cliniq'] .acute-card-metrics dd { font-size: 30px; font-weight: 300; color: #f8f7ff; }
+  html[data-app-design='cliniq'] .acute-card-metrics dd span { font-size: 14px; }
+  html[data-app-design='cliniq'] .acute-card-footer {
+    margin: 0; padding: 13px 18px; min-height: 66px; gap: 12px; border: 0; border-radius: 0;
+    background: linear-gradient(115deg, rgba(var(--acute-card-rgb), .32), rgba(var(--acute-card-rgb), .12));
+  }
+  html[data-app-design='cliniq'] .acute-card-footer p { font-size: 12px; }
+  html[data-app-design='cliniq'] .acute-card-footer small { font-size: 11px; }
+  html[data-app-design='cliniq'] .acute-card-assignment,
+  html[data-app-design='cliniq'] .acute-card-audit { gap: 8px; }
+  html[data-app-design='cliniq'] .acute-card-audit { padding-left: 12px; }
+  html[data-app-design='cliniq'] .acute-card-footer svg { color: #d3ceff; }
+  html[data-app-design='cliniq'] .acute-card-hitarea { border-radius: 22px; }
+  html[data-app-design='cliniq'] .acute-card-hitarea .acute-open-button { top: 12px; right: 12px; bottom: auto; }
+  html[data-app-design='cliniq'] .acute-module .acute-open-button {
+    width: 44px; height: 44px; border-color: var(--acute-border); color: #d3ceff; background: rgba(185, 181, 255, .1);
+  }
+  html[data-app-design='cliniq'] .acute-module :is(.acute-history-row, .acute-proposal, .acute-state) {
+    border-radius: 22px; background: linear-gradient(155deg, rgba(92, 90, 175, .35), rgba(18, 22, 58, .78));
+    border-color: var(--acute-border);
+  }
+  html[data-app-design='cliniq'] .acute-empty { min-height: 310px; gap: 18px; }
+  html[data-app-design='cliniq'] .acute-empty-orb { --acute-orb-accent: #c8c2ff; width: 170px; }
+  html[data-app-design='cliniq'] .acute-empty-orb-copy { font-size: 20px; font-weight: 300; }
+  html[data-app-design='cliniq'] .acute-calendar { border-radius: 24px; }
+  html[data-app-design='cliniq'] .acute-calendar button { border-radius: 14px; }
+  /* GlassCalendar uses inline colors; override only the selected-day surface. */
+  html[data-app-design='cliniq'] .acute-calendar button[aria-current='date'] {
+    background: linear-gradient(165deg, #eeecff, #c8c9ff 48%, #b9bfff) !important; color: #100c62 !important;
+  }
+  html[data-app-design='cliniq'] .acute-dialog-overlay.timeline-popup-overlay {
+    background: rgba(5, 7, 28, .65); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+  html[data-app-design='cliniq'] .acute-dialog.timeline-popup-panel {
+    width: calc(100vw - 24px); max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    border: 1px solid var(--acute-border); border-radius: 28px;
+    background: radial-gradient(ellipse at 50% 0, #353a86, transparent 65%), #10142f;
+    box-shadow: 0 24px 70px rgba(3, 5, 24, .45); overflow: hidden;
+  }
+  html[data-app-design='cliniq'] .acute-dialog .acute-dialog-heading { padding: 20px 18px 16px; border-bottom: 1px solid var(--acute-rule); background: transparent; gap: 10px; }
+  html[data-app-design='cliniq'] .acute-dialog .acute-dialog-heading h2 { color: #f8f7ff; font-size: 21px; font-weight: 400; }
+  /* The shared desktop Timeline shell marks these declarations important. */
+  html[data-app-design='cliniq'] .acute-dialog .acute-dialog-heading p { color: var(--acute-muted) !important; font-size: 12px !important; letter-spacing: 0 !important; }
+  html[data-app-design='cliniq'] .acute-dialog .acute-dialog-body { padding: 18px; }
+  html[data-app-design='cliniq'] .acute-dialog .acute-dialog-heading-icon,
+  html[data-app-design='cliniq'] .acute-dialog .acute-icon-button {
+    border-radius: 50%; background: linear-gradient(165deg, #eeecff, #c8c9ff 48%, #b9bfff); color: #100c62; border-color: #e6e2ff;
+  }
+  html[data-app-design='cliniq'] .acute-dialog .timeline-popup-close {
+    border-radius: 50% !important; background: linear-gradient(165deg, #eeecff, #c8c9ff 48%, #b9bfff) !important; border-color: #e6e2ff !important;
+  }
+  html[data-app-design='cliniq'] .acute-dialog .acute-field :is(input, select, textarea) { border-radius: 14px; min-height: 46px; font-size: 16px; }
+  html[data-app-design='cliniq'] .acute-dialog :is(.acute-duration-option, .acute-room-option, .acute-urgency-option, .acute-terminal-form) { border-radius: 16px; }
+  html[data-app-design='cliniq'] .acute-dialog .acute-urgency-option-icon { border-radius: 50%; }
+  html[data-app-design='cliniq'] .acute-dialog :is(.acute-form-error, .acute-emergent-note) { border-radius: 16px; color: #ffd2d8; background: rgba(255, 85, 96, .08); }
+  html[data-app-design='cliniq'] .acute-dialog .acute-dialog-actions { flex-wrap: wrap; }
+  html[data-app-design='cliniq'] .acute-dialog .acute-dialog-actions > button { flex: 1 1 110px; }
+}

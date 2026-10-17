@@ -1,0 +1,46 @@
+/* Presentation only: phases, colors and timestamps remain source-driven. */
+@media (max-width: 767px) {
+  html[data-app-design='cliniq'] .mobile-flow-orbit {
+    --m-text: #d3ceff;
+    --m-text-strong: #f8f7ff;
+    --m-muted: #c1bff1;
+    --m-faint: #aba8d7;
+    --m-accent: #d3ceff;
+    --m-on-accent: #100c62;
+    --m-accent-soft: rgba(185, 181, 255, .14);
+    --m-border: rgba(171, 164, 255, .23);
+    --m-track: rgba(171, 164, 255, .16);
+    --m-bg: rgba(8, 12, 37, .32);
+    --m-card: rgba(185, 181, 255, .1);
+    background: linear-gradient(to bottom, #00000066 0, #00000066 calc(216.1782vw - 184px), #0b102c calc(216.1782vw - 24px)),
+      #0b102c url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat;
+    color: var(--m-text);
+    color-scheme: dark;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  }
+  html[data-app-design='cliniq'] .mobile-flow-orbit > div { padding-inline: 16px; padding-top: calc(24px + env(safe-area-inset-top, 0px)) !important; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-heading-toolbar { display: grid; grid-template-columns: 76px minmax(0, 1fr) 76px; gap: 8px; min-height: 44px; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-heading-toolbar h1 { grid-column: 2; grid-row: 1; text-align: center; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-heading-actions { grid-column: 3; grid-row: 1; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-appearance-controls select { width: 76px; max-width: 100% !important; padding-inline: 6px !important; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-heading-toolbar h1 { font-size: clamp(20px, 6vw, 28px); font-weight: 300; letter-spacing: -.035em; color: var(--m-text-strong); }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .m-unified-card {
+    border: 1px solid var(--m-border); border-radius: 18px;
+    background: linear-gradient(155deg, rgba(92, 90, 175, .32), rgba(18, 22, 58, .72));
+    box-shadow: inset 0 1px 1px rgba(238, 235, 255, .055);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .m-unified-card-title { color: var(--m-text-strong); font-size: 16px; font-weight: 500; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit button[aria-pressed='true'] {
+    background: linear-gradient(165deg, #eeecff, #c8c9ff 48%, #b9bfff) !important; color: #100c62 !important;
+  }
+  html[data-app-design='cliniq'] .mobile-flow-orbit button[aria-pressed] { font-weight: 400; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-appearance-controls select { border-radius: 999px !important; color: var(--m-text) !important; background: var(--m-card) !important; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-flow-step { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 6px 10px; padding-block: 10px; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-flow-step > span:nth-child(1) { border-radius: 50%; grid-row: span 2; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-flow-step > span:nth-child(2) { font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-flow-step > span:nth-child(4) { grid-column: 2 / -1; justify-self: start; font-size: 9px; font-weight: 500; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-flow-footer { gap: 12px; align-items: flex-start; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-flow-footer > div { min-width: 0; flex: 1; }
+  html[data-app-design='cliniq'] .mobile-flow-orbit .mobile-flow-footer p { overflow-wrap: anywhere; line-height: 1.35; }
+}

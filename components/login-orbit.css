@@ -1,0 +1,207 @@
+/* Public login adopts the approved Orbit palette without altering saved app preferences. */
+.login-orbit.login-orbit.login-orbit {
+  /* Exact surfaces from RoomDetail: ARO glass and the four action buttons. */
+  --orbit-login-glass: rgba(146, 141, 190, .08);
+  --orbit-login-lavender: linear-gradient(165deg, #EEECFF 0%, #C8C9FF 48%, #B9BFFF 100%);
+  --orbit-login-border: rgba(163, 153, 239, .25);
+  --orbit-login-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+  --orbit-login-action-border: 1px solid rgba(246, 243, 255, .85);
+  --orbit-login-action-shadow: inset 0 1px 0 rgba(255, 255, 255, .65), 0 6px 18px rgba(8, 6, 35, .16);
+  --login-title: #F8F7FF;
+  --login-copy: #D1CEF3;
+  --login-muted: #C1BFF1;
+  --login-field: var(--orbit-login-glass);
+  --login-field-text: #F8F7FF;
+  --login-field-icon: #D1CEF3;
+  --login-field-border: var(--orbit-login-border);
+  --login-field-focus: #D5D0FF;
+  --login-role: var(--orbit-login-glass);
+  --login-role-border: var(--orbit-login-border);
+  --login-role-icon: #100C62;
+  --login-role-icon-bg: #D5D0FF;
+  --login-option-bg: #161B3F;
+  --login-divider: rgba(193, 191, 241, .23);
+  --login-toggle: var(--orbit-login-glass);
+  --login-toggle-border: var(--orbit-login-border);
+  --login-button: var(--orbit-login-lavender);
+  --login-button-shadow: 0 6px 24px rgba(155, 146, 241, .16);
+  color-scheme: dark;
+  color: var(--login-title);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(180deg, rgba(11, 16, 44, .14), rgba(11, 16, 44, .25) 52%, #0B102C 100%), #0B102C url('/images/mobile-orbit-background-v3.png') center top / cover no-repeat;
+}
+.login-orbit.login-orbit .login-aurora-flow,
+.login-orbit.login-orbit .login-aurora-vignette,
+.login-orbit-desktop > [aria-hidden] { display: none; }
+
+.login-orbit.login-orbit :is(.mobile-login-role, .mobile-login-field, .mobile-login-google, .mobile-login-selected-role, .login-role-tile, .login-glass-field, .login-glass-row, .login-glass-action) {
+  border: 1px solid var(--orbit-login-border);
+  background: var(--orbit-login-glass);
+  color: var(--login-title);
+  border-radius: 24px;
+  box-shadow: var(--orbit-login-glass-shadow);
+}
+.login-orbit.login-orbit :is(.login-role-icon, .login-role-badge) {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  opacity: 1;
+  filter: none;
+  box-shadow: none;
+}
+.login-orbit.login-orbit .login-role-icon { width: 32px; height: 32px; }
+.login-orbit.login-orbit .login-role-icon svg { width: 22px; height: 22px; stroke-width: 1.5; }
+.login-orbit.login-orbit :is(.mobile-login-role, .login-role-tile) {
+  align-items: center;
+  text-align: center;
+  border: 1px solid rgba(214, 211, 255, .28);
+  border-radius: 22px;
+  background: linear-gradient(155deg, rgba(202, 199, 255, .08), rgba(146, 141, 190, .035));
+  color: #FFFFFF;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.login-orbit.login-orbit .login-role-tile > span { color: inherit !important; font-weight: 400; }
+.login-orbit.login-orbit .login-role-tile[aria-pressed='true'] {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 4px;
+  background: rgba(202, 199, 255, .2);
+}
+.login-orbit.login-orbit .login-role-tile:hover:not(:disabled):not([data-dimmed='true']),
+.login-orbit.login-orbit .mobile-login-role:hover:not(:disabled) { border-color: rgba(213, 208, 255, .7); }
+.login-orbit.login-orbit :is(button, input, select):focus-visible {
+  outline: 2px solid #D5D0FF;
+  outline-offset: 3px;
+}
+.login-orbit.login-orbit :is(.mobile-login-submit, button.login-glass-action[type='submit']) {
+  background: var(--orbit-login-lavender);
+  color: #100C62;
+  border-radius: 28px;
+  font-weight: 400;
+  border: var(--orbit-login-action-border);
+  box-shadow: var(--orbit-login-action-shadow);
+}
+.login-orbit.login-orbit button.login-glass-action[type='submit'] svg { color: inherit; }
+.login-orbit.login-orbit .mobile-login-theme-toggle { color: var(--login-title); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.login-orbit.login-orbit .mobile-login-title { font-family: inherit; font-size: clamp(24px, 6.5vw, 30px); line-height: 1.2; letter-spacing: -.025em; font-weight: 400; }
+.login-orbit.login-orbit .mobile-login-header { text-align: center; }
+.login-orbit.login-orbit .mobile-login-product { display: block; margin-top: 0; font: inherit; letter-spacing: inherit; text-transform: none; color: inherit; }
+.login-orbit.login-orbit .mobile-login-subtitle { font-size: 14px; }
+.login-orbit.login-orbit .mobile-login-label { color: var(--login-muted); }
+.login-orbit.login-orbit .mobile-login-role { min-height: 78px; padding: 10px 6px; gap: 5px; border-radius: 18px; }
+.login-orbit.login-orbit .mobile-login-role-label { font-weight: 400; font-size: 12px; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; letter-spacing: -.025em; color: inherit; }
+.login-orbit.login-orbit .mobile-login-field { font-size: 16px; font-weight: 400; }
+.login-orbit.login-orbit .mobile-login-selected-role { padding: 20px; }
+.login-orbit.login-orbit .mobile-login-error { color: #FFD5DD; background: rgba(117, 26, 57, .65); border: 1px solid rgba(255, 166, 183, .4); }
+.login-orbit.login-orbit .mobile-login-google { font-weight: 500; border-radius: 28px; }
+.login-orbit.login-orbit .login-wordmark { font-weight: 400; }
+.login-orbit.login-orbit .login-hospital-select { color-scheme: dark; }
+.login-orbit.login-orbit .login-hospital-select option { background: #161B3F; color: #F8F7FF; }
+.login-orbit-desktop .login-glass-field { border-radius: 28px; }
+.login-orbit-desktop .login-desktop-main p { color: #C1BFF1; }
+.login-orbit-desktop footer p { color: #C1BFF1; }
+.login-orbit-desktop label,
+.login-orbit-desktop [class*="text-white/28"] { color: #C1BFF1; }
+.login-orbit-desktop svg.pointer-events-none { z-index: 1; color: #D1CEF3; }
+
+.login-orbit .login-hospital-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 13px 16px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.login-orbit .login-hospital-trigger > span { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
+.login-orbit .login-hospital-trigger > svg { width: 20px; height: 20px; flex-shrink: 0; color: #D3CEFF; }
+.login-orbit .login-hospital-trigger:disabled { cursor: wait; }
+.login-orbit .login-hospital-trigger[data-state='open'] { border-color: #D3CEFF; }
+/* Desktop keeps its original global login surfaces, branding and aurora.
+   Only size the functional hospital trigger replacing the native select. */
+.login-desktop-page .login-hospital-trigger { display: flex; align-items: center; gap: 14px; min-height: 58px; padding: 13px 20px; border-radius: 20px; text-align: left; color: rgba(255, 255, 255, .86); font-size: 14px; font-weight: 600; }
+.login-desktop-page .login-hospital-trigger > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.login-desktop-page .login-hospital-trigger > svg { flex-shrink: 0; width: 20px; height: 20px; color: #64B9CD; }
+.login-desktop-page .login-hospital-trigger > svg:last-child { width: 16px; height: 16px; color: rgba(255, 255, 255, .32); }
+.login-desktop-page .login-hospital-trigger:focus-visible { outline: 2px solid #64B9CD; outline-offset: 3px; }
+/* Portal-owned menu: deliberately scoped without relying on the login ancestor. */
+.login-hospital-menu {
+  z-index: 150;
+  box-sizing: border-box;
+  width: var(--radix-dropdown-menu-trigger-width);
+  min-width: 240px;
+  max-width: calc(100vw - 32px);
+  max-height: min(420px, var(--radix-dropdown-menu-content-available-height));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px;
+  border: 1px solid rgba(163, 153, 239, .35);
+  border-radius: 24px;
+  background: linear-gradient(155deg, rgba(54, 52, 110, .97), rgba(11, 16, 44, .98));
+  color: #F8F7FF;
+  box-shadow: 0 18px 48px rgba(4, 7, 24, .4), inset 0 1px 0 rgba(255, 255, 255, .08);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.login-hospital-menu-title { padding: 10px 12px; color: #C1BFF1; font-size: 12px; }
+.login-hospital-option { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 12px; border-radius: 16px; font-size: 14px; line-height: 1.4; cursor: pointer; }
+.login-hospital-option > svg { flex-shrink: 0; }
+.login-hospital-option > span:first-of-type { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.login-hospital-option small { display: block; margin-top: 3px; font-size: 11px; opacity: .8; }
+.login-hospital-option[data-state='checked'] { background: rgba(198, 190, 255, .12); }
+.login-hospital-option[data-highlighted] { background: linear-gradient(165deg, #EEECFF, #C8C9FF 48%, #B9BFFF); color: #100C62; outline: 2px solid #D3CEFF; outline-offset: -2px; }
+
+@media (max-width: 767px) {
+  .login-orbit.login-orbit.mobile-login-page {
+    --orbit-login-glass: rgba(146, 141, 190, .12);
+    --orbit-login-border: rgba(163, 153, 239, .25);
+    --login-muted: #C1BFF1;
+    background: linear-gradient(to bottom, rgba(30, 40, 115, .25), rgba(24, 33, 100, .35) 25%, rgba(11, 16, 44, .88) 48%, #0B102C 72%), #0B102C url('/images/mobile-login-surgery.webp') center top / 100% auto no-repeat;
+    background-size: 100% 100%, 100% auto;
+  }
+  .login-orbit.login-orbit .mobile-login-main { justify-content: flex-start; padding: max(24px, env(safe-area-inset-top)) clamp(20px, 8vw, 38px) max(28px, env(safe-area-inset-bottom)); }
+  .login-orbit.login-orbit .mobile-login-main > * { flex-shrink: 0; }
+  .login-orbit.login-orbit .mobile-login-header { display: flex; align-items: flex-start; justify-content: flex-start; min-height: clamp(260px, 42svh, 380px); }
+  .login-orbit .mobile-login-brand { margin: 0 0 0 -12px; width: clamp(62px, 17vw, 76px); }
+  .login-orbit .mobile-login-brand img { display: block; width: 100%; height: auto; }
+  .login-orbit.login-orbit .mobile-login-theme-toggle { left: auto; right: 20px; }
+  .login-orbit.login-orbit .mobile-login-roles-section { margin-top: 16px; }
+  .login-orbit.login-orbit .mobile-login-role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .login-orbit.login-orbit .mobile-login-role {
+    grid-column: auto; min-height: 54px; padding: 10px 12px; gap: 8px;
+    flex-direction: row; justify-content: flex-start; text-align: left; border-radius: 14px;
+    border-color: var(--orbit-login-border);
+    background: linear-gradient(145deg, rgba(202, 199, 255, .16), rgba(146, 141, 190, .1));
+  }
+  .login-orbit.login-orbit .mobile-login-role:last-child { grid-column: 1 / -1; }
+  .login-orbit.login-orbit .mobile-login-role-label { font-size: clamp(12px, 3.4vw, 15px); }
+  .login-orbit.login-orbit .mobile-login-role .login-role-icon { width: 26px; height: 26px; flex: 0 0 26px; }
+  .login-orbit.login-orbit .mobile-login-content { margin-top: 32px; }
+  .login-orbit.login-orbit :is(.mobile-login-field, .mobile-login-selected-role, .mobile-login-google) {
+    border-radius: 14px; background: var(--orbit-login-glass);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  .login-orbit.login-orbit .mobile-login-system { margin-top: 24px; }
+  .login-orbit.login-orbit .mobile-login-main footer { margin-top: 0; padding-top: 30px; }
+  .login-orbit .mobile-login-footer strong { display: block; color: #FFFFFF; font-size: 15px; letter-spacing: .18em; font-weight: 600; }
+  .login-orbit .mobile-login-footer span { display: block; margin-top: 3px; letter-spacing: .16em; font-size: 9px; }
+}
+@media (min-width: 768px) {
+  .login-orbit.login-orbit .login-wordmark,
+  .login-orbit.login-orbit .login-wordmark + p { font-family: inherit; font-size: clamp(28px, 3.5vw, 48px); font-weight: 400; line-height: 1.2; letter-spacing: -.025em; text-transform: none; color: #FFFFFF; margin-top: 0; }
+}
+@media (max-width: 359px) {
+  .login-orbit.login-orbit .mobile-login-role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .login-orbit.login-orbit .mobile-login-role,
+  .login-orbit.login-orbit .mobile-login-role:nth-last-child(-n+2) { grid-column: auto; }
+  .login-orbit.login-orbit .mobile-login-role:last-child { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-orbit.login-orbit :is(button, input, select, .login-password-reveal) { transition: none; animation: none; }
+}

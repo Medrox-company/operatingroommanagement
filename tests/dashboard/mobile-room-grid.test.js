@@ -33,6 +33,7 @@ function compile(sourceText, filename, dependencies = {}, globals = {}) {
 }
 
 const display = compile(read('lib/mobile-room-display.ts'), 'mobile-room-display.ts');
+const phaseVisual = compile(read('lib/mobile-room-phase-visual.ts'), 'mobile-room-phase-visual.ts');
 const acute = compile(read('lib/acute-requests.ts'), 'acute-requests.ts');
 const acuteDashboard = compile(read('lib/acute-dashboard.ts'), 'acute-dashboard.ts', { './acute-requests': acute });
 const statuses = [
@@ -42,6 +43,7 @@ const statuses = [
 const now = Date.parse('2026-09-17T10:00:00Z');
 const room = (id, extra = {}) => ({ id, name: `Sál ${id}`, department: 'Chirurgie', currentStepIndex: 0, ...extra });
 function AcuteDashboardBadge() { return null; }
+function MobileRoomOrbit() { return null; }
 
 // Execute the actual component against deterministic hook/context adapters and
 // real React elements. This is a render-tree/wiring test, not a substitute for
@@ -63,7 +65,7 @@ function renderOverview(rooms, { loaded = true, filter = 'all', layout = 'grid',
       useEffect: () => {},
       useState: () => {
         const index = stateIndex++;
-        return [state[index], value => { state[index] = value; mutations.push([index, value]); }];
+        return [state[index], value => { state[index] = typeof value === 'function' ? value(state[index]) : value; mutations.push([index, state[index]]); }];
       },
   };
   const QuickActions = compile(read('components/mobile/MobileRoomQuickActions.tsx'), 'MobileRoomQuickActions.tsx', {
@@ -72,10 +74,11 @@ function renderOverview(rooms, { loaded = true, filter = 'all', layout = 'grid',
   }).default;
   const Component = compile(source, 'MobileRoomOverview.tsx', {
     react: hooks,
-    'lucide-react': Object.fromEntries(['Bell', 'CalendarDays', 'ChevronRight', 'LayoutGrid', 'Rows3'].map(name => [name, name])),
+    'lucide-react': Object.fromEntries(['Bell', 'CalendarDays', 'ChevronRight', 'Clock3', 'Grip', 'LayoutGrid', 'Rows3', 'UsersRound'].map(name => [name, name])),
     '../../contexts/HospitalContext': { useHospital: () => ({ activeHospital: { hospital_short_name: 'Ukázkové zařízení' } }) },
     '../../contexts/AuthContext': { useAuth: () => ({ hasModuleAccess: () => true }) },
     '../../contexts/WorkflowStatusesContext': { useWorkflowStatusesContext: () => ({ workflowStatuses: statuses }) },
+    '../../contexts/RealtimeContext': { useRealtimeContext: () => ({ connected: true }) },
     '../../hooks/useSharedClock': { useNowMinuteMs: () => now },
     // Světlý i tmavý mobilní motiv vybírá barvu písma v barevném pruhu karty.
     // V testu držíme světlý motiv, na který jsou očekávané hodnoty psané.
@@ -83,10 +86,13 @@ function renderOverview(rooms, { loaded = true, filter = 'all', layout = 'grid',
     '../../hooks/useAppDesign': { useAppDesign: () => ({ design }) },
     './MobileRoomQuickActions': { __esModule: true, default: QuickActions },
     '../../lib/mobile-room-display': display,
+    '../../lib/mobile-room-phase-visual': phaseVisual,
     '../../lib/acute-dashboard': acuteDashboard,
     '../room/AcuteDashboardBadge': { __esModule: true, default: AcuteDashboardBadge },
-    './MobileShell': { MobileHeader: () => null },
+    './MobileRoomOrbit': { __esModule: true, default: MobileRoomOrbit },
+    './MobileShell': { MobileHeader: () => null, MobileDesignSelector: () => null },
     './mobile-overview.css': {},
+    './mobile-overview-orbit.css': {},
   }, {
     navigator: { vibrate: () => {} },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
@@ -147,7 +153,7 @@ test('room cards form two equal columns only below the desktop breakpoint', () =
   assert.equal(list.padding, '0');
   const columns = rules.flatMap(rule => rule.nodes.filter(node => node.prop === 'grid-template-columns').map(node => node.value));
   assert.deepEqual(columns, ['repeat(2, minmax(0, 1fr))'], 'Small screens must retain both columns');
-  assert.match(source, /className="mobile-room-overview md:hidden"/);
+  assert.match(source, /className=\{`mobile-room-overview md:hidden\$\{cliniq \? ' mobile-room-overview-orbit' : ''\}`\}/, 'The new overview is an optional Cliniq marker, not a replacement for the classic phone shell');
 });
 
 test('iOS cards retain common geometry and vertically stack identity and timing band', () => {
@@ -182,7 +188,9 @@ test('classic stays a two-column grid, while optional Cliniq exposes persisted l
   const cliniq = renderOverview([room('one', { name: longName })], { design: 'cliniq', layout: 'rows' });
   assert.equal(byClass(cliniq.tree, 'mro-room-list')[0].props['data-layout'], 'rows');
   assert.equal(text(byClass(cliniq.tree, 'm-unified-card-title')[0]), longName);
-  assert.deepEqual(byClass(cliniq.tree, 'mro-room-metric').map(metric => text(children(metric)[0])), ['Od začátku', 'Odhad konce']);
+  assert.equal(byClass(cliniq.tree, 'mro-room-metric').length, 0, 'Only optional Cliniq uses the new orbit footer instead of the classic timing band');
+  assert.match(text(byClass(cliniq.tree, 'mro-orbit-end')[0]), /Odhad konce.*Uplynulo/);
+  assert.equal(findAll(cliniq.tree, node => node.type === MobileRoomOrbit).length, 1);
   const toggle = byClass(cliniq.tree, 'mro-layout-toggle')[0];
   assert.equal(toggle.props.role, 'group');
   assert.equal(toggle.props['aria-label'], 'Rozložení sálů');
@@ -193,11 +201,12 @@ test('classic stays a two-column grid, while optional Cliniq exposes persisted l
   controls[0].props.onClick();
   assert.equal(byClass(cliniq.render(), 'mro-room-list')[0].props['data-layout'], 'grid');
   assert.equal(cliniq.storage.get('or-room-card-layout'), 'grid');
-  const cliniqCss = postcss.parse(read('components/mobile/mobile-cliniq.css'));
-  const targets = declarationsFor(cliniqCss, 'html[data-app-design="cliniq"] .mro-layout-toggle button');
-  assert.equal(targets.width, '44px');
-  assert.equal(targets.height, '44px');
-  assert.equal(declarationsFor(cliniqCss, 'html[data-app-design="cliniq"] .mro-room-list[data-layout=rows]')['grid-template-columns'], 'minmax(0, 1fr)');
+  const cliniqCss = postcss.parse(read('components/mobile/mobile-overview-orbit.css'));
+  const cliniqScope = 'html[data-app-design="cliniq"] .mobile-room-overview-orbit';
+  const targets = declarationsFor(cliniqCss, `${cliniqScope} .mro-orbit-settings .mro-layout-toggle button`);
+  assert.equal(targets['min-width'], '44px');
+  assert.equal(targets['min-height'], '44px');
+  assert.equal(declarationsFor(cliniqCss, `${cliniqScope} .mro-room-list[data-layout=rows]`)['grid-template-columns'], 'minmax(0, 1fr)');
 });
 
 test('acute badges remain passive inside the full-room target and full request text is announced', () => {

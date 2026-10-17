@@ -4,6 +4,7 @@ import { Search, X, Stethoscope, Heart, Check, UserX, Star, MapPin, Percent, Ale
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { SkillLevel, OperatingRoom } from '../types';
 import { useHospital } from '../contexts/HospitalContext';
+import './mobile/mobile-staff-picker-orbit.css';
 
 export type StaffRole = 'DOCTOR' | 'NURSE';
 
@@ -227,7 +228,7 @@ export default function StaffPickerModal({
           <header className="staff-picker-header flex flex-shrink-0 items-center justify-between gap-4 border-b border-white/[0.07] px-4 py-4 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
               {filterRole && (
-                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border ${accentColor.bg} ${accentColor.border}`}>
+                <div className={`staff-picker-role-icon flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border ${accentColor.bg} ${accentColor.border}`}>
                   <RoleIcon role={filterRole} />
                 </div>
               )}
@@ -260,7 +261,7 @@ export default function StaffPickerModal({
             {currentStaffName && onUnassign && (
               <button
                 onClick={handleUnassign}
-                className="ml-1 flex flex-shrink-0 items-center justify-center gap-2 rounded-md border border-red-500/20 bg-red-500/[0.07] px-3 py-2.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-300/80 transition-colors hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/60"
+                className="staff-picker-unassign ml-1 flex flex-shrink-0 items-center justify-center gap-2 rounded-md border border-red-500/20 bg-red-500/[0.07] px-3 py-2.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-300/80 transition-colors hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/60"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Odhlásit ze sálu</span>
@@ -293,7 +294,7 @@ export default function StaffPickerModal({
               </div>
 
           {/* Section label */}
-          <div className="flex flex-shrink-0 items-center justify-between px-4 pb-2 pt-3 sm:px-5">
+          <div className="staff-picker-list-heading flex flex-shrink-0 items-center justify-between px-4 pb-2 pt-3 sm:px-5">
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/40">
               {searchQuery.trim() ? `Výsledky hledání (${searchedStaff.length})` : `Volný personál (${freeStaff.length})`}
             </p>
@@ -307,7 +308,7 @@ export default function StaffPickerModal({
                 <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#FBBF24] animate-spin" />
               </div>
             ) : displayStaff.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <div className="staff-picker-empty flex flex-col items-center justify-center py-12 gap-3">
                 <UserX className="w-10 h-10 text-white/10" />
                 <p className="text-sm text-white/30">
                   {searchQuery.trim() ? `Žádné výsledky pro "${searchQuery}"` : 'Žádný volný personál'}
@@ -332,6 +333,7 @@ export default function StaffPickerModal({
                       key={member.id}
                       onClick={() => handleSelect(member)}
                       disabled={isUnavailable}
+                      data-selected={isSelected || undefined}
                       className={`staff-picker-person grid min-h-[78px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3.5 py-3 text-left transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/60 ${
                         isUnavailable ? 'cursor-not-allowed opacity-45' : ''
                       }`}

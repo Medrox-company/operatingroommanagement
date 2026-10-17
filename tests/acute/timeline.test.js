@@ -203,7 +203,7 @@ test('mobile keeps every actual room and warning; the proposal click is a separa
     '../../lib/acute-cycle-links': load('lib/acute-cycle-links.ts'),
     '../../hooks/useAcuteCycleLinks': { useAcuteCycleLinks: () => ({ links: [] }) },
     '../timeline/CompletedAcuteCycleLabel': { CompletedAcuteCycleLabel: () => null, completedAcuteCycleDescription: () => '' },
-    './MobileShell': { MobileModuleHeader: () => null, MobilePillTabs: () => null }, './mobile-timeline.css': {},
+    './MobileShell': { MobileModuleHeader: () => null, MobilePillTabs: () => null }, './mobile-timeline.css': {}, './mobile-timeline-orbit.css': {},
   }).default;
   const rooms = Array.from({ length: 15 }, (_, i) => ({ id: `room-${i + 1}`, name: `Sál ${i + 1}`, currentStepIndex: 0, isLocked: i === 0, completedOperations: [] }));
   const stats = Object.freeze({ operations: 0, cleaning: 0, free: 15, completed: 0, emergencyCount: 0 });

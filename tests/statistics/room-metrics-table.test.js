@@ -237,6 +237,28 @@ test('responsive overflow is table-local, focusable and preserves sticky room id
   css.walkDecls(decl => assert.ok(!['animation', 'transform'].includes(decl.prop), 'Rows should not shift or animate while compared'));
 });
 
+test('the continuous metrics panel follows the Overview KPI strip rather than nested or alternating cards', () => {
+  const baseRules = css.nodes.filter(node => node.type === 'rule');
+  const rule = selector => baseRules.find(node => node.selector === selector);
+  assert.equal(declaration(rule('.panel'), 'background'), 'var(--stats-surface)');
+  assert.equal(declaration(rule('.panel'), 'border-radius'), '12px');
+  assert.equal(declaration(rule('.table tr > :not(:last-child)'), 'border-right'), '1px solid var(--stats-border)');
+  assert.equal(declaration(rule('.table thead th'), 'font-size'), '9px');
+  assert.equal(declaration(rule('.table thead th'), 'font-weight'), '600');
+  assert.equal(declaration(rule('.table thead th'), 'text-transform'), 'uppercase');
+  assert.equal(declaration(rule('.table thead th'), 'letter-spacing'), '0.12em');
+  assert.equal(declaration(rule('.table thead th'), 'background'), undefined);
+  assert.equal(declaration(rule('.table tbody td'), 'font-size'), '20px');
+  assert.equal(declaration(rule('.table tbody td'), 'font-weight'), '300');
+  assert.equal(declaration(rule('.table tbody th'), 'font-size'), '14px');
+  assert.equal(declaration(rule('.table tbody th'), 'font-weight'), '500');
+  assert.ok(Number.parseInt(declaration(rule('.table tbody tr'), 'height')) >= 44);
+  assert.ok(baseRules.every(node => !/nth-child\(even\)|nth-child\(odd\)/.test(node.selector)), 'The shared surface must not become striped card rows');
+  const utilization = cells(bodyRows(render([row]))[0])[2];
+  const group = elements(utilization, node => node.props.className === 'utilization')[0];
+  assert.deepEqual(React.Children.toArray(group.props.children).map(node => node.props.className), ['percent', 'track']);
+});
+
 test('paper layout releases horizontal minimums, repeats headers and does not split room rows', () => {
   const print = css.nodes.find(node => node.type === 'atrule' && node.name === 'media' && node.params === 'print');
   assert.ok(print);
@@ -247,4 +269,7 @@ test('paper layout releases horizontal minimums, repeats headers and does not sp
   assert.equal(declaration(rule('.table thead'), 'display'), 'table-header-group');
   assert.equal(declaration(rule('.table tr'), 'break-inside'), 'avoid');
   assert.equal(declaration(rule('.table .identity'), 'position'), 'static');
+  const compactValues = print.nodes.find(node => node.type === 'rule' && node.selectors.includes('.table tbody td') && node.selectors.includes('.table .capacity'));
+  assert.equal(declaration(compactValues, 'font-size'), '9px');
+  assert.equal(declaration(rule('.table tbody tr'), 'height'), 'auto');
 });

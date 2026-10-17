@@ -86,6 +86,7 @@ function render(rooms, stateOverride = {}, warningsByRoom) {
       acuteProposalsForWindow: () => [],
     },
     './mobile-timeline.css': {},
+    './mobile-timeline-orbit.css': {},
   }).default;
   const tree = Component({
     rooms, activeStatuses: statuses, currentSpecialties: new Map([['1', [{ name: 'Chirurgie' }]]]),

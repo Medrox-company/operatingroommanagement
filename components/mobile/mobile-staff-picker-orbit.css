@@ -1,0 +1,202 @@
+/* Re-skin the real picker, keeping staff availability and assignment semantics. */
+@media (max-width: 767px) {
+  /* The room detail is a lower stacking context than the fixed app dock. */
+  html[data-app-design="cliniq"]:has(.staff-picker-overlay) .mobile-reference-nav {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  html[data-app-design="cliniq"] .staff-picker-overlay {
+    --staff-orbit-text: #F8F7FF;
+    --staff-orbit-muted: #C1BFF1;
+    --staff-orbit-border: rgba(171, 164, 255, .23);
+    --staff-orbit-glass: linear-gradient(155deg, rgba(92, 90, 175, .48), rgba(18, 22, 58, .78));
+    --staff-orbit-control: linear-gradient(165deg, #EEECFF, #C8C9FF 48%, #B9BFFF);
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    color: var(--staff-orbit-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  html[data-app-design="cliniq"] .staff-picker-backdrop {
+    background: #080B2299;
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+  }
+
+  html[data-app-design="cliniq"] .staff-picker-dialog {
+    max-width: 480px;
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom)));
+    border: 1px solid var(--staff-orbit-border);
+    border-radius: 30px;
+    background: linear-gradient(to bottom, #00000066 0, #00000066 calc(216.1782vw - 184px), #0B102C calc(216.1782vw - 24px)),
+      #0B102C url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat;
+    box-shadow: inset 0 1px 0 #FFFFFF1F, 0 24px 70px #03051D66;
+  }
+
+  html[data-app-design="cliniq"] .staff-picker-header {
+    gap: 10px;
+    padding: 20px 16px;
+    border: 0;
+    background: transparent;
+  }
+  html[data-app-design="cliniq"] .staff-picker-header > div { gap: 10px; }
+  html[data-app-design="cliniq"] .staff-picker-header p {
+    color: var(--staff-orbit-muted);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: .04em;
+    text-transform: none;
+  }
+  html[data-app-design="cliniq"] .staff-picker-header h2 {
+    overflow: visible;
+    white-space: normal;
+    font-size: 21px;
+    font-weight: 350;
+    line-height: 1.2;
+    letter-spacing: -.03em;
+    color: var(--staff-orbit-text);
+  }
+  html[data-app-design="cliniq"] .staff-picker-role-icon,
+  html[data-app-design="cliniq"] .staff-picker-icon-button,
+  html[data-app-design="cliniq"] .staff-picker-avatar-doctor,
+  html[data-app-design="cliniq"] .staff-picker-avatar-nurse,
+  html[data-app-design="cliniq"] .staff-picker-selected {
+    border: 1px solid #F6F3FFD9;
+    border-radius: 50%;
+    background: var(--staff-orbit-control);
+    color: #100C62;
+    box-shadow: inset 0 1px 0 #FFFFFF99;
+  }
+  html[data-app-design="cliniq"] .staff-picker-role-icon svg,
+  html[data-app-design="cliniq"] .staff-picker-icon-button svg { color: #100C62; stroke-width: 1.6; }
+  html[data-app-design="cliniq"] .staff-picker-icon-button { width: 44px; height: 44px; }
+
+  html[data-app-design="cliniq"] .staff-picker-current-bar {
+    margin: 0 12px;
+    padding: 12px;
+    gap: 10px;
+    border: 1px solid var(--staff-orbit-border);
+    border-radius: 22px;
+    background: var(--staff-orbit-glass);
+  }
+  html[data-app-design="cliniq"] .staff-picker-current-bar p:first-child {
+    color: var(--staff-orbit-muted);
+    font-size: 10px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  html[data-app-design="cliniq"] .staff-picker-current-bar p:last-child {
+    color: var(--staff-orbit-text);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-weight: 400;
+  }
+  html[data-app-design="cliniq"] .staff-picker-unassign {
+    min-height: 44px;
+    padding: 8px;
+    border-radius: 16px;
+    border-color: #FF8B913D;
+    background: #FF8B9112;
+    color: #FFB4BA;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 11px;
+  }
+  html[data-app-design="cliniq"] .staff-picker-search {
+    border: 1px solid var(--staff-orbit-border);
+    border-radius: 999px;
+    background: #B9B5FF17;
+    box-shadow: inset 0 1px 0 #FFFFFF0D;
+  }
+  html[data-app-design="cliniq"] .staff-picker-search input {
+    min-height: 48px;
+    border-radius: inherit;
+    font-size: 16px;
+    color: var(--staff-orbit-text);
+    caret-color: #D3CEFF;
+  }
+  html[data-app-design="cliniq"] .staff-picker-search input::placeholder,
+  html[data-app-design="cliniq"] .staff-picker-search svg { color: var(--staff-orbit-muted); }
+  html[data-app-design="cliniq"] .staff-picker-search button { min-width: 44px; }
+  html[data-app-design="cliniq"] .staff-picker-list-heading p,
+  html[data-app-design="cliniq"] .staff-picker-footer p {
+    color: var(--staff-orbit-muted);
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  html[data-app-design="cliniq"] .staff-picker-list { min-height: 0; overscroll-behavior: contain; }
+  html[data-app-design="cliniq"] .staff-picker-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  html[data-app-design="cliniq"] .staff-picker-person {
+    gap: 10px;
+    min-height: 78px;
+    border: 1px solid var(--staff-orbit-border);
+    border-radius: 22px;
+    background: var(--staff-orbit-glass) !important;
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+  }
+  html[data-app-design="cliniq"] .staff-picker-person > div:nth-child(2) > div:first-child > span {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    color: var(--staff-orbit-text);
+    font-weight: 400;
+    font-size: 15px;
+  }
+  html[data-app-design="cliniq"] .staff-picker-person > div:first-child > span {
+    min-width: 20px;
+    height: 20px;
+    font-size: 9px;
+    background: #161A3D;
+  }
+  html[data-app-design="cliniq"] .staff-picker-person > div:nth-child(2) > div:nth-child(2) {
+    color: var(--staff-orbit-muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 11px;
+  }
+  html[data-app-design="cliniq"] .staff-picker-person[data-selected="true"] {
+    border-color: #D3CEFF;
+    background: linear-gradient(135deg, #B9B5FF61, #4F4D96A6) !important;
+  }
+  html[data-app-design="cliniq"] .staff-picker-person:disabled {
+    opacity: .65;
+    border-color: #FF8B9140;
+    background: linear-gradient(145deg, #70334938, #151735CC) !important;
+  }
+  html[data-app-design="cliniq"] .staff-picker-empty { text-align: center; overflow-wrap: anywhere; }
+  html[data-app-design="cliniq"] .staff-picker-empty :is(svg, p) { color: var(--staff-orbit-muted); }
+  html[data-app-design="cliniq"] .staff-picker-footer {
+    gap: 12px;
+    padding: 12px 16px;
+    border-color: var(--staff-orbit-border);
+    background: #0B102C80;
+  }
+  html[data-app-design="cliniq"] .staff-picker-footer button {
+    min-height: 44px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    background: var(--staff-orbit-control);
+    color: #100C62;
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  html[data-app-design="cliniq"] .staff-picker-dialog :is(button, input):focus-visible {
+    outline: 2px solid #EEECFF;
+    outline-offset: -3px;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 500px) {
+  html[data-app-design="cliniq"] .staff-picker-dialog { overflow-y: auto; }
+  html[data-app-design="cliniq"] .staff-picker-dialog > .flex { flex: 0 0 auto; }
+  html[data-app-design="cliniq"] .staff-picker-list { max-height: 45dvh; }
+}

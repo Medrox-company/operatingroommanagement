@@ -6,6 +6,7 @@ import type { OperatingRoom } from '../../types';
 import type { WorkflowStatus } from '../../contexts/WorkflowStatusesContext';
 import { Activity, Workflow } from 'lucide-react';
 import { MobileHeaderMetrics, MobileModuleHeader } from './MobileShell';
+import './mobile-flow-orbit.css';
 
 /* =============================================================================
    MobileFlowView — „Tok pacienta" (mobil)
@@ -119,7 +120,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
       <div aria-hidden className="mobile-theme-surface fixed inset-0 md:hidden pointer-events-none" style={{ zIndex: 0 }} />
 
       <div
-        className="md:hidden h-full w-full overflow-y-auto hide-scrollbar relative"
+        className="mobile-flow-orbit md:hidden h-full w-full overflow-y-auto hide-scrollbar relative"
         style={{ zIndex: 1, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div
@@ -268,7 +269,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                             return (
                               <div
                                 key={s.id}
-                                className="flex items-center gap-3 py-3"
+                                className="mobile-flow-step flex items-center gap-3 py-3"
                                 style={{ borderTop: '1px solid var(--m-track)' }}
                               >
                                 <span
@@ -299,7 +300,7 @@ const MobileFlowView: React.FC<Props> = ({ rooms, statuses, statusesLoading = fa
                           })}
 
                           {/* Patička — poloha + odhad propuštění */}
-                          <div className="flex items-end justify-between pt-3" style={{ borderTop: '1px solid var(--m-track)' }}>
+                          <div className="mobile-flow-footer flex items-end justify-between pt-3" style={{ borderTop: '1px solid var(--m-track)' }}>
                             <div>
                               <p className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: FAINT }}>
                                 Aktuální poloha

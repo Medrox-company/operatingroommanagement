@@ -11,12 +11,14 @@ import { projectAcuteCircularTimeline } from '../lib/acute-circular-timeline';
 import { useAcuteRequests, type AcuteRequestsController } from '../hooks/useAcuteRequests';
 import { useAcuteCycleLinks } from '../hooks/useAcuteCycleLinks';
 import { useNowMinuteMs } from '../hooks/useSharedClock';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import ModulePageHeading from './ModulePageHeading';
 import { activeRequests, eventLabel, formatDateTime, formatTime, latestReorder, STATUS_LABELS, URGENCY_LABELS, urgencyCountLabel, waitingRequestsLabel, wholeWaitingMinutes } from './acute/display';
 import { AcuteCycleDetailDialog, AcuteDetailDialog, AcuteRequestFormDialog, AcuteReorderDialog, restoreAcuteDialogFocus } from './acute/AcuteDialogs';
 import AcuteCircularTimeline from './acute/AcuteCircularTimeline';
 import { DayNavigator, GlassCalendar } from './statistics/AppCharts';
 import './acute/acute-requests.css';
+import './acute/acute-mobile-orbit.css';
 
 export interface AcuteRequestsModuleProps {
   rooms: OperatingRoom[];
@@ -38,13 +40,14 @@ export interface AcuteModuleCycleEvidence {
 const EMPTY_CYCLE_EVIDENCE: AcuteModuleCycleEvidence = { links: [], loading: false, error: null };
 
 function LiveAcuteRequestsModule({ rooms, now: fixedNow, selectedDayKey: controlledDay, onSelectedDayChange }: Pick<AcuteRequestsModuleProps, 'rooms' | 'now' | 'selectedDayKey' | 'onSelectedDayChange'>) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const controller = useAcuteRequests();
   const minute = useNowMinuteMs();
   const now = fixedNow ?? minute;
   const [historyDays, setHistoryDays] = useState<AcuteModuleHistoryDays>(30);
   const [daySelection, setDaySelection] = useState<{ scopeId: string | undefined; dayKey: string } | null>(null);
   const todayKey = acutePragueDateKey(now)!;
-  const selectedDayKey = clampAcuteDaySelection(now, controlledDay ?? (daySelection?.scopeId === controller.scopeId ? daySelection.dayKey : todayKey));
+  const selectedDayKey = isMobile ? todayKey : clampAcuteDaySelection(now, controlledDay ?? (daySelection?.scopeId === controller.scopeId ? daySelection.dayKey : todayKey));
   const window = useMemo(() => acuteDayCycleQueryWindow(now, selectedDayKey, historyDays), [todayKey, selectedDayKey, historyDays]);
   const cycleEvidence = useAcuteCycleLinks(true, window);
   return <AcuteRequestsView key={controller.scopeId} rooms={rooms} controller={controller} now={now} cycleEvidence={cycleEvidence} historyDays={historyDays} onHistoryDaysChange={setHistoryDays} selectedDayKey={selectedDayKey} onSelectedDayChange={dayKey => { setDaySelection({ scopeId: controller.scopeId, dayKey }); onSelectedDayChange?.(dayKey); }} />;
@@ -63,6 +66,7 @@ type AcuteRequestsViewProps = Required<Pick<AcuteRequestsModuleProps, 'controlle
 };
 
 export function AcuteRequestsView({ rooms, controller, now: fixedNow, cycleEvidence = EMPTY_CYCLE_EVIDENCE, historyDays: controlledDays, onHistoryDaysChange, selectedDayKey: controlledDay, onSelectedDayChange }: AcuteRequestsViewProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const minute = useNowMinuteMs();
   const now = fixedNow ?? minute;
   const [tab, setTab] = useState<Tab>('requests');
@@ -81,7 +85,7 @@ export function AcuteRequestsView({ rooms, controller, now: fixedNow, cycleEvide
   const active = useMemo(() => activeRequests(controller.requests), [controller.requests]);
   const historyDays = controlledDays ?? localDays;
   const todayKey = acutePragueDateKey(now)!;
-  const selectedDayKey = clampAcuteDaySelection(now, controlledDay ?? localDay);
+  const selectedDayKey = isMobile ? todayKey : clampAcuteDaySelection(now, controlledDay ?? localDay);
   const pickerDates = useMemo(() => {
     const midnight = (key: string) => { const date = acutePickerDateFromKey(key)!; date.setHours(0, 0, 0, 0); return date; };
     const earliest = acutePragueDateKey(acuteDayCycleQueryWindow(now, todayKey, 365).startMs)!;
@@ -156,7 +160,7 @@ export function AcuteRequestsView({ rooms, controller, now: fixedNow, cycleEvide
 
       <div className="acute-day-bar">
         <div><strong>{tab === 'history' ? 'Historie požadavků' : dayLabel}</strong><span>{tab === 'history' ? 'Záznamy mimo vybraný den a audit změn' : 'Podle dne zadání · Europe/Prague'}</span></div>
-        {tab === 'history' ? <label className="acute-cycle-period"><span>Historie cyklů</span><select aria-label="Období historie akutních cyklů" value={historyDays} onChange={event => { const days = Number(event.currentTarget.value) as AcuteModuleHistoryDays; if (days !== 30 && days !== 90 && days !== 365) return; (onHistoryDaysChange ?? setLocalDays)(days); closeDetail(); }}><option value={30}>30 dní</option><option value={90}>90 dní</option><option value={365}>365 dní</option></select></label> : <DayNavigator value={pickerDates.selected} onChange={pickDate} today={pickerDates.today} minDate={pickerDates.min} className="acute-day-navigator" />}
+        {tab === 'history' ? <label className="acute-cycle-period"><span>Historie cyklů</span><select aria-label="Období historie akutních cyklů" value={historyDays} onChange={event => { const days = Number(event.currentTarget.value) as AcuteModuleHistoryDays; if (days !== 30 && days !== 90 && days !== 365) return; (onHistoryDaysChange ?? setLocalDays)(days); closeDetail(); }}><option value={30}>30 dní</option><option value={90}>90 dní</option><option value={365}>365 dní</option></select></label> : !isMobile && <DayNavigator value={pickerDates.selected} onChange={pickDate} today={pickerDates.today} minDate={pickerDates.min} className="acute-day-navigator" />}
       </div>
       {!loading && !error && outsideWaitingCount > 0 && <button type="button" className="acute-other-day-note" onClick={() => setTab('history')}><History size={16} aria-hidden /><span>Mimo vybraný den čekají další požadavky: <strong>{outsideWaitingCount}</strong></span><span>Otevřít historii</span><ArrowRight size={16} aria-hidden /></button>}
       <div className="acute-day-workspace">
@@ -185,11 +189,11 @@ export function AcuteRequestsView({ rooms, controller, now: fixedNow, cycleEvide
       )}
       {controller.historyLimited && tab !== 'history' && <p className="acute-context-note">Starší uzavřené požadavky jsou dostupné pouze v omezeném načteném výběru. Prázdný den nemusí znamenat úplnou historickou evidenci.</p>}
       </div>
-      <aside className="acute-calendar-aside" aria-label="Kalendář akutních požadavků">
+      {!isMobile && <aside className="acute-calendar-aside" aria-label="Kalendář akutních požadavků">
         <div className="acute-calendar-heading"><CalendarDays size={18} aria-hidden /><div><h2>Kalendář požadavků</h2><p>Vyberte den zadání</p></div></div>
         <GlassCalendar value={pickerDates.selected} onChange={pickDate} today={pickerDates.today} minDate={pickerDates.min} heat={calendarHeat} accent="#06B6D4" className="acute-calendar" />
         <p className="acute-context-note">Zvýrazněné dny obsahují skutečně načtené požadavky. Ostatní dny a změny najdete v Historii.</p>
-      </aside>
+      </aside>}
       </div>
       <footer className="acute-footer"><span>Operating Room Manager</span><span>Údaje z evidovaných požadavků a skutečných cyklů zařízení</span></footer>
       {form && <AcuteRequestFormDialog key={form.request?.id ?? 'new'} open rooms={rooms} request={form.request} revision={form.revision} controller={controller} onCloseAutoFocus={closeAutoFocus} onClose={() => setForm(null)} onSaved={() => { setForm(null); if (!form.request) { changeSelectedDay(todayKey); setTab('requests'); } setNotice(form.request ? 'Změny požadavku byly uloženy.' : 'Akutní požadavek byl přijat.'); }} />}

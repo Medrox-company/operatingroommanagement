@@ -31,7 +31,7 @@
 }
 
 .caption {
-  padding: 12px 18px;
+  padding: 11px 16px;
   text-align: left;
   color: var(--stats-muted);
   font-size: 11px;
@@ -40,39 +40,51 @@
 
 .table th,
 .table td {
-  padding: 16px 18px;
+  padding: 14px 16px;
   text-align: left;
   vertical-align: middle;
   border-bottom: 1px solid var(--stats-border);
 }
 
+.table tr > :not(:last-child) {
+  border-right: 1px solid var(--stats-border);
+}
+
 .table thead th {
-  padding-block: 13px;
+  padding-block: 12px;
   color: var(--stats-muted);
-  background: var(--stats-surface-2);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.table thead th:nth-child(1) { width: 23%; }
-.table thead th:nth-child(2) { width: 14%; }
-.table thead th:nth-child(3) { width: 16%; }
-.table thead th:nth-child(4) { width: 7%; }
+.table thead th:nth-child(1) { width: 21%; }
+.table thead th:nth-child(2) { width: 13%; }
+.table thead th:nth-child(3) { width: 14%; }
+.table thead th:nth-child(4) { width: 6%; }
 .table thead th:nth-child(5) { width: 12%; }
-.table thead th:nth-child(6) { width: 7%; }
-.table thead th:nth-child(7) { width: 13%; }
-.table thead th:nth-child(8) { width: 8%; }
+.table thead th:nth-child(6) { width: 9%; }
+.table thead th:nth-child(7) { width: 15%; }
+.table thead th:nth-child(8) { width: 10%; }
 
 .table tbody th {
-  font-weight: 600;
-  color: var(--stats-text-strong);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--stats-text);
   overflow-wrap: anywhere;
 }
 
-.table tbody tr:last-child > * { border-bottom: 0; }
+.table tbody td {
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1.25;
+}
 
-.table tbody tr:nth-child(even) { background: var(--stats-surface-2); }
+.table tbody tr { height: 64px; }
+
+.table tbody tr:last-child > * { border-bottom: 0; }
 
 .table tbody tr:hover { background: var(--stats-surface-hover); }
 
@@ -81,16 +93,22 @@
   white-space: nowrap;
 }
 
-.operations { font-weight: 600; }
+.operations { font-variant-numeric: tabular-nums; }
 
-.hours { white-space: nowrap; }
+.table .hours {
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.table .capacity { font-size: 16px; }
 
 .status {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .dot {
@@ -111,14 +129,14 @@
 
 .utilization {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .track {
   display: block;
-  flex: 1;
-  height: 5px;
+  height: 3px;
   min-width: 36px;
   border-radius: 3px;
   overflow: hidden;
@@ -132,9 +150,8 @@
 }
 
 .percent {
-  min-width: 42px;
-  text-align: right;
-  font-weight: 600;
+  font-weight: 300;
+  text-align: left;
   white-space: nowrap;
 }
 
@@ -142,7 +159,7 @@
 
 .empty { color: var(--stats-muted); }
 
-.overtime { font-weight: 600; }
+.overtime { font-size: 18px; font-weight: 300; }
 
 .table .emptyState {
   padding: 32px 18px;
@@ -172,6 +189,12 @@
   .scroll { overflow: visible; }
 
   .table { min-width: 0; font-size: 9px; table-layout: auto; }
+  .table tbody th,
+  .table tbody td,
+  .table .hours,
+  .table .capacity,
+  .overtime { font-size: 9px; }
+  .table tbody tr { height: auto; }
   .table thead { display: table-header-group; }
   .table tr { break-inside: avoid; }
   .table th,

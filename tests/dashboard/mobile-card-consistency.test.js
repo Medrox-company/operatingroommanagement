@@ -69,7 +69,7 @@ test('dark structural surfaces stay blue, while real clinical status colors are 
 test('shared header puts one left-aligned 28px title in the 44px top toolbar without a kicker', () => {
   const source = read('components/mobile/MobileShell.tsx');
   const start = source.indexOf('export const MobileHeader:');
-  const end = source.indexOf('export const MobileThemeToggle:');
+  const end = source.indexOf('export const MobileDesignSelector:');
   const header = source.slice(start, end);
   assert.ok(header.indexOf('mobile-heading-toolbar') < header.indexOf('mobile-heading-copy'));
   assert.ok(header.indexOf('<h1>') < header.indexOf('mobile-heading-actions'));
@@ -77,7 +77,7 @@ test('shared header puts one left-aligned 28px title in the 44px top toolbar wit
   assert.equal((header.match(/<h1>/g) || []).length, 1);
   assert.doesNotMatch(header, /mobile-heading-kicker|\{kicker\}/);
   assert.match(header, /\{\(description \|\| secondary\) && \(/);
-  assert.match(header, /\{showThemeToggle && <MobileThemeToggle \/>\}/);
+  assert.match(header, /\{showDesignSelector && <MobileDesignSelector \/>\}/);
   assert.equal(declarationsFor(shell, '.mobile-heading-toolbar')['min-height'], '44px');
   assert.equal(declarationsFor(shell, '.mobile-ios-header h1')['font-size'], 'var(--m-page-title-size)');
   for (const path of ['components/mobile/MobileRoomOverview.tsx', 'components/spatial/SpatialDashboardView.tsx', 'components/PlaceholderView.tsx']) {
@@ -85,10 +85,10 @@ test('shared header puts one left-aligned 28px title in the 44px top toolbar wit
   }
 });
 
-test('overview and module cards put the common title first, with a 16px content inset', () => {
+test('classic overview and module cards put the common title first, with a 16px content inset', () => {
   const source = read('components/mobile/MobileRoomOverview.tsx');
   assert.match(source, /className="mro-room m-unified-card"/);
-  assert.match(source, /<strong className="m-unified-card-title">\{room\.name\}<\/strong>\s*<span className="mro-phase-row">\s*<span className="mro-phase-label"/);
+  assert.match(source, /\{cliniq && <span className="mro-orbit-room-kicker">Operační sál<\/span>\}\s*<strong className="m-unified-card-title">\{room\.name\}<\/strong>\s*\{!cliniq && <span className="mro-phase-row">\s*<span className="mro-phase-label"/, 'Only optional Cliniq may add the new kicker and replace the original phase row; classic retains the common title-first card');
   assert.equal(declarationsFor(overview, '.mro-room-open').padding, 'var(--m-card-padding)');
   const shared = read('components/mobile/MobileShell.tsx');
   assert.match(shared, /className="m-unified-card mobile-header-metric min-w-0 p-4"/);
@@ -147,8 +147,10 @@ test('room detail retains shared surfaces and horizontal insets while adapting v
   }
   assert.equal(declarationsFor(spatial, '.spatial-mobile-dashboard .spatial-room-panel-heading > div')['padding-top'], '0');
   const source = read('components/RoomDetail.tsx');
-  assert.match(source, /className="mrd-phase-copy">\s*<h2>/);
-  assert.match(source, /className="mobile-room-detail mobile-room-reference flex md:hidden/);
+  // The selected mobile detail is now the reference orbit, not a shared
+  // rectangular phase card. Other module/card contracts above remain intact.
+  assert.match(source, /className="mrd-orbit-phase-title"/);
+  assert.match(source, /className="mobile-room-detail mobile-room-reference mobile-room-orbit flex md:hidden/);
 });
 
 test('all shared-card and room presentation rules remain phone-only, including short screens', () => {
