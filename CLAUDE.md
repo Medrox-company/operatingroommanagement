@@ -52,7 +52,7 @@ výrazy. Důsledky:
 
 ## Stav repozitáře a nasazení
 
-- Práce běží na větvi `zlepseni/rychle-vyhry`, nic nepushnuto.
+- Aktuální vývojová větev je `medrox_op_room_ver_0_2`, lokální výchozí větev je `medrox_op_room_ver_0_1`. Názvy dodržují konvenci uživatele `medrox_op_room_ver_0_<číslo>` a neoznačují verzi vydání aplikace. Toto přejmenování a předání návrhů jsou zatím pouze lokální.
 - Lokální `main` je **napřed proti produkci** o stovky commitů. Poslední
   produkční nasazení Vercelu (projekt `operatingroom`) je na commitu
   `225e9b2a` z konce července — automatické nasazení z `main` zřejmě neběží.

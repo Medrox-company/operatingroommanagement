@@ -1,9 +1,11 @@
 # Předání kontextu: design aplikace a časové osy
 
 Datum: 21. října 2026, Europe/Prague.
-Větev pro pokračování: `medrox/timeline-design-continuation`.
-Výchozí větev: `zlepseni/rychle-vyhry`.
+Větev pro pokračování: `medrox_op_room_ver_0_2`.
+Výchozí větev: `medrox_op_room_ver_0_1`.
 Výchozí commit: `7d68096489ce43db4cae3eb374b6da0442e7ca3b`.
+
+Obě lokální větve byly 21. října 2026 přejmenovány podle výslovného požadavku uživatele na konvenci `medrox_op_room_ver_0_<číslo>`. Čísla označují vývojové větve, nikoli vydání aplikace. Přejmenování zachovalo jejich commity i rozpracované soubory. Názvy vzdálených větví a historické commit zprávy se touto lokální úpravou nepřepisují.
 
 ## Co uživatel požaduje
 
@@ -107,4 +109,4 @@ Tyto reference z uživatelských příloh zůstávají na původních místních
 
 ## Doporučený začátek dalšího chatu
 
-„Pokračuj ve větvi medrox/timeline-design-continuation. Nejdřív přečti AGENTS.md a docs/design/timeline-2026-10-21/README.md, otevři poslední tři návrhy a reálnou referenci. Zachovej skutečné barvy statusů a původní levé menu. Zatím pokračujeme návrhem designu; implementaci zahaj až na můj požadavek.“
+„Pokračuj ve větvi medrox_op_room_ver_0_2. Nejdřív přečti AGENTS.md a docs/design/timeline-2026-10-21/README.md, otevři poslední tři návrhy a reálnou referenci. Zachovej skutečné barvy statusů a původní levé menu. Zatím pokračujeme návrhem designu; implementaci zahaj až na můj požadavek.“

@@ -8,7 +8,7 @@
 --
 -- POŘADÍ JE ZÁVAZNÉ:
 --   1. Nasadit verzi aplikace, která sloupec nečte ani do něj nezapisuje
---      (větev zlepseni/rychle-vyhry — lib/db.ts, App.tsx,
+--      (výchozí větev medrox_op_room_ver_0_1 — lib/db.ts, App.tsx,
 --      hooks/useOperatingRoomsData.ts).
 --   2. Teprve pak spustit tento skript.
 -- Obráceně by běžící produkce dostala chybu „column does not exist".
