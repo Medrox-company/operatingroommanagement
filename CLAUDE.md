@@ -23,12 +23,12 @@ přes Capacitor. Provoz na operatingroom.eu. **Jazyk kódu i rozhraní: češtin
 export PATH="$HOME/.nvm/versions/node/v22.13.0/bin:$PATH"
 
 npx tsc --noEmit -p tsconfig.json      # typová kontrola
-node --test "tests/**/*.test.js"       # sada testů (403 testů)
+node --test "tests/**/*.test.js"       # sada testů (npm test)
 npm run build                          # nutné před nasazením
 ```
 
-`npm run build` **nelze spustit v izolovaném Linuxu agenta** — chybí síť pro
-stažení `@next/swc-linux-arm64-gnu`. Vizuální a běhové ověření musí udělat
+`npm run build` v cloudovém prostředí agenta funguje (registr npm je
+dostupný). Vizuální a běhové ověření s reálnými daty musí udělat
 uživatel u sebe. Netvrdit, že něco „funguje", na základě samotné typové kontroly.
 
 ## Testy mají neobvyklý tvar — čtou zdrojový kód
@@ -43,7 +43,7 @@ výrazy. Důsledky:
   souboru. Po refaktoru je nutné testy upravit společně s kódem.
 - **Atrapy mají seznam povolených závislostí.** Nový import do komponenty
   shodí test hláškou `Unexpected dependency`. Doplň ho do atrapy.
-- **14 testů selhává dlouhodobě.** Tvrdí věci o rozvržení, které bylo záměrně
+- **6 testů selhává dlouhodobě.** Tvrdí věci o rozvržení, které bylo záměrně
   změněno (zrušené hledání sálu v mobilu, ikony akcí nahrazené dlouhým
   stiskem, jiný token pozadí). Nejsou to vady aplikace.
 
@@ -53,10 +53,10 @@ výrazy. Důsledky:
 ## Stav repozitáře a nasazení
 
 - Práce běží na větvi `zlepseni/rychle-vyhry`, nic nepushnuto.
-- Lokální `main` je **napřed proti produkci** o stovky commitů. Poslední
-  produkční nasazení Vercelu (projekt `operatingroom`) je na commitu
-  `225e9b2a` z konce července — automatické nasazení z `main` zřejmě neběží.
-  Před jakýmkoli pushem to ověřit, nespoléhat na „push do main = nasazení".
+- Produkční nasazení Vercelu (projekt `operatingroom`) bylo 18. 10. 2026 z
+  commitu `94d7bfc` (větev `zlepseni/rychle-vyhry`), tedy ještě s Next.js
+  16.3.8 — viz `docs/bezpecnost-a-upgrade-2026-10.md`. Nasazuje se z jiné větve
+  než `main`; před pushem ověřit stav, nespoléhat na „push do main = nasazení".
 - Agent **nemá přístup k GitHubu** (izolovaná síť, žádné credentials). Push
   a merge dělá uživatel.
 - `output/` a `tmp/` jsou generované soubory — necommitovat.
@@ -68,6 +68,7 @@ výrazy. Důsledky:
 | `scripts/add-operational-thresholds.sql` | sloupce pro provozní prahy; bez něj jedou výchozí hodnoty a panel hlásí upozornění |
 | `scripts/cleanup-anesthesiologist-column.sql` | odstranění `anesthesiologist_id`; **až po nasazení** verze, která ho nečte |
 | `scripts/check-schedules-usage.sql` | pouze čtení — ověří, jestli se rozpis sálů plní |
+| `scripts/check-security-grants.sql` | pouze čtení — vypíše práva a RLS politiky; podklad pro zpřísnění (audit 2026-10) |
 
 ## Domluvená rozhodnutí
 
