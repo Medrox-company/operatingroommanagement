@@ -2,8 +2,6 @@ import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { Group } from 'three';
 import { buildFloor,disposeTree,externalWallSegments,knlBoundaryLayout } from './geometry.js';
 import { CATALOG,snapRoomPlacement } from './model.js';
-// Plochy areálu (komunikace, zeleň, heliport) mají v půdorysu vlastní odstín.
-const PLAN_FILL={corridor:'#253251',road:'#1d2846',parking:'#1d2846',plaza:'#45587b',green:'#1f4c55',heliport:'#3d5a8f'};
 /** Exact 2D fallback for browsers without WebGL2; same canonical model and API. */
 export class PlanViewer{
  constructor(host,{onSelect,onTransform,onGroupTransform=()=>{}}){
@@ -34,8 +32,8 @@ export class PlanViewer{
   if(this.previewSnap?.snappedX){c.strokeStyle='#67e8f9';c.lineWidth=2/this.zoom;c.beginPath();c.moveTo(this.previewSnap.guideX,-100);c.lineTo(this.previewSnap.guideX,100);c.stroke()}
   if(this.previewSnap?.snappedZ){c.strokeStyle='#67e8f9';c.lineWidth=2/this.zoom;c.beginPath();c.moveTo(-100,this.previewSnap.guideZ);c.lineTo(100,this.previewSnap.guideZ);c.stroke()}
   for(const original of this.project.rooms.filter(r=>r.floorId===this.floorId)){
-   const r=this.multiPreview?.get(original.id)||(this.preview?.id===original.id?this.preview:original);c.save();c.translate(r.x,r.z);c.rotate(-r.rotation*Math.PI/180);c.fillStyle=PLAN_FILL[r.type]||'#34466e';c.fillRect(-r.width/2,-r.depth/2,r.width,r.depth);c.strokeStyle=this.selectedIds.has(r.id)?(r.id===this.selectedId?'#ffda28':'#67e8f9'):'#8f9fbe';c.lineWidth=(this.selectedIds.has(r.id)?3:2)/this.zoom;c.strokeRect(-r.width/2,-r.depth/2,r.width,r.depth);
-   if(r.type!=='corridor'&&r.doorWidth>0){c.fillStyle='#090f2a';c.fillRect(-r.doorWidth/2,r.depth/2-0.1,r.doorWidth,0.2)}c.restore();
+   const r=this.multiPreview?.get(original.id)||(this.preview?.id===original.id?this.preview:original);c.save();c.translate(r.x,r.z);c.rotate(-r.rotation*Math.PI/180);c.fillStyle=r.type==='corridor'?'#253251':'#34466e';c.fillRect(-r.width/2,-r.depth/2,r.width,r.depth);c.strokeStyle=this.selectedIds.has(r.id)?(r.id===this.selectedId?'#ffda28':'#67e8f9'):'#8f9fbe';c.lineWidth=(this.selectedIds.has(r.id)?3:2)/this.zoom;c.strokeRect(-r.width/2,-r.depth/2,r.width,r.depth);
+   if(r.type!=='corridor'){c.fillStyle='#090f2a';c.fillRect(-r.doorWidth/2,r.depth/2-0.1,r.doorWidth,0.2)}c.restore();
   }
   const floor=this.project.floors.find(f=>f.id===this.floorId);
   if(floor?.knlBoundaryEnabled!==false){const layout=knlBoundaryLayout(this.project.rooms.filter(r=>r.floorId===this.floorId),floor);if(layout){const outerWidth=layout.outerMaxX-layout.outerMinX,innerHeight=layout.maxZ-layout.minZ,solid=floor.knlBoundaryPreset==='solid';c.save();c.strokeStyle=solid?'#8799bd':'rgba(108,135,197,.92)';c.fillStyle=solid?'rgba(88,108,151,.24)':'rgba(101,114,154,.18)';c.lineWidth=solid?(floor.perimeterWallThickness??.42):.09;c.setLineDash(solid?[]:[.34,.16]);c.fillRect(layout.outerMinX,layout.outerMinZ,outerWidth,layout.offset);c.fillRect(layout.outerMinX,layout.maxZ,outerWidth,layout.offset);c.fillRect(layout.outerMinX,layout.minZ,layout.offset,innerHeight);c.fillRect(layout.maxX,layout.minZ,layout.offset,innerHeight);c.strokeRect(layout.outerMinX,layout.outerMinZ,outerWidth,layout.outerMaxZ-layout.outerMinZ);c.restore()}}

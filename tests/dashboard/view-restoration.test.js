@@ -202,9 +202,6 @@ test('mobile settings remove the 3D entry and guard an already selected editor',
   assert.match(source, /canViewSpatial = isDesktop && hasSubmoduleAccess\('dashboard.spatial'\)/);
   assert.match(source, /if \(item.id === 'spatial'\) return canViewSpatial/);
   assert.match(source, /selectedModule === 'spatial' && canViewSpatial/);
-  // Mapa areálu používá stejný 3D editor, a proto i stejné omezení na desktop.
-  assert.match(source, /if \(item.id === 'site-map'\) return canViewSpatial/);
-  assert.match(source, /selectedModule === 'site-map' && canViewSpatial/);
 });
 test('blocked storage does not crash initial render or manual selection', () => {
   withStorage({}, ({ storage }) => {
