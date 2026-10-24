@@ -147,11 +147,18 @@ test('dark and opt-in planning-light rail palettes match the source project with
   });
 });
 
-test('outside planning the active and hovered module keep the original neutral white highlight', () => {
-  const scope = '.sidebar-project:not(:has(.planner-rail)) .sidebar-project__button';
+test('application modules keep the original neutral white highlight without relying on :has()', () => {
+  const scope = '.sidebar-project__button';
   const active = declarations(`${scope}[aria-current="page"]`);
   assert.equal(active.background, 'rgba(255, 255, 255, 0.15)', 'Active module must not take the navy raised token');
   assert.equal(active['border-color'], 'transparent');
   assert.equal(active.color, '#fff');
   assert.equal(declarations(`${scope}:hover`).background, 'rgba(255, 255, 255, 0.05)');
+  // Modrý token zůstává jen panelu modulu (plánování operativy).
+  assert.equal(declarations(`.sidebar-project__module ${scope}[aria-current="page"]`).background, 'var(--or-sidebar-raised)');
+  css.walkRules(rule => {
+    if (rule.selectors.some(selector => selector.includes('aria-current="page"]') && !selector.includes('.sidebar-project__module') && !selector.includes('.planner-rail'))) {
+      assert.doesNotMatch(rule.toString(), /--or-sidebar-raised/, `${rule.selector} must stay neutral`);
+    }
+  });
 });
