@@ -10,6 +10,9 @@ import { useAcuteCycleLinks } from '../hooks/useAcuteCycleLinks';
 import { isActiveAcuteRequest, type AcuteRequest } from '../lib/acute-requests';
 import { AcuteProposalLane, AcuteTimelineStatusTile, acuteProposalsForWindow } from './timeline/AcuteProposalLane';
 import MobileTimelineView from './mobile/MobileTimelineView';
+import MobileTimelineRoomDetail from './mobile/MobileTimelineRoomDetail';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useAppDesign } from '../hooks/useAppDesign';
 import AroOvertimePopup from './AroOvertimePopup';
 import CapacityForecast from './timeline/CapacityForecast';
 import DayStatistics from './timeline/DayStatistics';
@@ -188,6 +191,9 @@ const TimelineMinimap: React.FC<TimelineMinimapProps> = ({ lanes, nowPct, contai
 import type { SortMode, StatusFilter } from './timeline/row-types';
 
 function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests, onOpenAcuteRoom }: TimelineModuleProps) {
+  const phoneViewport = useMediaQuery('(max-width: 767px)');
+  const { design } = useAppDesign();
+  const mobilePhaseDetail = phoneViewport && design === 'cliniq';
   const { activeHospitalId, tokenRevision, loading: hospitalLoading } = useHospital();
   const { modules, hasModuleAccess, permissionsLoading } = useAuth();
   // Superadmin may configure a disabled module, but that is not authority to
@@ -1071,14 +1077,15 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
     >
       {/* Room Detail Popup */}
       <AnimatePresence>
-        {detailRoom && (
+        {detailRoom && (mobilePhaseDetail ? <MobileTimelineRoomDetail key={detailRoom.id}
+          room={detailRoom} statuses={activeStatuses} onClose={closeRoomDetail} cycleEndedAt={selectedCycleEndTime} /> : (
           <RoomDetailPopup
             key={detailRoom.id}
             room={detailRoom}
             onClose={closeRoomDetail}
             cycleEndedAt={selectedCycleEndTime}
           />
-        )}
+        ))}
         {showAroPopup && (
           <AroOvertimePopup
             isOpen={showAroPopup}
@@ -1430,6 +1437,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
       </AnimatePresence>
 
       {/* ======== MOBILE VIEW (md:hidden) — redesigned ======== */}
+      <div className="contents" inert={mobilePhaseDetail && Boolean(detailRoom)} aria-hidden={mobilePhaseDetail && detailRoom ? true : undefined}>
       <MobileTimelineView
         rooms={sortedRooms}
         warningsByRoom={warningsByRoom}
@@ -1446,6 +1454,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
         onOpenAcuteRequests={onOpenAcuteRequests}
         onOpenAcuteRoom={onOpenAcuteRoom}
       />
+      </div>
 
       {/* ======== DESKTOP VIEW (hidden on mobile) ======== */}
       <div

@@ -43,6 +43,7 @@ interface DashboardModuleProps {
   onSelectRoom: (roomId: string) => void;
   onEmergency: (roomId: string) => void;
   onLock: (roomId: string) => void;
+  onMessage?: (roomId: string) => void;
   onNavigate?: (view: string) => void;
   acuteByRoom?: ReadonlyMap<string, AcuteDashboardRoomSummary>;
 }
@@ -63,6 +64,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
   onSelectRoom,
   onEmergency,
   onLock,
+  onMessage,
   onNavigate,
   acuteByRoom,
 }) => {
@@ -170,7 +172,7 @@ const DashboardModule: React.FC<DashboardModuleProps> = ({
     <div className={`app-module-shell dashboard-module statistics-module h-full w-full overflow-y-auto px-4 py-6 pb-mobile-nav sm:px-6 md:py-10 md:pb-10 md:pl-32 md:pr-10 mobile-safe-top ${spatialMode ? 'spatial-dashboard-module' : ''} ${carouselMode ? 'dashboard-carousel-module' : ''}`}>
       <div aria-hidden className="mobile-theme-surface fixed inset-0 -z-10 md:hidden" />
       <div className={`app-module-content ${spatialMode ? 'flex h-full min-h-0 flex-col' : 'dashboard-cards-layout'}`}>
-        {!spatialMode && <MobileRoomOverview rooms={rooms} roomsLoaded={roomsLoaded} onSelectRoom={onSelectRoom} onEmergency={onEmergency} onLock={onLock} onNavigate={onNavigate} acuteByRoom={acuteByRoom} />}
+        {!spatialMode && <MobileRoomOverview rooms={rooms} roomsLoaded={roomsLoaded} onSelectRoom={onSelectRoom} onEmergency={onEmergency} onLock={onLock} onMessage={onMessage} onNavigate={onNavigate} acuteByRoom={acuteByRoom} />}
 
         {/* Hlavička karet se přizpůsobuje dostupné šířce; 3D má vlastní layout. */}
         <header className="dashboard-page-header mb-7 hidden min-w-0 flex-shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-[clamp(1rem,3vw,3rem)] md:grid md:pr-2">

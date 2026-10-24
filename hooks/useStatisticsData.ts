@@ -140,7 +140,7 @@ export function aggregateRoomStatistics(history: StatusHistoryRow[]): RoomStatis
   const emergencyCount = history.filter((event) => event.event_type === 'emergency_on').length;
   const operationsByRoom: Record<string, number> = {};
   const operationsByDay: Record<string, number> = {};
-  const stepDurations: Record<string, number[]> = {};
+  const stepDurations: Record<string, number[]> = Object.create(null);
   const eventsByRoom = new Map<string, StatusHistoryRow[]>();
 
   history.forEach((event) => {

@@ -37,11 +37,12 @@ interface MobileRoomOverviewProps {
   onSelectRoom: (id: string) => void;
   onEmergency: (id: string) => void;
   onLock: (id: string) => void;
+  onMessage?: (id: string) => void;
   onNavigate?: (view: string) => void;
   acuteByRoom?: ReadonlyMap<string, AcuteDashboardRoomSummary>;
 }
 
-export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, onSelectRoom, onEmergency, onLock, onNavigate, acuteByRoom }: MobileRoomOverviewProps) {
+export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, onSelectRoom, onEmergency, onLock, onMessage, onNavigate, acuteByRoom }: MobileRoomOverviewProps) {
   const { activeHospital } = useHospital();
   const { hasModuleAccess } = useAuth();
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -293,6 +294,7 @@ export default function MobileRoomOverview({ rooms, roomsLoaded, viewControls, o
           phaseColor={mobileRoomPhase(quickActionsRoom, workflowStatuses).color}
           onEmergency={() => onEmergency(quickActionsRoom.id)}
           onLock={() => onLock(quickActionsRoom.id)}
+          onMessage={onMessage ? () => onMessage(quickActionsRoom.id) : undefined}
           onOpenDetail={() => onSelectRoom(quickActionsRoom.id)}
           onClose={() => setQuickActionsId(null)}
         />

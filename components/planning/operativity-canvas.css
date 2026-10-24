@@ -1,0 +1,12 @@
+/* The planner's temporary scoped flag leaves all other module canvases intact. */
+html[data-operativity-design="dark"] .app-module-background {
+  background: linear-gradient(172deg, #050920 0%, #070B21 40%, #08102A 100%);
+}
+
+html[data-operativity-design="light"] .app-module-background {
+  background: linear-gradient(172deg, #CED9DF 0%, #DCE5E8 40%, #E8F1EE 100%);
+}
+
+@media (min-width: 768px) {
+  html:has(.planner-rail:not(.planner-rail--collapsed)) .settings-module-wrapper { padding-left: 324px; }
+}

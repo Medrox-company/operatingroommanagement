@@ -28,6 +28,8 @@ import { MobileHeaderMetrics, MobileModuleHeader } from './mobile/MobileShell';
 import { useIsMobileDark } from '../hooks/useIsMobileDark';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
 import ModulePageHeading from './ModulePageHeading';
+import './mobile/mobile-settings-orbit.css';
+import './mobile/mobile-secondary-orbit.css';
 import StaffPickerModal from './StaffPickerModal';
 import './mobile/mobile-statistics.css';
 

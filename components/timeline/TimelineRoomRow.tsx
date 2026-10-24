@@ -1267,8 +1267,8 @@ export function TimelineRoomRow({
                   ? new Date(room.operationStartedAt).getTime()
                   : room.phaseStartedAt
                     ? new Date(room.phaseStartedAt).getTime()
-                    : Date.now() - 30 * 60 * 1000;
-                const now = Date.now();
+                    : currentTime.getTime() - 30 * 60 * 1000;
+                const now = currentTime.getTime();
                 
                 // Estimate end time: use provided estimate or default to 120 min
                 const estimatedEndTime = room.estimatedEndTime

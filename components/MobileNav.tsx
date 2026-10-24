@@ -25,13 +25,13 @@ const ROOM_DETAIL_ICONS = { dashboard: DoorOpen, 'acute-requests': ClipboardList
 const MobileNav: React.FC<MobileNavProps> = memo(({ currentView, onNavigate, roomDetail = false }) => {
   const { isSuperAdmin, hasModuleAccess, logout } = useAuth();
   const { design } = useAppDesign();
-  const referenceDock = roomDetail || (design === 'cliniq' && [...ROOM_DETAIL_IDS, 'flow', 'alerts'].includes(currentView));
+  const referenceDock = roomDetail || design === 'cliniq';
   const [moreOpen, setMoreOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const moreRef = useRef<HTMLButtonElement>(null);
   const enabledItems = useMemo(() => SIDEBAR_ITEMS.filter(item => hasModuleAccess(item.id)), [hasModuleAccess]);
-  // The detail's reference dock changes presentation only. Every destination
+  // Every module in the new mobile design shares the overview's dock. Every destination
   // still comes from the authenticated, permission-filtered module inventory.
   const primaryItems = referenceDock
     ? ROOM_DETAIL_IDS.flatMap(id => enabledItems.filter(item => item.id === id))

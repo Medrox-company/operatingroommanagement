@@ -6,7 +6,7 @@ import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext'
 import { 
   Plus, Minus, X, QrCode, User, Video, Cast, ArrowLeft, Clock,
   MessageSquare, Layout, Thermometer, Edit3,
-  ChevronRight, Pause, Play, AlertTriangle, Lock,
+  ChevronRight, Pause, Play, AlertTriangle, Lock, Siren,
   Phone, UserCheck, Stethoscope, Heart, ShieldAlert, Activity, BedDouble, ChevronLeft, Bell, Biohazard, Syringe, Megaphone,
   Utensils, Check, BedSingle, LogIn, LogOut, HeartPulse, ClipboardCheck, ClipboardList, HandHelping, Broom, CircleHelp,
 } from 'lucide-react';
@@ -673,9 +673,10 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
   }), [activeDbStatuses]);
   const orbitCircumference = 2 * Math.PI * 112;
   const orbitCompletedLength = orbitCircumference * Math.max(0, safeStepIndex) / Math.max(activeDbStatuses.length, 1);
-  const mobileCenterKind = mobilePatientFeedback || (isPaused ? 'pause' : mobilePhaseVisual.kind);
-  const MobileCenterStateIcon = mobilePatientFeedback === 'call' ? Phone : mobilePatientFeedback === 'arrival' ? BedSingle : isPaused ? Pause : null;
-  const mobileCenterTitle = mobilePatientFeedback === 'call' ? 'Volání pacienta' : mobilePatientFeedback === 'arrival' ? 'Příjezd pacienta' : isPaused ? 'Pauza' : renderPhaseTitle(currentStep?.title || currentStep?.name || 'Status');
+  // Operational warnings take priority over transient patient feedback.
+  const mobileCenterKind = room.isEmergency ? 'emergency' : room.isLocked ? 'locked' : mobilePatientFeedback || (isPaused ? 'pause' : mobilePhaseVisual.kind);
+  const MobileCenterStateIcon = room.isEmergency ? Siren : room.isLocked ? Lock : mobilePatientFeedback === 'call' ? Phone : mobilePatientFeedback === 'arrival' ? BedSingle : isPaused ? Pause : null;
+  const mobileCenterTitle = room.isEmergency ? 'Stav nouze' : room.isLocked ? 'Sál uzamčen' : mobilePatientFeedback === 'call' ? 'Volání pacienta' : mobilePatientFeedback === 'arrival' ? 'Příjezd pacienta' : isPaused ? 'Pauza' : renderPhaseTitle(currentStep?.title || currentStep?.name || 'Status');
 
   return (
     <motion.div 
@@ -824,9 +825,6 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
                   {mobilePhaseVisual.kind === 'arrival' && <LogIn className="mrd-orbit-phase-cue" aria-hidden="true" />}
                   {mobilePhaseVisual.kind === 'departure' && <LogOut className="mrd-orbit-phase-cue" aria-hidden="true" />}
                 </>}
-                {room.isLocked && isFinalStep && <span className="mrd-orbit-phase-state">
-                  <Lock aria-hidden="true" />
-                </span>}
               </span>
               <span className="mrd-orbit-phase-title" aria-live="polite" aria-atomic="true">{mobileCenterTitle}</span>
             </button>

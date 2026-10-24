@@ -47,17 +47,18 @@ function mobile(tree) { return findAll(tree, node => hasClass(node, 'mobile-logi
 function desktop(tree) { return findAll(tree, node => hasClass(node, 'app-module-background') && node.props.className.includes('md:flex'))[0]; }
 function input(tree, id) { return findAll(tree, node => node.type === 'input' && node.props.id === id)[0]; }
 function roleButton(tree, label, variant = 'mobile') {
-  const className = variant === 'mobile' ? 'mobile-login-role' : 'login-role-tile';
-  return findAll(tree, node => node.type === 'button' && hasClass(node, className) && text(node).startsWith(label))[0];
+  const className = variant === 'mobile' ? 'mobile-login-wheel-role' : 'login-role-tile';
+  return findAll(tree, node => node.type === 'button' && hasClass(node, className) && (node.props['aria-label'] === label || text(node).startsWith(label)))[0];
 }
 const settle = async () => { await new Promise(resolve => setImmediate(resolve)); };
 
 // Render the actual component with deterministic state/effect and auth adapters.
 // This checks its form wiring and callbacks, not browser layout or real sign-in.
 // No production context, token, endpoint, credential or network is imported.
-function makeHarness({ hospitalList = hospitals, googleEnabled = true, native = false, loginResult = { success: true } } = {}) {
+function makeHarness({ hospitalList = hospitals, googleEnabled = true, native = false, loginResult = { success: true }, visualViewport, mobilePage = null } = {}) {
   const states = [];
   const effects = [];
+  const effectCleanups = [];
   const pendingEffects = [];
   const calls = [];
   const requests = [];
@@ -81,12 +82,13 @@ function makeHarness({ hospitalList = hospitals, googleEnabled = true, native = 
       const index = effectIndex++;
       if (!effects[index] || deps.some((value, offset) => !Object.is(value, effects[index][offset]))) {
         effects[index] = deps;
-        pendingEffects.push(effect);
+        pendingEffects.push({ index, effect });
       }
     },
   };
   const dependencies = {
     './login-orbit.css': {},
+    './mobile/mobile-login-wheel.css': {},
     '@radix-ui/react-dropdown-menu': Object.fromEntries(['Root', 'Trigger', 'Portal', 'Content', 'Label', 'RadioGroup', 'RadioItem', 'ItemIndicator'].map(name => [name, `hospital-${name}`])),
     react: hooks,
     '../contexts/AuthContext': { useAuth: () => ({ login: async (...args) => { calls.push(args); return loginResult; } }) },
@@ -110,8 +112,10 @@ function makeHarness({ hospitalList = hospitals, googleEnabled = true, native = 
     document: {
       documentElement: { classList: { contains: () => false, toggle: () => {} } },
       getElementById: id => ({ focus: () => focusRequests.push(id) }),
+      querySelector: selector => selector === '.mobile-login-wheel-page' ? mobilePage : null,
     },
     window: {
+      visualViewport,
       addEventListener: () => {},
       removeEventListener: () => {},
       setTimeout: callback => { timeouts.push(callback); },
@@ -137,9 +141,118 @@ function makeHarness({ hospitalList = hospitals, googleEnabled = true, native = 
   };
   return {
     render, calls, requests, oauthCalls, storage, focusRequests, timeouts, reloads, NativeGoogleAuthOverlay,
-    ready: async () => { render(); pendingEffects.splice(0).forEach(effect => effect()); await settle(); return render(); },
+    ready: async () => {
+      render();
+      pendingEffects.splice(0).forEach(({ index, effect }) => {
+        effectCleanups[index]?.();
+        const cleanup = effect();
+        effectCleanups[index] = typeof cleanup === 'function' ? cleanup : undefined;
+      });
+      await settle();
+      return render();
+    },
+    unmount: () => {
+      effectCleanups.splice(0).forEach(cleanup => cleanup?.());
+      pendingEffects.splice(0);
+    },
   };
 }
+
+function makeViewportEnvironment() {
+  const listeners = new Map();
+  const properties = new Map();
+  const viewport = {
+    height: 667,
+    offsetTop: 0,
+    scale: 1,
+    addEventListener: (name, callback) => {
+      if (!listeners.has(name)) listeners.set(name, new Set());
+      listeners.get(name).add(callback);
+    },
+    removeEventListener: (name, callback) => listeners.get(name)?.delete(callback),
+    dispatch: name => listeners.get(name)?.forEach(callback => callback()),
+    listenerCount: name => listeners.get(name)?.size ?? 0,
+  };
+  const page = {
+    style: {
+      setProperty: (name, value) => properties.set(name, value),
+      removeProperty: name => properties.delete(name),
+    },
+  };
+  return { viewport, page, properties };
+}
+
+test('mobile login tracks keyboard viewport height and panning without duplicating listeners on rerender', async t => {
+  const { viewport, page, properties } = makeViewportEnvironment();
+  const app = makeHarness({ visualViewport: viewport, mobilePage: page });
+  t.after(() => app.unmount());
+  await app.ready();
+  assert.equal(properties.get('--login-viewport-height'), '667px');
+  assert.equal(properties.get('--login-viewport-top'), '0px');
+
+  viewport.height = 315.5;
+  viewport.offsetTop = 18;
+  viewport.dispatch('resize');
+  assert.equal(properties.get('--login-viewport-height'), '315.5px');
+  assert.equal(properties.get('--login-viewport-top'), '18px');
+
+  viewport.offsetTop = 32.5;
+  viewport.dispatch('scroll');
+  assert.equal(properties.get('--login-viewport-height'), '315.5px');
+  assert.equal(properties.get('--login-viewport-top'), '32.5px');
+  await app.ready();
+  assert.equal(viewport.listenerCount('resize'), 1);
+  assert.equal(viewport.listenerCount('scroll'), 1);
+  assert.deepEqual(app.focusRequests, [], 'Viewport updates must not move focus');
+});
+
+test('pinch zoom preserves login dimensions until the visual viewport returns to normal scale', async t => {
+  const { viewport, page, properties } = makeViewportEnvironment();
+  const app = makeHarness({ visualViewport: viewport, mobilePage: page });
+  t.after(() => app.unmount());
+  await app.ready();
+
+  viewport.scale = 1.5;
+  viewport.height = 240;
+  viewport.offsetTop = 90;
+  viewport.dispatch('resize');
+  viewport.dispatch('scroll');
+  assert.equal(properties.get('--login-viewport-height'), '667px');
+  assert.equal(properties.get('--login-viewport-top'), '0px');
+
+  viewport.scale = 1;
+  viewport.height = 450;
+  viewport.offsetTop = 4;
+  viewport.dispatch('resize');
+  assert.equal(properties.get('--login-viewport-height'), '450px');
+  assert.equal(properties.get('--login-viewport-top'), '4px');
+});
+
+test('unmount releases viewport listeners and only the temporary login geometry properties', async () => {
+  const { viewport, page, properties } = makeViewportEnvironment();
+  properties.set('--unrelated-property', 'preserve');
+  const app = makeHarness({ visualViewport: viewport, mobilePage: page });
+  await app.ready();
+  app.unmount();
+
+  assert.equal(viewport.listenerCount('resize'), 0);
+  assert.equal(viewport.listenerCount('scroll'), 0);
+  assert.deepEqual([...properties], [['--unrelated-property', 'preserve']]);
+  viewport.height = 280;
+  viewport.offsetTop = 50;
+  viewport.dispatch('resize');
+  viewport.dispatch('scroll');
+  assert.deepEqual([...properties], [['--unrelated-property', 'preserve']], 'Detached login must no longer react to viewport changes');
+});
+
+test('visual viewport support without a mounted mobile login shell does not register listeners', async t => {
+  const { viewport } = makeViewportEnvironment();
+  const app = makeHarness({ visualViewport: viewport });
+  t.after(() => app.unmount());
+  await app.ready();
+  assert.equal(viewport.listenerCount('resize'), 0);
+  assert.equal(viewport.listenerCount('scroll'), 0);
+});
 
 test('initial login offers hospital and roles without a username or unusable mobile form', async () => {
   const app = makeHarness();
@@ -147,7 +260,7 @@ test('initial login offers hospital and roles without a username or unusable mob
   assert.equal(findAll(mobile(tree), node => node.type === 'form').length, 0);
   assert.equal(findAll(mobile(tree), node => node.type === 'input').length, 0);
   assert.equal(findAll(mobile(tree), node => node.type === 'hospital-RadioGroup').length, 1);
-  assert.deepEqual(findAll(mobile(tree), node => hasClass(node, 'mobile-login-role')).map(text), roles.map(([label]) => label));
+  assert.deepEqual(findAll(mobile(tree), node => hasClass(node, 'mobile-login-wheel-role')).map(text), roles.map(([label]) => label === 'Administrátor' ? 'Admin' : label));
   assert.equal(findAll(tree, node => node.type === 'input' && (node.props.type === 'email' || node.props.autoComplete === 'username' || /email|username/i.test(node.props.id ?? ''))).length, 0);
   assert.equal(findAll(tree, node => node.type === 'label' && /uživatelské jméno|e-mail|email/i.test(text(node))).length, 0);
   assert.equal(findAll(desktop(tree), node => node.type === 'button' && node.props.type === 'submit')[0].props.disabled, true);
@@ -213,8 +326,24 @@ test('no role, empty password and missing hospital cannot invoke password authen
 
   const empty = makeHarness({ hospitalList: [] });
   const emptyTree = await empty.ready();
-  assert.ok(findAll(mobile(emptyTree), node => hasClass(node, 'mobile-login-role')).every(node => node.props.disabled));
+  assert.ok(findAll(mobile(emptyTree), node => hasClass(node, 'mobile-login-wheel-role')).every(node => node.props.disabled));
   assert.deepEqual(empty.calls, []);
+});
+
+test('mobile role opens only after clicking; unavailable hospitals remain disabled', async () => {
+  const app = makeHarness();
+  let tree = await app.ready();
+  assert.equal(roleButton(tree, 'Management').props.onPointerEnter, undefined);
+  assert.equal(findAll(mobile(app.render()), node => node.type === 'form').length, 0);
+  roleButton(tree, 'Management').props.onClick();
+  tree = app.render();
+  assert.ok(text(mobile(tree)).includes('Management'));
+  assert.ok(input(tree, 'mobile-role-password'));
+  assert.deepEqual(app.calls, []);
+  const empty = makeHarness({ hospitalList: [] });
+  const emptyTree = await empty.ready();
+  assert.equal(roleButton(emptyTree, 'Management').props.disabled, true);
+  assert.equal(findAll(mobile(empty.render()), node => node.type === 'form').length, 0);
 });
 
 test('mobile back clears entered password and reveal state before another role is chosen', async () => {

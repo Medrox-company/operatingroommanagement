@@ -93,7 +93,7 @@ export function buildCalendarPrintHtml(input: CalendarPrintInput): string {
     article { border-top: 4px solid #149b91; padding-top: 12px; }
     .report-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #dce3eb; padding-bottom: 12px; margin-bottom: 14px; }
     .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .report-logo { width: 40px; height: 50px; object-fit: contain; flex: 0 0 auto; }
+    .report-logo { width: 40px; height: 36px; object-fit: contain; flex: 0 0 auto; }
     .eyebrow { font-size: 8px; color: #14796f; letter-spacing: 1.2px; font-weight: 700; text-transform: uppercase; margin: 0 0 6px; }
     h1 { font-size: 23px; line-height: 1.15; font-weight: 700; letter-spacing: -.5px; margin: 0; color: #17233f; }
     h1 span { color: #64748b; font-weight: 400; }
@@ -124,7 +124,7 @@ export function buildCalendarPrintHtml(input: CalendarPrintInput): string {
 <body>
   <article aria-label="Kalendářní report">
     <header class="report-heading">
-      <div class="brand"><img class="report-logo" src="${OPERATINGROOM_REPORT_LOGO}" alt="Operatingroom Management System" width="40" height="50"><div><p class="eyebrow">Operatingroom Management System</p><h1>Kalendář <span>${text(input.monthName)} ${text(input.year)}</span></h1></div></div>
+      <div class="brand"><img class="report-logo" src="${OPERATINGROOM_REPORT_LOGO}" alt="Operatingroom Management System" width="40" height="36"><div><p class="eyebrow">Operatingroom Management System</p><h1>Kalendář <span>${text(input.monthName)} ${text(input.year)}</span></h1></div></div>
       <div class="report-meta">Provozní přehled<strong>${text(input.monthName)} ${text(input.year)}</strong>${text(input.rows.length)} oddělení / ${text(input.days.length)} dnů</div>
     </header>
     <h2 class="section-title"><span>01</span>Měsíční přehled</h2>

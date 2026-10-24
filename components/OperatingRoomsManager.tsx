@@ -235,7 +235,7 @@ const RoomCard: React.FC<{
   return (
     <article
       data-testid={`operating-room-card-${room.id}`}
-      className={`group grid min-w-[1040px] grid-cols-[245px_160px_minmax(445px,1fr)_190px] border-b border-white/[0.055] bg-transparent transition-colors hover:bg-white/[0.018] ${compact ? 'min-h-[76px]' : 'min-h-[104px]'}`}
+      className={`admin-room-row group grid min-w-[1040px] grid-cols-[245px_160px_minmax(445px,1fr)_190px] border-b border-white/[0.055] bg-transparent transition-colors hover:bg-white/[0.018] ${compact ? 'min-h-[76px]' : 'min-h-[104px]'}`}
     >
       <section className="flex min-w-0 items-center gap-3 border-r border-white/[0.055] bg-white/[0.028] px-4 py-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200/[0.10] bg-cyan-300/[0.055] text-[9px] font-semibold tabular-nums text-cyan-100/75">
@@ -667,7 +667,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
         <ModulePageHeading icon={Building2} kicker="OR CONTROL" title="OPERAČNÍ" mutedTitle="SÁLY" />
       </header>
 
-      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+      <section className="admin-toolbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
         <div className="flex min-w-max items-center gap-2.5">
           {[
             { label: 'Celkem sálů', value: stats.total, suffix: 'sálů', color: COLORS.cyan, icon: Building2 },
@@ -795,7 +795,7 @@ const OperatingRoomsManager: React.FC<OperatingRoomsManagerProps> = ({
                 <span className="text-[8px] font-semibold uppercase tracking-[0.13em] text-white/28">{filteredRooms.length} {filteredRooms.length === 1 ? 'sál' : filteredRooms.length < 5 ? 'sály' : 'sálů'}</span>
               </div>
               <div className="overflow-x-auto">
-                <div className="min-w-[1040px]">
+                <div className="admin-room-table min-w-[1040px]">
                   <div className="grid h-9 grid-cols-[245px_160px_minmax(445px,1fr)_190px] border-b border-white/[0.055] bg-white/[0.018] text-[7px] font-semibold uppercase tracking-[0.14em] text-white/34">
                     <div className="flex items-center border-r border-white/[0.055] bg-white/[0.022] px-4">Operační sál</div>
                     <div className="flex items-center border-r border-white/[0.055] px-4">Dnešní provoz</div>

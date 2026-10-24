@@ -66,6 +66,39 @@
     background-blend-mode: normal, luminosity;
   }
 
+  /* Same priority as the central symbol: emergency > lock > hygiene. */
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit[data-locked='true'],
+  .mobile-room-orbit[data-locked='true'] ~ .step-confirm-overlay {
+    --mrd-orbit-floor: #081E13;
+  }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit[data-locked='true'] {
+    background:
+      linear-gradient(to bottom,
+        rgba(0, 0, 0, .24) 0,
+        rgba(0, 0, 0, .24) calc(var(--mrd-orbit-art-height) - 184px),
+        var(--mrd-orbit-floor) calc(var(--mrd-orbit-art-height) - 24px)),
+      #176B3A url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat !important;
+    background-size: 100% 100%, 100% auto !important;
+    background-blend-mode: normal, luminosity;
+  }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit[data-emergency='true'],
+  .mobile-room-orbit[data-emergency='true'] ~ .step-confirm-overlay {
+    --mrd-orbit-floor: #29090E;
+  }
+
+  .mobile-room-detail.mobile-room-reference.mobile-room-orbit[data-emergency='true'] {
+    background:
+      linear-gradient(to bottom,
+        rgba(0, 0, 0, .24) 0,
+        rgba(0, 0, 0, .24) calc(var(--mrd-orbit-art-height) - 184px),
+        var(--mrd-orbit-floor) calc(var(--mrd-orbit-art-height) - 24px)),
+      #981C2C url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat !important;
+    background-size: 100% 100%, 100% auto !important;
+    background-blend-mode: normal, luminosity;
+  }
+
   .mobile-room-reference.mobile-room-orbit .mrd-header {
     display: grid;
     grid-template-columns: 44px minmax(0, 1fr) 44px;
@@ -252,15 +285,17 @@
     text-align: center;
     white-space: normal;
     overflow: visible;
-    overflow-wrap: normal;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
     word-break: normal;
     hyphens: none;
     clip-path: none;
     transform: translate(-50%, -50%);
   }
   .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps .is-current .mrd-step-name { color: #FFFFFF; }
-  .mobile-room-orbit .mrd-orbit-steps [data-label-side='right'] .mrd-step-name { width: min(82px, calc(100% - var(--orbit-label-x) - 8px)); text-align: left; transform: translateY(-50%); }
-  .mobile-room-orbit .mrd-orbit-steps [data-label-side='left'] .mrd-step-name { width: min(82px, calc(var(--orbit-label-x) - 8px)); text-align: right; transform: translate(-100%, -50%); }
+  /* Keep side labels inside the diagram even when short-phone rules resize it. */
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps [data-label-side='right'] .mrd-step-name { width: min(82px, calc(100% - var(--orbit-label-x) - 8px)); max-width: calc(100% - var(--orbit-label-x) - 8px); text-align: left; transform: translateY(-50%); }
+  .mobile-room-reference.mobile-room-orbit .mrd-orbit-steps [data-label-side='left'] .mrd-step-name { width: min(82px, calc(var(--orbit-label-x) - 8px)); max-width: calc(var(--orbit-label-x) - 8px); text-align: right; transform: translate(-100%, -50%); }
 
   .mobile-room-detail.mobile-room-reference.mobile-room-orbit .mrd-phase-advance.mrd-orbit-current {
     position: absolute;

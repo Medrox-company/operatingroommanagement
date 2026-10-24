@@ -32,6 +32,8 @@ const reactStub = {
 };
 const moduleStub = { exports: {} };
 const imports = {
+  '../types': { DEFAULT_WEEKLY_SCHEDULE: Object.fromEntries(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].map(day => [day, { enabled: true, startHour: 7, startMinute: 0, endHour: 15, endMinute: 30 }])) },
+  '../hooks/useSharedClock': { useNowMs: () => new Date(2026, 9, 22, 15, 0, 0).getTime() },
   react: reactStub,
   'lucide-react': require('lucide-react'),
   '../contexts/WorkflowStatusesContext': {
@@ -58,6 +60,18 @@ new Function('require', 'exports', 'module', outputText)(
   moduleStub,
 );
 const RoomCard = moduleStub.exports.default;
+const overtimeCountdown = moduleStub.exports.overtimeCountdown;
+
+test('overtime countdown ticks to the configured end and clamps at zero', () => {
+  const now = new Date(2026, 9, 22, 15, 0, 0).getTime();
+  const room = { estimatedEndTime: new Date(2026, 9, 22, 16, 2, 3).toISOString() };
+  assert.equal(overtimeCountdown(room, now), '01:02:03');
+  assert.equal(overtimeCountdown(room, now + 1000), '01:02:02');
+  assert.equal(overtimeCountdown(room, now + 5 * 3600000), '00:00:00');
+  assert.equal(overtimeCountdown({ estimatedEndTime: new Date(2026, 9, 22, 15, 30).toISOString() }, now), null);
+  assert.equal(overtimeCountdown({ estimatedEndTime: 'invalid' }, now), null);
+  assert.equal(overtimeCountdown({}, now), null);
+});
 
 const baseRoom = {
   id: 'room-1',
@@ -97,6 +111,30 @@ function render(overrides = {}) {
   assert.equal(cards.length, 2, 'Both mobile and desktop cards must be covered');
   return { tree, cards };
 }
+
+test('desktop replaces the circle only for an active overtime estimate and keeps priority states', () => {
+  const estimatedEndTime = new Date(2026, 9, 22, 16, 2, 3).toISOString();
+  for (const state of [{}, { isEmergency: true }, { isLocked: true }, { isPaused: true }, { currentStepIndex: 0 }]) {
+    const { cards } = render({ room: { ...baseRoom, estimatedEndTime, ...state } });
+    const timers = elements(cards[1], node => node.props.role === 'timer');
+    const shouldCount = Object.keys(state).length === 0;
+    assert.equal(timers.length, shouldCount ? 1 : 0);
+    assert.equal(elements(cards[1], node => node.props.className?.includes('dashboard-workspace-cycle-indicator')).length, shouldCount ? 0 : 1);
+    if (shouldCount) assert.equal(textContent(timers[0]), '01:02:03');
+  }
+});
+
+test('countdown uses individual working hours and preserves the operation day after midnight', () => {
+  const now = new Date(2026, 9, 23, 0, 0, 0).getTime();
+  const room = {
+    operationStartedAt: new Date(2026, 9, 22, 14).toISOString(),
+    estimatedEndTime: new Date(2026, 9, 23, 1).toISOString(),
+    weeklySchedule: { thursday: { enabled: true, startHour: 7, startMinute: 0, endHour: 16, endMinute: 0 } },
+  };
+  assert.equal(overtimeCountdown(room, now), '01:00:00');
+  room.weeklySchedule.thursday.enabled = false;
+  assert.equal(overtimeCountdown(room, now), null);
+});
 
 function keyEvent(key, currentTarget, target = currentTarget) {
   return {
@@ -230,6 +268,28 @@ test('dashboard patient and message indicators use circles backed by real room s
     assert.ok(header, 'room title reserves space for its status circles');
     const [footer] = elements(desktop, node => node.props.className?.includes('dashboard-workspace-card-footer'));
     assert.equal(elements(footer, node => node.props.className?.includes('dashboard-room-status-indicator')).length, 0);
+  }
+});
+
+test('desktop hygiene indicator follows its own room flag even alongside other clinical states', () => {
+  for (const state of [{}, { isSeptic: true }, { isEmergency: true }, { isLocked: true }, { isPaused: true }, { patientArrivedAt: '2026-10-22T08:00:00Z', noticeMessage: 'Zpráva' }]) {
+    for (const enabled of [true, false, undefined]) {
+      const { tree, cards } = render({ room: { ...baseRoom, ...state, isEnhancedHygiene: enabled } });
+      const desktop = cards[1];
+      const badges = elements(desktop, node => node.props.role === 'img' && node.props['aria-label'] === 'Zvýšený hygienický režim');
+      assert.equal(badges.length, enabled ? 1 : 0);
+      const [description] = elements(tree, node => node.props.id === desktop.props['aria-describedby']);
+      assert.equal(textContent(description).includes('Zvýšený hygienický režim.'), Boolean(enabled));
+      if (enabled) {
+        assert.equal(badges[0].type, 'span', 'The indicator must not introduce a clinical toggle');
+        assert.equal(badges[0].props.onClick, undefined);
+        assert.equal(badges[0].props.title, 'Zvýšený hygienický režim');
+        const [footer] = elements(desktop, node => node.props.className?.includes('dashboard-workspace-card-footer'));
+        assert.equal(elements(footer, node => node === badges[0]).length, 0);
+        const [rail] = elements(desktop, node => node.props.className === 'dashboard-room-status-rail');
+        assert.equal(elements(rail, node => node === badges[0]).length, 1);
+      }
+    }
   }
 });
 

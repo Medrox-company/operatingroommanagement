@@ -1,13 +1,33 @@
 
 import React, { memo, useId, useMemo } from 'react';
-import { OperatingRoom } from '../types';
+import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE } from '../types';
+import { useNowMs } from '../hooks/useSharedClock';
 import { useWorkflowStatusesContext } from '../contexts/WorkflowStatusesContext';
-import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight } from 'lucide-react';
+import { Biohazard, Clock, AlertCircle, Lock, Phone, BedDouble, User, Megaphone, ChevronRight, ShieldAlert } from 'lucide-react';
 import type { CurrentRoomSpecialty } from '../lib/room-specialty';
 import { useOperationalDayWindow } from '../hooks/useOperationalDayWindow';
 import { acuteDashboardDescription, type AcuteDashboardRoomSummary } from '../lib/acute-dashboard';
 import AcuteDashboardBadge from './room/AcuteDashboardBadge';
 import acuteBadgeStyles from './room/acute-dashboard-badge.module.css';
+
+export function overtimeCountdown(room: OperatingRoom, nowMs: number): string | null {
+  const endMs = Date.parse(room.estimatedEndTime || '');
+  if (!Number.isFinite(endMs)) return null;
+  // Keep the shift anchored to the current operation, including after midnight.
+  const startedMs = Date.parse(room.operationStartedAt || '');
+  const shift = new Date(Number.isFinite(startedMs) && startedMs <= nowMs ? startedMs : nowMs);
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+  const hours = (room.weeklySchedule || DEFAULT_WEEKLY_SCHEDULE)[days[shift.getDay()]];
+  if (!hours?.enabled) return null;
+  shift.setHours(hours.endHour, hours.endMinute, 0, 0);
+  if (hours.endHour * 60 + hours.endMinute <= hours.startHour * 60 + hours.startMinute) {
+    shift.setDate(shift.getDate() + 1);
+  }
+  if (endMs <= shift.getTime()) return null;
+  const seconds = Math.max(0, Math.ceil((endMs - nowMs) / 1000));
+  return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
+    .map(value => String(value).padStart(2, '0')).join(':');
+}
 
 interface RoomCardProps {
   room: OperatingRoom;
@@ -21,6 +41,7 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, onLock, fill, specialties, acuteSummary }) => {
+  const nowMs = useNowMs();
   const descriptionId = useId();
   // Get workflow statuses from database context - already filtered and sorted
   const { workflowStatuses } = useWorkflowStatusesContext();
@@ -74,7 +95,9 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
   
   const radius = 38;
   const center = 56;
-  const hasRoomStatusIndicators = Boolean(room.patientCalledAt || room.patientArrivedAt || room.noticeMessage);
+  const countdown = shouldShowTime && !room.isEmergency && !room.isLocked && !room.isPaused
+    ? overtimeCountdown(room, nowMs) : null;
+  const hasRoomStatusIndicators = Boolean(room.patientCalledAt || room.patientArrivedAt || room.noticeMessage || room.isEnhancedHygiene);
 
   const handleAction = (e: React.MouseEvent, action?: (e: React.MouseEvent) => void) => {
     e.stopPropagation();
@@ -128,6 +151,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       Lékař: {room.staff?.doctor?.name || 'neurčen'}. Sestra: {room.staff?.nurse?.name || 'neurčena'}.
       {room.patientArrivedAt ? 'Pacient na sále.' : room.patientCalledAt ? 'Pacient přivolán.' : ''}
       {room.noticeMessage ? 'Čeká notifikační zpráva pro sál.' : ''}
+      {room.isEnhancedHygiene ? 'Zvýšený hygienický režim.' : ''}
       {acuteDashboardDescription(acuteSummary)}
     </span>
     {/* ===== MOBILE — prémiová karta sálu ===== */}
@@ -321,7 +345,12 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
       </button>
 
       {hasRoomStatusIndicators && (
-        <div className="dashboard-room-status-rail" aria-label="Stav pacienta a zprávy pro sál">
+        <div className="dashboard-room-status-rail" aria-label="Stav pacienta, hygiena a zprávy pro sál">
+          {room.isEnhancedHygiene && (
+            <span role="img" aria-label="Zvýšený hygienický režim" title="Zvýšený hygienický režim" className="dashboard-room-status-indicator dashboard-room-status-indicator--hygiene">
+              <ShieldAlert aria-hidden="true" />
+            </span>
+          )}
           {room.patientCalledAt && !room.patientArrivedAt && (
             <span role="img" aria-label="Pacient přivolán" title="Pacient přivolán" className="dashboard-room-status-indicator dashboard-room-status-indicator--call">
               <Phone aria-hidden="true" />
@@ -361,6 +390,11 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
 
         {/* Central Content Wrapper */}
         <div className="dashboard-workspace-cycle">
+            {countdown !== null ? (
+              <div className="dashboard-workspace-countdown" role="timer" aria-live="off" aria-label={`Do předpokládaného konce výkonu ${countdown}`} style={{ color: themeColor }}>
+                {countdown}
+              </div>
+            ) : (
             <div className="relative flex items-center justify-center">
                 <svg
                   viewBox="0 0 112 112"
@@ -442,9 +476,10 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, onClick, onEmergency, on
                   </span>
                 )}
             </div>
+            )}
             <div className="dashboard-workspace-cycle-meta">
               <span className="dashboard-workspace-cycle-caption">
-                {room.isEmergency ? 'Nouzový stav' : (room.isLocked ? 'Sál uzamčen' : room.isPaused ? 'Pozastaveno' : 'Dokončené cykly')}
+                {countdown !== null ? (countdown === '00:00:00' ? 'Odhad konce dosažen' : 'Do předpokládaného konce') : room.isEmergency ? 'Nouzový stav' : (room.isLocked ? 'Sál uzamčen' : room.isPaused ? 'Pozastaveno' : 'Dokončené cykly')}
               </span>
             {room.estimatedEndTime && shouldShowTime && (
                 <span className="dashboard-workspace-estimate" title="Odhad konce výkonu">

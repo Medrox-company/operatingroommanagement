@@ -66,6 +66,12 @@ export async function GET(request: NextRequest) {
   if (!parsedRequestedDate && (!Number.isInteger(year) || year < 2020 || year > 2100)) {
     return NextResponse.json({ error: 'Neplatné datum nebo rok.' }, { status: 400 });
   }
+  const requestedOffset = request.nextUrl.searchParams.get('offset') ?? '0';
+  const offset = Number(requestedOffset);
+  if (!/^\d+$/.test(requestedOffset) || !Number.isSafeInteger(offset) || offset < 0 || offset > 1_000_000) {
+    return NextResponse.json({ error: 'Neplatná stránka rozpisu.' }, { status: 400 });
+  }
+  const pageSize = 1000;
 
   const admin = getSupabaseAdmin();
   const resolvedYear = parsedRequestedDate?.getUTCFullYear() ?? year;
@@ -81,7 +87,9 @@ export async function GET(request: NextRequest) {
       .eq('hospital_id', hospitalId)
       .gte('allocation_date', start)
       .lte('allocation_date', end)
-      .order('allocation_date', { ascending: true }),
+      .order('allocation_date', { ascending: true })
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1),
     admin
       .from('departments')
       .select('id, name, short_code, description, accent_color, is_active, sort_order')
@@ -94,7 +102,7 @@ export async function GET(request: NextRequest) {
   if (departmentError) return databaseError(departmentError, 'Operační obory se nepodařilo načíst.');
 
   return NextResponse.json(
-    { allocations: allocations ?? [], departments: departments ?? [] },
+    { allocations: allocations ?? [], departments: departments ?? [], nextOffset: allocations?.length === pageSize ? offset + pageSize : null },
     { headers: { 'Cache-Control': 'no-store' } },
   );
 }

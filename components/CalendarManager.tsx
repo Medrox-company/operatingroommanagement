@@ -810,18 +810,6 @@ const CalendarManager: React.FC = () => {
     return () => window.removeEventListener('click', handler);
   }, []);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
-      if (e.key === 'y' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); redo(); }
-      if (e.key === 'Delete' && selectedKeys.size > 0) { clearSelection(); }
-      if (e.key === 'Escape') { setSelectedKeys(new Set()); setIsDragging(false); }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [selectedKeys, historyIdx, history]);
-
   // ─── History ───
   const pushHistory = useCallback(() => {
     const snapshot: HistorySnapshot = { cells: { ...cells }, rows: [...rows], specialDays: [...specialDays] };
@@ -832,20 +820,25 @@ const CalendarManager: React.FC = () => {
   const undo = useCallback(() => {
     if (!canUndo) return;
     const snap = history[historyIdx];
+    // Swap the saved state with the current one so redo can restore this edit.
+    const current: HistorySnapshot = { cells: { ...cells }, rows: [...rows], specialDays: [...specialDays] };
+    setHistory(prev => prev.map((entry, index) => index === historyIdx ? current : entry));
     setCells(snap.cells);
     setRows(snap.rows);
     setSpecialDays(snap.specialDays);
     setHistoryIdx(prev => prev - 1);
-  }, [canUndo, history, historyIdx]);
+  }, [canUndo, history, historyIdx, cells, rows, specialDays]);
 
   const redo = useCallback(() => {
     if (!canRedo) return;
     const snap = history[historyIdx + 1];
+    const current: HistorySnapshot = { cells: { ...cells }, rows: [...rows], specialDays: [...specialDays] };
+    setHistory(prev => prev.map((entry, index) => index === historyIdx + 1 ? current : entry));
     setCells(snap.cells);
     setRows(snap.rows);
     setSpecialDays(snap.specialDays);
     setHistoryIdx(prev => prev + 1);
-  }, [canRedo, history, historyIdx]);
+  }, [canRedo, history, historyIdx, cells, rows, specialDays]);
 
   // ─── Actions ───
   const applyToSelection = (label: string, color: string) => {
@@ -859,7 +852,7 @@ const CalendarManager: React.FC = () => {
     setSelectedKeys(new Set());
   };
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     if (selectedKeys.size === 0) return;
     pushHistory();
     setCells(prev => {
@@ -868,7 +861,34 @@ const CalendarManager: React.FC = () => {
       return next;
     });
     setSelectedKeys(new Set());
-  };
+  }, [selectedKeys, pushHistory]);
+
+  // Keep native text editing and composition separate from calendar shortcuts.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.isComposing || e.altKey || (e.ctrlKey && e.metaKey)) return;
+      if (e.target instanceof Element && e.target.closest(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]',
+      )) return;
+
+      const key = e.key.toLowerCase();
+      if (e.ctrlKey || e.metaKey) {
+        if (key === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) redo(); else undo();
+        } else if (key === 'y' && !e.shiftKey) {
+          e.preventDefault();
+          redo();
+        }
+        return;
+      }
+      if (e.shiftKey) return;
+      if (e.key === 'Delete' && selectedKeys.size > 0) { e.preventDefault(); clearSelection(); }
+      if (e.key === 'Escape') { setSelectedKeys(new Set()); setIsDragging(false); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedKeys, undo, redo, clearSelection]);
 
   const copyRow = (rowId: string) => {
     const clip: Record<number, CellData> = {};

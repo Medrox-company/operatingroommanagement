@@ -663,7 +663,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = memo(({
     <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[310px_minmax(0,1fr)]">
       {calendarPanel}
       <div className="flex flex-col gap-4">
-        <Card><h2 className="text-base font-semibold" style={{ color: C.text }}>Notifikace vybraného dne</h2>
+        <Card><h2 className="stats-card-title text-base font-semibold" style={{ color: C.text }}>Notifikace vybraného dne</h2>
           <p className="mt-1 text-xs" style={{ color: C.muted }}>{activePeriodLabel}</p>
           <button type="button" className="mt-3 min-h-11 rounded-lg border px-3 text-xs" style={{ color: C.text, borderColor: C.border }} onClick={() => setCalendarSelectionActive(false)}>Zobrazit celé období</button>
         </Card>

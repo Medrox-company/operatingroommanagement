@@ -68,7 +68,7 @@ export function calculateAvgStepDurations(
     return workflowSteps.map(() => 0);
   }
 
-  const stepDurations: Record<string, number[]> = {};
+  const stepDurations: Record<string, number[]> = Object.create(null);
   workflowSteps.forEach(step => {
     stepDurations[step.title] = [];
   });

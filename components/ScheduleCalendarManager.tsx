@@ -271,7 +271,7 @@ const ScheduleCalendarManager: React.FC<ScheduleCalendarManagerProps> = ({ rooms
         <ModulePageHeading icon={CalendarRange} kicker="OR CALENDAR" title="KALENDÁŘ" mutedTitle="SÁLŮ" />
       </header>
 
-      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+      <section className="admin-toolbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
         <div className="flex min-w-max items-center gap-2.5">
           {[
             { label: 'Sály v plánu', value: plannedRoomIds.size, suffix: `z ${rooms.length}`, icon: Building2, color: '#38BDF8' },
@@ -279,7 +279,7 @@ const ScheduleCalendarManager: React.FC<ScheduleCalendarManagerProps> = ({ rooms
             { label: 'Použité obory', value: usedDepartmentIds.size, suffix: 'oborů', icon: Layers3, color: '#A78BFA' },
             { label: 'Vybraný den', value: selectedDayRoomCount, suffix: 'sálů', icon: CalendarRange, color: '#FBBF24' },
           ].map(({ label, value, suffix, icon: Icon, color }) => (
-            <div key={label} className="flex h-[68px] w-[122px] shrink-0 items-center rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[136px]">
+            <div key={label} className="relative flex h-[68px] w-[122px] shrink-0 items-center rounded-lg border border-white/[0.05] bg-black/10 px-3 py-2.5 2xl:w-[136px]">
               <div className="flex w-full items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-[8px] font-semibold uppercase tracking-[0.08em] text-white/38" title={label}>{label}</p>
@@ -298,7 +298,7 @@ const ScheduleCalendarManager: React.FC<ScheduleCalendarManagerProps> = ({ rooms
             <h2 className="text-[11px] font-semibold leading-tight text-white/92">Období</h2>
             <p className="mt-1 text-[8px] leading-tight text-white/38">Měsíční přehled</p>
           </div>
-          <div className="flex h-10 w-[210px] shrink-0 items-center justify-between gap-1 rounded-lg border border-white/[0.055] bg-black/10 p-1">
+          <div className="admin-period-nav flex h-10 w-[210px] shrink-0 items-center justify-between gap-1 rounded-lg border border-white/[0.055] bg-black/10 p-1">
             <button type="button" onClick={() => moveMonth(-1)} className="flex h-8 w-8 items-center justify-center rounded-md text-white/45 hover:bg-white/[0.05] hover:text-white" aria-label="Předchozí měsíc"><ChevronLeft className="h-4 w-4" /></button>
             <p className="truncate px-2 text-center text-[11px] font-semibold capitalize text-white/88">{MONTH_FORMATTER.format(cursor)}</p>
             <button type="button" onClick={() => moveMonth(1)} className="flex h-8 w-8 items-center justify-center rounded-md text-white/45 hover:bg-white/[0.05] hover:text-white" aria-label="Následující měsíc"><ChevronRight className="h-4 w-4" /></button>
@@ -320,7 +320,7 @@ const ScheduleCalendarManager: React.FC<ScheduleCalendarManagerProps> = ({ rooms
       )}
 
       <div className="grid min-h-[620px] gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
-        <section className="min-w-0 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
+        <section className="admin-calendar-panel min-w-0 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
           <div className="flex items-center justify-between gap-4 border-b border-white/[0.055] px-4 py-3">
             <div>
               <h2 className="text-[15px] font-semibold tracking-tight text-white/95">Měsíční provozní kalendář</h2>
@@ -391,20 +391,20 @@ const ScheduleCalendarManager: React.FC<ScheduleCalendarManagerProps> = ({ rooms
           )}
         </section>
 
-        <aside className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
+        <aside className="admin-calendar-panel flex min-h-0 flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
           <div className="border-b border-white/[0.055] px-4 py-3">
             <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-cyan-200/55">Vybraný den</p>
             <h2 className="mt-1 text-[15px] font-semibold capitalize text-white/95">{DATE_FORMATTER.format(new Date(`${selectedDate}T12:00:00`))}</h2>
             {getCzechPublicHoliday(new Date(`${selectedDate}T12:00:00`)) && <p className="mt-1 text-[9px] font-semibold text-amber-200/65">{getCzechPublicHoliday(new Date(`${selectedDate}T12:00:00`))?.name}</p>}
           </div>
-          <div className="grid grid-cols-[minmax(120px,1fr)_88px_88px] border-b border-white/[0.055] bg-white/[0.02] px-3 py-2 text-[8px] font-bold uppercase tracking-[0.12em] text-white/32">
+          <div className="admin-calendar-day-row grid grid-cols-[minmax(120px,1fr)_88px_88px] border-b border-white/[0.055] bg-white/[0.02] px-3 py-2 text-[8px] font-bold uppercase tracking-[0.12em] text-white/32">
             <span>Operační sál</span><span className="text-center">Dopoledne</span><span className="text-center">Odpoledne</span>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {rooms.map(room => {
               const slots = selectedDayByRoom.get(room.id) ?? {};
               return (
-                <div key={room.id} className="grid grid-cols-[minmax(120px,1fr)_88px_88px] border-b border-white/[0.05] transition-colors hover:bg-white/[0.02]">
+                <div key={room.id} className="admin-calendar-day-row grid grid-cols-[minmax(120px,1fr)_88px_88px] border-b border-white/[0.05] transition-colors hover:bg-white/[0.02]">
                   <div className="min-w-0 px-3 py-2.5">
                     <p className="truncate text-[10px] font-semibold text-white/82" title={room.name}>{room.name}</p>
                     <p className="mt-0.5 truncate text-[7px] font-medium uppercase tracking-[0.08em] text-white/27">{room.department}</p>

@@ -140,9 +140,26 @@ test('MobileNav retains four authorized primary destinations and a More drawer e
 });
 
 test('both primary and More items derive exclusively from the permission-filtered collection', () => {
-  assert.match(compact(variable('enabledItems')), /SIDEBAR_ITEMS\.filter\(item => isSuperAdmin \|\| hasModuleAccess\(item\.id\)\)/);
-  assert.equal(compact(variable('primaryItems')), 'enabledItems.filter(item => PRIMARY_IDS.has(item.id))');
-  assert.equal(compact(variable('moreItems')), 'enabledItems.filter(item => !PRIMARY_IDS.has(item.id))');
+  // Central authorization handles superadmins too, including disabled acute modules.
+  // A local superadmin bypass would expose a destination the module policy denies.
+  assert.match(compact(variable('enabledItems')), /SIDEBAR_ITEMS\.filter\(item => hasModuleAccess\(item\.id\)\)/);
+  assert.doesNotMatch(compact(variable('enabledItems')), /isSuperAdmin/);
+  const declarations = ['PRIMARY_IDS', 'ROOM_DETAIL_IDS', 'enabledItems', 'primaryItems', 'moreItems']
+    .map(name => `const ${name} = ${compact(variable(name))};`).join('\n');
+  const selectNavigation = new Function('SIDEBAR_ITEMS', 'hasModuleAccess', 'referenceDock', 'useMemo',
+    `${declarations}\nreturn { primaryItems, moreItems };`);
+  const inventory = ['dashboard', 'flow', 'timeline', 'statistics', 'acute-requests', 'settings']
+    .map(id => ({ id }));
+  for (const referenceDock of [false, true]) {
+    for (const allowed of [[], ['dashboard', 'settings'], ['timeline', 'acute-requests'], inventory.map(item => item.id)]) {
+      const { primaryItems, moreItems } = selectNavigation(inventory, id => allowed.includes(id), referenceDock, fn => fn());
+      const expectedPrimary = (referenceDock ? ['dashboard', 'acute-requests', 'timeline'] : ['dashboard', 'flow', 'timeline', 'statistics'])
+        .filter(id => allowed.includes(id));
+      assert.deepEqual(primaryItems.map(item => item.id), expectedPrimary);
+      assert.deepEqual(moreItems.map(item => item.id), inventory.filter(item => allowed.includes(item.id) && !expectedPrimary.includes(item.id)).map(item => item.id));
+      assert.equal(new Set([...primaryItems, ...moreItems]).size, allowed.length, 'Every authorized item appears exactly once; no unauthorized item appears in either dock mode');
+    }
+  }
   assert.match(navigationSource, /moreItems\.map\(item\s*=>/);
   assert.doesNotMatch(navigationSource, /SIDEBAR_ITEMS\.map\(/, 'No unfiltered list may be rendered separately');
   assert.match(navigationSource, /onClick=\{\(\) => onNavigate\(item\.id\)\}/);

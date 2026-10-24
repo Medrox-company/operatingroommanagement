@@ -240,6 +240,21 @@ test('every clinical action delegates only to the existing handler with the actu
   assert.equal(backControls.length, 5);
   assert.ok(backControls.every(control => control.props.disabled));
 });
+test('carousel shows the hygiene icon only for the room with active enhanced hygiene', () => {
+  for (const enabled of [true, false, undefined]) {
+    const { tree, calls } = render([{ ...room, isEnhancedHygiene: enabled, isSeptic: false }]);
+    const badges = elements(tree, node => node.props.role === 'img' && node.props['aria-label'] === 'Zvýšený hygienický režim');
+    assert.equal(badges.length, enabled ? 1 : 0);
+    const [detail] = elements(tree, node => node.type === 'button' && node.props.className === 'main');
+    assert.equal(detail.props['aria-label'].includes('Zvýšený hygienický režim.'), Boolean(enabled));
+    if (enabled) {
+      assert.equal(badges[0].props.title, 'Zvýšený hygienický režim');
+      assert.equal(badges[0].props.onClick, undefined);
+    }
+    assert.deepEqual(calls, [], 'Rendering hygiene must not change clinical data');
+  }
+});
+
 test('circular arrows and keyboard navigation do not perform clinical actions', () => {
   const { tree, calls } = render();
   const previous = elements(tree, node => node.props['aria-label'] === 'Předchozí sál')[0];

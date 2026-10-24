@@ -96,6 +96,7 @@ test('patient-flow filters and expanded room details expose their state to scree
     'framer-motion': { motion: { div: 'div' }, AnimatePresence: 'fragment', useReducedMotion: () => false },
     'lucide-react': { Activity: 'svg', Workflow: 'svg' },
     './MobileShell': { MobileHeaderMetrics: 'div', MobileModuleHeader: 'header' },
+    './mobile-flow-orbit.css': {},
   }).default;
   const room = { id: '1', name: 'Sál 1', currentStepIndex: 1, currentProcedure: { name: 'Operace' }, statusHistory: [] };
   const statuses = [

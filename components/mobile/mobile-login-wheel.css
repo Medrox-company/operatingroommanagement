@@ -1,0 +1,364 @@
+/* Mobile-only login: real glass artwork with accessible role buttons above it. */
+@media (max-width: 767px) {
+  .login-orbit.mobile-login-page.mobile-login-wheel-page {
+    --orbit-login-glass: rgba(5, 38, 65, .32);
+    --orbit-login-border: rgba(166, 211, 236, .25);
+    --login-copy: #E1ECF8;
+    --login-muted: #BECDDF;
+    --login-field-icon: #EAF7FF;
+    --login-divider: rgba(194, 218, 238, .22);
+    --login-gap: clamp(6px, 1.6dvh, 13px);
+    position: fixed;
+    inset: 0;
+    top: var(--login-viewport-top, 0px);
+    height: var(--login-viewport-height, 100dvh);
+    min-height: 0;
+    overflow: hidden;
+    container-type: size;
+    background: #031D38 url('/images/mobile-login-theatre-blue.webp') center top / cover no-repeat;
+    color: #FFFFFF;
+  }
+
+  /* Frost only the photograph; the foreground remains sharp and interactive. */
+  .login-orbit.mobile-login-page.mobile-login-wheel-page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    filter: blur(3px) brightness(.85);
+    clip-path: inset(0);
+    pointer-events: none;
+  }
+
+  .mobile-login-wheel-page.login-orbit .mobile-login-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    justify-content: stretch;
+    height: 100%;
+    min-height: 0;
+    padding: max(clamp(10px, 5.85cqh, 49px), env(safe-area-inset-top, 0px)) 0 max(clamp(8px, 3.8cqh, 32px), env(safe-area-inset-bottom, 0px));
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-main .mobile-login-powered-by {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    width: 100%;
+    margin-top: 0;
+    padding: clamp(6px, 2.6cqh, 22px) 16px 0;
+    color: #BBC1EE;
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: .02em;
+    text-align: center;
+  }
+  .mobile-login-wheel-page .mobile-login-powered-caption { color: #E4E6FC; font-size: 10px; }
+  .mobile-login-wheel-page .mobile-login-powered-brand {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    width: 84%;
+    color: #FFFFFF;
+    font-size: clamp(19px, 3cqh, 25px);
+    font-weight: 400;
+    letter-spacing: -.06em;
+    line-height: 1.1;
+  }
+  .mobile-login-wheel-page .mobile-login-powered-brand::before,
+  .mobile-login-wheel-page .mobile-login-powered-brand::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--login-divider);
+  }
+  .mobile-login-wheel-page .mobile-login-powered-country { font-size: 10px; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-header {
+    min-height: 0;
+    padding-inline: 5.6%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-brand {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: auto;
+    margin: 0;
+    color: #F6F9FF;
+    font-weight: 400;
+    text-align: left;
+  }
+  /* Reuse the supplied brand raster; only its square symbol is visible here. */
+  .mobile-login-wheel-page .mobile-login-brand-mark {
+    display: block;
+    flex-shrink: 0;
+    width: clamp(30px, 7.8vw, 38px);
+    aspect-ratio: 1;
+    background: #FFFFFF;
+    mask: url('/images/mobile-login-logo.webp') left top / 100% auto no-repeat;
+    -webkit-mask: url('/images/mobile-login-logo.webp') left top / 100% auto no-repeat;
+  }
+  .mobile-login-wheel-page .mobile-login-brand-copy {
+    display: block;
+    font-size: clamp(13px, 3.35vw, 17px);
+    line-height: 1.05;
+    letter-spacing: -.035em;
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-content {
+    display: grid;
+    grid-template-areas: 'error' 'roles' 'hospital' 'system';
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    justify-items: center;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    margin-top: 0;
+    padding-top: clamp(0px, calc((100cqh - 620px) * .45), 100px);
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-roles-section {
+    grid-area: roles;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    container-type: size;
+  }
+  .mobile-login-wheel-page .mobile-login-role-wheel {
+    position: relative;
+    width: min(76cqw, 100cqh, 350px);
+    aspect-ratio: 1;
+    container-type: inline-size;
+    isolation: isolate;
+  }
+  .mobile-login-wheel-page .mobile-login-wheel-art {
+    display: block;
+    width: 100%;
+    height: auto;
+    opacity: .78;
+    filter: saturate(.72) brightness(.88);
+    pointer-events: none;
+    user-select: none;
+  }
+  /* Keep the filtered edge stationary. Only the light inside its SVG mask moves;
+     opposing transforms re-rasterized the artwork and made it jitter on mobile. */
+  .mobile-login-wheel-page .mobile-login-wheel-light {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+  .mobile-login-wheel-page .mobile-login-wheel-light-sweep {
+    transform-box: view-box;
+    transform-origin: 480px 480px;
+    animation: mobile-login-edge-orbit 4.8s linear infinite;
+  }
+  .mobile-login-wheel-page .mobile-login-wheel-light-art {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(0 0 2px #BDEFFF) drop-shadow(0 0 5px rgba(77, 199, 255, .8));
+  }
+  @keyframes mobile-login-edge-orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .mobile-login-wheel-page .mobile-login-wheel-center {
+    position: absolute;
+    width: 13.4%;
+    left: 43.3%;
+    top: 43.2%;
+    pointer-events: none;
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-wheel-role {
+    position: absolute;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: clamp(3px, 1.5cqw, 6px);
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 18px;
+    background: transparent;
+    color: #FFFFFF;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: color 150ms ease, filter 150ms ease;
+  }
+  .mobile-login-wheel-page .mobile-login-wheel-role[data-role='admin'] { left: 12%; top: 65%; width: 34%; height: 25%; }
+  .mobile-login-wheel-page .mobile-login-wheel-role[data-role='aro'] { left: 68%; top: 29%; width: 27%; height: 29%; }
+  .mobile-login-wheel-page .mobile-login-wheel-role[data-role='cos'] { left: 5%; top: 29%; width: 27%; height: 29%; }
+  .mobile-login-wheel-page .mobile-login-wheel-role[data-role='management'] { left: 29%; top: 7%; width: 42%; height: 25%; }
+  .mobile-login-wheel-page .mobile-login-wheel-role[data-role='primar'] { left: 54%; top: 65%; width: 34%; height: 25%; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-wheel-role .login-role-icon {
+    width: clamp(20px, 9cqw, 36px);
+    height: clamp(20px, 9cqw, 36px);
+    background: transparent;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-wheel-role .login-role-icon svg {
+    width: 100%;
+    height: 100%;
+    stroke-width: 1.4;
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-role-label {
+    font-size: clamp(11px, 3.45cqw, 14px);
+    line-height: 1.2;
+    font-weight: 400;
+    letter-spacing: -.025em;
+    color: inherit;
+    overflow-wrap: normal;
+    width: 100%;
+    text-align: center;
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-wheel-role:focus-visible {
+    outline: 2px solid #AEF6FF;
+    outline-offset: 0;
+    background: rgba(31, 139, 187, .25);
+  }
+  .mobile-login-wheel-page .mobile-login-wheel-role:active:not(:disabled) { color: #E2F7FF; }
+  .mobile-login-wheel-page .mobile-login-wheel-role:disabled { cursor: wait; }
+  .mobile-login-wheel-page .mobile-login-hospital-section {
+    grid-area: hospital;
+    width: min(88%, 360px);
+    min-width: 0;
+    margin-top: var(--login-gap);
+  }
+  .mobile-login-wheel-page.login-orbit .login-hospital-trigger,
+  .mobile-login-wheel-page.login-orbit .mobile-login-google {
+    min-height: 44px;
+    height: auto;
+    gap: clamp(8px, 2.5vw, 12px);
+    padding: clamp(8px, 1.4cqh, 12px) 12px;
+    border-radius: 13px;
+    border: 1px solid var(--orbit-login-border);
+    background: var(--orbit-login-glass);
+    color: #F8FBFF;
+    font-size: clamp(12px, 3.35vw, 16px);
+    line-height: 1.35;
+    font-weight: 400;
+    box-shadow: inset 0 1px 0 rgba(205, 239, 255, .04);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  .mobile-login-wheel-page.login-orbit .login-hospital-trigger > svg { color: #F0F8FF; }
+  .mobile-login-wheel-page.login-orbit .login-hospital-leading { width: 22px; height: 22px; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-google > svg { flex-shrink: 0; width: 21px; height: 21px; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-system { grid-area: system; width: min(88%, 360px); min-width: 0; margin-top: var(--login-gap); }
+  .mobile-login-wheel-page .mobile-login-system > div { margin-bottom: var(--login-gap); }
+  .mobile-login-wheel-page.login-orbit .mobile-login-system .mobile-login-label { font-size: 12px; font-weight: 400; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-error {
+    grid-area: error;
+    width: 88%;
+    min-width: 0;
+    max-height: 72px;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    margin-bottom: var(--login-gap);
+    padding: 8px 10px;
+  }
+
+  /* The same role selection and password flow remain usable with the keyboard open. */
+  .mobile-login-wheel-page.login-orbit[data-role-selected='true'] .mobile-login-content {
+    grid-template-areas: 'error' 'password';
+    grid-template-rows: auto auto;
+    align-content: center;
+    margin-top: 0;
+    padding-top: 0;
+  }
+  .mobile-login-wheel-page .mobile-login-password-panel {
+    grid-area: password;
+    display: grid;
+    gap: var(--login-gap);
+    width: min(88%, 360px);
+    min-width: 0;
+    animation: mobile-login-password-enter 280ms cubic-bezier(.2, .7, .2, 1) both;
+  }
+  @keyframes mobile-login-password-enter {
+    from { opacity: 0; transform: translateY(16px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .mobile-login-wheel-page.login-orbit .mobile-login-selected-role {
+    margin: 0;
+    padding: clamp(8px, 2cqh, 18px);
+    gap: 10px;
+    background: rgba(3, 26, 52, .8);
+    border-color: var(--orbit-login-border);
+  }
+  .mobile-login-wheel-page .mobile-login-password-panel > * { margin-block: 0; min-width: 0; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-selected-title { color: #FFFFFF; font-size: clamp(15px, 2.5cqh, 18px); overflow-wrap: anywhere; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-selected-hospital { line-height: 1.3; }
+  .mobile-login-wheel-page .mobile-login-password-panel label { margin-bottom: 4px; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-password-panel :is(.mobile-login-field, .mobile-login-submit) { height: clamp(44px, 6.9cqh, 58px); min-height: 44px; font-size: 16px; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-password-panel .mobile-login-field { background-color: rgba(3, 26, 52, .8); color: #FFFFFF; }
+  .mobile-login-wheel-page.login-orbit .mobile-login-theme-toggle {
+    right: 5.6%;
+    background: rgba(3, 26, 52, .8);
+    border: 1px solid var(--orbit-login-border);
+  }
+  .login-hospital-menu:has([data-picker-id='login-hospital']) { background: #062846; border-color: rgba(166, 211, 236, .25); color: #F6FAFF; }
+  .login-hospital-menu:has([data-picker-id='login-hospital']) .login-hospital-option[data-highlighted] { background: #125E88; color: #FFFFFF; outline-color: #76DEEF; }
+  .login-hospital-menu:has([data-picker-id='login-hospital']) .login-hospital-menu-title { color: #BECDDF; }
+
+  @media (hover: hover) {
+    .mobile-login-wheel-page .mobile-login-wheel-role:hover:not(:disabled) { color: #DDF5FF; }
+  }
+  /* Short landscape phones put the existing controls beside the wheel. */
+  @media (min-width: 480px) and (max-height: 500px) {
+    .mobile-login-wheel-page.login-orbit .mobile-login-main { max-width: 700px; }
+    .mobile-login-wheel-page.login-orbit:not([data-role-selected]) .mobile-login-content {
+      grid-template-areas: 'error error' 'roles hospital' 'roles system';
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+      padding-inline: 12px;
+    }
+    .mobile-login-wheel-page .mobile-login-role-wheel { width: min(100cqw, 100cqh, 350px); }
+    .mobile-login-wheel-page .mobile-login-hospital-section { align-self: end; }
+    .mobile-login-wheel-page .mobile-login-system { align-self: start; }
+  }
+  @container (max-height: 450px) {
+    .mobile-login-wheel-page.login-orbit .mobile-login-main { padding-top: max(8px, env(safe-area-inset-top, 0px)); padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)); }
+    .mobile-login-wheel-page.login-orbit .mobile-login-main .mobile-login-powered-by { padding-top: 6px; gap: 0; }
+    .mobile-login-wheel-page .mobile-login-powered-brand { font-size: 19px; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-selected-role { padding: 6px 10px; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-selected-role .login-role-icon { width: 30px; height: 30px; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-selected-hospital { font-size: 11px; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-password-panel { gap: 6px; }
+  }
+  @container (max-height: 400px) {
+    .mobile-login-wheel-page.login-orbit .mobile-login-password-panel { grid-template-columns: minmax(0, 1fr) auto; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-selected-role { grid-column: 1 / -1; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-selected-role > div { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 2px 6px; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-selected-role .mobile-login-label { font-size: 11px; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-selected-title { margin: 0; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-selected-hospital { grid-column: 1 / -1; margin: 0; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-password-panel .mobile-login-submit { align-self: end; padding-inline: 10px; font-size: 13px; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-password-panel input.mobile-login-field { padding-left: 36px; padding-right: 50px; }
+    .mobile-login-wheel-page .mobile-login-password-panel .relative > svg { left: 12px; width: 18px; height: 18px; }
+    .mobile-login-wheel-page.login-orbit .mobile-login-error { max-height: 48px; margin-bottom: 6px; }
+    .mobile-login-wheel-page.login-orbit[data-role-selected='true'] .mobile-login-powered-by {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 3px 6px;
+    }
+    .mobile-login-wheel-page[data-role-selected='true'] .mobile-login-powered-brand { width: auto; font-size: 16px; }
+    .mobile-login-wheel-page[data-role-selected='true'] .mobile-login-powered-brand::before,
+    .mobile-login-wheel-page[data-role-selected='true'] .mobile-login-powered-brand::after { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-login-wheel-page .mobile-login-wheel-light { display: none; }
+    .mobile-login-wheel-page .mobile-login-wheel-light-sweep { animation: none; }
+    .mobile-login-wheel-page .mobile-login-wheel-role { transition: none; }
+    .mobile-login-wheel-page .mobile-login-password-panel { animation: none; }
+  }
+}

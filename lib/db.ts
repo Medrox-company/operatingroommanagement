@@ -1223,19 +1223,18 @@ export async function fetchRoomStatistics(
       : 0;
 
     // Average step durations
-    const stepDurations: Record<string, number[]> = {};
+    const stepDurations: Record<string, number[]> = Object.create(null);
     stepChanges.forEach((e: StatusHistoryRow) => {
       if (e.step_name && e.duration_seconds) {
         if (!stepDurations[e.step_name]) stepDurations[e.step_name] = [];
         stepDurations[e.step_name].push(e.duration_seconds);
       }
     });
-    const averageStepDurations: Record<string, number> = {};
-    Object.entries(stepDurations).forEach(([name, durations]) => {
-      averageStepDurations[name] = Math.round(
-        durations.reduce((a, b) => a + b, 0) / durations.length / 60
-      );
-    });
+    const averageStepDurations: Record<string, number> = Object.fromEntries(
+      Object.entries(stepDurations).map(([name, durations]) => [
+        name, Math.round(durations.reduce((a, b) => a + b, 0) / durations.length / 60),
+      ]),
+    );
 
     // Emergency count
     const emergencyCount = emergencyEvents.length;

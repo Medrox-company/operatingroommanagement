@@ -1,0 +1,240 @@
+/* Compact original-project navigation. These tokens never recolor clinical UI. */
+.sidebar-project {
+  --or-sidebar-bg: #070B21;
+  --or-sidebar-raised: #1C2744;
+  --or-sidebar-hover: #111834;
+  --or-sidebar-line: #2D3A5E;
+  --or-sidebar-text: #BBC6E2;
+  --or-sidebar-muted: #96A2C2;
+  --or-sidebar-strong: #F2F5FE;
+  --or-sidebar-focus: #5EC8E4;
+  --or-sidebar-danger: #E95B55;
+  position: fixed;
+  inset-block: 0;
+  left: 0;
+  z-index: 100;
+  display: none;
+  width: 96px;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 20px 20px;
+  border: 0;
+  background: transparent;
+  color: var(--or-sidebar-text);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.sidebar-project__links {
+  display: flex;
+  min-height: 0;
+  width: 100%;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-project__button {
+  position: relative;
+  display: flex;
+  width: 46px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--or-sidebar-muted);
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidebar-project__button:hover {
+  background: var(--or-sidebar-hover);
+  color: var(--or-sidebar-text);
+}
+
+.sidebar-project__button[aria-current="page"] {
+  border-color: var(--or-sidebar-line);
+  background: var(--or-sidebar-raised);
+  color: var(--or-sidebar-strong);
+}
+
+.sidebar-project__button:focus-visible {
+  outline: 2px solid var(--or-sidebar-focus);
+  outline-offset: 3px;
+}
+
+.sidebar-project__icon {
+  width: 21px;
+  height: 21px;
+  flex: none;
+}
+
+.sidebar-project__tooltip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 12px);
+  z-index: 101;
+  padding: 8px 12px;
+  border: 1px solid var(--or-sidebar-line);
+  border-radius: 10px;
+  background: var(--or-sidebar-raised);
+  color: var(--or-sidebar-strong);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: opacity 120ms, visibility 120ms;
+}
+
+.sidebar-project__button:hover .sidebar-project__tooltip,
+.sidebar-project__button:focus-visible .sidebar-project__tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sidebar-project__actions {
+  display: flex;
+  width: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 0;
+}
+
+.sidebar-project__module:empty { display: none; }
+.sidebar-project:has(.sidebar-project__module > *) { gap: 12px; padding-top: 16px; }
+.sidebar-project:has(.sidebar-project__module > *) .sidebar-project__links { flex: 0 0 auto; max-height: 45dvh; overflow-y: auto; scrollbar-width: thin; }
+.sidebar-project__module { width: 100%; min-height: 0; flex: 1; overflow-y: auto; scrollbar-width: thin; overscroll-behavior: contain; }
+.sidebar-project__module nav { display: flex; flex-direction: column; gap: 12px; }
+.sidebar-project__module section { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sidebar-project__module h2 { margin: 0 0 4px; color: var(--or-sidebar-muted); font-size: 10px; font-weight: 500; }
+.sidebar-project__module .sidebar-project__button { width: 100%; min-height: 52px; height: auto; padding: 5px 1px; flex-direction: column; gap: 3px; }
+.sidebar-project__module-label { font-size: 9px; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.sidebar-project:has(.sidebar-project__module > *) .sidebar-project__actions { padding-top: 0; gap: 4px; }
+
+.sidebar-project__button--logout:hover {
+  color: var(--or-sidebar-danger);
+}
+
+html[data-operativity-design="light"] .sidebar-project {
+  --or-sidebar-bg: #DCE5E8;
+  --or-sidebar-raised: #FCFDFD;
+  --or-sidebar-hover: #E9EFF1;
+  --or-sidebar-line: #C3CED4;
+  --or-sidebar-text: #43525B;
+  --or-sidebar-muted: #5A6971;
+  --or-sidebar-strong: #14212A;
+  --or-sidebar-focus: #2E7A60;
+  --or-sidebar-danger: #C24238;
+}
+
+@media (min-width: 768px) {
+  .sidebar-project {
+    display: flex;
+  }
+}
+
+@media (max-height: 560px) {
+  .sidebar-project {
+    gap: 8px;
+    padding-block: 8px;
+  }
+
+  .sidebar-project__links {
+    gap: 4px;
+  }
+
+  .sidebar-project__actions {
+    padding-top: 8px;
+  }
+}
+
+@media (max-height: 460px) {
+  .sidebar-project__links {
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-project__button,
+  .sidebar-project__tooltip {
+    transition: none;
+  }
+}
+
+@media print {
+  .sidebar-project {
+    display: none;
+  }
+}
+
+/* Outside planning, restore the original evenly spaced application icons. */
+.sidebar-project:not(:has(.planner-rail)) { padding: clamp(8px,2.2vh,24px) 16px; gap: 12px; }
+.sidebar-project:not(:has(.planner-rail)) .sidebar-project__links { padding-top: clamp(24px,6vh,72px); justify-content: space-between; }
+.sidebar-project:not(:has(.planner-rail)) .sidebar-project__button { width: 100%; height: clamp(44px,7vh,64px); border-radius: 16px; }
+.sidebar-project:not(:has(.planner-rail)) .sidebar-project__actions { gap: clamp(4px,1vh,16px); }
+
+/* The planner owns the rail only while mounted, with compact and expanded modes. */
+.sidebar-project:has(.planner-rail) { width: 300px; padding: 24px 18px; gap: 0; }
+.sidebar-project:has(.planner-rail--collapsed) { width: 96px; padding: 20px 18px; }
+.sidebar-project:has(.planner-rail) > .sidebar-project__links,
+.sidebar-project:has(.planner-rail) > .sidebar-project__actions { display: none; }
+.sidebar-project__module .planner-rail { gap: 22px; padding: 2px; }
+.planner-rail svg { width: 21px; height: 21px; flex: none; stroke-width: 1.7; }
+.planner-rail button { cursor: pointer; font: inherit; color: var(--or-sidebar-text); }
+.planner-rail button:focus-visible { outline: 2px solid var(--or-sidebar-focus); outline-offset: -2px; }
+.planner-rail__brand { display: flex; align-items: center; gap: 12px; }
+.planner-rail__logo { display: grid; place-items: center; width: 46px; height: 46px; flex: none; border-radius: 15px; background: var(--or-sidebar-focus); color: #06122a; font-weight: 700; }
+.planner-rail__brand-text { min-width: 0; flex: 1; }
+.planner-rail__brand-text b { display: block; font-size: 16px; color: var(--or-sidebar-strong); }
+.planner-rail__brand-text small { display: block; margin-top: 4px; font-size: 12px; line-height: 1.5; }
+.planner-rail__toggle { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 1px solid var(--or-sidebar-line); border-radius: 14px; background: var(--or-sidebar-raised); }
+.planner-rail__search { display: flex; align-items: center; gap: 12px; min-height: 48px; border: 1px solid var(--or-sidebar-line); border-radius: 24px; background: var(--or-sidebar-hover); padding: 10px 16px; }
+.planner-rail__search kbd { margin-left: auto; font-size: 11px; }
+.planner-rail__quick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.planner-rail__quick button { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; min-height: 86px; padding: 12px; border: 1px solid var(--or-sidebar-line); border-radius: 20px; background: var(--or-sidebar-raised); font-size: 14px; }
+.sidebar-project__module .planner-rail section { align-items: stretch; gap: 4px; }
+.sidebar-project__module .planner-rail h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; margin: 0 8px 8px; }
+.sidebar-project__module .planner-rail h2::before { content: '●'; color: var(--or-sidebar-focus); margin-right: 8px; }
+.sidebar-project__module .planner-rail .sidebar-project__button { flex-direction: row; justify-content: flex-start; min-height: 44px; padding: 10px 12px; gap: 12px; border-radius: 13px; }
+.planner-rail .sidebar-project__module-label { font-size: 14px; line-height: 1.3; text-align: left; }
+.planner-rail .sidebar-project__button[aria-current='page'] svg { color: var(--or-sidebar-focus); }
+.planner-rail__badge { margin-left: auto; border-radius: 20px; padding: 2px 6px; background: #ef5b55; color: #180807; font-size: 12px; }
+.planner-rail__exit { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 10px 12px; border: 0; border-radius: 13px; background: var(--or-sidebar-raised); }
+.planner-rail--collapsed .planner-rail__logo,
+.planner-rail--collapsed .planner-rail__brand-text,
+.planner-rail--collapsed .planner-rail__search span,
+.planner-rail--collapsed .planner-rail__search kbd,
+.planner-rail--collapsed .planner-rail__quick span,
+.planner-rail--collapsed .sidebar-project__module-label,
+.planner-rail--collapsed .planner-rail__exit span,
+.sidebar-project__module .planner-rail--collapsed h2 { display: none; }
+.planner-rail--collapsed .planner-rail__brand { justify-content: center; }
+.planner-rail--collapsed .planner-rail__quick { grid-template-columns: 1fr; }
+.planner-rail--collapsed .planner-rail__quick button { min-height: 52px; padding: 10px; }
+.planner-rail--collapsed .planner-rail__search,
+.planner-rail--collapsed .planner-rail__exit { justify-content: center; padding: 12px; }
+.sidebar-project__module .planner-rail--collapsed .sidebar-project__button { justify-content: center; min-height: 48px; padding: 10px; }
+.planner-rail--collapsed .planner-rail__badge { position: absolute; right: 3px; top: 2px; width: 8px; height: 8px; padding: 0; font-size: 0; }
+.sidebar-project__return { display: none; }
+.sidebar-project:has(.planner-rail) .sidebar-project__return { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; margin-top: 12px; width: 100%; flex: none; border: 0; border-radius: 14px; background: var(--or-sidebar-raised); color: var(--or-sidebar-text); font-size: 13px; cursor: pointer; }
+.sidebar-project__return svg { width: 20px; height: 20px; }
+.sidebar-project__return:focus-visible { outline: 2px solid var(--or-sidebar-focus); }
+.sidebar-project:has(.planner-rail--collapsed) .sidebar-project__return span { display: none; }

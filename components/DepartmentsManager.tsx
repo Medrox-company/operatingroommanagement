@@ -230,7 +230,7 @@ const DepartmentsManager: React.FC = () => {
 
       {/* Jedna vodorovná lišta ve stejné skladbě i velikostech jako v modulu
           Rozpis sálů: dlaždice čísel · dělítko · popisek · přepínač · akce. */}
-      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+      <section className="admin-toolbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
         <div className="flex min-w-max items-center gap-2.5">
           {([
             { label: 'Celkem oborů', value: stats.total, suffix: 'oborů', icon: Layers3, color: '#38BDF8' },

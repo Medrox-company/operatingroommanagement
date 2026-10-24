@@ -183,7 +183,7 @@
 }
 
 @media (max-width: 767px) {
-  html[data-app-design="cliniq"]:not(.m-dark) .mobile-room-reference .mrd-phase-card[data-emphasized=true] {
+  html[data-app-design="cliniq"]:not(.m-dark) .mobile-room-reference:not(.mobile-room-orbit) .mrd-phase-card[data-emphasized=true] {
     border-color: color-mix(in srgb, var(--room-phase-color) 10%, #FFFFFF);
     border-radius: 26px;
     background: linear-gradient(135deg, color-mix(in srgb, var(--room-phase-color) 17%, #FFFFFF), color-mix(in srgb, var(--room-phase-color) 5%, #FFFFFF));

@@ -88,7 +88,7 @@ test('shared header puts one left-aligned 28px title in the 44px top toolbar wit
 test('classic overview and module cards put the common title first, with a 16px content inset', () => {
   const source = read('components/mobile/MobileRoomOverview.tsx');
   assert.match(source, /className="mro-room m-unified-card"/);
-  assert.match(source, /\{cliniq && <span className="mro-orbit-room-kicker">Operační sál<\/span>\}\s*<strong className="m-unified-card-title">\{room\.name\}<\/strong>\s*\{!cliniq && <span className="mro-phase-row">\s*<span className="mro-phase-label"/, 'Only optional Cliniq may add the new kicker and replace the original phase row; classic retains the common title-first card');
+  assert.match(source, /\{cliniq && <span className="mro-orbit-room-kicker"><span className=\{badges\.length \? 'sr-only' : undefined\}>Operační sál<\/span><\/span>\}\s*<strong className="m-unified-card-title">\{room\.name\}<\/strong>\s*\{!cliniq && <span className="mro-phase-row">\s*<span className="mro-phase-label"/, 'Only optional Cliniq may add the accessible kicker and replace the original phase row; classic retains the common title-first card');
   assert.equal(declarationsFor(overview, '.mro-room-open').padding, 'var(--m-card-padding)');
   const shared = read('components/mobile/MobileShell.tsx');
   assert.match(shared, /className="m-unified-card mobile-header-metric min-w-0 p-4"/);

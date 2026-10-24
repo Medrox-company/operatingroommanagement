@@ -180,7 +180,7 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
       </header>
 
       {/* Stejná lišta jako v Rozpisu sálů a Operačních oborech. */}
-      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+      <section className="admin-toolbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
         <div className="flex min-w-max items-center gap-2.5">
           {([
             { label: 'Celkem', value: stats.total, suffix: 'zařízení', icon: Smartphone, color: '#38BDF8' },
@@ -267,7 +267,7 @@ const DevicesManager: React.FC<DevicesManagerProps> = ({ onBack }) => {
                 key={device.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`relative rounded-2xl border p-4 transition-all ${
+                className={`admin-device-card relative rounded-2xl border p-4 transition-all ${
                   !device.is_active
                     ? 'border-red-500/20 bg-red-500/[0.02] opacity-60'
                     : isCurrentDevice
