@@ -52,7 +52,7 @@ výrazy. Důsledky:
 
 ## Stav repozitáře a nasazení
 
-- Lokální práce běží na větvi `sal/provoz` (dříve `zlepseni/rychle-vyhry`).
+- Lokální práce běží na větvi `medrox_op_room_ver_0_2` (dříve `zlepseni/rychle-vyhry`).
   Část změn, které už běží na produkci, zatím není na GitHubu.
 - **Merge do `main` = automatické produkční nasazení** na Vercel (projekt
   `operatingroom`, doména operatingroom.eu). Push do jiné větve vytvoří jen
