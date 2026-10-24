@@ -59,10 +59,10 @@ výrazy. Důsledky:
 - **Merge do `main` = automatické produkční nasazení** na Vercel (projekt
   `operatingroom`, doména operatingroom.eu). Push do jiné větve vytvoří jen
   náhledové nasazení chráněné přihlášením do Vercelu.
-- Poslední produkční nasazení: 18. 10. 2026 z lokální kopie (základ commit
-  `94d7bfc`), ještě s Next.js 16.3.8 — viz
-  `docs/bezpecnost-a-upgrade-2026-10.md`. Nasazovat jen z kódu, který je na
-  GitHubu, jinak se produkce a repozitář rozejdou.
+- Poslední produkční nasazení: 24. 10. 2026 z `main` (PR #190, commit
+  `5e7c4ac`) — práce z `medrox_op_room_ver_0_2`, Next.js 16.4.3,
+  bezpečnostní hlavičky. Nasazovat jen z kódu, který je na GitHubu, jinak se
+  produkce a repozitář rozejdou (stalo se 18. 10. ručním nasazením).
 - Cloudový agent pushuje jen do své přidělené větve; merge a nasazení dělá
   uživatel.
 - `output/` a `tmp/` jsou generované soubory — necommitovat.
