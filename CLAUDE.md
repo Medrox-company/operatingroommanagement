@@ -52,12 +52,13 @@ výrazy. Důsledky:
 
 ## Stav repozitáře a nasazení
 
-- Práce běží na větvi `zlepseni/rychle-vyhry`, nic nepushnuto.
+- Lokální práce běží na větvi `sal/provoz` (dříve `zlepseni/rychle-vyhry`).
+  Část změn, které už běží na produkci, zatím není na GitHubu.
 - **Merge do `main` = automatické produkční nasazení** na Vercel (projekt
   `operatingroom`, doména operatingroom.eu). Push do jiné větve vytvoří jen
   náhledové nasazení chráněné přihlášením do Vercelu.
-- Poslední produkční nasazení: 18. 10. 2026, commit `94d7bfc`
-  (`zlepseni/rychle-vyhry`), ještě s Next.js 16.3.8 — viz
+- Poslední produkční nasazení: 18. 10. 2026 z lokální kopie (základ commit
+  `94d7bfc`, větev tehdy `zlepseni/rychle-vyhry`), ještě s Next.js 16.3.8 — viz
   `docs/bezpecnost-a-upgrade-2026-10.md`.
 - Agent **nemá přístup k GitHubu** (izolovaná síť, žádné credentials). Push
   a merge dělá uživatel.
