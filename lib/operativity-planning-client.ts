@@ -11,7 +11,10 @@ export async function loadOperativityPlanningYear(year: number, signal: AbortSig
       signal, cache: 'no-store', credentials: 'same-origin',
     });
     const payload = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(payload?.error || 'Roční rozpis se nepodařilo načíst.');
+    if (!response.ok) {
+      // migrationRequired říká, že v databázi chybí tabulky rozpisu (migrace 14–16).
+      throw Object.assign(new Error(payload?.error || 'Roční rozpis se nepodařilo načíst.'), { migrationRequired: payload?.migrationRequired === true });
+    }
     if (!Array.isArray(payload?.allocations) || !Array.isArray(payload?.departments)) throw new Error('Server vrátil neplatné podklady rozpisu.');
     allocations.push(...payload.allocations);
     if (page === 0) departments = payload.departments;

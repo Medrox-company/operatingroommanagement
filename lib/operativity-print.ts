@@ -76,3 +76,29 @@ export function openOperativityPrintWindow(html: string): boolean {
   });
   return true;
 }
+
+/**
+ * Náhradní cesta, když prohlížeč nové okno zablokuje: stejný vyčištěný
+ * dokument se vytiskne ze skrytého rámce v aktuální stránce.
+ */
+export function printOperativityDocumentInFrame(html: string): void {
+  const safe = sanitizeOperativityPrintDocument(html);
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.tabIndex = -1;
+  // Rámec nesmí mít display:none, některé prohlížeče by pak tiskly prázdnou stránku.
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+  let removed = false;
+  const remove = () => { if (!removed) { removed = true; frame.remove(); } };
+  frame.addEventListener('load', () => {
+    const view = frame.contentWindow;
+    if (!view) { remove(); return; }
+    view.addEventListener('afterprint', () => window.setTimeout(remove, 0), { once: true });
+    // Pojistka pro prohlížeče, které afterprint nevyvolají.
+    window.setTimeout(remove, 120_000);
+    view.focus();
+    view.print();
+  }, { once: true });
+  frame.srcdoc = safe;
+  document.body.append(frame);
+}
