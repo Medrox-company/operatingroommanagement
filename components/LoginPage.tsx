@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './login-orbit.css';
+import './mobile/mobile-login-wheel.css';
 import * as HospitalMenu from '@radix-ui/react-dropdown-menu';
 import { useAuth } from '../contexts/AuthContext';
 import NativeGoogleAuthOverlay from './NativeGoogleAuthOverlay';
@@ -97,6 +98,30 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   /** Údaje právě vybrané role — používá je rozbalený řádek s heslem. */
   const activeRole = QUICK_ROLES.find(role => role.id === selectedRole) ?? null;
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const page = document.querySelector<HTMLElement>('.mobile-login-wheel-page');
+    if (!page) return;
+
+    // Mobile keyboards can shrink only the visual viewport, leaving dvh unchanged.
+    // Resize this login shell, not the document or the desktop layout. Preserve zoom.
+    const syncViewport = () => {
+      if (viewport.scale !== 1) return;
+      page.style.setProperty('--login-viewport-height', `${viewport.height}px`);
+      page.style.setProperty('--login-viewport-top', `${viewport.offsetTop}px`);
+    };
+    syncViewport();
+    viewport.addEventListener('resize', syncViewport);
+    viewport.addEventListener('scroll', syncViewport);
+    return () => {
+      viewport.removeEventListener('resize', syncViewport);
+      viewport.removeEventListener('scroll', syncViewport);
+      page.style.removeProperty('--login-viewport-height');
+      page.style.removeProperty('--login-viewport-top');
+    };
+  }, []);
 
   useEffect(() => {
 
@@ -331,7 +356,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         window.location.reload();
       }}
     />
-    <div className="login-orbit mobile-login-page relative min-h-[100dvh] w-full overflow-x-hidden md:hidden">
+    <div className="login-orbit mobile-login-page mobile-login-wheel-page relative min-h-[100dvh] w-full overflow-x-hidden md:hidden" data-role-selected={selectedRole ? 'true' : undefined}>
       <div aria-hidden className="login-aurora-flow mobile-login-aurora pointer-events-none fixed" />
       <div aria-hidden className="login-aurora-vignette mobile-login-vignette pointer-events-none fixed inset-0" />
 
@@ -349,9 +374,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
       <main className="mobile-login-main relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[460px] flex-col">
         <header className="mobile-login-header">
-          <h1 className="mobile-login-brand">
-            <img src="/images/mobile-login-logo.webp" width="440" height="740"
-              alt="Operating Room manager application" fetchPriority="high" decoding="async" />
+          <h1 className="mobile-login-brand" aria-label="Operating Room">
+            <span className="mobile-login-brand-mark" aria-hidden="true" />
+            <span className="mobile-login-brand-copy">Operating<br />Room</span>
           </h1>
         </header>
 
@@ -364,7 +389,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           )}
 
           {selectedRole && (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="mobile-login-password-panel space-y-4">
               <div className="mobile-login-selected-role">
                 <span className="login-role-icon" aria-hidden="true">
                   {activeRole && <activeRole.icon className="h-6 w-6" strokeWidth={2} />}
@@ -409,17 +434,51 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </form>
           )}
 
-          {!selectedRole && <div className="space-y-5">
-            <div>
-              <label htmlFor="login-hospital" className="sr-only">Zdravotnické zařízení</label>
-              {renderHospitalPicker('login-hospital', 'mobile-login-field w-full disabled:opacity-50')}
-            </div>
-
-          </div>}
-
           {!selectedRole && (
-            <div className="mobile-login-roles-section">
-              <div className="mobile-login-role-grid">
+            <div className="mobile-login-roles-section" role="group" aria-label="Vyberte svou roli">
+              <div className="mobile-login-role-wheel">
+                <img className="mobile-login-wheel-art" src="/images/mobile-login-role-wheel.webp" width="960" height="960" alt="" aria-hidden="true" decoding="async" />
+                <span className="mobile-login-wheel-light" aria-hidden="true">
+                  <svg className="mobile-login-wheel-light-art" viewBox="0 0 960 960" width="960" height="960" focusable="false">
+                    <defs>
+                      <radialGradient id="mobile-login-wheel-outer-gradient" gradientUnits="userSpaceOnUse" cx="480" cy="480" r="679">
+                        <stop offset=".47" stopColor="white" stopOpacity="0" />
+                        <stop offset=".58" stopColor="white" />
+                      </radialGradient>
+                      <mask id="mobile-login-wheel-outer-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="960" height="960">
+                        <rect width="960" height="960" fill="url(#mobile-login-wheel-outer-gradient)" />
+                      </mask>
+                      <linearGradient id="mobile-login-wheel-sweep-gradient" gradientUnits="userSpaceOnUse" x1="480" y1="0" x2="960" y2="480">
+                        <stop offset="0" stopColor="white" stopOpacity="0" />
+                        <stop offset=".3" stopColor="white" stopOpacity=".15" />
+                        <stop offset=".72" stopColor="white" />
+                        <stop offset=".84" stopColor="white" />
+                        <stop offset="1" stopColor="white" stopOpacity="0" />
+                      </linearGradient>
+                      <mask id="mobile-login-wheel-sweep-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="960" height="960">
+                        <g className="mobile-login-wheel-light-sweep">
+                          <path d="M480 480V-480L1440 480Z" fill="url(#mobile-login-wheel-sweep-gradient)" />
+                        </g>
+                      </mask>
+                      <filter id="mobile-login-wheel-edge" x="-5%" y="-5%" width="110%" height="110%" colorInterpolationFilters="sRGB">
+                        <feComponentTransfer in="SourceAlpha" result="silhouette">
+                          <feFuncA type="linear" slope="4" intercept="-1.2" />
+                        </feComponentTransfer>
+                        <feMorphology in="silhouette" operator="erode" radius="3" result="inset" />
+                        <feComposite in="silhouette" in2="inset" operator="out" result="edge" />
+                        <feGaussianBlur in="edge" stdDeviation=".65" result="soft-edge" />
+                        <feFlood floodColor="#E6FAFF" />
+                        <feComposite in2="soft-edge" operator="in" />
+                      </filter>
+                    </defs>
+                    <g mask="url(#mobile-login-wheel-outer-mask)">
+                      <g mask="url(#mobile-login-wheel-sweep-mask)">
+                        <image href="/images/mobile-login-role-wheel.webp" width="960" height="960" filter="url(#mobile-login-wheel-edge)" />
+                      </g>
+                    </g>
+                  </svg>
+                </span>
+                <span className="mobile-login-wheel-center mobile-login-brand-mark" aria-hidden="true" />
                 {QUICK_ROLES.map(role => {
                   const Icon = role.icon;
                   return (
@@ -428,20 +487,25 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                       type="button"
                       onClick={() => handleRoleSelect(role.id)}
                       disabled={isLoading || !selectedHospitalId}
-                      className="mobile-login-role disabled:opacity-40"
-                      style={{ '--login-role-tone': role.tone } as React.CSSProperties}
+                      className="mobile-login-wheel-role disabled:opacity-40"
+                      data-role={role.id}
+                      aria-label={role.label}
                     >
                       <span className="login-role-icon" aria-hidden="true">
                         <Icon className="h-6 w-6" strokeWidth={2} />
                       </span>
-                      <span className="mobile-login-role-label">{role.label}</span>
+                      <span className="mobile-login-role-label">{role.id === 'admin' ? 'Admin' : role.label}</span>
                     </button>
                   );
                 })}
               </div>
-
             </div>
           )}
+
+          {!selectedRole && <div className="mobile-login-hospital-section">
+            <label htmlFor="login-hospital" className="sr-only">Zdravotnické zařízení</label>
+            {renderHospitalPicker('login-hospital', 'mobile-login-field w-full disabled:opacity-50')}
+          </div>}
 
           {googleEnabled && !selectedRole && (
             <div className="mobile-login-system">
@@ -455,9 +519,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           )}
         </section>
 
-        <footer className="mt-auto pt-10 text-center">
-          <p className="mobile-login-footer"><strong>MEDROX</strong><span>Czech Republic and Canada</span></p>
+        <footer className="mobile-login-powered-by">
+          <span className="mobile-login-powered-caption">Powered by</span>
+          <span className="mobile-login-powered-brand">Medrox</span>
+          <span className="mobile-login-powered-country">Czech Republic and Canada</span>
         </footer>
+
       </main>
     </div>
 

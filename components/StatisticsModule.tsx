@@ -20,6 +20,8 @@ import {
 import { BarList, ColumnChart, ScatterGrid, GaugeRing, RingRow, InsightPanel, StatSectionLabel, DayNavigator, OrbitRings, GlassCalendar, PhasePanel } from './statistics/AppCharts';
 import type { InsightItem, OrbitItem } from './statistics/AppCharts';
 import ModulePageHeading from './ModulePageHeading';
+import './mobile/mobile-settings-orbit.css';
+import './mobile/mobile-secondary-orbit.css';
 import { StatisticsNavigation, type StatisticsTab } from './statistics/StatisticsNavigation';
 import { StatisticsReportContext } from './statistics/StatisticsReportContext';
 import { openStatisticsPrintReport, type StatisticsReport } from '../lib/statistics-print';

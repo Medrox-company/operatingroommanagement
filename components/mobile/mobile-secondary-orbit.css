@@ -1,0 +1,74 @@
+/* Continue the accepted Orbit palette in administration and standalone reports.
+   Screen-only: desktop and printable reports retain their existing presentation. */
+@media screen and (max-width: 767px) {
+  html[data-app-design="cliniq"] :is(.settings-admin-orbit, .mobile-secondary-host) .mobile-theme-surface { display: none; }
+  html[data-app-design="cliniq"] :is(.mobile-statistics.mobile-unified-statistics, .mobile-staff-overview.mobile-unified-staff) {
+    --m-bg: var(--settings-orbit-floor);
+    --m-card: var(--settings-orbit-glass);
+    --m-card-2: rgba(11, 16, 44, .36);
+    --m-card-solid: #151A3B;
+    --m-control-surface: rgba(92, 90, 175, .3);
+    --m-chip-track: rgba(92, 90, 175, .2);
+    --m-border: var(--settings-orbit-border);
+    --m-text: var(--settings-orbit-text);
+    --m-text-strong: var(--settings-orbit-text);
+    --m-muted: var(--settings-orbit-muted);
+    --m-faint: #AAA8D1;
+    --m-track: rgba(163, 153, 239, .18);
+    --m-accent: #E5DDFF;
+    --m-accent-soft: rgba(163, 153, 239, .22);
+    --m-card-radius: 24px;
+    --m-card-padding: 16px;
+    --m-card-shadow: inset 0 1px 0 rgba(237, 233, 255, .07), 0 8px 20px rgba(4, 7, 24, .12);
+    color: var(--m-text);
+    background: transparent;
+  }
+  html[data-app-design="cliniq"] .mobile-secondary-host > .mobile-module-container { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+  html[data-app-design="cliniq"] .settings-admin-orbit :is(.mobile-statistics, .mobile-staff-overview) .mobile-module-hero > .mobile-ios-header { display: none; }
+  html[data-app-design="cliniq"] :is(.mobile-statistics, .mobile-staff-overview) .mobile-module-hero { padding: 0; border: 0; background: transparent; box-shadow: none; }
+  html[data-app-design="cliniq"] :is(.mobile-statistics, .mobile-staff-overview) .mobile-heading-toolbar { justify-content: center; }
+  html[data-app-design="cliniq"] :is(.mobile-statistics, .mobile-staff-overview) .mobile-heading-actions:empty { display: none; }
+  html[data-app-design="cliniq"] :is(.mobile-statistics, .mobile-staff-overview) .mobile-ios-header h1 {
+    color: var(--m-text); font-size: clamp(24px, 6.7vw, 30px); font-weight: 400; text-align: center; letter-spacing: -.04em;
+  }
+  html[data-app-design="cliniq"] :is(.mobile-statistics, .mobile-staff-overview) :is(.m-unified-card, .stats-shared-card) {
+    -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+  }
+  html[data-app-design="cliniq"] :is(.mobile-statistics, .mobile-staff-overview) :is(button, input, select) { min-height: 44px; }
+  html[data-app-design="cliniq"] :is(.mobile-statistics, .mobile-staff-overview) :is(input, select, textarea) { font-size: 16px; color-scheme: dark; }
+  html[data-app-design="cliniq"] :is(.mobile-statistics, .mobile-staff-overview) :is(button, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+  html[data-app-design="cliniq"] .mobile-statistics .mobile-ios-segments { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; border: 1px solid var(--m-border); border-radius: 26px; }
+  html[data-app-design="cliniq"] .mobile-statistics > .print-section > :is(button, label),
+  html[data-app-design="cliniq"] .mobile-statistics > .print-section > .print-hide > button { border-radius: 22px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+  html[data-app-design="cliniq"] .mobile-statistics .mobile-ios-segments button { border-radius: 22px; }
+  html[data-app-design="cliniq"] .mobile-statistics .mobile-ios-segments button[aria-pressed="true"] { color: #100C62 !important; }
+  html[data-app-design="cliniq"] .mobile-statistics .mobile-ios-segments button[aria-pressed="true"] > span.absolute { background: var(--settings-orbit-control) !important; border-radius: inherit; }
+  html[data-app-design="cliniq"] .mobile-statistics .stats-section-nav { border-radius: 24px; background: var(--m-card); border: 1px solid var(--m-border); }
+  html[data-app-design="cliniq"] .mobile-staff-overview .mobile-staff-filters > .overflow-x-auto { flex-wrap: wrap; overflow: visible; }
+  html[data-app-design="cliniq"] .mobile-staff-overview .mobile-staff-filters button[aria-pressed="true"] { background: var(--settings-orbit-control) !important; color: #100C62 !important; }
+
+  html[data-app-design="cliniq"] .settings-admin-orbit :is(.admin-device-card, .admin-calendar-panel, .system-settings-sections, .system-settings-content, .system-settings-overview) {
+    border: 1px solid var(--settings-orbit-border);
+    border-radius: 24px;
+    background: var(--settings-orbit-glass);
+    box-shadow: inset 0 1px 0 rgba(237, 233, 255, .07), 0 8px 20px rgba(4, 7, 24, .12);
+    -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-device-card button { min-height: 44px; min-width: 44px; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-device-card h3 { white-space: normal; overflow-wrap: anywhere; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-calendar-day-row { grid-template-columns: minmax(0, 1fr) 70px 70px; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar select { width: 100%; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings { --settings-muted: var(--settings-orbit-muted); --settings-border: var(--settings-orbit-border); }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-workspace { display: grid; gap: 14px; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-nav-item { flex-direction: column; align-items: flex-start; padding: 12px; min-width: 0; min-height: 104px; border: 1px solid var(--settings-orbit-border); border-radius: 18px; background: rgba(11,16,44,.24); }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-nav-item[aria-current="page"] { background: var(--settings-orbit-control); color: #100C62; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-nav-copy { min-width: 0; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-nav-copy > span { font-size: 13px; white-space: normal; overflow-wrap: anywhere; color: inherit; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-nav-arrow { display: none; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-nav-icon { color: inherit; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .system-settings-overview { margin: 0; padding: 16px; }
+}
+@media screen and (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  html[data-app-design="cliniq"] .mobile-secondary-host * { animation: none !important; transition: none !important; }
+}

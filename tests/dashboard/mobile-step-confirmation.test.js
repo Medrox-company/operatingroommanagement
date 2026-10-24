@@ -199,7 +199,7 @@ test('every confirmation appearance override is scoped to the open mobile orbit 
     if (!rule.selector.includes('.step-confirm-overlay')) return;
     count += 1;
     for (const selector of rule.selectors.filter(value => value.includes('.step-confirm-overlay'))) {
-      assert.match(selector, /^\.mobile-room-orbit(?:\[data-hygiene='true'\])? ~ \.step-confirm-overlay(?:\s|$)/, 'Do not restyle another confirmation, room design or module');
+      assert.match(selector, /^\.mobile-room-orbit(?:\[data-(?:hygiene|locked|emergency)='true'\])? ~ \.step-confirm-overlay(?:\s|$)/, 'Only the existing mobile room states may restyle their sibling confirmation, never another room design or module');
     }
     const media = [];
     for (let parent = rule.parent; parent; parent = parent.parent) {

@@ -366,19 +366,25 @@ test('each configured phase renders its thematic operational icon and authoritat
   }
 });
 
-test('pause replaces the central phase visual while final lock retains its independent lock cue', () => {
-  for (const [override, badges] of [[{ isPaused: true }, 0], [{ isLocked: true }, 1], [{ isPaused: true, isLocked: true }, 1]]) {
-    const view = harness({ room: { ...baseRoom, currentStepIndex: 2, ...override } }).render();
-    assert.equal(view.byClass('mrd-orbit-phase-icon')[0].props['data-phase-icon'], override.isPaused ? 'pause' : 'cleaning');
-    if (override.isPaused) {
-      assert.equal(content(view.byClass('mrd-orbit-phase-title')), 'Pauza');
-      assert.equal(view.byClass('mrd-orbit-current')[0].props['aria-label'], 'Pauza');
+test('emergency and lock replace the central symbol in every phase with warning priority', () => {
+  const { Siren, Lock, Pause } = require('lucide-react');
+  for (const currentStepIndex of [0, 1, 2]) {
+    for (const [override, kind, title, Icon] of [
+      [{ isPaused: true }, 'pause', 'Pauza', Pause],
+      [{ isLocked: true }, 'locked', 'Sál uzamčen', Lock],
+      [{ isLocked: true, isPaused: true, isEnhancedHygiene: true }, 'locked', 'Sál uzamčen', Lock],
+      [{ isEmergency: true }, 'emergency', 'Stav nouze', Siren],
+      [{ isEmergency: true, isLocked: true, isPaused: true, isEnhancedHygiene: true }, 'emergency', 'Stav nouze', Siren],
+    ]) {
+      const view = harness({ room: { ...baseRoom, currentStepIndex, ...override } }).render();
+      const icon = view.byClass('mrd-orbit-phase-icon')[0];
+      assert.equal(icon.props['data-phase-icon'], kind);
+      assert.equal(elements(icon, node => node.type === Icon).length, 1);
+      assert.equal(content(view.byClass('mrd-orbit-phase-title')), title);
+      assert.equal(view.byClass('mrd-orbit-phase-state').length, 0);
+      assert.equal(view.mobile.props.style['--mrd-orbit-phase-color'], statuses[currentStepIndex].color);
     }
-    assert.equal(view.byClass('mrd-orbit-phase-state').length, badges, 'Only a final-step lock may add the independent lock cue');
-    assert.equal(view.mobile.props.style['--mrd-orbit-phase-color'], statuses[2].color);
   }
-  const nonFinalLock = harness({ room: { ...baseRoom, currentStepIndex: 1, isLocked: true } }).render();
-  assert.equal(nonFinalLock.byClass('mrd-orbit-phase-state').length, 0, 'The lock badge must retain its original final-step guard');
 });
 
 test('paused ready, surgery, arrival, departure, completion, custom and empty workflows reuse the same central wrapper', () => {

@@ -64,7 +64,7 @@ test('light paper uses a small offline supplied logo, fine rules and repeating l
   const images = html.match(/<img\b[^>]*>/g) ?? [];
   assert.equal(images.length, 1);
   assert.ok(images[0].includes(`src="${logo}"`));
-  assert.match(images[0], /width="40" height="50"/);
+  assert.match(images[0], /width="40" height="36"/);
   assert.doesNotMatch(html, /<link|@import|url\s*\(|https?:\/\//i);
 });
 

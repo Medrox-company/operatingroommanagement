@@ -694,7 +694,7 @@ export default function StaffManager() {
         </header>
 
         {/* Lišta i menu ve stejné skladbě a velikostech jako v modulu Nastavení. */}
-        <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+      <section className="admin-toolbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
           <div className="flex min-w-max items-center gap-2.5">
             {([
               { label: 'Celkem', value: stats.total, suffix: 'osob', icon: Users, color: COLORS.cyan },
@@ -786,7 +786,7 @@ export default function StaffManager() {
         ) : (
           <section className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.025]">
             <div className="hide-scrollbar overflow-x-auto">
-              <div className="min-w-[1080px]">
+              <div className="admin-staff-table min-w-[1080px]">
                 <div className="grid h-9 grid-cols-[minmax(230px,1.5fr)_minmax(185px,1.15fr)_minmax(130px,.8fr)_minmax(170px,1fr)_minmax(140px,.85fr)_112px_112px] items-center border-b border-white/[0.06] bg-black/10 px-4 text-[7px] font-semibold uppercase tracking-[0.16em] text-white/27">
                   <span>Pracovník</span>
                   <span>Role</span>

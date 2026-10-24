@@ -2007,3 +2007,116 @@ final result: passed for removal of the username field with existing role/passwo
 - TypeScript noEmit, production Webpack build, email-secret guard and `git diff --check` passed.21st review reports756global findings, predominantly existing palette notices and unrelated global styles, plus the two unchanged desktop outline-none locations; the new mobile controls use an explicit scoped visible focus outline and no outline-none utility. No unrelated automatic fixes. Independent agent audited the new scoped UI diff and tests with no blocker. No commit, push or production deployment.
 
 final result: passed for readable, iOS-inspired mobile login with existing authentication preserved
+
+## 2026-10-17 — Mobile five-segment glass login
+
+### Target and implementation
+
+- User reference: `/Users/jaroslavjedlicka/Desktop/BA4651A8-7795-472C-B290-38D73279D015.PNG` (941 × 1672). Requested a similar mobile login graphic, not a change to authentication or desktop.
+- Implemented in the existing `components/LoginPage.tsx`, with a mobile-only stylesheet `components/mobile/mobile-login-wheel.css` (max-width 767px). Five transparent native buttons overlay optimized glass artwork; names and Lucide icons remain live accessible content. Reused the supplied Q brand as a mask. Hospital selection follows the wheel. Existing password, Google, native authentication, disabled/error and Back behavior is retained.
+- Product Design image-to-code guided asset extraction, actual functional controls and paired screenshot comparison. Background and wheel were recreated with imagegen from the supplied reference, rather than approximating the major artwork with CSS/SVG. No new package or font dependency. Both new WebP assets total 168,664 bytes (about 165 KiB).
+
+### Visual QA and fix pass
+
+- Canonical screenshot: `/tmp/operatingroom-mobile-login-qa/login-393x698.png`. Source normalized to 393 × 698 and compared beside the actual browser screenshot in one image: `/tmp/operatingroom-mobile-login-qa/comparison.png` (source left, implementation right). Whole image, no crop. This is the actual localhost application, not a static fixture.
+- Initial QA found inherited centered wordmark alignment; corrected to left aligned. The password surface rule also affected the hospital picker; restricted it to the password panel. Re-rendered and compared the final result.
+- Hierarchy, five-petal geometry/order, upper-left branding, lamp position, cyan light trails, dropdown and superadministrator access match the reference direction. Residual P3 differences: generated glass highlights are slightly more violet and stronger, and the lower controls sit around 12–16px below the scaled reference. These do not obstruct reading or operation. No remaining P0–P2 findings in the tested views.
+- Verified 320 × 568, 393 × 698 and 390 × 844. No horizontal document overflow; all five role labels fit; all role targets are at least 44 × 44px. At 320px the long hospital name wraps naturally, and the complete chooser fits vertically. Screenshots: `login-320x568.png`, `login-393x698.png`, `login-390x844.png` in the same QA directory.
+- Desktop checked at 1024 × 768: original desktop presentation is visible, mobile wheel is hidden, no horizontal document overflow. Screenshot: `login-desktop-1024x768.png`. Desktop JSX/styles were not changed.
+
+### Functional verification
+
+- Actual browser: hospital menu opens with the current selected institution, closes without changing it; Administrátor opens the real password view; empty-password reveal changes input type; Back restores the wheel. No password was entered or submitted, and no OAuth redirect was triggered. Browser error log was empty. Temporary viewport override reset after testing.
+- 35/35 focused tests pass: existing role/account/hospital/Google/native/reset/error tests, retained base presentation contracts, and four new wheel-scoping, interaction, focus and asset-budget tests. The inert role harness was updated only for the new CSS import and button class. No live authentication is performed by these tests. Older presentation contracts cover the retained base stylesheet, not a claim that its legacy light theme is the displayed wheel design.
+- `npx tsc --noEmit --incremental false`, `npm run build -- --webpack` and the build's email-security guard passed. No deployment, commit, push, credential, provider or database change. Pre-existing circle-label CSS modifications in `mobile-cliniq.css` and `mobile-room-orbit.css` preserved.
+
+### Artwork provenance
+
+- Reference above supplied for both imagegen edits. Background: `transparent_background: false`; source `/Users/jaroslavjedlicka/.codex/generated_images/01a14bab-f64d-70a0-b36a-191ade5b428b/exec-0d618624-338d-41e7-aa62-0407b87fd259.png`; optimized `public/images/mobile-login-theatre-blue.webp` (941 × 1671, 29,070 bytes).
+- Exact background prompt:
+
+```text
+Use case: precise-object-edit. Asset type: portrait 9:16 mobile app background raster, with no interface. Input image 1 is the edit target and exact palette/composition reference. Remove every foreground interface element: all text and lettering, all logos including the Q at top and center, the entire segmented circular wheel with its glass panels and icons, hospital selector, buttons, lines surrounding text, labels and control outlines. Reconstruct the continuous background behind them. Preserve the deep midnight navy blue photographic surgical theatre atmosphere, the softly blurred multi-light surgical operating lamp at upper middle (center about 60% across and 25% down), and softly luminous blue/cyan sweeping light ribbons across lower middle. Preserve source colors, soft defocus, elegant lighting, diagonal lower light trails, dark uncluttered bottom and generous empty space for later UI. Background only, no humans, no added objects, no typography, no UI panels, no logo, no watermark. Save the resulting background image artifact.
+```
+
+- Wheel: `transparent_background: true`; source `/Users/jaroslavjedlicka/.codex/generated_images/01a14bac-85ac-7572-b59c-12f8703425c8/exec-987b6ae4-842f-44ae-a0d8-af7f080ae535.png`; optimized `public/images/mobile-login-role-wheel.webp` (960 × 960, 139,594 bytes).
+- Exact wheel prompt:
+
+```text
+Use case: background-extraction.
+Asset type: production mobile login circular menu glass-surface sprite with real transparent background.
+Input image 1 is the exact appearance and geometry reference. Extract/recreate ONLY the circular five-petal menu centered in the reference, excluding every other screen element and the hospital photographic background.
+Subject: five separate softly rounded annular wedge-shaped glass panels arranged as a circular wheel, plus one separate central dark glass circular disc. The top petal points upward centered at -90 degrees; then four petals centered at -18, 54, 126, 198 degrees clockwise from the x axis. Each outer petal spans about 70 degrees with a narrow radial gap. Keep the source's petal proportions: outer circle, softly rounded corners, inner circular cutout radius about 20% of outer wheel diameter, round central disc slightly smaller than the hole leaving a visible clear ring gap.
+Style/material: match the original reference accurately: sophisticated smooth dark navy translucent blue glass faces, gently luminous cyan hairline outlines, brighter cyan outer edges on the right and lower-right, limited lilac-white edge reflections on the upper left and lower left, subtle blue shaded glass gradients. Keep surfaces broad and calm so readable text and icons can later be overlaid. Central circle is blank dark navy glass with a cyan rim and very subtle lilac reflection lower left.
+Composition: exact flat front view, no perspective, no tilt, centered on a square canvas. Outer wheel diameter takes about 94% of the square, leaving a small margin for soft edge glow. Match the wheel of the reference; do not make a turbine, mechanical bevel, gear, or 3D thickness.
+Transparency: genuine RGBA alpha background, fully transparent outside the five petals and center disc and fully transparent in the radial gaps and the circular gap. Preserve translucent edge glows. Do not draw a checkered or solid backdrop.
+Remove every icon, shield, heart trace, briefcase, clipboard, stethoscope, all letters and all labels. Remove the cyan Q logo from the center entirely; leave blank glass. No text, symbols, logos, watermarks, buttons, backdrop, rays, photo, lamp, or added elements anywhere. Deliver ONLY the isolated five glass petals and blank central glass disc.
+```
+
+final result: passed for the requested mobile reference-inspired glass login; minor raster fidelity differences recorded above
+
+## 2026-10-18 — Quieter mobile login refinement
+
+- User-requested refinement reuses the existing wheel, mask logo, live buttons and Radix hospital picker. Only the decorative wheel image receives opacity .78 and saturation/brightness reduction; foreground text/icons stay sharp and opaque. Both Q marks are white. Icon/label groups use a centered grid, with thin 1.4px glyph strokes. Mobile visible administrator label is Admin while its accessible name and actual role/account remain Administrátor. Hospital/superadministrator borders use 25% alpha and surfaces 32%, with a quieter divider and inset reflection. Desktop and authentication unchanged.
+- Actual browser inspected at 320 × 568 and default tall phone; final 393 × 698 screenshot saved to `/tmp/operatingroom-mobile-login-qa/login-refined-393x698.png`. All five role icons are horizontally centered within their hit targets (maximum subpixel deviation 0.004px), targets exceed 44 × 44px, names fit, document width stays 320px. Temporary viewport reset. No login submission or institution change.
+- 22 focused component/auth/wheel tests and TypeScript noEmit passed; git whitespace check passed. 21st catalog was unavailable (`fetch failed`), so existing primitives were reused. Review reported 44 findings, including existing desktop fixed widths/outline removal and palette notices; no unrelated auto-fixes or desktop edits. Mobile visible focus outline remains explicit. No new asset payload, dependency, clinical operation or deployment.
+
+final result: passed for quieter mobile glass, white branding, centered live labels and subtle secondary controls
+
+## 2026-10-18 — Management placement and password reveal
+
+- Swapped only mobile petal positions: Management now uses the wide top segment; Admin is lower-left. Kept live role identities, white logos and quiet artwork. Existing password form enters with a 280ms opacity/16px translation animation, disabled under prefers-reduced-motion. Mouse pointer entry and click/tap select through the existing handler; touch pointer entry alone and missing hospital cannot select. Desktop unchanged.
+- Actual browser at 320 × 568 confirms the full Management label fits within the upper petal. Clicking it opens the real Management password form with the expected animation name and no horizontal overflow. Back restores the wheel; viewport reset. No credential entered/submitted. Screenshot: `/tmp/operatingroom-mobile-login-qa/login-management-top.png`.
+- 24 focused tests and TypeScript passed. New tests cover mouse versus touch entry, unavailable hospital, exchanged geometry and reduced motion. 21st search unavailable; reused current project controls. Review retains the same 44 existing palette/desktop findings; no unrelated desktop fixes. No deployment.
+
+final result: passed for swapped mobile roles and animated password reveal
+
+## 2026-10-18 — Mobile login requires click to enter password
+
+- Removed the mobile role button's mouse pointer-entry handler. Hover changes appearance only; click, tap, Enter or Space activates the existing role selection and animated password form. Management remains in the upper wide segment and Admin stays lower-left.
+- Actual localhost browser click on Management opened its password field, and Back restored the wheel. No password was entered. All 24 focused role and wheel tests passed, including a direct check that role buttons have no pointer-entry handler. No desktop or authentication backend change.
+
+final result: passed for click-only mobile role activation
+
+## 2026-10-18 — Mobile administration matches Settings Orbit
+
+- Scoped rooms, specialties, room schedule, staff, statuses and notifications to the existing Cliniq phone palette/background. Reused Settings artwork, dark veil, lavender controls, 9px backdrop blur and a shared centered title/back header. Desktop/classic styles, lazy module imports, permissions and clinical handlers are unchanged. No dependency or image payload added.
+- Summary tiles wrap to two columns; search and period navigation fit the viewport with 44px controls. Rooms administration and staff table rows become phone cards. The genuine planning grid keeps horizontal scrolling and existing department/status colors. Explicit focus-visible and reduced-motion rules apply only to this mobile scope.
+- Actual localhost UI: opened all six modules, checked screenshots at375px, specialties at456px, notifications at320px/393px. Document widths matched375/320 respectively. Corrected an observed date-navigation wrap and search-container collision. Staff table verified with321px-wide visible grid rows inside375px screen; restored cards afterward. At1280px, new mobile heading is hidden and original toolbar remains nowrap. Reset temporary viewport and returned to Settings. No clinical/settings data saved or messages sent.
+- Proof: `/tmp/mobile-admin-notifications.png` (393×900). TypeScript noEmit and19 focused settings/schedule tests passed; git whitespace check passed. Tests cover six module titles/back navigation, permission preservation, phone-only scope and desktop selection.
+- 21st search was unavailable (fetch failed); existing project primitives were reused. 21st review completed with163 findings, largely existing hardcoded semantic colors and outline/desktop widths; no bulk auto-fixes. Mobile focus outlines are explicitly supplied by scoped CSS. Review is not a clean lint pass. React review preserved stable wrappers, lazy loading and derived title without effects.
+
+final result: passed for scoped mobile administration layout; no deployment performed
+
+## 2026-10-18 — Remaining mobile administration and reports
+
+- Extended the existing Settings Orbit header/background to statistics, staff overview, calendar, management, devices and system settings. Standalone statistics and staff routes now share the same host palette. Reused existing real components, graphic asset and data; no new dependency. All visual changes are scoped to Cliniq phones. Chart/status colors, permissions, export/print, assignments and settings operations are unchanged.
+- Statistics/staff cards reuse lavender glass tokens and 9px frosting; filters and report controls use rounded surfaces and visible focus. System settings uses two-column section tiles. Calendar toolbar wraps, month navigation fits and the real month grid remains scrollable; selected-day columns shrink within the phone. Added the missing existing statistics title hook to NotificationsTab so its daily heading follows the same card typography.
+- Browser verified staff overview, calendar, management and devices at375px, settings and statistics at320px, final statistics at393px. Observed document width matched viewport. Settings section grid and four-choice statistics period row fit. At1280px the desktop statistics component remains visible and host has no added background. Viewport reset. No saves, messages, registrations or clinical mutations performed.
+- TypeScript and42 focused settings, statistics style/navigation and calendar-print tests passed; whitespace check passed. 21st catalog failed to connect, so reused project components. 21st review reported111 findings (mostly existing palette literals and outline warnings), no automated broad fixes; scoped mobile focus rules remain explicit. React review retained stable components/lazy imports and did not add data effects.
+- Screenshot proof: `/tmp/mobile-secondary-statistics.png`. Local only; not deployed.
+
+final result: passed for requested mobile-only visual unification
+
+## 2026-10-18 — One mobile dock across modules
+
+- Reused MobileNav and the overview Orbit stylesheet for every Cliniq route, removing the route-specific design allowlist. Permission-filtered destinations, More drawer, native Back and logout are unchanged. More now shares the lavender active pill for secondary modules. Classic navigation and desktop remain unchanged.
+- Live localhost checked Timeline, Statistics and Settings at393px and320px. Shared dock has28px backdrop blur; at320px all four buttons measured approximately63×52px, with no horizontal overflow of the dock. Desktop1280px hides the mobile navigation. No clinical/settings mutations. Screenshot: `/tmp/mobile-shared-menu.png`.
+- TypeScript noEmit passed. All18 focused dock, navigation-style and More tests passed, including every permitted route and existing permission-revocation coverage. Broader overview suite has a pre-existing stale assertion expecting a superadmin permission bypass and old primary-list expressions; no permission logic was changed to satisfy it (combined result29/30).
+- 21st catalog unavailable; reused installed primitives. 21st review:8 informational findings for existing palette literals, no automated fixes. Local only, not deployed.
+
+final result: shared mobile dock verified
+
+## 2026-10-18 — Mobile Timeline phase-time page
+
+- Phone Cliniq room selection now opens a dedicated read-only phase interval page instead of the old progress-gauge popup. Reused the accepted Orbit background and global MobileNav; no duplicate dock or extra requests. Underlying MobileTimelineView remains mounted and inert, preserving window/scroll state. Desktop/classic retains RoomDetailPopup unchanged.
+- Actual timestamps only: recorded intervals clipped to the selected cycle, repeated phases retained, invalid/future entries excluded, absent phases explicitly unmeasured. Completed-cycle selection freezes the endpoint; ready-room default uses the latest available completed cycle, if any. Current recorded pause cuts off phase accrual and is shown separately. Historical pause reconstruction is not added. No mutations, estimates or new clinical logic.
+- Live localhost: current Traumatology cycle and recorded18October16:00–16:25 cycle; ready/paused room historical view;320px and393px screens.320px page scrollWidth/clientWidth both320 and rows284px; full names wrap. Verified back-to-list and More drawer opening/Escape without closing the page after correcting Vaul's data-state (it does not expose aria-modal).1280px retains the original desktop dialog. Saved proof `/tmp/mobile-phase-times.png`.
+-55 focused model/render/navigation/timeline tests passed, TypeScript noEmit and whitespace checks passed. React review: stable separate component, shared10-second clock, no data effects, native labelled select, focus cleanup and global navigation kept accessible.21st search unavailable; existing components/style reused.21st review reports54 primarily palette-literal findings, no broad automatic fixes. Production build/deployment not performed.
+
+final result: mobile phase-time view verified locally
+
+## 2026-10-18 — Subtle mobile login background blur
+
+- Added a clipped, pointer-transparent pseudo-element with inherited photograph and3px blur, exclusively below768px. Existing foreground logo, role controls and password form remain unfiltered; desktop unchanged. No new asset or dependency.
+- Focused login-role/wheel tests and whitespace check pass. Added regression checks for photo-only blur and mobile scope.21st catalog unavailable; review reports25 existing palette-literal findings. Did not sign out the user's authenticated browser to inspect login. Local only.

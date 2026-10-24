@@ -341,7 +341,7 @@ test('the continuous blue canvas remains independent of the live phase color', (
   assert.equal(shell['mix-blend-mode'], undefined, 'Do not blend the restored room canvas or its contents');
 });
 
-test('only enhanced hygiene recolors the complete mobile backdrop to dark orange', () => {
+test('enhanced hygiene recolors the complete mobile backdrop to dark orange', () => {
   const selector = `${root}[data-hygiene='true']`;
   const hygiene = declarationsFor(selector);
   const base = declarationsFor(root);
@@ -365,14 +365,31 @@ test('only enhanced hygiene recolors the complete mobile backdrop to dark orange
   let blendRules = 0;
   stylesheet.walkDecls('background-blend-mode', declaration => {
     blendRules += 1;
-    assert.deepEqual(declaration.parent.selectors, [selector], 'Background recoloring is allowed only on the actual hygiene-mode mobile root');
+    assert.ok(declaration.parent.selectors.every(value => [selector, `${root}[data-locked='true']`, `${root}[data-emergency='true']`].includes(value)));
   });
-  assert.equal(blendRules, 1);
+  assert.equal(blendRules, 3);
   let important = false;
   stylesheet.walkRules(rule => {
     if (rule.selectors.includes(selector)) rule.walkDecls('background', declaration => { important ||= declaration.important; });
   });
   assert.equal(important, true, 'The real hygiene canvas must outrank the legacy dark-theme shorthand');
+});
+
+test('lock and emergency tint the entire canvas with emergency taking precedence', () => {
+  const ordered = [];
+  stylesheet.walkRules(rule => {
+    if (rule.nodes.some(node => node.prop === 'background-blend-mode')) ordered.push(...rule.selectors);
+  });
+  assert.deepEqual(ordered, ['hygiene', 'locked', 'emergency'].map(state => `${root}[data-${state}='true']`));
+  for (const [state, tint, floor] of [['locked', '#176B3A', '#081E13'], ['emergency', '#981C2C', '#29090E']]) {
+    const values = declarationsFor(`${root}[data-${state}='true']`);
+    assert.ok(values.background.includes(`${tint} url('/images/mobile-orbit-background-v3.png')`));
+    assert.equal(values['--mrd-orbit-floor'], floor);
+    assert.equal(values['background-blend-mode'], 'normal, luminosity');
+    assert.equal(values.filter, undefined);
+    assert.equal(values.color, undefined);
+    assert.equal(declarationsFor(`.mobile-room-orbit[data-${state}='true'] ~ .step-confirm-overlay`)['--mrd-orbit-floor'], floor);
+  }
 });
 
 test('the raster fades continuously into the navy floor before its bottom edge', () => {
@@ -415,9 +432,8 @@ test('the active phase owns the ring and readable icon tint, independent of oper
     if (/data-(?:emergency|locked|paused)/.test(rule.selector)) {
       rule.walkDecls('--mrd-orbit-accent', () => assert.fail('Warnings must remain separate from phase identity'));
       rule.walkDecls('--mrd-orbit-phase-color', () => assert.fail('Warnings must not override the configured phase identity'));
-      // Child warning badges may retain their own explicit contrast color, but
-      // an operational state must never replace the restored blue root canvas.
-      if (rule.selectors.some(selector => /^\.mobile-room(?:-detail|-reference|-orbit)[^\s>+~]*\[data-(?:emergency|locked|paused)/.test(selector))) {
+      // Pause alone retains the blue canvas; emergency and lock tint it.
+      if (rule.selectors.some(selector => /^\.mobile-room(?:-detail|-reference|-orbit)[^\s>+~]*\[data-paused/.test(selector))) {
         rule.walkDecls(declaration => {
           assert.ok(!/^background(?:-|$)/.test(declaration.prop), 'Operational state selectors must not replace the reference blue backdrop');
         });

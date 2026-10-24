@@ -1,0 +1,75 @@
+/* Match the room-detail confirmation and interval-warning glass popups. */
+@media (max-width: 767px) {
+  .room-notice-backdrop {
+    --notice-glass: rgba(146, 141, 190, .08);
+    --notice-border: .7px solid rgba(163, 153, 239, .25);
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    background: rgba(0, 0, 0, .32);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    color: #F8F7FF;
+    font-family: var(--m-font-sans, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .room-notice-backdrop .room-notice-dialog {
+    width: 100%;
+    max-width: 400px;
+    max-height: calc(100dvh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    padding: 24px 20px 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: var(--notice-border);
+    border-radius: 32px;
+    background: linear-gradient(var(--notice-glass), var(--notice-glass)), color-mix(in srgb, #0B102C 78%, transparent) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025), 0 20px 60px rgba(0, 0, 0, .22) !important;
+    -webkit-backdrop-filter: blur(28px);
+    backdrop-filter: blur(28px) !important;
+  }
+
+  .room-notice-dialog > [aria-hidden],
+  .room-notice-icon > [aria-hidden] { display: none; }
+  .room-notice-dialog h2 { color: #F8F7FF; font-size: 20px; font-weight: 400; letter-spacing: -.025em; }
+  .room-notice-dialog p, .room-notice-dialog label { color: #C1BFF1; }
+  .room-notice-dialog label { font-weight: 400; }
+  .room-notice-dialog .room-notice-icon,
+  .room-notice-dialog button[aria-label='Zavřít zprávu'] {
+    width: 44px;
+    height: 44px;
+    border: var(--notice-border);
+    border-radius: 50%;
+    background: var(--notice-glass) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025) !important;
+    color: #D3CEFF;
+    display: grid;
+    place-items: center;
+  }
+  .room-notice-icon svg { color: #D3CEFF; stroke-width: 1.5; filter: none; }
+  .room-notice-dialog textarea {
+    background: var(--notice-glass);
+    border: var(--notice-border);
+    border-radius: 20px;
+    color: #F8F7FF;
+    padding: 14px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .room-notice-dialog textarea::placeholder { color: #C1BFF1; opacity: .7; }
+  .room-notice-dialog .room-notice-action {
+    --notice-tint: var(--color-success, #20C997);
+    flex: 1;
+    justify-content: center;
+    min-height: 52px;
+    border: var(--notice-border);
+    border-color: color-mix(in srgb, var(--notice-tint) 45%, rgba(220, 214, 255, .65));
+    border-radius: 22px;
+    background: linear-gradient(color-mix(in srgb, var(--notice-tint) 16%, transparent), color-mix(in srgb, var(--notice-tint) 16%, transparent)), var(--notice-glass) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025) !important;
+    color: #F8F7FF;
+    font-size: 13.5px;
+    font-weight: 400;
+  }
+  .room-notice-dialog .room-notice-cancel { --notice-tint: var(--color-danger, #FF5560); }
+  .room-notice-dialog button:focus-visible,
+  .room-notice-dialog textarea:focus-visible { outline: 2px solid #E5DDFF; outline-offset: 3px; }
+}

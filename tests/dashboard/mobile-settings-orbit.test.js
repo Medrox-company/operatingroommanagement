@@ -69,6 +69,46 @@ test('restricted permissions do not leak administration cards', () => {
   assert.equal(classes(harness({ access: () => false }).render(), 'settings-grid-card').length, 0);
 });
 
+test('administration modules share a mobile heading and return to settings without changing permissions', () => {
+  for (const id of ['rooms', 'specialties', 'schedule', 'staff', 'statuses', 'notifications', 'statistics', 'staff-overview', 'calendar', 'management', 'devices', 'settings']) {
+    const app = harness({ access: key => key === (id === 'settings' ? 'settings.modules' : `settings.${id}`) });
+    const cards = classes(app.render(), 'settings-grid-card');
+    assert.equal(cards.length, 1, id);
+    cards[0].props.onClick();
+    const selected = app.render();
+    assert.equal(selected.props['data-settings-module'], id);
+    assert.equal(classes(selected, 'settings-admin-orbit').length, 1);
+    assert.equal(classes(selected, 'admin-mobile-heading').length, 1);
+    assert.equal(nodes(selected, n => n.type === 'admin-module').length, 1);
+    nodes(selected, n => n.props['aria-label'] === 'Zpět do nastavení')[0].props.onClick();
+    assert.equal(app.render().props['data-settings-landing'], 'grid');
+  }
+});
+
+test('secondary mobile styles preserve desktop, print and semantic chart colors', () => {
+  const secondaryCss = postcss.parse(readFileSync(new URL('../../components/mobile/mobile-secondary-orbit.css', import.meta.url), 'utf8'));
+  secondaryCss.walkRules(rule => {
+    assert.ok(rule.selector.startsWith('html[data-app-design="cliniq"]'));
+    assert.ok(rule.parent.params.startsWith('screen and (max-width: 767px)'));
+  });
+  assert.match(secondaryCss.toString(), /--m-card: var\(--settings-orbit-glass\)/);
+  assert.match(secondaryCss.toString(), /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.doesNotMatch(secondaryCss.toString(), /(?:fill|stroke):/);
+});
+
+test('administration styling is mobile-only and keeps planning grids and semantic colors', () => {
+  const adminCss = postcss.parse(readFileSync(new URL('../../components/mobile/mobile-admin-orbit.css', import.meta.url), 'utf8'));
+  adminCss.walkRules(rule => {
+    assert.ok(rule.selector.startsWith('html[data-app-design="cliniq"] .settings-admin-orbit'));
+    assert.ok(rule.parent.params.startsWith('(max-width: 767px)'));
+  });
+  assert.match(adminCss.toString(), /admin-room-row/);
+  assert.match(adminCss.toString(), /admin-staff-table/);
+  assert.match(adminCss.toString(), /prefers-reduced-motion: reduce/);
+  assert.match(adminCss.toString(), /min-height: 44px/);
+  assert.doesNotMatch(adminCss.toString(), /color:.*!important/);
+});
+
 test('desktop keeps carousel and switching; resizing does not overwrite desktop selection', () => {
   const app = harness({ desktop: true });
   assert.equal(app.render().props['data-settings-landing'], 'carousel');

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, Stethoscope, User, AlertTriangle } from 'lucide-react';
 import { OperatingRoom } from '../types';
 import { C } from './timeline/constants';
+import { boundedTimelineTicks, MAX_ARO_MARKERS } from '../lib/timeline-sampling';
 
 /* ════════════════════════════════════════════════════════════════════════
    ARO Přesah — popup ve stejném čistém stylu jako detail sálu.
@@ -61,10 +62,11 @@ const AroOvertimePopup: React.FC<Props> = ({ isOpen, onClose, overtimeRooms, roo
 
   // Okno osy: od nejdřívějšího konce směny po nejpozdější odhad konce (+ okraje)
   const { tStart, tEnd, markers, nowPos } = useMemo(() => {
-    const ends = overtimeRooms.map((r) => r.workingEndTime.getTime());
-    const ests = overtimeRooms.map((r) => r.estimatedEndTime.getTime());
-    const minT = Math.min(...(ends.length ? ends : [now]), now);
-    const maxT = Math.max(...(ests.length ? ests : [now]), now);
+    if (!isOpen) return { tStart: now, tEnd: now + 1, markers: [], nowPos: 0 };
+    const ends = overtimeRooms.map((r) => r.workingEndTime.getTime()).filter(Number.isFinite);
+    const ests = overtimeRooms.map((r) => r.estimatedEndTime.getTime()).filter(Number.isFinite);
+    const minT = ends.reduce((earliest, end) => Math.min(earliest, end), now);
+    const maxT = ests.reduce((latest, end) => Math.max(latest, end), now);
     const pad = Math.max(10 * 60 * 1000, (maxT - minT) * 0.06);
     const s = minT - pad;
     const e = maxT + pad;
@@ -75,14 +77,14 @@ const AroOvertimePopup: React.FC<Props> = ({ isOpen, onClose, overtimeRooms, roo
     const mk: { t: number; p: number }[] = [];
     const first = new Date(s);
     first.setMinutes(first.getMinutes() < 30 ? 30 : 60, 0, 0);
-    for (let t = first.getTime(); t <= e; t += 30 * 60 * 1000) {
+    for (const t of boundedTimelineTicks(first.getTime(), e, 30 * 60 * 1000, MAX_ARO_MARKERS)) {
       mk.push({ t, p: pos(t) });
     }
     return { tStart: s, tEnd: e, markers: mk, nowPos: pos(now) };
-  }, [overtimeRooms, now]);
+  }, [isOpen, overtimeRooms, now]);
 
   const pos = (t: number) => Math.max(0, Math.min(100, ((t - tStart) / Math.max(1, tEnd - tStart)) * 100));
-  const totalOvertime = overtimeRooms.reduce((sum, r) => sum + r.overtimeMinutes, 0);
+  const totalOvertime = isOpen ? overtimeRooms.reduce((sum, r) => sum + r.overtimeMinutes, 0) : 0;
 
   return (
     <AnimatePresence>

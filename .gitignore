@@ -90,3 +90,7 @@ tsconfig.tsbuildinfo
 # Generované soubory agentů a nástrojů
 output/
 tmp/
+
+# Instalátory a sestavené aplikace nepatří do gitu
+*.dmg
+*.ipa

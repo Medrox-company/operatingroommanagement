@@ -1,0 +1,47 @@
+@media (max-width: 767px) {
+  html[data-app-design='cliniq'] .mobile-phase-detail {
+    position: fixed; inset: 0; z-index: 90; overflow-y: auto; overscroll-behavior: contain;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 18px calc(110px + 3svh + env(safe-area-inset-bottom, 0px));
+    color: #f8f7ff; color-scheme: dark;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    background: linear-gradient(to bottom, #00000066 0, #00000066 calc(216.1782vw - 184px), #0b102c calc(216.1782vw - 24px)),
+      #0b102c url('/images/mobile-orbit-background-v3.png') center top / 100% auto no-repeat;
+  }
+  .mobile-phase-detail-header { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 8px; align-items: start; margin-bottom: 25px; }
+  .mobile-phase-detail-header button { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: rgba(185,181,255,.14); border: 1px solid rgba(171,164,255,.23); color: #d3ceff; }
+  .mobile-phase-detail-header div { text-align: center; min-width: 0; }
+  .mobile-phase-detail-header p { font-size: 12px; color: #c1bff1; margin: 0 0 6px; }
+  .mobile-phase-detail-header h1 { font-size: clamp(21px,6vw,28px); line-height: 1.15; font-weight: 300; overflow-wrap: anywhere; letter-spacing: -.025em; margin: 0 0 8px; }
+  .mobile-phase-detail-header span { font-size: 12px; color: #c1bff1; overflow-wrap: anywhere; }
+  .mobile-phase-detail-content { max-width: 520px; margin: auto; }
+  .mobile-phase-detail-state { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; margin-bottom: 22px; }
+  .mobile-phase-detail-state i { width: 8px; height: 8px; border-radius: 50%; }
+  .mobile-phase-cycle-picker { display: grid; gap: 8px; color: #c1bff1; font-size: 12px; }
+  .mobile-phase-cycle-picker select { width: 100%; min-width: 0; min-height: 46px; border-radius: 18px; border: 1px solid rgba(171,164,255,.23); background: #1c204c; color: #f8f7ff; padding: 10px 12px; font-size: 16px; }
+  .mobile-phase-summary { display: grid; grid-template-columns: 1fr 1fr; margin: 18px 0 24px; padding: 17px 0; border-block: 1px solid rgba(171,164,255,.23); }
+  .mobile-phase-summary div { min-width: 0; padding: 0 10px; display: grid; gap: 8px; text-align: center; }
+  .mobile-phase-summary div + div { border-left: 1px solid rgba(171,164,255,.23); }
+  .mobile-phase-summary span { font-size: 11px; color: #c1bff1; }
+  .mobile-phase-summary strong { font-size: clamp(17px,5vw,23px); font-weight: 300; font-variant-numeric: tabular-nums; }
+  .mobile-phase-summary small { color: #c1bff1; }
+  .mobile-phase-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .mobile-phase-section-heading h2 { font-size: 19px; font-weight: 400; margin: 0; }
+  .mobile-phase-section-heading svg { color: #d3ceff; }
+  .mobile-phase-caption { margin: 7px 0 16px; font-size: 11px; color: #c1bff1; }
+  .mobile-phase-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .mobile-phase-list li { position: relative; padding: 17px 14px 16px 24px; border: 1px solid rgba(171,164,255,.23); border-radius: 21px; background: linear-gradient(145deg,rgba(185,181,255,.13),rgba(185,181,255,.05)); -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px); }
+  .mobile-phase-marker { position: absolute; left: 10px; top: 17px; bottom: 17px; width: 4px; border-radius: 4px; background: var(--phase-color); }
+  .mobile-phase-row-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+  .mobile-phase-row-heading h3 { min-width: 0; font-size: 15px; font-weight: 400; line-height: 1.35; overflow-wrap: anywhere; margin: 0; }
+  .mobile-phase-row-heading strong { flex-shrink: 0; font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .mobile-phase-row-time { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 9px; color: #c1bff1; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .mobile-phase-live { color: #f8f7ff; }
+  .mobile-phase-empty, .mobile-phase-pause { font-size: 14px; line-height: 1.6; padding: 18px; border-radius: 21px; background: rgba(185,181,255,.09); color: #d3ceff; }
+  .mobile-phase-pause { margin-top: 12px; }
+  .mobile-phase-missing { margin-top: 16px; color: #c1bff1; font-size: 12px; }
+  .mobile-phase-missing summary { min-height: 44px; padding-block: 14px; cursor: pointer; }
+  .mobile-phase-missing ul { list-style: none; margin: 0; padding: 0; }
+  .mobile-phase-missing li { display: flex; justify-content: space-between; gap: 14px; padding-block: 10px; border-bottom: 1px solid rgba(171,164,255,.16); }
+  .mobile-phase-missing li span { flex-shrink: 0; }
+  .mobile-phase-detail :is(button,select,summary):focus-visible { outline: 2px solid #d3ceff; outline-offset: 3px; }
+}

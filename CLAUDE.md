@@ -23,12 +23,12 @@ přes Capacitor. Provoz na operatingroom.eu. **Jazyk kódu i rozhraní: češtin
 export PATH="$HOME/.nvm/versions/node/v22.13.0/bin:$PATH"
 
 npx tsc --noEmit -p tsconfig.json      # typová kontrola
-node --test "tests/**/*.test.js"       # sada testů (403 testů)
+node --test "tests/**/*.test.js"       # sada testů (npm test)
 npm run build                          # nutné před nasazením
 ```
 
-`npm run build` **nelze spustit v izolovaném Linuxu agenta** — chybí síť pro
-stažení `@next/swc-linux-arm64-gnu`. Vizuální a běhové ověření musí udělat
+`npm run build` v cloudovém prostředí agenta funguje (registr npm je
+dostupný). Vizuální a běhové ověření s reálnými daty musí udělat
 uživatel u sebe. Netvrdit, že něco „funguje", na základě samotné typové kontroly.
 
 ## Testy mají neobvyklý tvar — čtou zdrojový kód
@@ -43,7 +43,7 @@ výrazy. Důsledky:
   souboru. Po refaktoru je nutné testy upravit společně s kódem.
 - **Atrapy mají seznam povolených závislostí.** Nový import do komponenty
   shodí test hláškou `Unexpected dependency`. Doplň ho do atrapy.
-- **14 testů selhává dlouhodobě.** Tvrdí věci o rozvržení, které bylo záměrně
+- **3 testy selhávají dlouhodobě.** Tvrdí věci o rozvržení, které bylo záměrně
   změněno (zrušené hledání sálu v mobilu, ikony akcí nahrazené dlouhým
   stiskem, jiný token pozadí). Nejsou to vady aplikace.
 
@@ -52,13 +52,19 @@ výrazy. Důsledky:
 
 ## Stav repozitáře a nasazení
 
-- Práce běží na větvi `zlepseni/rychle-vyhry`, nic nepushnuto.
-- Lokální `main` je **napřed proti produkci** o stovky commitů. Poslední
-  produkční nasazení Vercelu (projekt `operatingroom`) je na commitu
-  `225e9b2a` z konce července — automatické nasazení z `main` zřejmě neběží.
-  Před jakýmkoli pushem to ověřit, nespoléhat na „push do main = nasazení".
-- Agent **nemá přístup k GitHubu** (izolovaná síť, žádné credentials). Push
-  a merge dělá uživatel.
+- Aktuální vývojová větev je `medrox_op_room_ver_0_2` (na GitHubu od
+  24. 10. 2026), lokální výchozí větev je `medrox_op_room_ver_0_1`. Názvy
+  dodržují konvenci uživatele `medrox_op_room_ver_0_<číslo>` a neoznačují
+  verzi vydání aplikace.
+- **Merge do `main` = automatické produkční nasazení** na Vercel (projekt
+  `operatingroom`, doména operatingroom.eu). Push do jiné větve vytvoří jen
+  náhledové nasazení chráněné přihlášením do Vercelu.
+- Poslední produkční nasazení: 18. 10. 2026 z lokální kopie (základ commit
+  `94d7bfc`), ještě s Next.js 16.3.8 — viz
+  `docs/bezpecnost-a-upgrade-2026-10.md`. Nasazovat jen z kódu, který je na
+  GitHubu, jinak se produkce a repozitář rozejdou.
+- Cloudový agent pushuje jen do své přidělené větve; merge a nasazení dělá
+  uživatel.
 - `output/` a `tmp/` jsou generované soubory — necommitovat.
 
 ## Nespuštěné skripty
@@ -68,6 +74,7 @@ výrazy. Důsledky:
 | `scripts/add-operational-thresholds.sql` | sloupce pro provozní prahy; bez něj jedou výchozí hodnoty a panel hlásí upozornění |
 | `scripts/cleanup-anesthesiologist-column.sql` | odstranění `anesthesiologist_id`; **až po nasazení** verze, která ho nečte |
 | `scripts/check-schedules-usage.sql` | pouze čtení — ověří, jestli se rozpis sálů plní |
+| `scripts/check-security-grants.sql` | pouze čtení — vypíše práva a RLS politiky; podklad pro zpřísnění (audit 2026-10) |
 
 ## Domluvená rozhodnutí
 

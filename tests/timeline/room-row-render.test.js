@@ -146,6 +146,41 @@ const testCycle = (hour = 8) => ({
   ],
 });
 
+test('projekce aktuálního cyklu používá předaný čas osy, nikoli systémové hodiny', t => {
+  let wallClock = at(11, 30).getTime();
+  t.mock.method(Date, 'now', () => wallClock);
+  const input = props({ room: room({ statusHistory: testCycle(9).statusHistory }) });
+  const render = () => renderToStaticMarkup(React.createElement(TimelineRoomRow, input));
+  const reference = render();
+  const forecast = elementPaths(TimelineRoomRow(input))
+    .map(path => path.at(-1)).find(node => node.props.style?.background === 'rgba(255,255,255,0.028)');
+  assert.equal(forecast?.props.style.left, '62.5%');
+  for (const clock of [at(7), at(14), new Date(2027, 0, 1)]) {
+    wallClock = clock.getTime();
+    assert.equal(render(), reference, 'Stejné props musí zachovat polohu fází i rozlišení skutečnosti od projekce');
+  }
+});
+
+test('chybějící začátek cyklu se odvozuje od času osy i při odlišných systémových hodinách', t => {
+  let wallClock = at(11, 30).getTime();
+  t.mock.method(Date, 'now', () => wallClock);
+  for (const estimatedEndTime of [at(13).toISOString(), null]) {
+    const input = props({ room: room({
+      operationStartedAt: null, phaseStartedAt: null, estimatedEndTime,
+      statusHistory: [{ stepIndex: 2, startedAt: at(11).toISOString(), stepName: 'Výkon' }],
+    }) });
+    const render = () => renderToStaticMarkup(React.createElement(TimelineRoomRow, input));
+    const reference = render();
+    const forecast = elementPaths(TimelineRoomRow(input))
+      .map(path => path.at(-1)).find(node => node.props.style?.background === 'rgba(255,255,255,0.028)');
+    assert.equal(forecast?.props.style.left, '25%', 'Výchozí začátek je 30 minut před časem osy');
+    for (const clock of [at(7), at(14)]) {
+      wallClock = clock.getTime();
+      assert.equal(render(), reference);
+    }
+  }
+});
+
 test('název sálu otevře pouze denní souhrn v běžném, souhrnném i nouzovém řádku', () => {
   for (const mode of [{}, { showSummary: true }, { room: room({ isEmergency: true }) }]) {
     const calls = [];

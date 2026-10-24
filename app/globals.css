@@ -1546,6 +1546,7 @@ html.capacitor-native select {
    specialty fields when the viewport is short or a room title wraps. */
 .dashboard-workspace-cycle-indicator { width: min(160px, 36cqw, max(64px, calc(100cqh - 24px))); height: min(160px, 36cqw, max(64px, calc(100cqh - 24px))); }
 .dashboard-workspace-cycle-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 10px; row-gap: 3px; width: 100%; }
+.dashboard-workspace-countdown { max-width: 100%; padding: 12px 0; font-size: clamp(24px, 12cqw, 58px); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1.2; white-space: nowrap; }
 .dashboard-workspace-cycle-caption { color: rgba(222, 231, 255, 0.76); font-size: clamp(11px, 2.6cqw, 13px); font-weight: 500; letter-spacing: .025em; }
 .dashboard-workspace-estimate { display: inline-flex; align-items: center; gap: 4px; color: #d6e1f5; font-size: clamp(11px, 3cqw, 15px); font-weight: 600; white-space: nowrap; }
 .dashboard-workspace-estimate > svg { color: #8fa4cd; }
@@ -1593,6 +1594,16 @@ html.capacitor-native select {
 .dashboard-room-status-indicator--call { --dashboard-indicator-rgb: 96, 165, 250; }
 .dashboard-room-status-indicator--arrival { --dashboard-indicator-rgb: 52, 211, 153; }
 .dashboard-room-status-indicator--notice { --dashboard-indicator-rgb: 251, 146, 60; }
+.dashboard-room-status-indicator--hygiene { --dashboard-indicator-rgb: 253, 186, 116; }
+/* Three simultaneous indicators grow inward, keeping the right edge inside the card. */
+.dashboard-room-status-rail:has(> :nth-child(3)) {
+  left: auto;
+  right: 4%;
+  transform: translateY(-50%);
+}
+.dashboard-workspace-card:has(.dashboard-room-status-rail > :nth-child(3)) .dashboard-workspace-card-header--with-indicators {
+  padding-right: max(36%, 96px);
+}
 
 /* Compact rows still retain two-line names, readable metadata and the action pocket. */
 .dashboard-room-grid[data-density='compact'] .dashboard-workspace-card-content { --dashboard-card-padding: 16px; gap: 6px; }

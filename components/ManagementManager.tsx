@@ -505,7 +505,7 @@ export default function ManagementManager() {
       </header>
 
       {/* Stejná lišta jako v Rozpisu sálů a Operačních oborech. */}
-      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+      <section className="admin-toolbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
         <div className="flex min-w-max items-center gap-2.5">
           {([
             { label: 'Celkem kontaktů', value: stats.total, suffix: 'osob', icon: Users, color: COLORS.cyan },

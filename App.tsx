@@ -84,6 +84,7 @@ const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [settingsResetTrigger, setSettingsResetTrigger] = useState(0);
   const [noticeComposerOpen, setNoticeComposerOpen] = useState(false);
+  const [noticeDefaultRoomId, setNoticeDefaultRoomId] = useState<string | undefined>();
   const hasAnyModuleAccess = useMemo(
     () => SIDEBAR_ITEMS.some(item => hasModuleAccess(item.id)),
     [hasModuleAccess],
@@ -695,7 +696,7 @@ const AppContent: React.FC = () => {
 <Sidebar
             currentView={currentView}
             onNavigate={handleNavigate}
-            onSendMessage={() => setNoticeComposerOpen(true)}
+            onSendMessage={() => { setNoticeDefaultRoomId(undefined); setNoticeComposerOpen(true); }}
           />
       <MobileNav currentView={currentView} onNavigate={handleNavigate}
         roomDetail={Boolean(selectedRoom && (currentView === 'dashboard' || (currentView === 'timeline' && acuteRoomEnabled)))} />
@@ -704,6 +705,7 @@ const AppContent: React.FC = () => {
       {noticeComposerOpen && isAdmin && hasModuleAccess('alerts') && (
         <RoomNoticeComposer
           rooms={rooms}
+          targetRoomId={noticeDefaultRoomId}
           onClose={() => setNoticeComposerOpen(false)}
           onSend={handleSendRoomNotice}
         />
@@ -763,6 +765,11 @@ const AppContent: React.FC = () => {
                 onSelectRoom={setSelectedRoomId}
                 onEmergency={toggleEmergency}
                 onLock={toggleLock}
+                onMessage={isAdmin && hasModuleAccess('alerts') ? roomId => {
+                  if (!rooms.some(room => room.id === roomId)) return;
+                  setNoticeDefaultRoomId(roomId);
+                  setNoticeComposerOpen(true);
+                } : undefined}
                 onNavigate={handleNavigate}
               />
             )}
@@ -798,7 +805,7 @@ const AppContent: React.FC = () => {
 
             {/* Statistics */}
             {currentView === 'statistics' && (
-              <div className="w-full h-full overflow-y-auto hide-scrollbar">
+              <div className="mobile-secondary-host w-full h-full overflow-y-auto hide-scrollbar">
                 <div className="mobile-module-container app-module-shell w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
                   <div className="app-module-content">
                     <StatisticsModule rooms={rooms} />
@@ -809,7 +816,7 @@ const AppContent: React.FC = () => {
 
   {/* Staff */}
   {currentView === 'staff' && (
-  <div className="w-full h-full overflow-y-auto hide-scrollbar">
+  <div className="mobile-secondary-host w-full h-full overflow-y-auto hide-scrollbar">
   <div className="mobile-module-container app-module-shell w-full px-4 sm:px-6 md:pl-32 md:pr-10 py-6 md:py-10 pb-mobile-nav md:pb-10 mobile-safe-top">
   <div className="app-module-content">
   <StaffOverviewModule rooms={rooms} />
@@ -833,10 +840,12 @@ const AppContent: React.FC = () => {
               <div className="h-full min-h-0 w-full overflow-hidden">
                 <SettingsPage 
                   rooms={rooms} 
+                  roomsLoaded={roomsLoaded}
                   onRoomsChange={setRooms} 
                   onScheduleUpdate={handleUpdateWeeklySchedule}
                   onStaffChange={handleStaffChange}
                   resetTrigger={settingsResetTrigger} 
+                  onOpenDashboard={hasModuleAccess('dashboard') ? () => handleNavigate('dashboard') : undefined}
                 />
               </div>
             )}

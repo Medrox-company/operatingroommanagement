@@ -481,7 +481,7 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
         <ModulePageHeading icon={CalendarRange} kicker="OR PLANNING" title="ROZPIS" mutedTitle="SÁLŮ" />
       </header>
 
-      <section className="hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
+      <section className="admin-toolbar hide-scrollbar mb-4 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
         <div className="flex min-w-max items-center gap-2.5">
           {[
             { label: 'Operační sály', value: rooms.length, suffix: 'sálů', icon: Building2, color: '#38BDF8' },
@@ -524,7 +524,7 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
             ))}
           </div>
 
-          <div className="flex h-10 w-[190px] shrink-0 items-center justify-between gap-1 rounded-lg border border-white/[0.055] bg-black/10 p-1">
+          <div className="admin-period-nav flex h-10 w-[190px] shrink-0 items-center justify-between gap-1 rounded-lg border border-white/[0.055] bg-black/10 p-1">
             <button type="button" onClick={() => movePeriod(-1)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-white/45 hover:bg-white/[0.05] hover:text-white" aria-label="Předchozí období">
               <ChevronLeft className="h-4 w-4" />
             </button>

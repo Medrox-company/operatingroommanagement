@@ -1,7 +1,9 @@
-/* Existing Orbit appearance, limited to the mobile Settings landing.
-   Selected administration modules and desktop keep their own presentation. */
+/* Shared mobile Orbit palette for Settings and its opted-in administration modules.
+   Landing layout rules remain separate; desktop retains its own presentation. */
 @media (max-width: 767px) {
-  html[data-app-design="cliniq"] .settings-page-root[data-settings-landing="grid"] {
+  html[data-app-design="cliniq"] .settings-page-root[data-settings-landing="grid"],
+  html[data-app-design="cliniq"] .settings-page-root.settings-admin-orbit,
+  html[data-app-design="cliniq"] .mobile-secondary-host {
     --settings-orbit-art-height: 216.1782vw;
     --settings-orbit-floor: #0B102C;
     --settings-orbit-text: #F8F7FF;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeft, ArrowRight, Clock3, LockKeyhole, Pause, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Clock3, LockKeyhole, Pause, ShieldAlert, Users } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 import type { CurrentRoomSpecialty } from '../../lib/room-specialty';
 import type { AcuteDashboardRoomSummary } from '../../lib/acute-dashboard';
@@ -217,8 +217,14 @@ export default function DashboardCarousel({ rooms, specialtiesByRoom, acuteByRoo
               }}>
               <div className={styles.cardContent} inert={!selected || rotating || selectionStale}>
               <button type="button" className={styles.main} data-orbit-swipe="" disabled={!selected || rotating || selectionStale} onClick={() => onSelectRoom(room.id)}
-                aria-label={`Otevřít detail: ${room.name}. ${model.title}. Dokončené cykly: ${model.count}. Fáze ${model.phasePosition}.`}>
-                <span className={styles.phase}><i style={{ backgroundColor: model.color }} aria-hidden="true" />{model.title}</span>
+                aria-label={`Otevřít detail: ${room.name}. ${model.title}. Dokončené cykly: ${model.count}. Fáze ${model.phasePosition}.${room.isEnhancedHygiene ? ' Zvýšený hygienický režim.' : ''}`}>
+                <span className={styles.phase}><i style={{ backgroundColor: model.color }} aria-hidden="true" />{model.title}
+                  {room.isEnhancedHygiene && (
+                    <span role="img" aria-label="Zvýšený hygienický režim" title="Zvýšený hygienický režim" className="inline-flex shrink-0 text-orange-300">
+                      <ShieldAlert size={16} aria-hidden="true" />
+                    </span>
+                  )}
+                </span>
                 <span className={styles.visual}><StatusRing model={model} /></span>
                 <span className={styles.identity}><span className={styles.name}>{room.name}</span><span className={styles.department}>{room.department}</span></span>
                 <span className={styles.timings}>

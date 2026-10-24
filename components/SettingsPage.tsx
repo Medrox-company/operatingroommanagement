@@ -12,10 +12,12 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { MobileHeader } from './mobile/MobileShell';
 import './mobile/mobile-settings.css';
 import './mobile/mobile-settings-orbit.css';
+import './mobile/mobile-admin-orbit.css';
+import './mobile/mobile-secondary-orbit.css';
 
 const OperatingRoomsManager = dynamic(() => import('./OperatingRoomsManager'), { ssr: false });
 const DepartmentsManager = dynamic(() => import('./DepartmentsManager'), { ssr: false });
-const RoomSpecialtyScheduleManager = dynamic(() => import('./RoomSpecialtyScheduleManager'), { ssr: false });
+const OperativityPlanningWorkspace = dynamic(() => import('./OperativityPlanningWorkspace'), { ssr: false });
 const NotificationsManager = dynamic(() => import('./NotificationsManager'), { ssr: false });
 const StatisticsModule = dynamic(() => import('./StatisticsModule'), { ssr: false });
 const StaffManager = dynamic(() => import('./StaffManager'), { ssr: false });
@@ -61,11 +63,13 @@ const GROUP_LABELS: Record<Exclude<ModuleGroup, 'all'>, string> = {
 
 interface SettingsPageProps {
   rooms?: OperatingRoom[];
+  roomsLoaded?: boolean;
   onRoomsChange?: (rooms: OperatingRoom[]) => void;
   onScheduleUpdate?: (roomId: string, schedule: WeeklySchedule) => Promise<void>;
   /** Přiřazení personálu na sál — stejná cesta jako z detailu sálu. */
   onStaffChange?: (roomId: string, role: 'doctor' | 'nurse' | 'anesthesiologist', staffId: string, staffName: string) => void;
   resetTrigger?: number;
+  onOpenDashboard?: () => void;
 }
 
 // Stable component identity keeps search focus and scroll position while filtering.
@@ -77,7 +81,7 @@ const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   </div>
 );
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, onScheduleUpdate, onStaffChange, resetTrigger = 0 }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], roomsLoaded = true, onRoomsChange, onScheduleUpdate, onStaffChange, resetTrigger = 0, onOpenDashboard }) => {
   const { activeHospitalId } = useHospital();
   const { hasSubmoduleAccess } = useAuth();
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -285,10 +289,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
   ) : null;
 
   const carouselStep = Math.min(250, Math.max(viewportWidth < 840 ? 92 : 138, viewportWidth * 0.145));
+  const mobileAdminTitle = selectedModule && selectedModule !== 'spatial'
+    ? (selectedModule === 'staff-overview' ? 'Přehled personálu' : settings.find(item => item.id === selectedModule)?.title) : undefined;
 
   return (
     // Grid and administration modules scroll inside the available viewport.
-    <div className={`settings-page-root relative h-full min-h-0 w-full ${selectedModule || effectiveLandingView === 'grid' ? 'hide-scrollbar overflow-y-auto' : 'overflow-hidden'}`} data-settings-landing={selectedModule ? undefined : effectiveLandingView}>
+    <div className={`settings-page-root${mobileAdminTitle ? ' settings-admin-orbit' : ''} relative h-full min-h-0 w-full ${selectedModule || effectiveLandingView === 'grid' ? 'hide-scrollbar overflow-y-auto' : 'overflow-hidden'}`} data-settings-module={selectedModule || undefined} data-settings-landing={selectedModule ? undefined : effectiveLandingView}>
+      {mobileAdminTitle && <header className="admin-mobile-heading hidden">
+        <button type="button" onClick={() => setSelectedModule(null)} aria-label="Zpět do nastavení"><ArrowLeft aria-hidden="true" /></button>
+        <h1>{mobileAdminTitle}</h1>
+        <span aria-hidden="true" />
+      </header>}
       {selectedModule === 'rooms' ? (
         <ModuleWrapper>
           <OperatingRoomsManager 
@@ -310,9 +321,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
         </ModuleWrapper>
       ) : selectedModule === 'schedule' ? (
         <ModuleWrapper>
-          <RoomSpecialtyScheduleManager
+          <OperativityPlanningWorkspace
             key={activeHospitalId || 'no-hospital'}
             rooms={rooms}
+            roomsLoaded={roomsLoaded}
+            onOpenDashboard={onOpenDashboard}
           />
         </ModuleWrapper>
       ) : selectedModule === 'notifications' ? (

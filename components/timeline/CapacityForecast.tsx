@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, TrendingUp, Clock, AlertTriangle, CheckCircle2, Activity } from 'lucide-react';
 import { OperatingRoom } from '../../types';
 import { C, TIMELINE_START_HOUR, TIMELINE_HOURS } from './constants';
+import { boundedTimelineTicks, MAX_FORECAST_SAMPLES, MAX_FORECAST_MARKERS } from '../../lib/timeline-sampling';
 
 /* ════════════════════════════════════════════════════════════════════════
    PROGNÓZA KAPACITY — prediktivní vrstva časové osy operačních sálů.
@@ -43,6 +44,11 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
   const now = currentTime.getTime();
 
   const model = useMemo(() => {
+    // The popup stays mounted while closed; do not read room data or sample it.
+    if (!isOpen) return {
+      startMs: now, endMs: now + 1, rangeMs: 1, samples: [], peak: 1,
+      totalRooms: 1, freeing: [], bottlenecks: [], currentLoad: 0,
+    };
     // Okno: 7:00 (dnešní den) → max(teď, nejpozdější odhad konce) + rezerva
     const dayStart = new Date(currentTime);
     dayStart.setHours(TIMELINE_START_HOUR, 0, 0, 0);
@@ -76,7 +82,7 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
 
     const endMs = Math.max(
       now + 30 * 60 * 1000,
-      ...intervals.map((i) => i.e),
+      intervals.reduce((latest, interval) => Math.max(latest, interval.e), startMs),
       startMs + TIMELINE_HOURS * 3600_000 * 0.5,
     );
     const rangeMs = Math.max(1, endMs - startMs);
@@ -84,7 +90,7 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
     // Vzorkování vlny po 6 minutách
     const STEP = 6 * 60 * 1000;
     const samples: { t: number; count: number; future: boolean }[] = [];
-    for (let t = startMs; t <= endMs; t += STEP) {
+    for (const t of boundedTimelineTicks(startMs, endMs, STEP, MAX_FORECAST_SAMPLES)) {
       let count = 0;
       intervals.forEach((iv) => { if (t >= iv.s && t < iv.e) count++; });
       samples.push({ t, count, future: t > now });
@@ -105,10 +111,11 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
       }
     });
 
-    const currentLoad = samples.find((s) => s.t > now)?.count ?? samples[samples.length - 1]?.count ?? 0;
+    // Live occupancy must not depend on the chart's adaptive sampling stride.
+    const currentLoad = intervals.reduce((count, iv) => count + (now >= iv.s && now < iv.e ? 1 : 0), 0);
 
     return { startMs, endMs, rangeMs, samples, peak, totalRooms, freeing, bottlenecks, currentLoad };
-  }, [rooms, currentTime, now]);
+  }, [isOpen, rooms, currentTime, now]);
 
   // SVG vlna
   const VB_W = 1000;
@@ -140,13 +147,14 @@ const CapacityForecast: React.FC<Props> = ({ isOpen, onClose, rooms, currentTime
   // Hodinové značky
   const hourMarks = useMemo(() => {
     const marks: { x: number; label: string }[] = [];
+    if (!isOpen) return marks;
     const d = new Date(model.startMs);
     d.setMinutes(0, 0, 0);
-    for (let t = d.getTime(); t <= model.endMs; t += 2 * 3600_000) {
+    for (const t of boundedTimelineTicks(d.getTime(), model.endMs, 2 * 3600_000, MAX_FORECAST_MARKERS)) {
       if (t >= model.startMs) marks.push({ x: xOf(t), label: `${new Date(t).getHours()}:00` });
     }
     return marks;
-  }, [model]);
+  }, [isOpen, model]);
 
   const nextFree = model.freeing[0];
 

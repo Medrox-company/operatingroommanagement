@@ -1,27 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Megaphone, X, Send, Loader2, Check } from 'lucide-react';
 import { OperatingRoom } from '../types';
+import './mobile/mobile-notice-composer.css';
 
 const ACCENT = '#22D3EE';
 
 interface Props {
   rooms: OperatingRoom[];
-  defaultRoomId?: string;
+  targetRoomId?: string;
   onClose: () => void;
   onSend: (roomIds: string[], message: string) => Promise<void> | void;
 }
 
-const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, onSend }) => {
+const RoomNoticeComposer: React.FC<Props> = ({ rooms, targetRoomId, onClose, onSend }) => {
   const sorted = [...rooms].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(defaultRoomId ? [defaultRoomId] : []));
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const singleRoom = targetRoomId !== undefined;
+  const targetRoom = singleRoom ? rooms.find(room => room.id === targetRoomId) : undefined;
+  // A room-specific message can never inherit the bulk recipient selection.
+  const recipientIds = singleRoom ? (targetRoom ? [targetRoom.id] : []) : [...selected];
+  const messageId = useId();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
   const allSelected = sorted.length > 0 && selected.size === sorted.length;
-  const canSend = selected.size > 0 && message.trim().length > 0 && !sending;
+  const canSend = recipientIds.length > 0 && message.trim().length > 0 && !sending;
 
   const toggleRoom = (id: string) => {
     setSelected((prev) => {
@@ -39,7 +45,7 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
     if (!canSend) return;
     setSending(true);
     try {
-      await onSend([...selected], message.trim());
+      await onSend(recipientIds, message.trim());
       onClose();
     } finally {
       setSending(false);
@@ -51,7 +57,7 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="room-notice-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
@@ -59,7 +65,7 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-[calc(100vw-2rem)] max-w-lg rounded-3xl border border-white/10 p-6 overflow-hidden"
+        className="room-notice-dialog relative w-[calc(100vw-2rem)] max-w-lg rounded-3xl border border-white/10 p-6 overflow-hidden"
         style={{ background: 'rgba(13,19,32,0.98)', backdropFilter: 'blur(40px)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
       >
         <div aria-hidden className="absolute inset-x-10 top-0 h-[2px] rounded-full" style={{ background: `linear-gradient(to right, transparent, ${ACCENT}, transparent)` }} />
@@ -69,7 +75,7 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
         <div className="relative flex items-start justify-between gap-3 mb-5">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="relative w-11 h-11 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
+              className="room-notice-icon relative w-11 h-11 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
               style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT}aa)`, boxShadow: `0 6px 16px -4px ${ACCENT}99` }}
             >
               <div aria-hidden className="absolute inset-0 rounded-full bg-gradient-to-b from-white/40 to-transparent opacity-50" />
@@ -77,17 +83,17 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
             </div>
             <div className="min-w-0">
               <h2 className="text-lg font-bold text-white truncate">Zpráva na sál</h2>
-              <p className="text-xs text-white/40 mt-0.5">Zobrazí se jako popup v detailu vybraných sálů</p>
+              <p className="text-xs text-white/60 mt-0.5 break-words">{singleRoom ? targetRoom?.name || 'Sál již není dostupný' : 'Zobrazí se jako popup v detailu vybraných sálů'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0">
+          <button onClick={onClose} aria-label="Zavřít zprávu" className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="relative space-y-4">
           {/* Výběr sálů (více možností) */}
-          <div>
+          {!singleRoom && <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider text-white/50">
                 Operační sály {selected.size > 0 && <span style={{ color: ACCENT }}>· {selected.size}</span>}
@@ -123,12 +129,14 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
                 );
               })}
             </div>
-          </div>
+          </div>}
 
           {/* Zpráva */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Zpráva</label>
+            <label htmlFor={messageId} className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1.5">Zpráva</label>
             <textarea
+              id={messageId}
+              autoFocus={singleRoom}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
@@ -144,14 +152,14 @@ const RoomNoticeComposer: React.FC<Props> = ({ rooms, defaultRoomId, onClose, on
         <div className="relative mt-5 flex justify-end gap-2.5">
           <button
             onClick={onClose}
-            className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white/80 transition-colors"
+            className="room-notice-action room-notice-cancel px-4 py-2.5 text-sm font-semibold rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white/80 transition-colors"
           >
             Zrušit
           </button>
           <button
             onClick={handleSend}
             disabled={!canSend}
-            className="px-5 py-2.5 text-sm font-bold rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-40 flex items-center gap-2"
+            className="room-notice-action room-notice-send px-5 py-2.5 text-sm font-bold rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-40 flex items-center gap-2"
             style={{ background: ACCENT, boxShadow: `0 8px 20px -6px ${ACCENT}88` }}
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

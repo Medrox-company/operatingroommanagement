@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import ts from 'typescript';
 
-// Source bytes supplied by the user; the test suite must never require access
+// Optimized bytes derived from the supplied logo; the test suite must never require access
 // to that user's Desktop, a network service, or a remote brand asset.
-const SUPPLIED_LOGO_SHA256 = '6b4a09b8778e4189731b67a9513a3b60ec0c2da4c85bc3a0fa14b69fba6cabf5';
+const SUPPLIED_LOGO_SHA256 = '19b08f83e2738212c3b965248333b19c03413335e34d47542056e81657b8a6e3';
 const source = readFileSync(new URL('../../lib/statistics-print.ts', import.meta.url), 'utf8');
 const { outputText } = ts.transpileModule(source, {
   fileName: 'statistics-print.ts',
@@ -22,13 +22,13 @@ const metadata = {
 const sample = (rest = {}) => ({ metrics: [], sections: [], ...rest });
 const styleOf = html => html.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? '';
 
-test('every report embeds the exact supplied SVG once, at a small stable accessible size', () => {
-  assert.match(OPERATINGROOM_REPORT_LOGO, /^data:image\/svg\+xml;base64,[A-Za-z0-9+/]+=*$/);
+test('every report embeds the supplied PNG once, at a small stable accessible size', () => {
+  assert.match(OPERATINGROOM_REPORT_LOGO, /^data:image\/png;base64,[A-Za-z0-9+/]+=*$/);
   const bytes = Buffer.from(OPERATINGROOM_REPORT_LOGO.split(',')[1], 'base64');
   assert.equal(createHash('sha256').update(bytes).digest('hex'), SUPPLIED_LOGO_SHA256);
-  const svg = bytes.toString('utf8');
-  assert.match(svg, /viewBox="0 0 830 1030"/);
-  assert.doesNotMatch(svg, /<script\b|<foreignObject\b|\son[a-z]+\s*=|(?:href|src)\s*=|@import|url\s*\(/i);
+  assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
+  assert.equal(bytes.readUInt32BE(16), 256);
+  assert.equal(bytes[25], 6, 'Transparent alpha channel is preserved');
   for (const tabLabel of ['Přehled', 'Finance', 'Sazby', 'Sály', 'Fáze', 'Výkonnost', 'Notifikace', 'Zařízení', metadata.tabLabel]) {
     const html = buildStatisticsPrintHtml(sample(), { ...metadata, tabLabel });
     const images = html.match(/<img\b[^>]*>/gi) ?? [];
@@ -37,7 +37,7 @@ test('every report embeds the exact supplied SVG once, at a small stable accessi
     assert.match(images[0], /class="report-logo"/);
     assert.match(images[0], /alt="Operatingroom Management System"/);
     assert.match(images[0], /width="40"/);
-    assert.match(images[0], /height="50"/);
+    assert.match(images[0], /height="36"/);
     const header = html.match(/<header class="report-header">([\s\S]*?)<\/header>/)?.[1] ?? '';
     assert.ok(header.includes(images[0]), 'The logo belongs in the document header, not a repeated data row');
   }

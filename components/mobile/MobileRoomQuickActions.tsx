@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useRef } from 'react';
-import { AlertCircle, ArrowRight, Lock, Unlock } from 'lucide-react';
+import { AlertCircle, ArrowRight, Lock, Unlock, MessageSquare } from 'lucide-react';
 import type { OperatingRoom } from '../../types';
 
 interface MobileRoomQuickActionsProps {
@@ -10,6 +10,7 @@ interface MobileRoomQuickActionsProps {
   phaseColor: string;
   onEmergency: () => void;
   onLock: () => void;
+  onMessage?: () => void;
   onOpenDetail: () => void;
   onClose: () => void;
 }
@@ -26,6 +27,7 @@ export default function MobileRoomQuickActions({
   phaseColor,
   onEmergency,
   onLock,
+  onMessage,
   onOpenDetail,
   onClose,
 }: MobileRoomQuickActionsProps) {
@@ -102,6 +104,11 @@ export default function MobileRoomQuickActions({
             <span className="mrq-box-label">{room.isLocked ? 'Odemknout sál' : 'Uzamknout sál'}</span>
           </button>
         </div>
+
+        {onMessage && <button type="button" className="mrq-detail" onClick={() => { onClose(); onMessage(); }}>
+          <MessageSquare size={18} strokeWidth={1.8} aria-hidden />
+          Odeslat zprávu
+        </button>}
 
         <button type="button" className="mrq-detail" onClick={() => { onOpenDetail(); onClose(); }}>
           Otevřít detail sálu

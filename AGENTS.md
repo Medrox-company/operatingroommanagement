@@ -1,12 +1,20 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Branch naming — 2026-10-21
+
+Use the user's versioned branch naming convention `medrox_op_room_ver_0_<number>` for this development line. The local baseline branch is `medrox_op_room_ver_0_1`; the current design-continuation branch is `medrox_op_room_ver_0_2`. These names identify development branches, not the application release version. Keep the existing branch unless the user requests another branch or a separate checkout is required.
+
+## Timeline design handoff — 2026-10-21
+
+Before continuing timeline or large-screen design work, read `docs/design/timeline-2026-10-21/README.md` and its visual references. Preserve the real application's workflow/status colors from hospital configuration and the existing left navigation menu. The latest three image proposals are alternatives; none has been selected or authorized for implementation. The user requested design proposals only. The handoff records preferences, earlier alternatives, source references, existing implementation entry points, and the branch/worktree state.
 
 ## Mobile Cliniq direction — 2026-10-07
 

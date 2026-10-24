@@ -1,5 +1,5 @@
-/* Reference dock is isolated to an open mobile room. The ordinary tab bar,
-   permission filtering and both saved appearance preferences are unchanged. */
+/* Shared overview dock for every module in the new mobile design.
+   Classic navigation, desktop and permission filtering remain unchanged. */
 @media (max-width: 767px) {
   .mobile-reference-nav.mobile-orbit-nav {
     inset: auto 4.34% calc(2.98svh + env(safe-area-inset-bottom, 0px));
@@ -37,13 +37,13 @@
     background: transparent !important;
   }
   .mobile-orbit-nav .mobile-nav-icon svg { width: 24px; height: 24px; stroke-width: 1.5; }
-  .mobile-reference-nav.mobile-orbit-nav > button[aria-current='page'] {
+  .mobile-reference-nav.mobile-orbit-nav > button[aria-current='page'],
+  .mobile-reference-nav.mobile-orbit-nav > button[data-active='true'],
+  .mobile-reference-nav.mobile-orbit-nav > button[aria-expanded='true'] {
     color: #100c62;
     background: #e6e2ff;
     box-shadow: inset 0 2px 8px #fff, 0 0 20px rgba(203, 190, 255, .25);
     font-weight: 400;
   }
   .mobile-reference-nav.mobile-orbit-nav > button:focus-visible { outline-color: #d2c9ff; }
-  .mobile-reference-nav.mobile-orbit-nav > button[data-active='true'],
-  .mobile-reference-nav.mobile-orbit-nav > button[aria-expanded='true'] { color: #fff; }
 }

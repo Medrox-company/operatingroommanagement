@@ -124,7 +124,38 @@ test('Cliniq overview uses the identical room-detail dock and keeps other module
   assert.deepEqual(overview.tabs.map(content), detail.tabs.map(content));
   assert.deepEqual(overview.links.map(content), detail.links.map(content));
   assert.deepEqual(overview.tabs.map(tab => tab.props['aria-current']), detail.tabs.map(tab => tab.props['aria-current']));
-  assert.ok(!harness({ design: 'cliniq', currentView: 'statistics' }).render().nav.props.className.includes('mobile-orbit-nav'));
+});
+
+test('every Cliniq module retains the overview dock, icons, destinations and active selection', () => {
+  const overview = harness({ design: 'cliniq' }).render();
+  const primary = ['dashboard', 'acute-requests', 'timeline'];
+  for (const item of items) {
+    const app = harness({ design: 'cliniq', currentView: item.id });
+    const view = app.render();
+    assert.equal(view.nav.props.className, overview.nav.props.className, item.id);
+    assert.deepEqual(view.tabs.map(content), overview.tabs.map(content), item.id);
+    assert.deepEqual(view.tabs.map(tab => elements(tab, el => typeof el.type !== 'string').map(el => el.type)),
+      overview.tabs.map(tab => elements(tab, el => typeof el.type !== 'string').map(el => el.type)), item.id);
+    assert.deepEqual(view.tabs.slice(0, -1).map(tab => tab.props['aria-current']),
+      primary.map(id => id === item.id ? 'page' : undefined), item.id);
+    assert.equal(view.more.props['data-active'], primary.includes(item.id) ? undefined : true, item.id);
+    view.more.props.onClick();
+    assert.equal(app.render().drawer.props.open, true);
+    assert.deepEqual(view.links.map(content), overview.links.map(content), item.id);
+  }
+});
+
+test('the shared dock retains blurred glass and the same active pill for More', () => {
+  const css = postcss.parse(read('components/mobile/mobile-orbit-navigation.css'));
+  let active;
+  let blur;
+  css.walkRules(rule => {
+    if (rule.selectors.includes(".mobile-reference-nav.mobile-orbit-nav > button[aria-current='page']")) active = rule;
+    if (rule.selector === '.mobile-reference-nav.mobile-orbit-nav') blur = rule.nodes.find(node => node.prop === 'backdrop-filter')?.value;
+  });
+  assert.ok(active.selectors.includes(".mobile-reference-nav.mobile-orbit-nav > button[data-active='true']"));
+  assert.ok(active.selectors.includes(".mobile-reference-nav.mobile-orbit-nav > button[aria-expanded='true']"));
+  assert.match(blur, /blur\(28px\)/);
 });
 
 test('Cliniq requests share the detail dock with only Requests selected', () => {

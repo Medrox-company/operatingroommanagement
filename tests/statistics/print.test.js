@@ -105,7 +105,7 @@ test('all dynamic text contexts escape markup and event-handler payloads', () =>
 test('the document is self-contained, with only the supplied embedded logo and no app tokens', () => {
   const html = buildStatisticsPrintHtml(report(), metadata());
   const content = withoutTrustedLogo(html);
-  assert.match(OPERATINGROOM_REPORT_LOGO, /^data:image\/svg\+xml;base64,[A-Za-z0-9+/]+=*$/);
+  assert.match(OPERATINGROOM_REPORT_LOGO, /^data:image\/png;base64,[A-Za-z0-9+/]+=*$/);
   assert.doesNotMatch(content, /<(?:script|link|img|iframe|object|embed|video|audio|svg|canvas)\b/i);
   assert.doesNotMatch(html, /@import\b|url\s*\(|var\(--(?:stats|m)-/i);
   assert.doesNotMatch(content, /(?:src|href)\s*=/i);

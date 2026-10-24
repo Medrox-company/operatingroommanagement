@@ -48,7 +48,7 @@ function MobileRoomOrbit() { return null; }
 // Execute the actual component against deterministic hook/context adapters and
 // real React elements. This is a render-tree/wiring test, not a substitute for
 // browser layout or focus-trap verification. No backend is imported.
-function renderOverview(rooms, { loaded = true, filter = 'all', layout = 'grid', design = 'classic', acuteByRoom } = {}) {
+function renderOverview(rooms, { loaded = true, filter = 'all', layout = 'grid', design = 'classic', acuteByRoom, canMessage = false } = {}) {
   let stateIndex = 0;
   const state = [layout, filter, null];
   const mutations = [];
@@ -70,7 +70,7 @@ function renderOverview(rooms, { loaded = true, filter = 'all', layout = 'grid',
   };
   const QuickActions = compile(read('components/mobile/MobileRoomQuickActions.tsx'), 'MobileRoomQuickActions.tsx', {
     react: hooks,
-    'lucide-react': Object.fromEntries(['AlertCircle', 'ArrowRight', 'Lock', 'Unlock'].map(name => [name, name])),
+    'lucide-react': Object.fromEntries(['AlertCircle', 'ArrowRight', 'Lock', 'Unlock', 'MessageSquare'].map(name => [name, name])),
   }).default;
   const Component = compile(source, 'MobileRoomOverview.tsx', {
     react: hooks,
@@ -104,6 +104,7 @@ function renderOverview(rooms, { loaded = true, filter = 'all', layout = 'grid',
     onSelectRoom: id => calls.push(['detail', id]),
     onEmergency: id => calls.push(['emergency', id]),
     onLock: id => calls.push(['lock', id]),
+    onMessage: canMessage ? id => calls.push(['message', id]) : undefined,
     onNavigate: id => calls.push(['navigate', id]),
     });
   };
@@ -276,6 +277,23 @@ test('one full-card target keeps keyboard quick actions and each callback bound 
   assert.match(source, /const LONG_PRESS_MS = 500;/);
   assert.match(source, /onPointerDown=\{event => startPress\(room\.id, event\)\}/);
   assert.match(source, /onPointerCancel=\{cancelPress\}/);
+});
+
+test('quick-action message opens only for an authorized callback and targets the pressed room', () => {
+  for (const canMessage of [false, true]) {
+    const app = renderOverview([room('first'), room('second')], { canMessage });
+    const card = byClass(app.tree, 'mro-room-open')[1];
+    card.props.onKeyDown({ key: 'ContextMenu', preventDefault() {} });
+    const [actions] = findAll(app.render(), node => node.type === app.QuickActions);
+    const buttons = findAll(app.QuickActions(actions.props), node => node.type === 'button' && text(node) === 'Odeslat zprávu');
+    assert.equal(buttons.length, canMessage ? 1 : 0);
+    assert.deepEqual(app.calls, [], 'Opening the menu must not send or open a message');
+    if (canMessage) {
+      buttons[0].props.onClick();
+      assert.deepEqual(app.calls, [['message', 'second']]);
+      assert.equal(findAll(app.render(), node => node.type === app.QuickActions).length, 0, 'Close the menu before opening the composer');
+    }
+  }
 });
 
 test('semantic phase colors and real elapsed/end times survive the layout change', () => {

@@ -1,0 +1,167 @@
+/* Administration uses the accepted mobile Settings palette, not desktop tables.
+   Workflow/department colors, disabled states and all handlers remain intact. */
+@media (max-width: 767px) {
+  html[data-app-design="cliniq"] .settings-admin-orbit {
+    font-family: var(--m-font-sans, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
+    -webkit-font-smoothing: antialiased;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit > .settings-module-wrapper {
+    padding: 12px 16px calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-mobile-heading {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 8px;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 16px 10px;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-mobile-heading h1 {
+    margin: 0;
+    color: var(--settings-orbit-text);
+    font-size: clamp(24px, 6.7vw, 30px);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -.04em;
+    text-align: center;
+    text-wrap: balance;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-mobile-heading button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--settings-orbit-border);
+    border-radius: 50%;
+    color: var(--settings-orbit-text);
+    background: var(--settings-orbit-glass);
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-mobile-heading svg { width: 22px; height: 22px; stroke-width: 1.5; }
+  /* Keep heading actions (card/list switches), hide only the duplicate title. */
+  html[data-app-design="cliniq"] .settings-admin-orbit .module-page-heading > div > .min-w-0 { display: none; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .module-page-heading > div { justify-content: flex-end; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module > header { margin-bottom: 12px; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module { background: transparent; color: var(--settings-orbit-text); }
+
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar,
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module > section.rounded-xl,
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module article {
+    border: 1px solid var(--settings-orbit-border);
+    border-radius: 24px;
+    background: var(--settings-orbit-glass);
+    box-shadow: inset 0 1px 0 rgba(237, 233, 255, .07), 0 8px 20px rgba(4, 7, 24, .12) !important;
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar { padding: 12px; overflow: visible; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar > div {
+    display: flex;
+    flex-wrap: wrap;
+    min-width: 0;
+    gap: 8px;
+  }
+  /* Summary tiles wrap into two columns; filters/search stay within the screen. */
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar > div > div.relative.flex {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    height: 68px;
+    border-color: var(--settings-orbit-border);
+    border-radius: 18px;
+    background: rgba(11, 16, 44, .24);
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar > div > [aria-hidden="true"] { display: none; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar > div > :is(label, .grid, div:not(.relative):not(.flex)) {
+    width: 100%;
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar > div > .flex:not(.relative) { flex-wrap: wrap; max-width: 100%; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar > div > div.relative:not(.flex) { flex: 1 1 100%; width: 100%; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar input[type="search"] { border-radius: 24px; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar > div > .admin-period-nav {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    flex: 1 1 100%;
+    width: 100%;
+    height: auto;
+    min-height: 52px;
+    border-radius: 24px;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-period-nav p { white-space: normal; line-height: 1.4; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar label {
+    min-height: 48px;
+    border-radius: 24px;
+    background: rgba(11, 16, 44, .28);
+    border-color: var(--settings-orbit-border);
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar button {
+    min-height: 44px;
+    min-width: 44px;
+    height: auto;
+    padding: 8px 10px;
+    border-radius: 18px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.3;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: normal;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar button[aria-pressed="true"] {
+    color: #100C62;
+    background: var(--settings-orbit-control);
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module [class*="text-white/"] { color: var(--settings-orbit-muted); }
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module :is(h2, h3) { color: var(--settings-orbit-text); font-weight: 500; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module h3 { white-space: normal; overflow-wrap: anywhere; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-toolbar :is(p, span)[class*="text-[8px]"] { font-size: 11px; letter-spacing: 0; text-transform: none; white-space: normal; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module article :is(p, span)[class*="text-[9px]"] { font-size: 11px; letter-spacing: 0; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module article > .flex.items-center { flex-wrap: wrap; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .statistics-module article button { min-height: 44px; min-width: 44px; border-radius: 16px; }
+  html[data-app-design="cliniq"] .settings-admin-orbit :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), textarea, select) {
+    min-height: 44px;
+    min-width: 0;
+    font-size: 16px;
+    color: #F8F7FF;
+    border-color: var(--settings-orbit-border);
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit :is(input, textarea)::placeholder { color: #C1BFF1; opacity: .75; }
+  html[data-app-design="cliniq"] .settings-admin-orbit select { background-color: #151A3B; color-scheme: dark; }
+  html[data-app-design="cliniq"] .settings-admin-orbit :is(button, input, textarea, select):focus-visible { outline: 2px solid #E5DDFF; outline-offset: 3px; }
+
+  /* Convert only the rooms administration table to mobile cards. The planning
+     calendar retains its genuine two-dimensional scrollable time grid. */
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-room-table { min-width: 0; padding: 10px; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-room-table > .grid { display: none; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-room-row {
+    min-width: 0;
+    grid-template-columns: 1fr;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-room-row > section { border-right: 0; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-room-row > section.grid-cols-7 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 12px;
+    gap: 6px;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-room-row > section.grid-cols-7 > div { border: 1px solid var(--settings-orbit-border); border-radius: 12px; overflow: hidden; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-room-row :is(p, span)[class*="text-[7px]"],
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-room-row :is(p, span, button)[class*="text-[8px]"] { font-size: 11px; letter-spacing: 0; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-staff-table { min-width: 0; padding: 10px; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-staff-table > div.grid { display: none; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-staff-table > article {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-staff-table > article > :first-child { grid-column: 1 / -1; }
+  html[data-app-design="cliniq"] .settings-admin-orbit .admin-staff-table :is(p, span) { white-space: normal; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  html[data-app-design="cliniq"] .settings-admin-orbit *,
+  html[data-app-design="cliniq"] .settings-admin-orbit *::before,
+  html[data-app-design="cliniq"] .settings-admin-orbit *::after { transition: none !important; animation: none !important; }
+}
