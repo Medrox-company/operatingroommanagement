@@ -1,7 +1,7 @@
 # Bezpečnost a upgrade — audit 2026-10
 
 Revize zdrojového kódu, závislostí, databázových skriptů a nasazení.
-Stav k 24. 10. 2026, větev `claude/intelligent-planck-4luiic`.
+Stav k 24. 10. 2026, větev `claude/intelligent-planck-4luiic` (založená na `medrox_op_room_ver_0_2`).
 
 Závažnost: **K** kritická · **V** vysoká · **S** střední · **N** nízká.
 
@@ -11,14 +11,14 @@ Závažnost: **K** kritická · **V** vysoká · **S** střední · **N** nízk�
 
 | Změna | Proč |
 |---|---|
-| Next.js 16.3.8 → **16.4.3** | Odstraňuje tři zranitelnosti: dvě neautentizované RCE (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr) a DoS přes Server Actions (GHSA-p3m5-59mp-jv5r). `npm audit` po změně nehlásí nic kritického. |
+| Next.js → **16.4.3** (produkce běží na 16.3.8, větev `medrox_op_room_ver_0_2` měla 16.4.2) | Odstraňuje tři zranitelnosti: dvě neautentizované RCE (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr) a DoS přes Server Actions (GHSA-p3m5-59mp-jv5r). `npm audit` po změně nehlásí nic kritického. |
 | Aktualizace v rámci povolených verzí (`npm update`, 65 balíčků) | React 19.3.1, supabase-js 2.118, Capacitor 8.5.3, framer-motion 14.6, lucide-react 1.61 a další opravné verze. `package.json` se kromě Next nemění, posun drží `package-lock.json`. |
 | Bezpečnostní HTTP hlavičky (`next.config.ts`) | HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, zákaz vložení do cizího iframe (`X-Frame-Options` + `frame-ancestors`). Vypnutá hlavička `X-Powered-By`. Ověřeno na produkčním buildu (`next start`). |
 | Skripty `npm run typecheck` a `npm test` | Nefunkční `npm run lint` odstraněn (`next lint` v Next 16 neexistuje). |
 | `scripts/check-security-grants.sql` | **Pouze čtení.** Vypíše skutečná práva a RLS politiky v živé databázi. Nespuštěno. |
 
-Ověření: `tsc` bez chyb; testy 1169/1178 (stejných 6 dlouhodobých selhání
-jako před změnou); `next build` úspěšný.
+Ověření: `tsc` bez chyb; testy 1335/1343 (stejná 3 dlouhodobá selhání jako na
+`medrox_op_room_ver_0_2`); `next build` úspěšný.
 
 ---
 

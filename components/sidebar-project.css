@@ -190,6 +190,10 @@ html[data-operativity-design="light"] .sidebar-project {
 .sidebar-project:not(:has(.planner-rail)) .sidebar-project__links { padding-top: clamp(24px,6vh,72px); justify-content: space-between; }
 .sidebar-project:not(:has(.planner-rail)) .sidebar-project__button { width: 100%; height: clamp(44px,7vh,64px); border-radius: 16px; }
 .sidebar-project:not(:has(.planner-rail)) .sidebar-project__actions { gap: clamp(4px,1vh,16px); }
+/* Původní neutrální zvýraznění: průhledná bílá bez barevného tónu, aby se
+   menu nepralo s barvou fáze v detailu sálu. */
+.sidebar-project:not(:has(.planner-rail)) .sidebar-project__button:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+.sidebar-project:not(:has(.planner-rail)) .sidebar-project__button[aria-current="page"] { border-color: transparent; background: rgba(255, 255, 255, 0.15); color: #fff; }
 
 /* The planner owns the rail only while mounted, with compact and expanded modes. */
 .sidebar-project:has(.planner-rail) { width: 300px; padding: 24px 18px; gap: 0; }

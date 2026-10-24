@@ -146,3 +146,12 @@ test('dark and opt-in planning-light rail palettes match the source project with
     if (declaration.prop.startsWith('--')) assert.ok(declaration.prop.startsWith('--or-sidebar-'), 'Sidebar styles must not override workflow or global application color tokens');
   });
 });
+
+test('outside planning the active and hovered module keep the original neutral white highlight', () => {
+  const scope = '.sidebar-project:not(:has(.planner-rail)) .sidebar-project__button';
+  const active = declarations(`${scope}[aria-current="page"]`);
+  assert.equal(active.background, 'rgba(255, 255, 255, 0.15)', 'Active module must not take the navy raised token');
+  assert.equal(active['border-color'], 'transparent');
+  assert.equal(active.color, '#fff');
+  assert.equal(declarations(`${scope}:hover`).background, 'rgba(255, 255, 255, 0.05)');
+});

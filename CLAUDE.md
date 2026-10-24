@@ -43,7 +43,7 @@ výrazy. Důsledky:
   souboru. Po refaktoru je nutné testy upravit společně s kódem.
 - **Atrapy mají seznam povolených závislostí.** Nový import do komponenty
   shodí test hláškou `Unexpected dependency`. Doplň ho do atrapy.
-- **14 testů selhává dlouhodobě.** Tvrdí věci o rozvržení, které bylo záměrně
+- **3 testy selhávají dlouhodobě.** Tvrdí věci o rozvržení, které bylo záměrně
   změněno (zrušené hledání sálu v mobilu, ikony akcí nahrazené dlouhým
   stiskem, jiný token pozadí). Nejsou to vady aplikace.
 
