@@ -68,6 +68,7 @@ výrazy. Důsledky:
 | `scripts/add-operational-thresholds.sql` | sloupce pro provozní prahy; bez něj jedou výchozí hodnoty a panel hlásí upozornění |
 | `scripts/cleanup-anesthesiologist-column.sql` | odstranění `anesthesiologist_id`; **až po nasazení** verze, která ho nečte |
 | `scripts/check-schedules-usage.sql` | pouze čtení — ověří, jestli se rozpis sálů plní |
+| `scripts/24-spatial-site-projects.sql` | tabulka pro 3D mapu areálu (Nastavení → Mapa areálu); bez ní editor hlásí, že modul není nainstalovaný, a mapu nelze uložit |
 
 ## Domluvená rozhodnutí
 

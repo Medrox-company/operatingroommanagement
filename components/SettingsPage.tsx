@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Building2, Calendar, Users, Settings as SettingsIcon, ArrowLeft, ArrowRight, Clock, Bell, Briefcase, BarChart3, Activity, Smartphone, ClipboardList, Stethoscope, GalleryHorizontalEnd, LayoutGrid, Search, SlidersHorizontal, Cuboid } from 'lucide-react';
+import { Building2, Calendar, Users, Settings as SettingsIcon, ArrowLeft, ArrowRight, Clock, Bell, Briefcase, BarChart3, Activity, Smartphone, ClipboardList, Stethoscope, GalleryHorizontalEnd, LayoutGrid, Search, SlidersHorizontal, Cuboid, Map as MapIcon } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { OperatingRoom, WeeklySchedule } from '../types';
 import { useHospital } from '../contexts/HospitalContext';
@@ -26,6 +26,7 @@ const DevicesManager = dynamic(() => import('./DevicesManager'), { ssr: false })
 const CalendarManager = dynamic(() => import('./ScheduleCalendarManager'), { ssr: false });
 const SystemSettingsModule = dynamic(() => import('./SystemSettingsModule'), { ssr: false });
 const SpatialEditorManager = dynamic(() => import('./SpatialEditorManager'), { ssr: false });
+const SiteMapEditorManager = dynamic(() => import('./SiteMapEditorManager'), { ssr: false });
 
 type ModuleGroup = 'all' | 'provoz' | 'personal' | 'system';
 type LandingView = 'carousel' | 'grid';
@@ -41,6 +42,7 @@ const SETTINGS_SYSTEM_SUBMODULES = [
 const SETTINGS_MODULE_PERMISSIONS: Record<string, string> = {
   rooms: 'settings.rooms',
   spatial: 'dashboard.spatial',
+  'site-map': 'dashboard.spatial',
   specialties: 'settings.specialties',
   schedule: 'settings.schedule',
   staff: 'settings.staff',
@@ -114,6 +116,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       description: 'Editor prostorového modelu operačního traktu',
       icon: Cuboid,
       accentColor: '#FBBF24',
+    },
+    {
+      id: 'site-map',
+      group: 'provoz' as const,
+      title: 'Mapa areálu',
+      description: '3D mapa areálu s pavilony, komunikacemi a heliportem',
+      icon: MapIcon,
+      accentColor: '#34D399',
     },
     {
       id: 'specialties',
@@ -205,6 +215,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
     },
   ].filter(item => {
     if (item.id === 'spatial') return canViewSpatial;
+    if (item.id === 'site-map') return canViewSpatial;
     if (item.id === 'settings') return canViewSystemSettings;
     const permissionId = SETTINGS_MODULE_PERMISSIONS[item.id];
     return permissionId ? hasSubmoduleAccess(permissionId) : false;
@@ -303,6 +314,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ rooms = [], onRoomsChange, 
       ) : selectedModule === 'spatial' && canViewSpatial ? (
         <ModuleWrapper>
           <SpatialEditorManager key={activeHospitalId || 'no-hospital'} rooms={rooms} />
+        </ModuleWrapper>
+      ) : selectedModule === 'site-map' && canViewSpatial ? (
+        <ModuleWrapper>
+          <SiteMapEditorManager key={activeHospitalId || 'no-hospital'} />
         </ModuleWrapper>
       ) : selectedModule === 'specialties' ? (
         <ModuleWrapper>

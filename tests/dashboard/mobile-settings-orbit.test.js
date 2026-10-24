@@ -78,7 +78,7 @@ test('desktop keeps carousel and switching; resizing does not overwrite desktop 
   assert.equal(app.render().props['data-settings-landing'], 'carousel');
   nodes(app.render(), n => n.props['aria-label'] === 'Zobrazit jako mřížka')[0].props.onClick();
   assert.equal(app.render().props['data-settings-landing'], 'grid');
-  assert.equal(classes(app.render(), 'settings-grid-card').length, 13);
+  assert.equal(classes(app.render(), 'settings-grid-card').length, 14);
 });
 
 test('autoplay is guarded on mobile and wrapper identity is stable for search focus', () => {

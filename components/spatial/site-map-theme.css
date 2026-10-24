@@ -1,0 +1,83 @@
+/* Doplněk editoru mapy areálu. Základ přebírá ze stylu editoru operačního bloku. */
+.orms-site-editor .oe-site-types {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.orms-site-editor .oe-site-types button {
+  min-height: 44px;
+}
+
+.orms-site-editor .oe-objects button small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.orms-site-editor .oe-heliport {
+  margin: 12px 0 14px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--yellow) 32%, transparent);
+  border-radius: 10px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--yellow) 8%, transparent), color-mix(in srgb, var(--yellow) 2%, transparent));
+}
+
+.orms-site-editor .oe-heliport-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orms-site-editor .oe-heliport-head b {
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  color: var(--yellow);
+}
+
+.orms-site-editor .oe-heliport-head output {
+  font-size: 22px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.orms-site-editor .oe-heliport input.oe-heliport-range {
+  height: 44px;
+  padding: 0;
+  margin: 4px 0 2px;
+  border: 0;
+  background: transparent;
+  accent-color: var(--yellow);
+}
+
+.orms-site-editor .oe-heliport-steps,
+.orms-site-editor .oe-heliport-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.orms-site-editor .oe-heliport-presets {
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  margin-top: 4px;
+}
+
+.orms-site-editor .oe-heliport button {
+  min-height: 44px;
+  padding: 6px;
+  font-size: 11px;
+}
+
+.orms-site-editor .oe-heliport .oe-help {
+  margin: 8px 0 0;
+  color: rgba(236, 240, 252, 0.72);
+}
+
+.orms-site-editor .oe-storeys {
+  min-width: 2ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

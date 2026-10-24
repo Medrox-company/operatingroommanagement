@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createBoundaries,generateBoundary } from './boundaries.mjs';
 import { CATALOG,boundaryOffsetForFloor,roomCorners } from './model.js';
-const palette={body:0x2d426f,edge:0x455e8e,wallEdge:0x6179aa,dark:0x18243c,shadow:0x0d1629,steel:0x788aa8,screen:0x051421,blue:0x5278d8,light:0xd3e7fc,yellow:0xffda28,door:0x26385e,doorInset:0x1d2d4d,doorFrame:0x6078a7,tabletFrame:0x15223a,tabletScreen:0x1264b1,amber:0xffc52e,wall:0x344877,facade:0x2a3e68,floor:0x45587b,wallJoint:0x293b64,floorJoint:0x314361,selectedWall:0x81785f,selectedFacade:0x776e59,selectedEdge:0xe0bd45,selectedFloor:0xaaa28b};
+import { buildSite } from './site-geometry.js';
+const palette={body:0x2d426f,edge:0x455e8e,wallEdge:0x6179aa,dark:0x18243c,shadow:0x0d1629,steel:0x788aa8,screen:0x051421,blue:0x5278d8,light:0xd3e7fc,yellow:0xffda28,door:0x26385e,doorInset:0x1d2d4d,doorFrame:0x6078a7,tabletFrame:0x15223a,tabletScreen:0x1264b1,amber:0xffc52e,wall:0x344877,facade:0x2a3e68,floor:0x45587b,wallJoint:0x293b64,floorJoint:0x314361,selectedWall:0x81785f,selectedFacade:0x776e59,selectedEdge:0xe0bd45,selectedFloor:0xaaa28b,asphalt:0x1d2846,lawn:0x1f4c55,tree:0x2c6a6c,trunk:0x2a2f3f,marking:0xc9d8f2,glass:0x0b2744};
 const surface={
  body:{metalness:0.04,roughness:0.62,envMapIntensity:0.26},edge:{metalness:0.08,roughness:0.56,envMapIntensity:0.28},wallEdge:{metalness:0.05,roughness:0.55,envMapIntensity:0.3,emissive:0x27334e,emissiveIntensity:0.045},dark:{metalness:0.05,roughness:0.74,envMapIntensity:0.18},shadow:{metalness:0,roughness:1,envMapIntensity:0.02},
  steel:{metalness:0.58,roughness:0.34,envMapIntensity:0.58,clearcoat:0.12,clearcoatRoughness:0.42},door:{metalness:0.1,roughness:0.63,envMapIntensity:0.24,emissive:0x26344f,emissiveIntensity:0.07},doorInset:{metalness:0.05,roughness:0.78,envMapIntensity:0.16,emissive:0x1e2b44,emissiveIntensity:0.05},doorFrame:{metalness:0.28,roughness:0.43,envMapIntensity:0.44,clearcoat:0.12,clearcoatRoughness:0.5},tabletFrame:{metalness:0.22,roughness:0.48,envMapIntensity:0.34},tabletScreen:{metalness:0.05,roughness:0.24,envMapIntensity:0.38,clearcoat:0.7,clearcoatRoughness:0.18,emissive:0x0d5598,emissiveIntensity:0.72},screen:{metalness:0.04,roughness:0.22,envMapIntensity:0.4,clearcoat:0.75,clearcoatRoughness:0.16,emissive:0x082f52,emissiveIntensity:0.44},light:{metalness:0,roughness:0.28,envMapIntensity:0.38,emissive:0xbcdfff,emissiveIntensity:0.62},amber:{metalness:0.02,roughness:0.32,emissive:0xffa000,emissiveIntensity:1.25},wall:{metalness:0,roughness:0.78,envMapIntensity:0.2,emissive:0x202a42,emissiveIntensity:0.018},facade:{metalness:0,roughness:0.8,envMapIntensity:0.18,emissive:0x1b263d,emissiveIntensity:0.022},floor:{metalness:0.03,roughness:0.67,envMapIntensity:0.24,clearcoat:0.06,clearcoatRoughness:0.76},wallJoint:{metalness:0,roughness:0.9,envMapIntensity:0.08},floorJoint:{metalness:0.02,roughness:0.84,envMapIntensity:0.1},
+ asphalt:{metalness:0.02,roughness:0.92,envMapIntensity:0.12},lawn:{metalness:0,roughness:0.95,envMapIntensity:0.1},tree:{metalness:0,roughness:0.86,envMapIntensity:0.14},trunk:{metalness:0,roughness:0.9,envMapIntensity:0.1},marking:{metalness:0,roughness:0.5,envMapIntensity:0.3,emissive:0x5b6c8f,emissiveIntensity:0.18},glass:{metalness:0.1,roughness:0.18,envMapIntensity:0.55,clearcoat:0.8,clearcoatRoughness:0.12,emissive:0x0a3a66,emissiveIntensity:0.38},
  selectedWall:{metalness:0,roughness:0.88,emissive:0x493a16,emissiveIntensity:0.42},selectedFacade:{metalness:0,roughness:0.88,emissive:0x4d3b17,emissiveIntensity:0.5},selectedEdge:{metalness:0.02,roughness:0.64,emissive:0x765700,emissiveIntensity:0.5},selectedFloor:{metalness:0,roughness:0.88,emissive:0x332b15,emissiveIntensity:0.16}
 };
 function material(color){const token=typeof color==='string'?color:'body',finish=surface[token]||surface.body;return new THREE.MeshPhysicalMaterial({color:palette[color]??color,dithering:true,...finish})}
@@ -16,7 +18,7 @@ function material(color){const token=typeof color==='string'?color:'body',finish
  * OrbitControls rotation, pan and zoom. The rounded-box SDF fades to zero
  * before the plane boundary, which prevents a rectangular edge from showing.
  */
-function createBuildingHalo(width,depth,centerX,centerZ){
+export function createBuildingHalo(width,depth,centerX,centerZ){
  const radius=3.2,planeWidth=width+radius*2+1.2,planeDepth=depth+radius*2+1.2;
  const material=new THREE.ShaderMaterial({
   uniforms:{
@@ -124,13 +126,13 @@ function createKnlBoundary(rooms,floor,options={}){
  group.userData.entity='knl-boundary';group.userData.offset=offset;group.userData.offsetMode=floor.knlBoundaryOffsetMode==='manual'?'manual':'corridor';group.userData.preset=presetName;return group;
 }
 
-function part(root,name,geometry,color,pos=[0,0,0],rotation=[0,0,0]){
+export function part(root,name,geometry,color,pos=[0,0,0],rotation=[0,0,0]){
  const mesh=new THREE.Mesh(geometry,material(color));mesh.name=name;mesh.userData.baseMaterialToken=color;mesh.userData.appliedMaterialToken=color;mesh.position.set(...pos);mesh.rotation.set(...rotation);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh;
 }
-const box=(g,n,s,p,c='body',selectedColor)=>{const mesh=part(g,n,new RoundedBoxGeometry(...s,2,Math.min(Math.min(...s)*(surface[c]?0.075:0.09),['wall','facade','wallEdge','doorFrame','edge','selectedWall','selectedFacade','selectedEdge'].includes(c)?0.025:0.055)),c,p);if(selectedColor)mesh.userData.selectedMaterialToken=selectedColor;return mesh};
-const cyl=(g,n,r,h,p,c='steel')=>part(g,n,new THREE.CylinderGeometry(r,r,h,24),c,p);
+export const box=(g,n,s,p,c='body',selectedColor)=>{const mesh=part(g,n,new RoundedBoxGeometry(...s,2,Math.min(Math.min(...s)*(surface[c]?0.075:0.09),['wall','facade','wallEdge','doorFrame','edge','selectedWall','selectedFacade','selectedEdge'].includes(c)?0.025:0.055)),c,p);if(selectedColor)mesh.userData.selectedMaterialToken=selectedColor;return mesh};
+export const cyl=(g,n,r,h,p,c='steel')=>part(g,n,new THREE.CylinderGeometry(r,r,h,24),c,p);
 const sphere=(g,n,r,p,c='steel')=>part(g,n,new THREE.SphereGeometry(r,16,12),c,p);
-function bar(g,n,a,b,r=0.035,c='steel'){
+export function bar(g,n,a,b,r=0.035,c='steel'){
  const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),delta=B.clone().sub(A);
  const m=cyl(g,n,r,delta.length(),A.clone().add(B).multiplyScalar(0.5).toArray(),c);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());return m;
 }
@@ -464,6 +466,7 @@ function cloneDashboardRoom(prototype,room){
 }
 
 export function buildFloor(project,floorId,options={}){
+ if(project.kind==='site')return buildSite(project,floorId,options);
  const floor=project.floors.find(f=>f.id===floorId),g=new THREE.Group();g.name=floor.name;g.userData={entity:'floor',entityId:floorId};g.position.y=options.elevation?floor.elevation:0;
  const map=new Map();
  const rooms=project.rooms.filter(r=>r.floorId===floorId);
