@@ -22,6 +22,36 @@ export function buildOperativityFrame(sourceHtml: string, options: { threeRuntim
   // Keep upstream actions and handlers, but place shared tools beside the view title.
   script = replaceRequired(script, 'function topHTML(){', "function topHTML(){return '';}\nfunction compactToolsHTML(){");
   script = replaceRequired(script, '<div class="ph-r">${right||', '<div class="ph-r">${compactToolsHTML()}${right||');
+  // Tisk je dostupný v záhlaví každé sekce, i tam, kde sekce nahrazuje pravou část vlastními prvky.
+  script = replaceRequired(script, '<button class="btn sm prt" data-act="print" title="Vytisknout tuto sekci">${ico(\'printer\')}Tisk</button>', '');
+  script = replaceRequired(script, '<button class="icon-btn thm" data-act="theme"',
+    '<button class="btn sm prt" data-act="print" title="Vytisknout tuto sekci nebo ji uložit jako PDF">${ico(\'printer\')}<span>Tisk / PDF</span></button><button class="icon-btn thm" data-act="theme"');
+  // Uvnitř rámce se tisk neodmítá: otevře se samostatná tisková stránka (stejně
+  // jako tisk statistik), a když prohlížeč nové okno zablokuje, tiskne se přímo
+  // z rámce původním tiskovým režimem plánovače.
+  script = replaceRequired(script, 'if(window.self===window.top){if(inner==null){window.print();return;}', 'if(medroxOpenPrint(title,inner))return;{if(inner==null){window.print();return;}');
+  script = replaceRequired(script, '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap">', '');
+  script = replaceRequired(script, '@media print{.prt-bar{display:none!important}body{padding:0}}',
+    '.print-h span{margin-left:10px;color:#43525B}.prt-bar{margin-bottom:28px!important}.prt-bar small{display:block;margin-top:2px;font-size:12px;font-weight:400;opacity:.8}.prt-act{display:flex;gap:8px;flex:none}.prt-act button+button{background:transparent;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}\n@media print{.wt-card,.tl-card,.bc-card{break-inside:auto!important}.wt-card tr,.bc-card tr,.tl-r{break-inside:avoid}}\n@media print{.prt-bar{display:none!important}body{padding:0}}');
+  script = replaceRequired(script, '<div class="prt-bar"><span>${esc(title)}</span><button onclick="print()">Tisknout</button></div>',
+    '<div class="prt-bar"><span><b>${esc(title)}</b><small>A4 na šířku · pro PDF zvolte v dialogu tisku „Uložit jako PDF“</small></span><span class="prt-act"><button type="button" data-print-action="print">Tisk / Uložit PDF</button><button type="button" data-print-action="close">Zavřít</button></span></div>');
+  script = replaceRequired(script, '<h2 id="pi-t">Náhled v Claude tisk neumožňuje</h2>', '<h2 id="pi-t">Tisk se nepodařilo otevřít</h2>');
+  script = replaceRequired(script,
+    '<ol class="info-list"><li>Otevřete soubor aplikace <b>rozpis-operativy.html</b> přímo v prohlížeči (Chrome, Edge, Safari).</li><li>Přejděte do sekce, kterou chcete tisknout, a nastavte filtry.</li><li>Klepněte na <b>Tisk</b> – vytiskne se aktuální sekce na A4 na šířku, ve světlých barvách a bez ovládacích prvků.</li></ol>',
+    '<ol class="info-list"><li>Povolte v prohlížeči otevírání nových oken pro tuto aplikaci.</li><li>Klepněte znovu na <b>Tisk / PDF</b> – otevře se tisková stránka aktuální sekce na A4 na šířku, ve světlých barvách a bez ovládacích prvků.</li><li>V dialogu tisku zvolte tiskárnu, nebo <b>Uložit jako PDF</b>.</li></ol>');
+  script = replaceRequired(script, '<p class="hint">Do tisku se propíše hlavička s nemocnicí, sekcí, obdobím, filtry a datem tisku. V ostré verzi aplikace bude tisk fungovat přímo.</p>',
+    '<p class="hint">Do tisku se propíše hlavička s nemocnicí, sekcí, obdobím, filtry a datem tisku.</p>');
+  // Hlavičky tisku a souhrny nesou skutečně přihlášenou nemocnici, ne ukázkovou KNL.
+  script = replaceRequired(script, '<b>Rozpis operativy · Krajská nemocnice Liberec</b><span>${esc(t)}</span>', '<b>Rozpis operativy · ${esc(MEDROX_HOSPITAL)}</b><span>${esc(t)}</span>');
+  script = replaceRequired(script, '<b>Rozpis operativy · Krajská nemocnice Liberec</b><span>Omezení operačních sálů</span>', '<b>Rozpis operativy · ${esc(MEDROX_HOSPITAL)}</b><span>Omezení operačních sálů</span>');
+  script = replaceRequired(script, '<div><b>Operační program</b><span>Krajská nemocnice Liberec</span></div>', '<div><b>Operační program</b><span>${esc(MEDROX_HOSPITAL)}</span></div>');
+  script = replaceRequired(script, "${S.view==='staff'||S.view==='timeline'?scope:'KNL'}", "${S.view==='staff'||S.view==='timeline'?scope:MEDROX_HOSPITAL_SHORT}");
+  script = replaceRequired(script, "<small>Σ ${sites.length>1?'KNL':SITE[sites[0]].name}</small>", "<small>Σ ${sites.length>1?esc(MEDROX_HOSPITAL_SHORT):SITE[sites[0]].name}</small>");
+  script = replaceRequired(script, '<tr class="tot"><th>Celkem KNL</th>', '<tr class="tot"><th>Celkem ${esc(MEDROX_HOSPITAL_SHORT)}</th>');
+  script = replaceRequired(script, "if(sites.length>1)h+=block('Celkem KNL',", "if(sites.length>1)h+=block('Celkem '+esc(MEDROX_HOSPITAL_SHORT),");
+  script = replaceRequired(script, "if(sites.length>1)h+=rows('Celkem KNL',", "if(sites.length>1)h+=rows('Celkem '+esc(MEDROX_HOSPITAL_SHORT),");
+  script = replaceRequired(script, "${row('Nedostatek personálu','celá KNL',def)}", "${row('Nedostatek personálu','celé zařízení',def)}");
+  script = replaceRequired(script, 'Kapacita celé KNL: ', 'Kapacita celého zařízení: ');
   const seedStart = script.indexOf('function seed(){');
   const stateStart = script.indexOf('\nlet D=null;');
   const seedEnd = script.lastIndexOf('\n}', stateStart);
@@ -160,12 +190,33 @@ const KM_OR=`);
     "function placeTip(e){const r=tip.getBoundingClientRect(),vp=medroxViewport();let x=e.clientX+14,y=e.clientY+16;if(x+r.width>innerWidth-8)x=e.clientX-r.width-14;if(y+r.height>vp.top+vp.height-8)y=e.clientY-r.height-14;tip.style.left=Math.max(8,x)+'px';tip.style.top=Math.max(vp.top+8,y)+'px';}");
   const extension = `
 let medroxLastHeight=0,medroxVisible=null,medroxPresented=true;
+const MEDROX_HOSPITAL=typeof host.hospitalName==='string'&&host.hospitalName.trim()?host.hospitalName.trim().slice(0,160):'Zdravotnické zařízení';
+const MEDROX_HOSPITAL_SHORT=typeof host.hospitalShortName==='string'&&host.hospitalShortName.trim()?host.hospitalShortName.trim().slice(0,40):MEDROX_HOSPITAL;
+// Tiskovou stránku otevírá hostitelská aplikace: rámec s neprůhledným původem
+// nemůže zapisovat do vlastního nového okna. Když hostitel okno otevřít nemůže
+// (zablokované okno), vrátí 'print-direct' a tiskne se přímo z rámce.
+let medroxPendingPrint=null;
+function medroxOpenPrint(title,inner){
+  let doc;try{doc=printDocHTML(title,inner==null?viewPrintHTML():inner);}catch{return false;}
+  medroxPendingPrint={inner};
+  medroxSend({type:'print',title:String(title).slice(0,300),html:doc});
+  return true;
+}
+function medroxPrintInFrame(){
+  const pending=medroxPendingPrint;medroxPendingPrint=null;if(!pending)return;
+  if(pending.inner==null){window.print();return;}
+  const h=$('#prt');h.innerHTML=pending.inner;document.body.classList.add('prt-on');
+  const done=()=>{document.body.classList.remove('prt-on');h.innerHTML='';removeEventListener('afterprint',done);};
+  addEventListener('afterprint',done);window.print();
+}
 function medroxSend(message){parent.postMessage({protocol:'${OPERATIVITY_FRAME_PROTOCOL}',channel:host.channel,...message},'*');}
 function medroxAllowedViews(){return navList().flatMap(([,items])=>items.map(([view])=>view)).filter(view=>Object.prototype.hasOwnProperty.call(VIEWS,view));}
 function medroxNotifyView(){medroxSend({type:'view',view:S.view,allowedViews:medroxAllowedViews(),theme:S.theme,counts:{alerts:ISSUES().length,requests:D.requests.filter(q=>q.status==='pending').length,free:(D.claims||[]).filter(c=>c.status==='pending').length}});}
 function medroxReportHeight(){const app=$('.app');if(!app)return;const height=Math.ceil(app.getBoundingClientRect().height);if(Number.isFinite(height)&&height>0&&height!==medroxLastHeight){medroxLastHeight=height;medroxSend({type:'resize',height});}}
 function medroxViewport(){return medroxVisible||{top:0,height:Math.max(1,innerHeight)};}
 function medroxReceive(message){
+  if(message.type==='print-direct'){medroxPrintInFrame();return;}
+  if(message.type==='print-opened'){medroxPendingPrint=null;return;}
   if(message.type==='presentation'){
     if(typeof message.visible!=='boolean'||message.visible===medroxPresented)return;
     medroxPresented=message.visible;

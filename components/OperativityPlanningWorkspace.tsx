@@ -10,6 +10,7 @@ import { useHospital } from '../contexts/HospitalContext';
 import { useConfirm } from './ui/ConfirmDialog';
 import { buildOperativityPlanningSeed, mergeOperativityPlanningDraft, type OperativityPlanningSeed } from '../lib/operativity-planning';
 import { buildOperativityFrame } from '../lib/operativity-frame';
+import { openOperativityPrintWindow } from '../lib/operativity-print';
 import { loadOperativityPlanningYear } from '../lib/operativity-planning-client';
 import { OPERATIVITY_THREE_RUNTIME_URL, validateOperativityThreeRuntime } from '../lib/operativity-three-assets';
 import { OPERATIVITY_NAVIGATION, isOperativityView, operativityAllowedViews, operativityFrameHeight, type OperativityView } from '../lib/operativity-navigation';
@@ -92,6 +93,9 @@ function PlanningDraft({ rooms, onOpenDashboard, tabs }: Props & { tabs: React.R
   const actionsRef = useRef({ isAdmin, hasDashboard: hasModuleAccess('dashboard'), onOpenDashboard });
   actionsRef.current = { isAdmin, hasDashboard: hasModuleAccess('dashboard'), onOpenDashboard };
   const hospitalName = activeHospital?.hospital_name || activeHospital?.hospital_short_name || 'Zdravotnické zařízení';
+  // Tisková hlavička plánovače nese přihlášenou nemocnici; změna názvu nespouští nové načtení.
+  const hospitalLabelsRef = useRef({ name: hospitalName, short: activeHospital?.hospital_short_name || '' });
+  hospitalLabelsRef.current = { name: hospitalName, short: activeHospital?.hospital_short_name || '' };
 
   useEffect(() => {
     const root = document.documentElement;
@@ -165,7 +169,8 @@ function PlanningDraft({ rooms, onOpenDashboard, tabs }: Props & { tabs: React.R
         initialized = true;
         window.clearTimeout(timeout);
         frame.current?.contentWindow?.postMessage({ protocol: PROTOCOL, type: 'init', channel: loaded.channel,
-          data: { data: loaded.draft, sites: loaded.seed.sites, years: loaded.seed.years, canEdit: isAdmin, theme: appearanceRef.current } }, '*');
+          data: { data: loaded.draft, sites: loaded.seed.sites, years: loaded.seed.years, canEdit: isAdmin, theme: appearanceRef.current,
+            hospitalName: hospitalLabelsRef.current.name, hospitalShortName: hospitalLabelsRef.current.short } }, '*');
         return;
       }
       if (event.data.channel !== loaded.channel) return;
@@ -191,6 +196,14 @@ function PlanningDraft({ rooms, onOpenDashboard, tabs }: Props & { tabs: React.R
       }
       if (event.data.type === 'open-live') {
         if (actionsRef.current.hasDashboard) actionsRef.current.onOpenDashboard?.();
+        return;
+      }
+      if (event.data.type === 'print') {
+        // Tiskovou stránku otevírá aplikace (rámec do nového okna zapsat nesmí).
+        // Zablokované okno se nahradí tiskem přímo z rámce.
+        let opened = false;
+        try { opened = typeof event.data.html === 'string' && openOperativityPrintWindow(event.data.html); } catch { opened = false; }
+        frame.current?.contentWindow?.postMessage({ protocol: PROTOCOL, channel: loaded.channel, type: opened ? 'print-opened' : 'print-direct' }, '*');
         return;
       }
       if (event.data.type === 'error') {
