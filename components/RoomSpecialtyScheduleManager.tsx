@@ -158,7 +158,9 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
   const [printView, setPrintView] = useState<ViewMode>('week');
   const [printScope, setPrintScope] = useState<RoomSchedulePrintScope>('all');
   const [printRoomId, setPrintRoomId] = useState('');
+  const [loadedYear, setLoadedYear] = useState<number | null>(null);
   const paintDragRef = useRef<SchedulePaintDrag | null>(null);
+  const loadControllerRef = useRef<AbortController | null>(null);
 
   const year = anchorDate.getFullYear();
   const selectedRoom = rooms.find(room => room.id === selectedRoomId) || rooms[0] || null;
@@ -170,30 +172,38 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
     }
   }, [rooms, selectedRoomId]);
 
-  const loadYear = useCallback(async (signal?: AbortSignal) => {
+  const loadYear = useCallback(async () => {
+    // Novější načtení (jiný rok, obnovení po uložení) ruší starší, aby jeho
+    // pozdní stránky nepřepsaly aktuální rozpis na obrazovce ani v tisku.
+    loadControllerRef.current?.abort();
     if (!activeHospitalId) return;
+    const controller = new AbortController();
+    loadControllerRef.current = controller;
     setLoading(true);
     setError(null);
     try {
       // Rok mívá víc než 1000 půldenních bloků a server je vrací po stránkách.
       // Načítají se všechny, jinak by obrazovka i tisk ukázaly pozdější dny jako volné.
-      const payload = await loadOperativityPlanningYear(year, signal ?? new AbortController().signal);
+      const payload = await loadOperativityPlanningYear(year, controller.signal);
+      if (controller.signal.aborted) return;
       setMigrationRequired(false);
       setDepartments(payload.departments as Department[]);
       setAllocations(payload.allocations as Allocation[]);
+      setLoadedYear(year);
     } catch (loadError) {
-      if (loadError instanceof DOMException && loadError.name === 'AbortError') return;
+      if (controller.signal.aborted) return;
+      // Bez úspěšně načteného roku se netiskne: starší data by vypadala jako aktuální.
+      setLoadedYear(null);
       setMigrationRequired((loadError as { migrationRequired?: boolean } | null)?.migrationRequired === true);
       setError(loadError instanceof Error ? loadError.message : 'Rozpis se nepodařilo načíst.');
     } finally {
-      if (!signal?.aborted) setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [activeHospitalId, year]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    void loadYear(controller.signal);
-    return () => controller.abort();
+    void loadYear();
+    return () => loadControllerRef.current?.abort();
   }, [loadYear]);
 
   useEffect(() => {
@@ -435,7 +445,9 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
       ? MONTH_FORMATTER.format(anchorDate)
       : String(year);
 
-  const canPrint = !loading && !saving && rooms.length > 0 && activeDepartments.length > 0;
+  // Tiskne se jen úspěšně načtený rok; aktivní obory nejsou podmínkou, uložená
+  // přiřazení i provozní stavy (uzavřeno, servis) se tisknou i bez nich.
+  const canPrint = !loading && !saving && loadedYear === year && rooms.length > 0;
   const printPeriods: Array<{ mode: ViewMode; title: string; label: string }> = [
     { mode: 'week', title: 'Týden', label: `${weekDates[0].getDate()}. ${weekDates[0].getMonth() + 1}. – ${weekDates[6].getDate()}. ${weekDates[6].getMonth() + 1}. ${weekDates[6].getFullYear()}` },
     { mode: 'month', title: 'Měsíc', label: MONTH_FORMATTER.format(anchorDate) },

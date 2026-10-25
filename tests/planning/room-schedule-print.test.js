@@ -138,10 +138,18 @@ test('prázdné období to řekne, místo aby tisklo nuly jako data', () => {
 
 test('Společný rozpis sálů tiskne uložená data a načítá celý rok po stránkách', () => {
   const component = readFileSync(new URL('../../components/RoomSpecialtyScheduleManager.tsx', import.meta.url), 'utf8');
-  assert.match(component, /loadOperativityPlanningYear\(year, signal \?\? new AbortController\(\)\.signal\)/);
+  assert.match(component, /loadOperativityPlanningYear\(year, controller\.signal\)/);
   assert.doesNotMatch(component, /fetch\(`\/api\/room-specialty-allocations\?year=/, 'jediný požadavek by vrátil jen prvních 1000 bloků');
+  // Každé načtení zruší předchozí, takže pozdní stránky starého roku nepřepíší nový.
+  const loadYear = component.match(/const loadYear = useCallback\(async \(\) => \{([\s\S]*?)\n  \}, \[activeHospitalId, year\]\);/)?.[1];
+  assert.ok(loadYear, 'loadYear nenalezen');
+  assert.ok(loadYear.indexOf('loadControllerRef.current?.abort()') < loadYear.indexOf('loadOperativityPlanningYear('));
+  assert.match(loadYear, /if \(controller\.signal\.aborted\) return;\s*setMigrationRequired\(false\)/);
+  assert.match(loadYear, /catch \(loadError\) \{\s*if \(controller\.signal\.aborted\) return;[\s\S]*?setLoadedYear\(null\)/);
+  assert.match(component, /return \(\) => loadControllerRef\.current\?\.abort\(\);/);
   assert.match(component, /const printSlot = [\s\S]*?allocationMap\.get\(/, 'tisk nečte náhled rozpracovaného tažení');
-  assert.match(component, /const canPrint = !loading && !saving/);
+  // Tiskne se jen úspěšně načtený rok; aktivní obory nejsou podmínkou.
+  assert.match(component, /const canPrint = !loading && !saving && loadedYear === year && rooms\.length > 0;/);
   assert.match(component, /openOperativityPrintWindow\(html\)/);
   assert.match(component, /printOperativityDocumentInFrame\(html\)/);
   assert.match(component, />\s*Tisk \/ PDF\s*</);

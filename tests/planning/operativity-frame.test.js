@@ -675,6 +675,8 @@ test('printing works inside the isolated frame without the upstream preview noti
   assert.match(script, /function medroxOpenPrint\(title,inner\)\{[\s\S]*?medroxSend\(\{type:'print',title:String\(title\)\.slice\(0,300\),html:doc\}\);/);
   assert.ok(script.includes("if(message.type==='print-direct'){medroxPrintInFrame();return;}"));
   assert.ok(script.includes("if(message.type==='print-opened'){medroxPendingPrint=null;return;}"));
+  // Náhradní tisk v rámci počká na dekódování obrázků (snímek 3D modelu), nejvýš 3 s.
+  assert.match(script, /function medroxPrintInFrame\(\)\{[\s\S]*?h\.querySelectorAll\('img'\)[\s\S]*?Promise\.race\(\[Promise\.all\(images\),new Promise\(resolve=>setTimeout\(resolve,3000\)\)\]\)\.then\(\(\)=>window\.print\(\)\);/);
   // Tlačítko je v záhlaví každé sekce (sdílené nástroje), ne jen ve výchozí pravé části.
   assert.ok(script.includes('data-act="print" title="Vytisknout tuto sekci nebo ji uložit jako PDF">${ico(\'printer\')}<span>Tisk / PDF</span>'));
   assert.equal(script.split('data-act="print"').length - 1, 1, 'One shared print button, no duplicate in the default header');

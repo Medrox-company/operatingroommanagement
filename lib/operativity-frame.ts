@@ -207,7 +207,10 @@ function medroxPrintInFrame(){
   if(pending.inner==null){window.print();return;}
   const h=$('#prt');h.innerHTML=pending.inner;document.body.classList.add('prt-on');
   const done=()=>{document.body.classList.remove('prt-on');h.innerHTML='';removeEventListener('afterprint',done);};
-  addEventListener('afterprint',done);window.print();
+  addEventListener('afterprint',done);
+  // Vložené obrázky (např. snímek 3D modelu) se dekódují asynchronně; tisk na ně počká nejvýš 3 s.
+  const images=Array.from(h.querySelectorAll('img'),image=>image.decode?image.decode().catch(()=>{}):Promise.resolve());
+  Promise.race([Promise.all(images),new Promise(resolve=>setTimeout(resolve,3000))]).then(()=>window.print());
 }
 function medroxSend(message){parent.postMessage({protocol:'${OPERATIVITY_FRAME_PROTOCOL}',channel:host.channel,...message},'*');}
 function medroxAllowedViews(){return navList().flatMap(([,items])=>items.map(([view])=>view)).filter(view=>Object.prototype.hasOwnProperty.call(VIEWS,view));}
