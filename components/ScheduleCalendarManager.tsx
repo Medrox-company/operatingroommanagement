@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Building2,
   CalendarDays,
@@ -23,6 +23,7 @@ import {
   type RoomScheduleDayPart,
 } from '../lib/room-specialty';
 import { getCzechPublicHoliday } from '../lib/czech-public-holidays';
+import { loadOperativityPlanningYear } from '../lib/operativity-planning-client';
 import ModulePageHeading from './ModulePageHeading';
 
 interface Department {
@@ -90,11 +91,15 @@ const ScheduleCalendarManager: React.FC<ScheduleCalendarManagerProps> = ({ rooms
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadControllerRef = useRef<AbortController | null>(null);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
 
   const loadSchedule = useCallback(async () => {
+    // Novější načtení (jiný rok, nemocnice, obnovení) ruší starší, aby jeho
+    // pozdní stránky nepřepsaly aktuální rozpis.
+    loadControllerRef.current?.abort();
     if (!activeHospitalId) {
       setAllocations([]);
       setDepartments([]);
@@ -102,26 +107,28 @@ const ScheduleCalendarManager: React.FC<ScheduleCalendarManagerProps> = ({ rooms
       return;
     }
 
+    const controller = new AbortController();
+    loadControllerRef.current = controller;
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/room-specialty-allocations?year=${year}`, {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || 'Kalendář rozpisu se nepodařilo načíst.');
-      setAllocations(Array.isArray(payload.allocations) ? payload.allocations : []);
-      setDepartments(Array.isArray(payload.departments) ? payload.departments : []);
+      // API vrací rok po 1000 blocích; pomocník projde všechny stránky
+      // a neúplný rozpis odmítne.
+      const payload = await loadOperativityPlanningYear(year, controller.signal);
+      if (controller.signal.aborted) return;
+      setAllocations(payload.allocations as Allocation[]);
+      setDepartments(payload.departments as Department[]);
     } catch (loadError) {
+      if (controller.signal.aborted) return;
       setError(loadError instanceof Error ? loadError.message : 'Kalendář rozpisu se nepodařilo načíst.');
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [activeHospitalId, year]);
 
   useEffect(() => {
     void loadSchedule();
+    return () => loadControllerRef.current?.abort();
   }, [loadSchedule]);
 
   useEffect(() => {
