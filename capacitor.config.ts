@@ -17,7 +17,11 @@ const config: CapacitorConfig = {
     iosScheme: 'https',
   },
   ios: {
-    contentInset: 'automatic',
+    // Obsah sahá přes celou obrazovku (pod stavový řádek i lištu domovské
+    // obrazovky) stejně jako na webu; odsazení řeší styly přes
+    // env(safe-area-inset-*). Při 'automatic' iOS odsadil celé zobrazení
+    // a nahoře i dole zůstaly pruhy v barvě backgroundColor.
+    contentInset: 'never',
     preferredContentMode: 'mobile',
     backgroundColor: '#07183F',
   },
