@@ -683,7 +683,7 @@ const AppContent: React.FC = () => {
 
   return (
     <ErrorBoundary>
-    <div className="app-shell-safe flex h-dvh md:h-screen w-full font-sans overflow-hidden bg-black text-white">
+    <div className="flex h-dvh md:h-screen w-full font-sans overflow-hidden bg-black text-white">
       {!hospitalLoading && activeHospitalId && <DeviceRegistration key={activeHospitalId} />}
       {/* Statická CSS pozadí — bez fotografií, vzdálených zdrojů a runtime konfigurace. */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
@@ -776,18 +776,19 @@ const AppContent: React.FC = () => {
 
             {/* Tok pacienta — živý monitorovací modul */}
             {currentView === 'flow' && (
-              <div className="app-module-shell w-full h-full overflow-hidden p-0 md:pb-6">
+              <div className="app-module-shell app-module-fill w-full h-full overflow-hidden p-0">
                 <FlowMonitorModule rooms={rooms} />
               </div>
             )}
 
             {/* Timeline */}
             {/* Pozn.: BEZ `pb-mobile-nav` — třída je definovaná mimo Tailwind vrstvy,
-                takže přebíjela i `md:pb-6` a modul na desktopu nedosahoval na spodní
-                okraj obrazovky. Mobilní odsazení řeší `pb-20` na <main> + interní
-                spodní padding v MobileTimelineView. */}
+                takže přebíjela i spodní odsazení na desktopu a modul nedosahoval na
+                spodní okraj obrazovky. Na desktopu ho určuje `app-module-fill`.
+                Mobilní odsazení řeší `pb-20` na <main> + interní spodní padding
+                v MobileTimelineView. */}
             {currentView === 'timeline' && (
-              <div className="app-module-shell w-full h-full overflow-hidden p-0 md:pb-6" inert={acuteRoomEnabled} aria-hidden={acuteRoomEnabled || undefined}>
+              <div className="app-module-shell app-module-fill w-full h-full overflow-hidden p-0" inert={acuteRoomEnabled} aria-hidden={acuteRoomEnabled || undefined}>
                 <TimelineModule rooms={rooms} onRefresh={refreshRooms} onOpenAcuteRequests={() => handleNavigate('acute-requests')}
                   onOpenAcuteRoom={hasModuleAccess('dashboard') ? handleOpenAcuteRoom : undefined} />
               </div>
