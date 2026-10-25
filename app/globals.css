@@ -4591,6 +4591,18 @@ html.capacitor-native select {
    .content-safe v detailu sálu a .app-module-shell / .app-module-fill
    v modulech. */
 
+/* Hlavní kruh detailu sálu je kontejner: upozornění na dlouhý úklid se
+   měří podle průměru kruhu (cqw), ne podle šířky okna, a zůstává uvnitř
+   prstence. V malém kruhu zůstane jen hlavní sdělení. */
+.room-detail-circle-current {
+  container-type: inline-size;
+}
+@container (max-width: 300px) {
+  .room-detail-circle-note {
+    display: none;
+  }
+}
+
 /* ── Detail sálu na nízké obrazovce (iPhone na šířku) ───────────────────
    Výška kolem 400 bodů: prvky se zmenší podle skutečné výšky bezpečné
    oblasti, pravý sloupec drží pevné pořadí bez překryvů a spodní průběh

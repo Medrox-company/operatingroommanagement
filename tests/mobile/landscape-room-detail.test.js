@@ -54,3 +54,14 @@ test('okno notifikací a dialogy modulů se na šířku vejdou vedle menu a mimo
   assert.match(short, /main \.fixed\.inset-0:is\(\.justify-center, \.justify-end\):not\(\.notification-overlay-desktop\) \{\s*padding-left: calc\(96px \+ var\(--safe-left\) \+ 8px\);/);
   assert.match(read('components/statistics/RoomActivityPanels.tsx'), /paddingRight:'var\(--safe-right\)'/);
 });
+
+test('upozornění na dlouhý úklid se měří podle průměru kruhu a zůstává uvnitř prstence', () => {
+  const detail = read('components/RoomDetail.tsx');
+  const warning = detail.slice(detail.indexOf('key="cleaning-warning"'), detail.lastIndexOf('Tento krok bude automaticky ukončen.'));
+  assert.ok(warning.length > 0, 'chybí upozornění na dlouhý úklid');
+  assert.doesNotMatch(warning, /\d+(?:\.\d+)?vw/, 'velikosti podle šířky okna by text vytlačily přes prstenec');
+  assert.match(warning, /text-\[clamp\(1rem,8\.5cqw,3rem\)\]/);
+  assert.match(warning, /room-detail-circle-note text-\[clamp\(0\.75rem,3\.6cqw,1\.125rem\)\][^"]*max-w-\[62cqw\]/);
+  assert.match(globals, /\.room-detail-circle-current \{\s*container-type: inline-size;/);
+  assert.match(globals, /@container \(max-width: 300px\) \{\s*\.room-detail-circle-note \{\s*display: none;/);
+});

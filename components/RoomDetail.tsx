@@ -1517,9 +1517,9 @@ const prevStep = activeDbStatuses.length > 0
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={{ duration: 0.3 }}
-                    className="flex flex-col items-center text-center gap-[clamp(0.75rem,2vw,1.5rem)] px-4"
+                    className="flex flex-col items-center text-center gap-[clamp(0.5rem,3.5cqw,1.5rem)] px-4"
                   >
-                    <p className="text-[clamp(8px,0.8vw,10px)] font-semibold tracking-[0.3em] uppercase text-white/30">
+                    <p className="text-[clamp(9px,2.3cqw,10px)] font-semibold tracking-[0.3em] uppercase text-white/30">
                       Upozornění
                     </p>
                     <motion.div
@@ -1527,17 +1527,18 @@ const prevStep = activeDbStatuses.length > 0
                       transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
                       style={{ color: '#FBBF24' }}
                     >
-                      <AlertTriangle style={{ width: 'clamp(2.5rem,4vw,5rem)', height: 'clamp(2.5rem,4vw,5rem)' }} strokeWidth={1.5} />
+                      {/* Velikosti v cqw = podíl průměru kruhu; text zůstává uvnitř prstence. */}
+                      <AlertTriangle style={{ width: 'clamp(1.5rem,11cqw,5rem)', height: 'clamp(1.5rem,11cqw,5rem)' }} strokeWidth={1.5} />
                     </motion.div>
                     <motion.h2
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="text-[clamp(1.5rem,4vw,3rem)] font-bold tracking-tight leading-tight text-center text-white"
+                      className="text-[clamp(1rem,8.5cqw,3rem)] font-bold tracking-tight leading-tight text-center text-white"
                     >
                       Úklid sálu<br />přesahuje<br />{thresholds.cleaningWarningMinutes} minut
                     </motion.h2>
-                    <p className="room-detail-circle-note text-[clamp(0.8rem,1.6vw,1.125rem)] text-white/60 leading-snug max-w-[85%] text-center">
+                    <p className="room-detail-circle-note text-[clamp(0.75rem,3.6cqw,1.125rem)] text-white/60 leading-snug max-w-[62cqw] text-center">
                       Tento krok bude automaticky ukončen.
                     </p>
                   </motion.div>
