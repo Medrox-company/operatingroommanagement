@@ -66,6 +66,12 @@ výrazy. Důsledky:
 - Cloudový agent pushuje jen do své přidělené větve; merge a nasazení dělá
   uživatel.
 - `output/` a `tmp/` jsou generované soubory — necommitovat.
+- **iOS (Xcode Cloud) sestavuje z `main`.** `@capacitor/ios`, `core` a
+  `android` mají v `package.json` přesnou verzi. Při jejich změně je nutné na
+  Macu spustit `npm run ios:sync`, v Xcode File → Packages → Resolve Package
+  Versions a commitnout `ios/App/CapApp-SPM/Package.swift` i `Package.resolved`;
+  jinak Xcode Cloud selže na „out-of-date resolved file“ (stalo se 24. 10. po
+  posunu na 8.5.3). Hlídá to `tests/mobile/ios-package-resolved.test.js`.
 
 ## Nespuštěné skripty
 
