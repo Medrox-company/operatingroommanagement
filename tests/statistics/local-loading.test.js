@@ -20,6 +20,7 @@ function load(path, imports) {
   return module.exports;
 }
 const helper = load('lib/statistics-loading-progress.ts', {});
+const planningClient = load('lib/operativity-planning-client.ts', {});
 const loader = load('components/statistics/StatisticsPreloader.tsx', {
   react: React,
   'react/jsx-runtime': require('react/jsx-runtime'),
@@ -59,7 +60,7 @@ function fixture(name, t, overrides = {}) {
   };
   const sourceRead = source => options => new Promise((resolve, reject) => { reads.push({ source, options, hospital, resolve, reject }); });
   globalThis.fetch = (url, options) => new Promise(resolve => {
-    assert.match(url, /^\/api\/room-specialty-allocations\?year=\d{4}$/);
+    assert.match(url, /^\/api\/room-specialty-allocations\?year=\d{4}&offset=\d+$/);
     years.push({ url, options, hospital, resolve: (payload = { allocations: [], departments: [] }, ok = true) => resolve({ ok, json: async () => payload }) });
   });
   const passthrough = ({ children, ...attributes }) => React.createElement('section', attributes, children);
@@ -81,6 +82,7 @@ function fixture(name, t, overrides = {}) {
     './StatisticsPhaseFilterContext': { useStatisticsPhaseHistory: history => history },
     '../../lib/statistics-room-scope': roomScope,
     '../../lib/statistics-loading-progress': helper, './StatisticsPreloader': loader,
+    '../../lib/operativity-planning-client': planningClient,
   })[name];
   const render = () => {
     cursor = 0; const tree = expand(component(props)); effects.splice(0).forEach(run => run()); return tree;
@@ -134,6 +136,28 @@ test('Finance selected day waits for both full reads, treats null as an error an
   app.reads.slice(2).forEach(read => read.resolve([]));
   tree = await app.flush();
   assert.ok(app.latestReport(), 'Successful empty day responses are valid after explicit retry');
+});
+
+test('Finance counts a schedule year only after its last page', async t => {
+  const app = fixture('FinanceTab', t); app.render();
+  const first = app.years[0];
+  const yearCount = new Set(app.years.map(year => year.url.replace(/&offset=\d+$/, ''))).size;
+  assert.match(first.url, /&offset=0$/);
+  first.resolve({ allocations: Array.from({ length: 1000 }, (_, id) => ({ id: `block-${id}` })), departments: [], nextOffset: 1000 });
+  let tree = await app.flush();
+  const next = app.years.find(year => year.url === first.url.replace(/offset=0$/, 'offset=1000'));
+  assert.ok(next, 'The next page of the same year is requested');
+  assert.equal(next.options.signal, first.options.signal, 'Every page stays cancellable together with the year');
+  assert.equal(app.latestReport(), null, 'The first 1000 blocks alone never make the report ready');
+  assert.equal(walk(tree, node => node.props.role === 'progressbar')[0].props['aria-valuenow'], 0);
+  next.resolve({ allocations: [{ id: 'block-1000' }], departments: [], nextOffset: null });
+  tree = await app.flush();
+  if (yearCount > 1) {
+    assert.equal(walk(tree, node => node.props.role === 'progressbar')[0].props['aria-valuenow'], Math.floor(100 / yearCount));
+    assert.equal(app.latestReport(), null);
+  }
+  app.resolveYears(); tree = await app.flush();
+  assert.ok(app.latestReport());
 });
 
 test('Finance malformed schedule responses never certify zero data', async t => {

@@ -27,6 +27,7 @@ import { useStatisticsPhaseHistory } from './StatisticsPhaseFilterContext';
 import { useHospital } from '../../contexts/HospitalContext';
 import { StatisticsPreloader } from './StatisticsPreloader';
 import { aggregateStatisticsProgress, INITIAL_STATISTICS_PROGRESS } from '../../lib/statistics-loading-progress';
+import { loadOperativityPlanningYear } from '../../lib/operativity-planning-client';
 import { scopeStatisticsRooms, statisticsDayWindow, statisticsPeriodWindow, STATISTICS_ROOM_SCOPE_NOTE } from '../../lib/statistics-room-scope';
 
 type Period = 'den' | 'týden' | 'měsíc' | 'rok';
@@ -640,12 +641,8 @@ export function FinanceTab({
       try {
         if (!active()) return;
         const payloads = await Promise.all(years.map(async year => {
-          const response = await fetch('/api/room-specialty-allocations?year=' + year, {
-            credentials: 'include', cache: 'no-store', signal: controller.signal,
-          });
-          if (!response.ok) throw new Error('Rozpis odborností se nepodařilo načíst.');
-          const payload = await response.json() as { allocations?: SpecialtyAllocation[]; departments?: SpecialtyDepartment[] };
-          if (!payload || !Array.isArray(payload.allocations) || !Array.isArray(payload.departments)) throw new Error('Rozpis odborností nevrátil úplná data.');
+          // Rok přichází po stránkách; rok se započte až po poslední z nich.
+          const payload = await loadOperativityPlanningYear(year, controller.signal);
           if (active() && !failed) {
             completedYears += 1;
             setScheduleProgress({ scope: expectedScope, value: { loaded: completedYears, total: years.length, complete: false } });
@@ -654,8 +651,8 @@ export function FinanceTab({
         }));
         if (!active()) return;
         const departments = new Map<string, SpecialtyDepartment>();
-        payloads.flatMap(payload => payload.departments ?? []).forEach(department => departments.set(department.id, department));
-        setSpecialtyAllocations(payloads.flatMap(payload => payload.allocations ?? []));
+        payloads.flatMap(payload => payload.departments).forEach(department => departments.set(department.id, department));
+        setSpecialtyAllocations(payloads.flatMap(payload => payload.allocations) as SpecialtyAllocation[]);
         setSpecialtyDepartments(Array.from(departments.values()));
         setDelayScope(expectedScope);
         setScheduleProgress({ scope: expectedScope, value: { loaded: years.length, total: years.length, complete: true } });
