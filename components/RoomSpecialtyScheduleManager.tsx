@@ -15,6 +15,7 @@ import {
   Loader2,
   Plus,
   Palette,
+  Printer,
   RefreshCw,
   Stethoscope,
   Wrench,
@@ -31,6 +32,14 @@ import {
   type RoomScheduleDayPart,
 } from '../lib/room-specialty';
 import { getCzechPublicHoliday } from '../lib/czech-public-holidays';
+import { loadOperativityPlanningYear } from '../lib/operativity-planning-client';
+import { openOperativityPrintWindow, printOperativityDocumentInFrame } from '../lib/operativity-print';
+import {
+  buildRoomSchedulePrintHtml,
+  ROOM_SCHEDULE_PRINT_SYSTEM_CODES,
+  type RoomSchedulePrintScope,
+  type RoomSchedulePrintSlot,
+} from '../lib/room-schedule-print';
 
 type ViewMode = 'week' | 'month' | 'year';
 type RepeatMode = 'single' | 'month' | 'year';
@@ -128,7 +137,7 @@ function repeatedDateKeys(startKey: string, repeat: RepeatMode) {
 }
 
 const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ rooms }) => {
-  const { activeHospitalId } = useHospital();
+  const { activeHospitalId, activeHospital } = useHospital();
   const [view, setView] = useState<ViewMode>('week');
   const [anchorDate, setAnchorDate] = useState(() => new Date());
   const [selectedRoomId, setSelectedRoomId] = useState(rooms[0]?.id || '');
@@ -145,7 +154,13 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
   const [migrationRequired, setMigrationRequired] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
   const [paintPreview, setPaintPreview] = useState<Map<string, Allocation>>(() => new Map());
+  const [printOpen, setPrintOpen] = useState(false);
+  const [printView, setPrintView] = useState<ViewMode>('week');
+  const [printScope, setPrintScope] = useState<RoomSchedulePrintScope>('all');
+  const [printRoomId, setPrintRoomId] = useState('');
+  const [loadedYear, setLoadedYear] = useState<number | null>(null);
   const paintDragRef = useRef<SchedulePaintDrag | null>(null);
+  const loadControllerRef = useRef<AbortController | null>(null);
 
   const year = anchorDate.getFullYear();
   const selectedRoom = rooms.find(room => room.id === selectedRoomId) || rooms[0] || null;
@@ -157,36 +172,38 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
     }
   }, [rooms, selectedRoomId]);
 
-  const loadYear = useCallback(async (signal?: AbortSignal) => {
+  const loadYear = useCallback(async () => {
+    // Novější načtení (jiný rok, obnovení po uložení) ruší starší, aby jeho
+    // pozdní stránky nepřepsaly aktuální rozpis na obrazovce ani v tisku.
+    loadControllerRef.current?.abort();
     if (!activeHospitalId) return;
+    const controller = new AbortController();
+    loadControllerRef.current = controller;
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/room-specialty-allocations?year=${year}`, {
-        credentials: 'include',
-        cache: 'no-store',
-        signal,
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setMigrationRequired(Boolean(payload.migrationRequired));
-        throw new Error(payload.error || 'Rozpis se nepodařilo načíst.');
-      }
+      // Rok mívá víc než 1000 půldenních bloků a server je vrací po stránkách.
+      // Načítají se všechny, jinak by obrazovka i tisk ukázaly pozdější dny jako volné.
+      const payload = await loadOperativityPlanningYear(year, controller.signal);
+      if (controller.signal.aborted) return;
       setMigrationRequired(false);
-      setDepartments(Array.isArray(payload.departments) ? payload.departments : []);
-      setAllocations(Array.isArray(payload.allocations) ? payload.allocations : []);
+      setDepartments(payload.departments as Department[]);
+      setAllocations(payload.allocations as Allocation[]);
+      setLoadedYear(year);
     } catch (loadError) {
-      if (loadError instanceof DOMException && loadError.name === 'AbortError') return;
+      if (controller.signal.aborted) return;
+      // Bez úspěšně načteného roku se netiskne: starší data by vypadala jako aktuální.
+      setLoadedYear(null);
+      setMigrationRequired((loadError as { migrationRequired?: boolean } | null)?.migrationRequired === true);
       setError(loadError instanceof Error ? loadError.message : 'Rozpis se nepodařilo načíst.');
     } finally {
-      if (!signal?.aborted) setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [activeHospitalId, year]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    void loadYear(controller.signal);
-    return () => controller.abort();
+    void loadYear();
+    return () => loadControllerRef.current?.abort();
   }, [loadYear]);
 
   useEffect(() => {
@@ -202,6 +219,20 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [saving, selectedCell]);
+
+  useEffect(() => {
+    if (!printOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPrintOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [printOpen]);
 
   useEffect(() => {
     const refresh = () => { void loadYear(); };
@@ -414,6 +445,75 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
       ? MONTH_FORMATTER.format(anchorDate)
       : String(year);
 
+  // Tiskne se jen úspěšně načtený rok; aktivní obory nejsou podmínkou, uložená
+  // přiřazení i provozní stavy (uzavřeno, servis) se tisknou i bez nich.
+  const canPrint = !loading && !saving && loadedYear === year && rooms.length > 0;
+  const printPeriods: Array<{ mode: ViewMode; title: string; label: string }> = [
+    { mode: 'week', title: 'Týden', label: `${weekDates[0].getDate()}. ${weekDates[0].getMonth() + 1}. – ${weekDates[6].getDate()}. ${weekDates[6].getMonth() + 1}. ${weekDates[6].getFullYear()}` },
+    { mode: 'month', title: 'Měsíc', label: MONTH_FORMATTER.format(anchorDate) },
+    { mode: 'year', title: 'Rok', label: String(year) },
+  ];
+  const printDescription = printView === 'week'
+    ? 'Tabulka sálů a dnů v týdnu. U každého dopoledního a odpoledního bloku je kód i název oboru.'
+    : printView === 'month'
+      ? printScope === 'all'
+        ? 'Přehled všech sálů na jedné stránce: řádky jsou sály, sloupce dny měsíce.'
+        : 'Kalendář měsíce pro vybraný sál s kódem a názvem oboru u každého bloku.'
+      : printScope === 'all'
+        ? 'Roční přehled po sálech, každý sál na samostatné stránce: řádky jsou měsíce, sloupce dny.'
+        : 'Roční přehled vybraného sálu na jedné stránce: řádky jsou měsíce, sloupce dny.';
+
+  const openPrintDialog = () => {
+    setPrintView(view);
+    setPrintScope(view === 'week' ? 'all' : 'selected');
+    setPrintRoomId(selectedRoom?.id || rooms[0]?.id || '');
+    setPrintOpen(true);
+  };
+
+  /** Tiskne uložený stav rozpisu, ne náhled rozpracovaného tažení. */
+  const printSlot = (roomId: string, date: string, part: RoomScheduleDayPart): RoomSchedulePrintSlot | null => {
+    const allocation = allocationMap.get(`${roomId}|${date}|${part}`);
+    if (!allocation) return null;
+    if (allocation.allocation_kind === 'CLOSED' || allocation.allocation_kind === 'SERVICE') {
+      const option = ROOM_SCHEDULE_SYSTEM_OPTIONS[allocation.allocation_kind];
+      return { code: ROOM_SCHEDULE_PRINT_SYSTEM_CODES[allocation.allocation_kind], name: option.name, color: option.color };
+    }
+    const department = allocation.department_id ? departmentMap.get(allocation.department_id) : null;
+    return department
+      ? { code: department.short_code || department.name, name: department.name, color: department.color }
+      : { code: '?', name: 'Obor není v seznamu oborů', color: '#94A3B8' };
+  };
+
+  const printSchedule = () => {
+    let html: string;
+    try {
+      html = buildRoomSchedulePrintHtml({
+        hospitalName: activeHospital?.hospital_name || activeHospital?.hospital_short_name || 'Zdravotnické zařízení',
+        view: printView,
+        scope: printScope,
+        anchor: anchorDate,
+        loadedYear: year,
+        rooms: rooms.map(room => ({ id: room.id, name: room.name, department: room.department })),
+        selectedRoomId: printRoomId,
+        slot: printSlot,
+        generatedAt: new Date(),
+      });
+    } catch (printError) {
+      setError(printError instanceof Error ? printError.message : 'Tiskový přehled se nepodařilo připravit.');
+      setPrintOpen(false);
+      return;
+    }
+    let opened = false;
+    try { opened = openOperativityPrintWindow(html); } catch { opened = false; }
+    if (!opened) {
+      // Zablokované okno: stejný dokument se vytiskne přímo z této stránky.
+      try { printOperativityDocumentInFrame(html); } catch {
+        setError('Tisk se nepodařilo spustit. Povolte pro aplikaci otevírání oken a zkuste to znovu.');
+      }
+    }
+    setPrintOpen(false);
+  };
+
   const renderAllocation = (roomId: string, date: string, dayPart: RoomScheduleDayPart, compact = false) => {
     const allocation = displayedAllocationMap.get(`${roomId}|${date}|${dayPart}`);
     const display = allocation
@@ -547,6 +647,16 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
 
           <button type="button" onClick={() => setAnchorDate(new Date())} className="h-10 rounded-lg border border-white/[0.06] bg-white/[0.025] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/52 hover:text-white">
             Dnes
+          </button>
+          <button
+            type="button"
+            onClick={openPrintDialog}
+            disabled={!canPrint}
+            className="flex h-11 shrink-0 items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] px-4 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/60 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            title="Vytisknout rozpis nebo ho uložit jako PDF"
+          >
+            <Printer className="h-4 w-4" aria-hidden="true" />
+            Tisk / PDF
           </button>
           {activeDepartments.length > 0 && (
             <button
@@ -789,6 +899,92 @@ const RoomSpecialtyScheduleManager: React.FC<{ rooms: OperatingRoom[] }> = ({ ro
           })}
         </section>
       ) : null}
+
+      {printOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-5">
+          <button type="button" tabIndex={-1} aria-label="Zavřít tisk rozpisu" className="staff-picker-backdrop absolute inset-0 cursor-default" onClick={() => setPrintOpen(false)} />
+          <div role="dialog" aria-modal="true" aria-labelledby="room-schedule-print-title" className="staff-picker-dialog relative flex max-h-[calc(100dvh-1rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl">
+            <header className="staff-picker-header flex shrink-0 items-center justify-between gap-4 border-b border-white/[0.07] px-4 py-4 sm:px-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/[0.08]">
+                  <Printer className="h-5 w-5 text-cyan-200/80" strokeWidth={1.7} />
+                </div>
+                <div className="min-w-0">
+                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-300/65">Tisk a PDF</p>
+                  <h2 id="room-schedule-print-title" className="truncate text-lg font-semibold tracking-tight text-white sm:text-xl">Tisk rozpisu sálů</h2>
+                </div>
+              </div>
+              <button type="button" onClick={() => setPrintOpen(false)} className="staff-picker-icon-button flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40" aria-label="Zavřít tisk rozpisu">
+                <X className="h-4 w-4 text-white/65" />
+              </button>
+            </header>
+
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+              <section aria-labelledby="room-schedule-print-period">
+                <p id="room-schedule-print-period" className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/55">Období</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {printPeriods.map(option => (
+                    <button
+                      key={option.mode}
+                      type="button"
+                      aria-pressed={printView === option.mode}
+                      onClick={() => setPrintView(option.mode)}
+                      className={`min-h-14 rounded-lg border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50 ${printView === option.mode ? 'border-cyan-200/30 bg-cyan-300/[0.12]' : 'border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]'}`}
+                    >
+                      <span className={`block text-[11px] font-bold ${printView === option.mode ? 'text-cyan-100' : 'text-white/80'}`}>{option.title}</span>
+                      <span className="mt-0.5 block text-[10px] capitalize text-white/55">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section aria-labelledby="room-schedule-print-rooms">
+                <p id="room-schedule-print-rooms" className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/55">Sály</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ['all', 'Všechny sály', `${rooms.length} sálů`],
+                    ['selected', 'Jeden sál', 'Výběr níže'],
+                  ] as const).map(([scope, title, description]) => (
+                    <button
+                      key={scope}
+                      type="button"
+                      aria-pressed={printScope === scope}
+                      onClick={() => setPrintScope(scope)}
+                      className={`min-h-14 rounded-lg border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50 ${printScope === scope ? 'border-cyan-200/30 bg-cyan-300/[0.12]' : 'border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06]'}`}
+                    >
+                      <span className={`block text-[11px] font-bold ${printScope === scope ? 'text-cyan-100' : 'text-white/80'}`}>{title}</span>
+                      <span className="mt-0.5 block text-[10px] text-white/55">{description}</span>
+                    </button>
+                  ))}
+                </div>
+                {printScope === 'selected' && (
+                  <select
+                    value={printRoomId}
+                    onChange={event => setPrintRoomId(event.target.value)}
+                    className="mt-2 h-11 w-full rounded-lg border border-white/[0.07] bg-[#10182a] px-3 text-[11px] font-semibold text-white/85 outline-none focus-visible:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300/20"
+                    aria-label="Sál pro tisk"
+                  >
+                    {rooms.map(room => <option key={room.id} value={room.id}>{room.name}</option>)}
+                  </select>
+                )}
+              </section>
+
+              <div className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2.5 text-[11px] leading-relaxed text-white/70">
+                <p>{printDescription}</p>
+                <p className="mt-1 text-white/55">Tiskne se A4 na šířku ve světlých barvách. Pro PDF zvolte v dialogu tisku „Uložit jako PDF“.</p>
+              </div>
+            </div>
+
+            <footer className="staff-picker-footer flex shrink-0 gap-2 border-t border-white/[0.07] px-4 py-3 sm:justify-end sm:px-5">
+              <button type="button" onClick={() => setPrintOpen(false)} className="h-11 flex-1 rounded-md px-4 text-[9px] font-semibold uppercase tracking-[0.1em] text-white/60 transition-colors hover:bg-white/5 hover:text-white/80 sm:flex-none">Zrušit</button>
+              <button type="button" onClick={printSchedule} autoFocus className="flex h-11 flex-1 items-center justify-center gap-2 rounded-md bg-cyan-300 px-5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#061724] transition-colors hover:bg-cyan-200 sm:flex-none">
+                <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+                Otevřít tisk / PDF
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
 
       {selectedCell && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-5">

@@ -23,6 +23,21 @@ test('annual import follows all pages and never writes to the source API', async
   assert.deepEqual(calls, ['/api/room-specialty-allocations?year=2026&offset=0', '/api/room-specialty-allocations?year=2026&offset=1000']);
 });
 
+test('a row shifted onto the next page by a concurrent change is counted once', async () => {
+  const pages = [
+    Array.from({ length: 1000 }, (_, index) => ({ id: `a-${index}` })),
+    [{ id: 'a-999' }, { id: 'a-1000' }],
+  ];
+  let call = 0;
+  const result = await load(2026, new AbortController().signal, async () => {
+    const allocations = pages[call];
+    call++;
+    return response({ departments: [], allocations, nextOffset: call === 1 ? 1000 : null });
+  });
+  assert.equal(result.allocations.length, 1001);
+  assert.equal(new Set(result.allocations.map(allocation => allocation.id)).size, 1001);
+});
+
 test('failed, incomplete or looping pages never become a plausible empty or truncated plan', async () => {
   const signal = new AbortController().signal;
   await assert.rejects(load(2026, signal, async () => new Response('{"error":"Přístup odepřen"}', { status: 403 })), /Přístup odepřen/);

@@ -665,3 +665,46 @@ test('frame resizing reports content dimensions once per change instead of its o
   for (height of [0, -1, Infinity, NaN]) report();
   assert.equal(messages.length, 2);
 });
+
+test('printing works inside the isolated frame without the upstream preview notice', () => {
+  for (const banned of ['Náhled v Claude', 'rozpis-operativy.html', 'V ostré verzi aplikace', 'fonts.googleapis.com']) {
+    assert.ok(!html.includes(banned), `Frame must not contain: ${banned}`);
+  }
+  // Tisk se předá hostitelské aplikaci; při zablokovaném okně tiskne rámec sám.
+  assert.ok(script.includes('if(medroxOpenPrint(title,inner))return;{if(inner==null){window.print();return;}'));
+  assert.match(script, /function medroxOpenPrint\(title,inner\)\{[\s\S]*?medroxSend\(\{type:'print',title:String\(title\)\.slice\(0,300\),html:doc\}\);/);
+  assert.ok(script.includes("if(message.type==='print-direct'){medroxPrintInFrame();return;}"));
+  assert.ok(script.includes("if(message.type==='print-opened'){medroxPendingPrint=null;return;}"));
+  // Náhradní tisk v rámci počká na dekódování obrázků (snímek 3D modelu), nejvýš 3 s.
+  assert.match(script, /function medroxPrintInFrame\(\)\{[\s\S]*?h\.querySelectorAll\('img'\)[\s\S]*?Promise\.race\(\[Promise\.all\(images\),new Promise\(resolve=>setTimeout\(resolve,3000\)\)\]\)\.then\(\(\)=>window\.print\(\)\);/);
+  // Tlačítko je v záhlaví každé sekce (sdílené nástroje), ne jen ve výchozí pravé části.
+  assert.ok(script.includes('data-act="print" title="Vytisknout tuto sekci nebo ji uložit jako PDF">${ico(\'printer\')}<span>Tisk / PDF</span>'));
+  assert.equal(script.split('data-act="print"').length - 1, 1, 'One shared print button, no duplicate in the default header');
+  // Tisková stránka nabízí uložení do PDF a nemá vložené obsluhy událostí.
+  assert.ok(script.includes('data-print-action="print">Tisk / Uložit PDF</button>'));
+  assert.ok(script.includes('pro PDF zvolte v dialogu tisku „Uložit jako PDF“'));
+  assert.ok(!script.includes('<button onclick="print()">'));
+});
+
+test('print headers and totals name the signed-in hospital instead of the upstream demo', () => {
+  assert.ok(!script.includes('Krajská nemocnice Liberec</b>'));
+  assert.ok(!/'KNL'|Celkem KNL|celá KNL|celé KNL/.test(script));
+  assert.ok(script.includes('<b>Rozpis operativy · ${esc(MEDROX_HOSPITAL)}</b>'));
+  assert.match(script, /const MEDROX_HOSPITAL=typeof host\.hospitalName==='string'&&host\.hospitalName\.trim\(\)\?host\.hospitalName\.trim\(\)\.slice\(0,160\):'Zdravotnické zařízení';/);
+  assert.match(script, /const MEDROX_HOSPITAL_SHORT=typeof host\.hospitalShortName==='string'/);
+});
+
+test('the host opens the planner print page itself, sanitized and script-free, with a frame fallback', () => {
+  const workspace = readFileSync(new URL('../../components/OperativityPlanningWorkspace.tsx', import.meta.url), 'utf8');
+  assert.match(workspace, /event\.data\.type === 'print'/);
+  assert.match(workspace, /openOperativityPrintWindow\(event\.data\.html\)/);
+  assert.match(workspace, /type: opened \? 'print-opened' : 'print-direct'/);
+  assert.match(workspace, /hospitalName: hospitalLabelsRef\.current\.name, hospitalShortName: hospitalLabelsRef\.current\.short/);
+  const printer = readFileSync(new URL('../../lib/operativity-print.ts', import.meta.url), 'utf8');
+  assert.match(printer, /script-src 'none'/);
+  assert.match(printer, /default-src 'none'/);
+  for (const element of ['script', 'iframe', 'object', 'embed', 'link', 'meta', 'base']) assert.match(printer, new RegExp(`REMOVED_ELEMENTS = '[^']*\\b${element}\\b`));
+  assert.match(printer, /name\.startsWith\('on'\) \|\| name === 'srcdoc'/);
+  assert.match(printer, /head\.prepend\(charset, csp\)/);
+  assert.match(printer, /preview\.opener = null/);
+});

@@ -62,7 +62,7 @@ function render({ currentView = 'map', mapMode = 'campus', previousView = 'home'
     '../contexts/AuthContext': { useAuth: () => ({ user: { id: 'user-test' }, isAdmin: true, hasModuleAccess: () => true }) },
     '../contexts/HospitalContext': { useHospital: () => ({ activeHospitalId: 'hospital-test', activeHospital: { hospital_name: 'Test hospital' } }) },
     './ui/ConfirmDialog': { useConfirm: () => async () => false },
-    '../lib/operativity-planning': {}, '../lib/operativity-frame': {}, '../lib/operativity-planning-client': {}, '../lib/operativity-three-assets': {},
+    '../lib/operativity-planning': {}, '../lib/operativity-frame': {}, '../lib/operativity-print': {}, '../lib/operativity-planning-client': {}, '../lib/operativity-three-assets': {},
     '../lib/operativity-navigation': { OPERATIVITY_NAVIGATION: [] },
     './planning/operativity-workspace.module.css': {}, './planning/operativity-canvas.css': {},
   };
