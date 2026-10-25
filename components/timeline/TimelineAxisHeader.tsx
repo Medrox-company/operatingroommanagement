@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { C, ROOM_LABEL_WIDTH, TIMELINE_START_HOUR } from './constants';
+import { C, ROOM_LABEL_WIDTH_CSS, TIMELINE_START_HOUR } from './constants';
 import { hourLabelCompact } from './utils';
 import type { StatusFilter } from './row-types';
 
@@ -43,8 +43,8 @@ export function TimelineAxisHeader({
     <div 
       className="timeline-room-rail-header flex-shrink-0 flex items-center px-4 py-1.5"
       style={{ 
-        width: ROOM_LABEL_WIDTH, 
-        minWidth: ROOM_LABEL_WIDTH, 
+        width: ROOM_LABEL_WIDTH_CSS,
+        minWidth: ROOM_LABEL_WIDTH_CSS,
         borderRight: '1px solid rgba(160,174,220,0.09)',
       }}
     >
@@ -89,7 +89,7 @@ export function TimelineAxisHeader({
         proto se podle šířky buňky zmenší písmo a vypisuje se jen
         každá druhá / třetí hodina. */}
     <div className="flex-1 overflow-hidden" ref={timelineRef}>
-      <div className="flex items-center h-[58px] relative" style={{ width: `${zoom * 100}%`, transition: 'width 0.25s ease' }}>
+      <div className="timeline-axis-track flex items-center h-[58px] relative" style={{ width: `${zoom * 100}%`, transition: 'width 0.25s ease' }}>
         {/* Pásy RÁNO/DEN/VEČER/NOC odstraněny — jednotný vzhled celé osy */}
         {TIME_MARKERS.map((hour, i) => {
           const isLast = i === TIME_MARKERS.length - 1;

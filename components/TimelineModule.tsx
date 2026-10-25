@@ -25,10 +25,11 @@ import { TimelineRoomRow, type TimelineHoveredOp } from './timeline/TimelineRoom
 import { TimelineAxisHeader } from './timeline/TimelineAxisHeader';
 import { TimelineCommandBar } from './timeline/TimelineCommandBar';
 import './timeline/timeline-refinement.css';
+import './timeline/timeline-landscape.css';
 import { AlertTriangle, X, CheckCircle, Search, Crosshair } from 'lucide-react';
 
 // ========== DESIGN TOKENS, CONSTANTS & HELPERS (extrahováno do ./timeline) ==========
-import { C, TIMELINE_START_HOUR, TIMELINE_HOURS as TIMELINE_HOURS_FULL, ROOM_LABEL_WIDTH, MIN_ROW_HEIGHT, MAX_ROW_HEIGHT } from './timeline/constants';
+import { C, TIMELINE_START_HOUR, TIMELINE_HOURS as TIMELINE_HOURS_FULL, ROOM_LABEL_WIDTH_CSS, roomLabelWidthPx, MIN_ROW_HEIGHT, MAX_ROW_HEIGHT } from './timeline/constants';
 import { getTimePercent as getTimePercentRaw, parseTimeToDate, getTimePercentForTimeline as getTimePercentForTimelineRaw, getOperationPosition as getOperationPositionRaw } from './timeline/utils';
 import RoomDetailPopup from './timeline/RoomDetailPopup';
 import { useCurrentRoomSpecialties } from '../hooks/useCurrentRoomSpecialties';
@@ -71,7 +72,7 @@ const TimelineClockDisplay: React.FC = React.memo(() => {
         <span>
           {clockTime.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
         </span>
-        <span className="text-[11px] xl:text-[12px] font-medium tracking-normal text-white/28 tabular-nums">
+        <span className="timeline-clock-seconds text-[11px] xl:text-[12px] font-medium tracking-normal text-white/28 tabular-nums">
           {clockTime.toLocaleTimeString('cs-CZ', { second: '2-digit' })}
         </span>
       </motion.p>
@@ -105,8 +106,9 @@ const TimelineMinimap: React.FC<TimelineMinimapProps> = ({ lanes, nowPct, contai
     if (!el) return;
     let raf = 0;
     const update = () => {
-      const fullWidth = Math.max(1, el.scrollWidth - ROOM_LABEL_WIDTH);
-      const visible = Math.max(0, el.clientWidth - ROOM_LABEL_WIDTH);
+      const labelWidth = roomLabelWidthPx(el);
+      const fullWidth = Math.max(1, el.scrollWidth - labelWidth);
+      const visible = Math.max(0, el.clientWidth - labelWidth);
       setViewport({ left: el.scrollLeft / fullWidth, width: Math.min(1, visible / fullWidth) });
     };
     const onScroll = () => {
@@ -132,8 +134,9 @@ const TimelineMinimap: React.FC<TimelineMinimapProps> = ({ lanes, nowPct, contai
     if (!track || !el) return;
     const rect = track.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const fullWidth = el.scrollWidth - ROOM_LABEL_WIDTH;
-    const visible = el.clientWidth - ROOM_LABEL_WIDTH;
+    const labelWidth = roomLabelWidthPx(el);
+    const fullWidth = el.scrollWidth - labelWidth;
+    const visible = el.clientWidth - labelWidth;
     const target = Math.max(0, ratio * fullWidth - visible / 2);
     el.scrollTo({ left: target, behavior: 'smooth' });
     if (axisRef.current) axisRef.current.scrollTo({ left: target, behavior: 'smooth' });
@@ -404,8 +407,9 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
     const container = rowsContainerRef.current;
     if (!container) return;
     const nowPct = getTimePercent(new Date()) / 100; // 0..1 v rámci osy
-    const fullWidth = container.scrollWidth - ROOM_LABEL_WIDTH;
-    const target = Math.max(0, nowPct * fullWidth - (container.clientWidth - ROOM_LABEL_WIDTH) / 2);
+    const labelWidth = roomLabelWidthPx(container);
+    const fullWidth = container.scrollWidth - labelWidth;
+    const target = Math.max(0, nowPct * fullWidth - (container.clientWidth - labelWidth) / 2);
     container.scrollTo({ left: target, behavior: 'smooth' });
     if (timelineRef.current) timelineRef.current.scrollTo({ left: target, behavior: 'smooth' });
   }, []);
@@ -1468,7 +1472,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
           background: 'transparent',
         }}
       >
-        <div className="-mt-1 pt-1 pb-3">
+        <div className="timeline-header-inner -mt-1 pt-1 pb-3">
 
           {/* Jediná horní lišta — nástroje vlevo, čas uprostřed, zoom a ARO vpravo */}
           <div className="timeline-commandbar relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 xl:gap-3">
@@ -1528,7 +1532,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
               >
                 <div className="relative flex items-center gap-3 h-full">
                   <motion.div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                    className="timeline-status-icon w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                     animate={{ scale: [1, 1.15, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                     style={{
@@ -1556,7 +1560,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
                 }}
               >
                 <div 
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
+                  className="timeline-status-icon w-8 h-8 rounded-xl flex items-center justify-center"
                   style={{ background: `${C.green}18` }}
                 >
                   <CheckCircle className="w-4 h-4" style={{ color: C.green }} />
@@ -1603,7 +1607,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
           >
             <div
               className="h-full px-4 flex items-center justify-between gap-3 shrink-0"
-              style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH, borderRight: `1px solid ${C.border}` }}
+              style={{ width: ROOM_LABEL_WIDTH_CSS, minWidth: ROOM_LABEL_WIDTH_CSS, borderRight: `1px solid ${C.border}` }}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Crosshair className="w-3.5 h-3.5 shrink-0" style={{ color: C.cyan }} />
@@ -1642,7 +1646,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
           }}
         >
           <div
-            className={`relative ${density === 'auto' ? 'h-full' : 'min-h-full'}`}
+            className={`timeline-rows-canvas relative ${density === 'auto' ? 'h-full' : 'min-h-full'}`}
             ref={scrollContainerRef}
             style={{
               width: `${zoom * 100}%`,
@@ -1664,7 +1668,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
                 <motion.div 
                   className="absolute top-0 bottom-0 z-30 pointer-events-none" 
                   style={{
-                    left: `calc(${ROOM_LABEL_WIDTH}px + ((100% - ${ROOM_LABEL_WIDTH}px) * ${nowPercent / 100}))`
+                    left: `calc(${ROOM_LABEL_WIDTH_CSS} + ((100% - ${ROOM_LABEL_WIDTH_CSS}) * ${nowPercent / 100}))`
                   }}
                   initial={false}
                 >
@@ -1689,7 +1693,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
                     }}
                   />
                   <div
-                    className="absolute -left-[1px] -top-[14px] -translate-x-1/2 px-2.5 py-[4px] rounded-lg whitespace-nowrap"
+                    className="timeline-now-chip absolute -left-[1px] -top-[14px] -translate-x-1/2 px-2.5 py-[4px] rounded-lg whitespace-nowrap"
                     style={{
                       background: `linear-gradient(135deg, ${C.now}, ${C.primary})`,
                       boxShadow: `0 5px 16px ${C.primary}38`,
@@ -1704,7 +1708,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
             </AnimatePresence>
 
             {/* Hour grid overlay — jemná svislá hodinová mřížka přes řádky, sladěná s časovou osou */}
-            <div className="absolute inset-y-0 z-20 pointer-events-none" style={{ left: ROOM_LABEL_WIDTH, right: 0 }}>
+            <div className="absolute inset-y-0 z-20 pointer-events-none" style={{ left: ROOM_LABEL_WIDTH_CSS, right: 0 }}>
               {TIME_MARKERS.slice(0, -1).map((hour, i) => {
                 const leftPct = (i * 100) / TIMELINE_HOURS;
                 const widthPct = 100 / TIMELINE_HOURS;
@@ -1759,8 +1763,9 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
                 style={{ cursor: 'col-resize' }}
                 onPointerMove={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const x = e.clientX - rect.left - ROOM_LABEL_WIDTH;
-                  const w = Math.max(1, rect.width - ROOM_LABEL_WIDTH);
+                  const labelWidth = roomLabelWidthPx(e.currentTarget);
+                  const x = e.clientX - rect.left - labelWidth;
+                  const w = Math.max(1, rect.width - labelWidth);
                   const pct = Math.max(0, Math.min(1, x / w));
                   const t = dayWindowStartMs + pct * TIMELINE_HOURS * 3600_000;
                   setScrubTime(Math.min(t, currentTime.getTime()));
@@ -1774,7 +1779,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
                 {scrubPct !== null && scrubTime !== null && (
                   <div
                     className="absolute top-0 bottom-0 pointer-events-none"
-                    style={{ left: `calc(${ROOM_LABEL_WIDTH}px + ((100% - ${ROOM_LABEL_WIDTH}px) * ${scrubPct / 100}))` }}
+                    style={{ left: `calc(${ROOM_LABEL_WIDTH_CSS} + ((100% - ${ROOM_LABEL_WIDTH_CSS}) * ${scrubPct / 100}))` }}
                   >
                     {/* Hlavní linie lupy */}
                     <div
@@ -1802,7 +1807,7 @@ function TimelineModuleImpl({ rooms: sourceRooms, onRefresh, onOpenAcuteRequests
             )}
 
             {/* Room Rows */}
-            <div className={`relative z-10 flex flex-col gap-0 ${density === 'auto' ? 'h-full' : ''}`}>
+            <div className={`timeline-rows relative z-10 flex flex-col gap-0 ${density === 'auto' ? 'h-full' : ''}`}>
             {displayRooms.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                 <Search className="w-6 h-6 text-white/25" />

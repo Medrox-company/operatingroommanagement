@@ -56,6 +56,16 @@ export const TIMELINE_START_HOUR = 7;
 export const TIMELINE_END_HOUR = 31; // 7:00 next day (7 + 24 = 31)
 export const TIMELINE_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR; // 24 hours
 export const ROOM_LABEL_WIDTH = 320;
+/** Šířka sloupce sálů pro styly. Na nízké obrazovce (iPhone na šířku) ji
+ *  zužuje CSS proměnná --tl-label-w; řádky, osa, mřížka i čára „teď"
+ *  proto používají stejnou hodnotu a zůstávají zarovnané. */
+export const ROOM_LABEL_WIDTH_CSS = `var(--tl-label-w, ${ROOM_LABEL_WIDTH}px)`;
+/** Skutečná šířka sloupce sálů v px pro výpočty posunu a polohy ukazatele. */
+export function roomLabelWidthPx(element: Element | null): number {
+  if (!element || typeof getComputedStyle !== 'function') return ROOM_LABEL_WIDTH;
+  const width = Number.parseFloat(getComputedStyle(element).getPropertyValue('--tl-label-w'));
+  return Number.isFinite(width) && width > 0 ? width : ROOM_LABEL_WIDTH;
+}
 export const MIN_ROW_HEIGHT = 24; // Bezpečné minimum pro 15 sálů na 720px displeji
 export const MAX_ROW_HEIGHT = 76; // Vzdušnější řádky při menším počtu sálů
 export const ROW_GAP_PX = 6;      // gap-1.5 mezi řádky — musí korespondovat s JSX

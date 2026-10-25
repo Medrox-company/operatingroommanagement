@@ -1,0 +1,145 @@
+/* Časová osa na nízké obrazovce (iPhone na šířku, výška do 520 px).
+   Na počítači a iPadu se nic nemění. Žádný text se nesmí překrývat:
+   hlavička je v jednom řádku, sloupec sálů je užší, řádky mají výšku
+   dotykového cíle a při větším počtu sálů se posouvají, stav sálu je pod
+   jeho názvem místo karty přes osu a popisky úseků se ukážou jen tam,
+   kam se vejdou. */
+
+/* Stav pod názvem sálu patří jen nízké obrazovce. */
+.timeline-desktop-workspace .timeline-room-status-line {
+  display: none;
+}
+
+@media (min-width: 768px) and (max-height: 520px) {
+  /* Užší okraje: vlevo menu, kolem bezpečná oblast (výřez, lišta). */
+  .app-module-fill:has(.timeline-desktop-workspace) {
+    padding-top: calc(10px + var(--safe-top)) !important;
+    padding-right: calc(12px + var(--safe-right));
+    padding-bottom: calc(6px + var(--safe-bottom));
+    padding-left: calc(108px + var(--safe-left));
+  }
+
+  .timeline-desktop-workspace {
+    --tl-label-w: 196px;
+  }
+
+  /* Hlavička v jednom řádku: nástroje, čas, stav ARO. */
+  .timeline-desktop-workspace .timeline-header-inner {
+    padding-bottom: 8px;
+  }
+  .timeline-desktop-workspace .timeline-commandbar {
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    column-gap: 8px;
+    row-gap: 0;
+  }
+  .timeline-desktop-workspace .timeline-commandbar .timeline-status-group:has(.timeline-status-tile) {
+    grid-column: auto;
+    justify-self: end;
+  }
+  .timeline-desktop-workspace .timeline-toolbar-float {
+    height: 48px;
+    padding: 2px;
+  }
+  .timeline-desktop-workspace .timeline-clock-clean {
+    width: auto;
+    min-width: 0;
+    height: 44px;
+    padding-inline: 0;
+  }
+  .timeline-desktop-workspace .timeline-clock-seconds {
+    display: none;
+  }
+  .timeline-desktop-workspace .timeline-status-group {
+    gap: 6px;
+  }
+  .timeline-desktop-workspace .timeline-status-tile {
+    height: 44px;
+    padding: 4px 10px;
+  }
+  /* S dlaždicí akutních požadavků se vedle nástrojů vejdou jen dvě
+     dlaždice bez ikon; aktuální hodinu pak ukazuje zvýrazněná hodina osy. */
+  .timeline-desktop-workspace .timeline-status-group:has(.timeline-acute-control) {
+    display: flex;
+    width: auto;
+    max-width: none;
+  }
+  .timeline-desktop-workspace .timeline-status-group:has(.timeline-acute-control) > .timeline-status-tile {
+    width: auto;
+    height: 44px;
+  }
+  .timeline-desktop-workspace .timeline-commandbar:has(.timeline-acute-control) :is(.timeline-status-icon, .timeline-acute-icon, .timeline-clock-clean) {
+    display: none;
+  }
+
+  /* Osa: filtry se vejdou do užšího sloupce, popisky hodin níž. */
+  .timeline-desktop-workspace .timeline-room-rail-header {
+    padding: 2px 6px;
+  }
+  .timeline-desktop-workspace .timeline-room-filter {
+    padding-inline: 1px;
+    font-size: 11px;
+  }
+  .timeline-desktop-workspace .timeline-axis-track {
+    height: 48px;
+  }
+
+  /* Řádky: nejméně 44 px a nikdy nižší než jejich obsah; co se nevejde,
+     posune se. Mřížka a čára „teď" sahají přes všechny řádky. */
+  .timeline-desktop-workspace .timeline-rows-canvas,
+  .timeline-desktop-workspace .timeline-rows {
+    height: auto !important;
+    min-height: 100%;
+  }
+  .timeline-desktop-workspace .timeline-room-row {
+    flex: 1 0 auto !important;
+    height: auto !important;
+    min-height: 44px !important;
+  }
+  .timeline-desktop-workspace .timeline-room-label {
+    gap: 6px;
+    padding-left: 10px;
+    padding-right: 6px;
+  }
+  .timeline-desktop-workspace .timeline-room-label .room-name-nobreak {
+    font-size: 13px;
+    line-height: 16px;
+  }
+  .timeline-desktop-workspace .timeline-room-department {
+    display: none;
+  }
+  .timeline-desktop-workspace .timeline-room-status-line {
+    display: flex;
+    margin-top: 2px;
+  }
+
+  /* Karta stavu vpravo zakrývala osu u aktuálního času; stav je pod názvem. */
+  .timeline-desktop-workspace .timeline-room-availability-summary {
+    display: none;
+  }
+
+  /* Čas „teď" ukazuje hlavička i zvýrazněná hodina; štítek nad čarou by
+     ležel přes první řádek. */
+  .timeline-desktop-workspace .timeline-now-chip {
+    display: none;
+  }
+
+  /* Přesah stačí jednou: v pilulce na konci úseku, ne znovu uprostřed. */
+  .timeline-desktop-workspace .timeline-overrun-label {
+    display: none;
+  }
+
+  /* Popisky úseků jen tam, kam se celé vejdou. */
+  .timeline-desktop-workspace .timeline-operation-block {
+    container-type: inline-size;
+  }
+  @container (max-width: 72px) {
+    .timeline-desktop-workspace .timeline-operation-label {
+      display: none;
+    }
+  }
+  @container (max-width: 190px) {
+    .timeline-desktop-workspace .timeline-remaining-pill {
+      display: none;
+    }
+  }
+}

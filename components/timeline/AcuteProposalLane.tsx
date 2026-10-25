@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Siren } from 'lucide-react';
 import { ACUTE_URGENCY_LABELS, isActiveAcuteRequest, type AcuteRequest, type AcuteUrgency } from '../../lib/acute-requests';
-import { C, ROOM_LABEL_WIDTH } from './constants';
+import { C, ROOM_LABEL_WIDTH_CSS } from './constants';
 import './acute-proposal-lane.css';
 
 export interface AcuteTimelineProposal {
@@ -67,7 +67,7 @@ export function AcuteProposalLane({ proposal, roomName, roomWarning, mobile = fa
       </span>
     </span>
   </>;
-  const style = { '--acute-proposal-color': urgencyColor[request.urgency], '--acute-label-width': mobile ? 'var(--mtl-label-width)' : `${ROOM_LABEL_WIDTH}px` } as React.CSSProperties;
+  const style = { '--acute-proposal-color': urgencyColor[request.urgency], '--acute-label-width': mobile ? 'var(--mtl-label-width)' : ROOM_LABEL_WIDTH_CSS } as React.CSSProperties;
   return onOpen
     ? <button type="button" className={`acute-proposal-lane${mobile ? ' acute-proposal-mobile' : ''}`} data-request-id={request.id} style={style} aria-label={label} title={label} onClick={onOpen}>{content}</button>
     : <div className={`acute-proposal-lane${mobile ? ' acute-proposal-mobile' : ''}`} data-request-id={request.id} style={style} aria-label={label} title={label}>{content}</div>;
