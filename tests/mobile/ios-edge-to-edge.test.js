@@ -11,6 +11,15 @@ test('iOS aplikace zobrazuje obsah přes celou obrazovku jako web', () => {
   assert.match(read('mobile/index.html'), /viewport-fit=cover/);
 });
 
+test('po spuštění se ukáže rovnou aplikace, bez úvodního obrázku s logem', () => {
+  const config = read('capacitor.config.ts');
+  assert.match(config, /SplashScreen:\s*\{[\s\S]*?launchShowDuration:\s*0,/);
+  const launch = read('ios/App/App/Base.lproj/LaunchScreen.storyboard');
+  assert.doesNotMatch(launch, /<imageView|image="Splash"/, 'iOS úvodní obrazovka je jen plocha v barvě pozadí');
+  assert.match(launch, /<color key="backgroundColor" red="0\.02745\d*" green="0\.09411\d*" blue="0\.24705\d*"/, 'barva #07183F jako pozadí obalu');
+  assert.match(config, /ios:\s*\{[\s\S]*?backgroundColor:\s*'#07183F'/);
+});
+
 test('mobilní obrazovky odsazují obsah od výřezu i spodní lišty samy', () => {
   const shell = read('components/mobile/MobileShell.tsx');
   assert.match(shell, /env\(safe-area-inset-top/);

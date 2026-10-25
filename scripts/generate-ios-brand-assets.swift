@@ -8,9 +8,8 @@ private let sourceLogoURL = workspace.appendingPathComponent("public/images/logo
 private let appIconURL = workspace.appendingPathComponent(
     "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
 )
-private let splashDirectory = workspace.appendingPathComponent(
-    "ios/App/App/Assets.xcassets/Splash.imageset"
-)
+// Úvodní obrazovka iOS je jen plocha v barvě #07183F (LaunchScreen.storyboard),
+// obrázek s logem se negeneruje.
 
 private func color(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, _ alpha: CGFloat = 1) -> NSColor {
     NSColor(deviceRed: red / 255, green: green / 255, blue: blue / 255, alpha: alpha)
@@ -140,16 +139,7 @@ do {
     }
     try appIcon.write(to: appIconURL, options: .atomic)
 
-    let splash = try makeCanvas(size: 2732) { context, size in
-        context.setFillColor(color(7, 24, 63).cgColor)
-        context.fill(CGRect(x: 0, y: 0, width: size, height: size))
-        drawBrandMark(logo: logo, canvasSize: size, widthRatio: 0.34, verticalOffset: size * 0.035, glow: false)
-    }
-    for filename in ["splash-2732x2732.png", "splash-2732x2732-1.png", "splash-2732x2732-2.png"] {
-        try splash.write(to: splashDirectory.appendingPathComponent(filename), options: .atomic)
-    }
-
-    print("Generated branded iOS icon and splash assets.")
+    print("Generated branded iOS icon.")
 } catch {
     fputs("Asset generation failed: \(error)\n", stderr)
     exit(1)

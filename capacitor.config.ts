@@ -43,7 +43,9 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     SplashScreen: {
-      launchShowDuration: 2000,
+      // Po spuštění se hned zobrazí aplikace, bez úvodního obrázku s logem.
+      // iOS během spouštění ukáže jen plochu v barvě pozadí (LaunchScreen.storyboard).
+      launchShowDuration: 0,
       launchAutoHide: true,
       backgroundColor: '#07183F',
       showSpinner: false,
