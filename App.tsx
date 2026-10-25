@@ -683,7 +683,7 @@ const AppContent: React.FC = () => {
 
   return (
     <ErrorBoundary>
-    <div className="flex h-dvh md:h-screen w-full font-sans overflow-hidden bg-black text-white">
+    <div className="app-shell-safe flex h-dvh md:h-screen w-full font-sans overflow-hidden bg-black text-white">
       {!hospitalLoading && activeHospitalId && <DeviceRegistration key={activeHospitalId} />}
       {/* Statická CSS pozadí — bez fotografií, vzdálených zdrojů a runtime konfigurace. */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">

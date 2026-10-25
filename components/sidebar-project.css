@@ -10,8 +10,9 @@
   --or-sidebar-focus: #5EC8E4;
   --or-sidebar-danger: #E95B55;
   position: fixed;
-  inset-block: 0;
-  left: 0;
+  /* Mimo výřez, stavový řádek a lištu domovské obrazovky (iPhone na šířku, iPad). */
+  inset-block: var(--safe-top, 0px) var(--safe-bottom, 0px);
+  left: var(--safe-left, 0px);
   z-index: 100;
   display: none;
   width: 96px;
@@ -253,3 +254,14 @@ html[data-operativity-design="light"] .sidebar-project {
 .sidebar-project__return svg { width: 20px; height: 20px; }
 .sidebar-project__return:focus-visible { outline: 2px solid var(--or-sidebar-focus); }
 .sidebar-project:has(.planner-rail--collapsed) .sidebar-project__return span { display: none; }
+
+/* Nízká obrazovka (iPhone na šířku): všechny položky se vejdou bez
+   posouvání. Položky drží výšku 44px natěsno pod sebou, zpráva a odhlášení
+   stojí vedle sebe. */
+@media (min-width: 768px) and (max-height: 520px) {
+  .sidebar-project:not(:has(.planner-rail)) { padding: 4px 2px; gap: 4px; }
+  .sidebar-project:not(:has(.planner-rail)) .sidebar-project__links { padding-top: 0; gap: 0; justify-content: flex-start; }
+  .sidebar-project:not(:has(.planner-rail)) .sidebar-project__button { height: 44px; border-radius: 14px; }
+  .sidebar-project:not(:has(.planner-rail)) .sidebar-project__actions { flex-direction: row; justify-content: center; gap: 4px; padding-top: 0; }
+  .sidebar-project:not(:has(.planner-rail)) .sidebar-project__actions .sidebar-project__button { width: 44px; }
+}

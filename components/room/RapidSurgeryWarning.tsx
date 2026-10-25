@@ -116,7 +116,7 @@ const RapidSurgeryWarningComponent = ({
       <section
         role="status"
         aria-live="polite"
-        className={`relative overflow-hidden rounded-2xl border border-amber-300/25 bg-white/[0.05] p-3 text-center backdrop-blur-md ${className}`}
+        className={`rapid-warning-rail relative overflow-hidden rounded-2xl border border-amber-300/25 bg-white/[0.05] p-3 text-center backdrop-blur-md ${className}`}
         style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.28)' }}
       >
         {/* Vlasová linka nahoře — stejný prvek jako u ostatních karet aplikace. */}
@@ -136,31 +136,31 @@ const RapidSurgeryWarningComponent = ({
         </button>
 
         <span
-          className="mx-auto grid h-9 w-9 place-items-center rounded-xl"
+          className="rapid-warning-rail__icon mx-auto grid h-9 w-9 place-items-center rounded-xl"
           style={{ background: 'rgba(251,191,36,0.14)', color: '#FBBF24' }}
         >
           <AlertTriangle className="h-[18px] w-[18px]" strokeWidth={1.9} />
         </span>
 
         <p
-          className="mt-2.5 text-[8px] font-medium uppercase tracking-[0.18em]"
+          className="rapid-warning-rail__label mt-2.5 text-[8px] font-medium uppercase tracking-[0.18em]"
           style={{ color: 'rgba(251,191,36,0.75)' }}
         >
           Krátký interval
         </p>
 
-        <p className="mt-1.5 text-[10px] font-normal leading-snug text-white/70">
+        <p className="rapid-warning-rail__detail mt-1.5 text-[10px] font-normal leading-snug text-white/70">
           Od příjezdu na sál<br />do výkonu uplynulo
         </p>
 
         <p
-          className="mt-2 text-[26px] font-normal leading-none tabular-nums"
+          className="rapid-warning-rail__value mt-2 text-[26px] font-normal leading-none tabular-nums"
           style={{ color: '#FBBF24' }}
           aria-label={`Naměřený interval ${transition.formattedDuration}`}
         >
           {transition.formattedDuration}
         </p>
-        <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.16em] text-white/30">
+        <p className="rapid-warning-rail__unit mt-1 text-[8px] font-medium uppercase tracking-[0.16em] text-white/30">
           minut
         </p>
       </section>

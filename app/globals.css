@@ -3221,7 +3221,12 @@ html.capacitor-native select {
 }
 @media (min-width: 768px) {
   .content-safe {
-    left: 6rem; /* 96px = sidebar width */
+    /* Vlevo menu (96px); kolem obsahu bezpečná oblast iPhonu na šířku
+       (výřez po stranách, lišta dole) a iPadu (stavový řádek nahoře). */
+    top: var(--safe-top);
+    right: var(--safe-right);
+    bottom: var(--safe-bottom);
+    left: calc(6rem + var(--safe-left));
   }
 }
 
@@ -4557,4 +4562,190 @@ html.capacitor-native select {
    drobné písmo než text přes okraj. */
 .room-name-fit {
   font-size: clamp(9px, var(--room-name-fit-scale, 8.2cqw), var(--room-name-fit-max, 17px)) !important;
+}
+
+
+/* ── Bezpečná oblast obrazovky ──────────────────────────────────────────
+   iOS aplikace i web s viewport-fit=cover kreslí pod výřez, stavový řádek
+   a lištu domovské obrazovky. Hodnoty jsou v proměnných, aby je šlo v QA
+   náhledu nasimulovat; na počítači jsou nulové. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* Rozvržení s postranním menu (od 768px): iPhone na šířku a iPad. Pozadí
+   sahá přes celou obrazovku, obsah zůstává v bezpečné oblasti. */
+@media (min-width: 768px) {
+  .app-shell-safe {
+    padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  }
+}
+
+/* ── Detail sálu na nízké obrazovce (iPhone na šířku) ───────────────────
+   Výška kolem 400 bodů: prvky se zmenší podle skutečné výšky bezpečné
+   oblasti, pravý sloupec drží pevné pořadí bez překryvů a spodní průběh
+   cyklu ukazuje jen úseky bez popisků. */
+@media (min-width: 768px) and (max-height: 520px) {
+  .room-detail-desktop {
+    --rd-h: calc(100dvh - var(--safe-top) - var(--safe-bottom));
+    --rd-edge: 12px;
+    --rd-gap: 8px;
+    --rd-btn: clamp(48px, calc(var(--rd-h) * 0.145), 56px);
+    --rd-circle: clamp(150px, calc(var(--rd-h) * 0.5), 220px);
+    --rd-side: clamp(84px, calc(var(--rd-h) * 0.29), 120px);
+    --rd-ctrl: 46px;
+    --rd-rail: calc(var(--rd-edge) + 2 * var(--rd-btn) + var(--rd-gap));
+  }
+
+  /* Hlavička vlevo nahoře končí před tlačítky personálu a zavření. */
+  .room-detail-desktop .app-module-detail-heading {
+    top: var(--rd-edge) !important;
+    left: 24px !important;
+    right: calc(var(--rd-edge) + 3 * var(--rd-btn) + 3 * var(--rd-gap) + 8px) !important;
+  }
+  .room-detail-desktop:has(.room-detail-hygiene-card) .app-module-detail-heading {
+    right: calc(var(--rd-edge) + 3 * var(--rd-btn) + 3 * var(--rd-gap) + 190px) !important;
+  }
+  .room-detail-desktop .app-module-detail-heading .app-module-title {
+    max-width: 100% !important;
+    font-size: clamp(22px, calc(var(--rd-h) * 0.075), 30px) !important;
+  }
+
+  /* Pravý sloupec: nahoře zavřít a notifikace, dole volání, příjezd,
+     hygiena a pauza, upozornění jen v prostoru mezi nimi. */
+  .room-detail-desktop .room-detail-rail-top,
+  .room-detail-desktop .room-detail-rail-bottom,
+  .room-detail-desktop .room-detail-rail-warning {
+    right: var(--rd-edge) !important;
+  }
+  .room-detail-desktop .room-detail-rail-top {
+    top: var(--rd-edge) !important;
+    gap: var(--rd-gap) !important;
+  }
+  .room-detail-desktop .room-detail-rail-bottom {
+    bottom: var(--rd-edge) !important;
+    gap: var(--rd-gap) !important;
+  }
+  .room-detail-desktop .room-detail-rail-bottom > div {
+    gap: var(--rd-gap) !important;
+  }
+  .room-detail-desktop .room-detail-rail-top > button,
+  .room-detail-desktop .room-detail-rail-bottom button,
+  .room-detail-desktop .room-detail-staff-row > button {
+    width: var(--rd-btn) !important;
+    height: var(--rd-btn) !important;
+  }
+  .room-detail-desktop .room-detail-staff-row {
+    top: var(--rd-edge) !important;
+    right: calc(var(--rd-edge) + var(--rd-btn) + var(--rd-gap)) !important;
+    height: var(--rd-btn) !important;
+    gap: var(--rd-gap) !important;
+  }
+  .room-detail-desktop .room-detail-hygiene-card {
+    padding: 6px 10px !important;
+  }
+  .room-detail-desktop .room-detail-rail-warning {
+    top: calc(var(--rd-edge) + 2 * var(--rd-btn) + 2 * var(--rd-gap)) !important;
+    bottom: calc(var(--rd-edge) + 2 * var(--rd-btn) + 2 * var(--rd-gap)) !important;
+    width: calc(2 * var(--rd-btn) + var(--rd-gap)) !important;
+    /* Tailwind v4 posouvá přes vlastnost translate, ne transform. */
+    translate: none !important;
+    transform: none !important;
+    display: flex;
+    align-items: center;
+  }
+  .room-detail-desktop .rapid-warning-rail {
+    width: 100%;
+    max-height: 100%;
+    padding: 8px 6px !important;
+  }
+  .room-detail-desktop .rapid-warning-rail__icon,
+  .room-detail-desktop .rapid-warning-rail__detail {
+    display: none !important;
+  }
+  .room-detail-desktop .rapid-warning-rail__label {
+    margin-top: 0 !important;
+    padding-inline: 14px;
+    line-height: 1.35;
+  }
+  .room-detail-desktop .rapid-warning-rail__value {
+    margin-top: 4px !important;
+    font-size: 22px !important;
+  }
+  .room-detail-desktop .rapid-warning-rail__unit {
+    margin-top: 2px !important;
+  }
+
+  /* Kruhy fází podle výšky; text zůstává uvnitř prstence. */
+  .room-detail-desktop .room-detail-phase-stage {
+    padding-right: calc(var(--rd-rail) + 16px) !important;
+  }
+  .room-detail-desktop .room-detail-circle-current {
+    width: var(--rd-circle) !important;
+    height: var(--rd-circle) !important;
+  }
+  .room-detail-desktop .room-detail-circle-side {
+    width: var(--rd-side) !important;
+    height: var(--rd-side) !important;
+  }
+  .room-detail-desktop .room-detail-circle-side-content {
+    padding-inline: 8px !important;
+  }
+  .room-detail-desktop .room-detail-circle-side-content p {
+    margin-bottom: 4px !important;
+  }
+  .room-detail-desktop .room-detail-circle-side-content h3 {
+    font-size: clamp(11px, calc(var(--rd-side) * 0.12), 15px) !important;
+  }
+  .room-detail-desktop .room-detail-circle-content {
+    padding-inline: 14px !important;
+  }
+  .room-detail-desktop .room-detail-circle-content .flex-col {
+    gap: 6px !important;
+  }
+  .room-detail-desktop .room-detail-circle-content p {
+    margin-bottom: 6px !important;
+  }
+  .room-detail-desktop .room-detail-circle-content h2 {
+    margin-bottom: 0 !important;
+    font-size: clamp(18px, calc(var(--rd-circle) * 0.125), 28px) !important;
+  }
+  .room-detail-desktop .room-detail-circle-content svg {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  /* Doplňující věta k úklidu se do prstence nevejde; hlavní sdělení zůstává. */
+  .room-detail-desktop .room-detail-circle-note {
+    display: none !important;
+  }
+
+  /* Úprava času hned pod hlavním kruhem, nad úseky průběhu cyklu. */
+  .room-detail-desktop .room-detail-time-controls {
+    top: calc(50% + var(--rd-circle) / 2 + 6px) !important;
+    padding-right: calc(var(--rd-rail) + 16px) !important;
+    transform: none !important;
+  }
+  .room-detail-desktop .room-detail-time-controls > div {
+    width: calc(var(--rd-circle) + var(--rd-ctrl)) !important;
+  }
+  .room-detail-desktop .room-detail-time-control {
+    width: var(--rd-ctrl) !important;
+    height: var(--rd-ctrl) !important;
+  }
+  .room-detail-desktop .room-detail-time-control-icon {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  /* Průběh cyklu bez popisků fází (na malé výšce se nevejdou). */
+  .room-detail-desktop .room-detail-phase-indicator {
+    bottom: var(--rd-edge) !important;
+    padding-right: calc(var(--rd-rail) + 16px) !important;
+  }
+  .room-detail-desktop .room-detail-phase-label {
+    display: none !important;
+  }
 }

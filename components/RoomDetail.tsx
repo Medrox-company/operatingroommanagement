@@ -993,7 +993,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
       </div>
 
       {/* ========== DESKTOP LAYOUT (hidden on mobile) ========== */}
-      <div className="hidden md:block w-full h-full overflow-hidden">
+      <div className="room-detail-desktop hidden md:block w-full h-full overflow-hidden">
       {/* Status Overlay Effects — emergency / locked rámeček */}
       {room.isEmergency ? (
         <div className="absolute inset-0 z-10 pointer-events-none border-[12px] border-red-500/30" />
@@ -1085,7 +1085,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
           název fáze. Šířka odpovídá dvojici tlačítek pod ním, takže sloupec
           drží jednu svislou linku. */}
       <div
-        className="absolute right-[clamp(0.75rem,2.5vw,2rem)] top-1/2 z-50 -translate-y-1/2"
+        className="room-detail-rail-warning absolute right-[clamp(0.75rem,2.5vw,2rem)] top-1/2 z-50 -translate-y-1/2"
         style={{
           width: 'calc(2 * clamp(3.5rem, min(7.5vw, 14vh), 6rem) + clamp(0.5rem, 1.5vw, 1rem))',
         }}
@@ -1100,7 +1100,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
       {/* Right Column Action Buttons - Absolute Positioning */}
       {/* Close Button and Notification Button - Top Right */}
-      <div className="absolute right-[clamp(0.75rem,2.5vw,2rem)] top-[clamp(0.75rem,4vh,2rem)] z-50 flex flex-col gap-[clamp(0.5rem,2vh,1rem)]">
+      <div className="room-detail-rail-top absolute right-[clamp(0.75rem,2.5vw,2rem)] top-[clamp(0.75rem,4vh,2rem)] z-50 flex flex-col gap-[clamp(0.5rem,2vh,1rem)]">
         {/* Close Button */}
         <button 
           ref={acuteDesktopCloseRef}
@@ -1129,7 +1129,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
       {/* Staff Names - Top Right next to close button */}
       <div
-        className="absolute z-50 flex flex-row gap-[clamp(0.5rem,1.5vw,1rem)]"
+        className="room-detail-staff-row absolute z-50 flex flex-row gap-[clamp(0.5rem,1.5vw,1rem)]"
         style={{
           top: 'clamp(0.75rem, 4vh, 2rem)',
           right: 'calc(clamp(0.75rem, 2.5vw, 2rem) + clamp(3.5rem, min(7.5vw, 14vh), 6rem) + clamp(0.5rem, 1.5vw, 1rem))',
@@ -1146,7 +1146,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 16, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              className="rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 h-full"
+              className="room-detail-hygiene-card rounded-2xl p-3 backdrop-blur-md whitespace-nowrap flex flex-col justify-center gap-1 h-full"
               style={{
                 background: 'linear-gradient(135deg, rgba(120,50,10,0.55) 0%, rgba(60,25,5,0.45) 100%)',
                 border: '1px solid rgba(249,115,22,0.5)',
@@ -1200,7 +1200,7 @@ const RoomDetail: React.FC<RoomDetailProps> = ({ room, allRooms = [], onClose, o
 
 
       {/* Right Side Buttons Container - All 4 buttons in one row */}
-      <div className="absolute bottom-[clamp(1rem,5vh,4rem)] right-[clamp(0.75rem,2.5vw,2rem)] z-50 flex flex-row gap-[clamp(0.5rem,1.5vw,1rem)]">
+      <div className="room-detail-rail-bottom absolute bottom-[clamp(1rem,5vh,4rem)] right-[clamp(0.75rem,2.5vw,2rem)] z-50 flex flex-row gap-[clamp(0.5rem,1.5vw,1rem)]">
         {/* VOLAT and PŘÍJEZD Container - Vertical */}
         <div className="flex flex-col gap-[clamp(0.5rem,2vh,1rem)]">
           {/* Volat Button */}
@@ -1423,7 +1423,7 @@ const prevStep = activeDbStatuses.length > 0
                 />
                 
                 {/* Inner content */}
-                <div className="relative z-10 text-center px-4">
+                <div className="room-detail-circle-side-content relative z-10 text-center px-4">
                   <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-medium tracking-[0.24em] uppercase text-white/35 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
                     DOKONČENÁ FÁZE
                   </p>
@@ -1508,7 +1508,7 @@ const prevStep = activeDbStatuses.length > 0
             </AnimatePresence>
 
             {/* Center Content */}
-            <div className="pointer-events-none relative z-20 px-[clamp(1rem,3vw,2rem)] text-center">
+            <div className="room-detail-circle-content pointer-events-none relative z-20 px-[clamp(1rem,3vw,2rem)] text-center">
               <AnimatePresence mode="wait">
                 {showCleaningWarning ? (
                   <motion.div
@@ -1537,7 +1537,7 @@ const prevStep = activeDbStatuses.length > 0
                     >
                       Úklid sálu<br />přesahuje<br />{thresholds.cleaningWarningMinutes} minut
                     </motion.h2>
-                    <p className="text-[clamp(0.8rem,1.6vw,1.125rem)] text-white/60 leading-snug max-w-[85%] text-center">
+                    <p className="room-detail-circle-note text-[clamp(0.8rem,1.6vw,1.125rem)] text-white/60 leading-snug max-w-[85%] text-center">
                       Tento krok bude automaticky ukončen.
                     </p>
                   </motion.div>
@@ -1690,7 +1690,7 @@ const prevStep = activeDbStatuses.length > 0
             />
             
             {/* Inner content */}
-            <div className="relative z-10 text-center px-4">
+            <div className="room-detail-circle-side-content relative z-10 text-center px-4">
               <p className="text-[5px] sm:text-[7px] md:text-[8px] lg:text-[9px] font-medium tracking-[0.24em] uppercase text-white/35 mb-1 sm:mb-2 md:mb-3 lg:mb-4">
                 {isFinalStep ? 'NOVÝ CYKLUS' : 'NÁSLEDUJÍCÍ FÁZE'}
               </p>
@@ -1755,7 +1755,7 @@ const prevStep = activeDbStatuses.length > 0
       <div
         data-testid="room-detail-phase-indicator"
         data-tour="cycle"
-        className="absolute inset-x-0 bottom-8 z-50 flex flex-col items-center gap-4 px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]"
+        className="room-detail-phase-indicator absolute inset-x-0 bottom-8 z-50 flex flex-col items-center gap-4 px-2 pr-[clamp(9rem,19vw,15rem)] sm:px-4 sm:pr-[clamp(9rem,19vw,15rem)]"
       >
         {/* Průběh cyklu: stejně široké úseky s názvem fáze pod nimi.
             Aktivní úsek svítí barvou fáze, ostatní zůstávají tlumené — obsluha
@@ -1775,7 +1775,7 @@ const prevStep = activeDbStatuses.length > 0
                 }}
               />
               <span
-                className="whitespace-nowrap text-[clamp(7px,0.62vw,9px)] font-medium uppercase tracking-[0.18em] transition-colors duration-500"
+                className="room-detail-phase-label whitespace-nowrap text-[clamp(7px,0.62vw,9px)] font-medium uppercase tracking-[0.18em] transition-colors duration-500"
                 style={{ color: isCurrent ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.28)' }}
               >
                 {status.name}
