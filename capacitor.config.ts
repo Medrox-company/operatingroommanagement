@@ -17,7 +17,11 @@ const config: CapacitorConfig = {
     iosScheme: 'https',
   },
   ios: {
-    contentInset: 'automatic',
+    // Obsah sahá přes celou obrazovku (pod stavový řádek i lištu domovské
+    // obrazovky) stejně jako na webu; odsazení řeší styly přes
+    // env(safe-area-inset-*). Při 'automatic' iOS odsadil celé zobrazení
+    // a nahoře i dole zůstaly pruhy v barvě backgroundColor.
+    contentInset: 'never',
     preferredContentMode: 'mobile',
     backgroundColor: '#07183F',
   },
@@ -39,7 +43,9 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     SplashScreen: {
-      launchShowDuration: 2000,
+      // Po spuštění se hned zobrazí aplikace, bez úvodního obrázku s logem.
+      // iOS během spouštění ukáže jen plochu v barvě pozadí (LaunchScreen.storyboard).
+      launchShowDuration: 0,
       launchAutoHide: true,
       backgroundColor: '#07183F',
       showSpinner: false,

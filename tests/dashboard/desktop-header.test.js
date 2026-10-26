@@ -93,9 +93,10 @@ test('desktop headings shrink gently on tablet, laptop and wide screens without 
 
 test('shared desktop shell keeps the dashboard 128px / 40px gutters and 40px top inset', () => {
   const shell = declarations('.app-module-shell', '(min-width: 768px)');
-  assert.equal(shell['padding-left'].value, '128px');
-  assert.equal(shell['padding-right'].value, '40px');
-  assert.equal(shell['padding-top'].value, '40px');
+  // Bezpečná oblast je na počítači nulová; na iPhonu na šířku a iPadu se přičte.
+  assert.equal(shell['padding-left'].value, 'calc(128px + var(--safe-left))');
+  assert.equal(shell['padding-right'].value, 'calc(40px + var(--safe-right))');
+  assert.equal(shell['padding-top'].value, 'calc(40px + var(--safe-top))');
   assert.ok(shell['padding-top'].important, 'The canonical top inset must win over legacy safe-top/module rules');
   const content = declarations('.app-module-content');
   assert.equal(content.width.value, '100%');

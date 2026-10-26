@@ -243,7 +243,7 @@ export const RoomDetailPanel: React.FC<RoomPanelProps> = ({
         onClick={onClose}
       />
       <div className="relative z-10 h-full w-full max-w-3xl overflow-y-auto hide-scrollbar"
-        style={{background:'var(--stats-modal-bg)',borderLeft:`1px solid ${C.border}`}}>
+        style={{background:'var(--stats-modal-bg)',borderLeft:`1px solid ${C.border}`,paddingRight:'var(--safe-right)'}}>
 
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-7 py-5"

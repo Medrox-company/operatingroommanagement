@@ -95,7 +95,9 @@ test('room messaging retains administrator, alert-module and callback gating; lo
 test('the visual rewrite stays inside the existing 96px desktop rail, with no application content or mobile-layout selectors', () => {
   const rail = declarations('.sidebar-project');
   assert.equal(rail.position, 'fixed');
-  assert.equal(rail.left, '0');
+  // Na iPhonu na šířku a na iPadu menu leží mimo výřez, stavový řádek a lištu.
+  assert.equal(rail.left, 'var(--safe-left, 0px)');
+  assert.equal(rail['inset-block'], 'var(--safe-top, 0px) var(--safe-bottom, 0px)');
   assert.equal(rail.width, '96px');
   assert.equal(rail.display, 'none');
   assert.equal(rail.background, 'transparent');

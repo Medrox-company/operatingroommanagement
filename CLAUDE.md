@@ -59,10 +59,17 @@ výrazy. Důsledky:
 - **Merge do `main` = automatické produkční nasazení** na Vercel (projekt
   `operatingroom`, doména operatingroom.eu). Push do jiné větve vytvoří jen
   náhledové nasazení chráněné přihlášením do Vercelu.
-- Poslední produkční nasazení: 24. 10. 2026 z `main` (PR #190, commit
-  `5e7c4ac`) — práce z `medrox_op_room_ver_0_2`, Next.js 16.4.3,
-  bezpečnostní hlavičky. Nasazovat jen z kódu, který je na GitHubu, jinak se
-  produkce a repozitář rozejdou (stalo se 18. 10. ručním nasazením).
+- Poslední produkční nasazení: 25. 10. 2026 z `main` (PR #192, commit
+  `cb1e8a0`) — tisk a PDF v rozpisu sálů, celý roční rozpis po stránkách
+  (rozpis, kalendář, finance), Capacitor 8.5.2 pro Xcode Cloud. Předtím
+  24. 10. PR #190 (Next.js 16.4.3, bezpečnostní hlavičky). Nasazovat jen z
+  kódu, který je na GitHubu, jinak se produkce a repozitář rozejdou (stalo
+  se 18. 10. ručním nasazením).
+- Otevřené body revize PR #192 (Sourcery), čekají na rozhodnutí uživatele:
+  stránkování podle klíče `(allocation_date, id)` místo offsetu v
+  `/api/room-specialty-allocations` (souběžné smazání může při načítání
+  vynechat blok do dalšího obnovení), limit 100 stránek, korelace tisků
+  v plánovači.
 - Cloudový agent pushuje jen do své přidělené větve; merge a nasazení dělá
   uživatel.
 - `output/` a `tmp/` jsou generované soubory — necommitovat.

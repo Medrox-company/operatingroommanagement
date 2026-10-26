@@ -249,7 +249,7 @@ export default function NotificationOverlay({
       {isOpen && (
           <div
             key="notif-desktop"
-            className="hidden md:flex fixed inset-0 z-[200] items-center justify-center overflow-hidden"
+            className="notification-overlay-desktop hidden md:flex fixed inset-0 z-[200] items-center justify-center overflow-hidden"
             data-tour="notification-panel"
           >
             {/* Background - same style as main app */}
@@ -275,16 +275,16 @@ export default function NotificationOverlay({
             {/* Close button - top right */}
             <button 
               onClick={onClose} 
-              className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 opacity-40 hover:opacity-100 z-20 outline-none select-none"
+              className="notification-overlay-close absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 h-10 w-10 sm:h-14 sm:w-14 md:h-20 md:w-20 lg:h-24 lg:w-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 opacity-40 hover:opacity-100 z-20 outline-none select-none"
             >
               <X className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white/60" />
             </button>
 
             {/* Main content */}
-            <div className="flex flex-col items-center relative z-10 px-4">
+            <div className="notification-overlay-content flex flex-col items-center relative z-10 px-4">
               
               {/* Title section - matching app typography */}
-              <div className="text-center mb-8 md:mb-12">
+              <div className="notification-overlay-title text-center mb-8 md:mb-12">
                 <p className="text-[10px] sm:text-[11px] font-bold text-white/30 tracking-[0.5em] uppercase mb-4">
                   POSLAT NOTIFIKACI
                 </p>
@@ -294,7 +294,7 @@ export default function NotificationOverlay({
               </div>
 
               {/* First Row - 3 circles */}
-              <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16 mb-4 sm:mb-6 md:mb-10 lg:mb-16">
+              <div className="notification-overlay-row flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16 mb-4 sm:mb-6 md:mb-10 lg:mb-16">
                 {firstRow.map((notif) => {
                   const isLoading = loading === notif.id;
                   return (
@@ -302,7 +302,7 @@ export default function NotificationOverlay({
                       key={notif.id}
                       onClick={() => handleSendNotification(notif.id)}
                       disabled={loading !== null}
-                      className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer disabled:opacity-50"
+                      className="notification-overlay-circle relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer disabled:opacity-50"
                     >
                       {/* Primary Background Glow - matching main circle */}
                       <div 
@@ -336,11 +336,11 @@ export default function NotificationOverlay({
                       />
 
                       {/* Center Content - Text only, centered */}
-                      <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
+                      <div className="notification-overlay-text absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
                         {isLoading ? (
                           <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90" />
                         ) : (
-                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white text-center leading-tight whitespace-pre-line">
+                          <span className="notification-overlay-label text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}
@@ -351,7 +351,7 @@ export default function NotificationOverlay({
               </div>
 
               {/* Second Row - 2 circles (centered) */}
-              <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16">
+              <div className="notification-overlay-row flex items-center justify-center gap-4 sm:gap-6 md:gap-10 lg:gap-16">
                 {secondRow.map((notif) => {
                   const isLoading = loading === notif.id;
                   return (
@@ -359,7 +359,7 @@ export default function NotificationOverlay({
                       key={notif.id}
                       onClick={() => handleSendNotification(notif.id)}
                       disabled={loading !== null}
-                      className="relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer disabled:opacity-50"
+                      className="notification-overlay-circle relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] flex items-center justify-center rounded-full group focus:outline-none cursor-pointer disabled:opacity-50"
                     >
                       {/* Primary Background Glow - matching main circle */}
                       <div 
@@ -398,11 +398,11 @@ export default function NotificationOverlay({
                       />
 
                       {/* Center Content - Text only, centered */}
-                      <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
+                      <div className="notification-overlay-text absolute inset-0 flex items-center justify-center px-3 sm:px-4 md:px-5">
                         {isLoading ? (
                           <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white/90" />
                         ) : (
-                          <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white text-center leading-tight whitespace-pre-line">
+                          <span className="notification-overlay-label text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase text-white/80 group-hover:text-white text-center leading-tight whitespace-pre-line">
                             {notif.label}
                           </span>
                         )}

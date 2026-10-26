@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { OperatingRoom, DEFAULT_WEEKLY_SCHEDULE } from '../../types';
 import { Lock, AlertTriangle, Activity, Pause, Phone, BedDouble, Biohazard } from 'lucide-react';
-import { C, TIMELINE_START_HOUR, ROOM_LABEL_WIDTH, MIN_ROW_HEIGHT } from './constants';
+import { C, TIMELINE_START_HOUR, ROOM_LABEL_WIDTH_CSS, MIN_ROW_HEIGHT } from './constants';
 import { isOperationInWindow, exceedsT24Hours, getOperationPosition as getOperationPositionRaw } from './utils';
 import type { WorkflowStatus } from '../../contexts/WorkflowStatusesContext';
 import type { CurrentRoomSpecialty } from '../../lib/room-specialty';
@@ -161,6 +161,15 @@ export function TimelineRoomRow({
         : isFree
           ? { label: stepName, color: C.green }
           : { label: 'Sál v provozu', color: C.blue };
+  // Na nízké obrazovce (iPhone na šířku) karta vpravo zakrývala osu kolem
+  // aktuálního času; stav se tam ukáže pod názvem sálu (viz timeline-landscape.css).
+  const roomStatusLine = (
+    <p className="timeline-room-status-line items-center gap-1.5 truncate text-[10px] font-semibold leading-[12px]"
+      style={{ color: isFree ? C.textHi : availabilityStatus.color }}>
+      <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: availabilityStatus.color }} aria-hidden="true" />
+      <span className="truncate">{availabilityStatus.label}</span>
+    </p>
+  );
   const availabilityBadge = (
     <div className="timeline-room-availability-summary absolute right-3 top-1/2 z-[15] flex max-h-[calc(100%-4px)] w-[122px] -translate-y-1/2 flex-col overflow-hidden rounded-md"
       style={{ background: `${availabilityStatus.color}1a`, border: `1px solid ${availabilityStatus.color}45` }}
@@ -293,7 +302,7 @@ export function TimelineRoomRow({
           tabIndex={0}
           aria-label={`Celodenní souhrn sálu ${room.name}; ${unusedDescription}; ${teamSummary}${warningSummary ? `; ${warningSummary}` : ''}`}
           className="timeline-room-label flex-shrink-0 flex items-center gap-2 px-3 py-1 min-h-0 overflow-hidden sticky left-0 z-20 transition-colors duration-200 group-hover:bg-white/[0.04]"
-          style={{ width: ROOM_LABEL_WIDTH, minWidth: ROOM_LABEL_WIDTH }}
+          style={{ width: ROOM_LABEL_WIDTH_CSS, minWidth: ROOM_LABEL_WIDTH_CSS }}
           onClick={(event) => {
             event.stopPropagation();
             setStatsRoomId(room.id);
@@ -314,6 +323,7 @@ export function TimelineRoomRow({
                   {room.department}
                 </p>
               )}
+              {roomStatusLine}
             </div>
             <TimelineRoomSpecialtyStrip specialties={currentSpecialty} />
           </div>
@@ -400,8 +410,8 @@ export function TimelineRoomRow({
         aria-label={`Celodenní souhrn sálu ${room.name}; ${unusedDescription}; ${teamSummary}${warningSummary ? `; ${warningSummary}` : ''}`}
         className="timeline-room-label flex-shrink-0 flex items-center gap-3 pl-4 pr-3 min-h-0 overflow-hidden transition-colors duration-200 sticky left-0 z-20"
         style={{
-          width: ROOM_LABEL_WIDTH,
-          minWidth: ROOM_LABEL_WIDTH,
+          width: ROOM_LABEL_WIDTH_CSS,
+          minWidth: ROOM_LABEL_WIDTH_CSS,
         }}
         onClick={(event) => {
           event.stopPropagation();
@@ -477,6 +487,7 @@ export function TimelineRoomRow({
                   {room.department}
                 </p>
               )}
+              {roomStatusLine}
             </div>
             <TimelineRoomSpecialtyStrip specialties={currentSpecialty} />
           </div>
@@ -1546,7 +1557,7 @@ export function TimelineRoomRow({
                   }}
                 >
                   {overrunW > 3.2 && (
-                    <span className="text-[9px] font-bold tabular-nums whitespace-nowrap px-1 rounded" style={{ color: '#fff', background: `${C.red}d9` }}>+{overrunMins}m</span>
+                    <span className="timeline-overrun-label text-[9px] font-bold tabular-nums whitespace-nowrap px-1 rounded" style={{ color: '#fff', background: `${C.red}d9` }}>+{overrunMins}m</span>
                   )}
                 </div>
               );
@@ -1602,7 +1613,7 @@ export function TimelineRoomRow({
                     const isOverrun = remainingTime.startsWith('-');
                     return (
                     <motion.div
-                      className="flex-shrink-0 px-3 py-1.5 rounded-lg"
+                      className="timeline-remaining-pill flex-shrink-0 px-3 py-1.5 rounded-lg"
                       style={{
                         background: isOverrun
                           ? `linear-gradient(135deg, ${C.red}2a 0%, ${C.red}12 100%)`
