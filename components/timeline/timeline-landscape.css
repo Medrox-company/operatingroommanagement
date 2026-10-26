@@ -123,7 +123,8 @@
     display: none;
   }
 
-  /* Přesah stačí jednou: v pilulce na konci úseku, ne znovu uprostřed. */
+  /* Přesah stačí jednou: v pilulce na konci úseku, ne znovu uprostřed.
+     Do úzkého úseku se pilulka nevejde; tam zůstane krátký štítek „+X m“. */
   .timeline-desktop-workspace .timeline-overrun-label {
     display: none;
   }
@@ -140,6 +141,9 @@
   @container (max-width: 190px) {
     .timeline-desktop-workspace .timeline-remaining-pill {
       display: none;
+    }
+    .timeline-desktop-workspace .timeline-overrun-label {
+      display: inline;
     }
   }
 }

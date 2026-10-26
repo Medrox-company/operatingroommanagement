@@ -165,8 +165,8 @@ export function TimelineRoomRow({
   // aktuálního času; stav se tam ukáže pod názvem sálu (viz timeline-landscape.css).
   const roomStatusLine = (
     <p className="timeline-room-status-line items-center gap-1.5 truncate text-[10px] font-semibold leading-[12px]"
-      style={{ color: isFree ? C.textHi : availabilityStatus.color }} aria-hidden="true">
-      <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: availabilityStatus.color }} />
+      style={{ color: isFree ? C.textHi : availabilityStatus.color }}>
+      <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: availabilityStatus.color }} aria-hidden="true" />
       <span className="truncate">{availabilityStatus.label}</span>
     </p>
   );

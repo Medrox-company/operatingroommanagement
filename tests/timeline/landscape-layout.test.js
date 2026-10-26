@@ -69,7 +69,10 @@ test('stav sálu je pod názvem místo karty přes osu; popisky úseků jen tam,
   assert.deepEqual(containers, [
     ['(max-width: 72px)', '.timeline-desktop-workspace .timeline-operation-label', 'none'],
     ['(max-width: 190px)', '.timeline-desktop-workspace .timeline-remaining-pill', 'none'],
+    ['(max-width: 190px)', '.timeline-desktop-workspace .timeline-overrun-label', 'inline'],
   ]);
+  assert.doesNotMatch(row.slice(row.indexOf('const roomStatusLine'), row.indexOf('const availabilityBadge')),
+    /<p[^>]*aria-hidden/, 'stav pod názvem čte i čtečka obrazovky');
   assert.equal((row.match(/\{roomStatusLine\}/g) ?? []).length, 2, 'běžný i nouzový řádek');
   assert.match(row, /className="timeline-room-status-line[^"]*"[\s\S]*?\{availabilityStatus\.label\}/);
   assert.match(row, /className="timeline-remaining-pill /);
@@ -81,4 +84,20 @@ test('se dvěma stavovými dlaždicemi se hlavička vejde bez překryvu', () => 
   assert.equal(short.get('.timeline-desktop-workspace .timeline-commandbar:has(.timeline-acute-control) :is(.timeline-status-icon, .timeline-acute-icon, .timeline-clock-clean)').display, 'none');
   assert.equal(short.get('.timeline-desktop-workspace .timeline-status-group:has(.timeline-acute-control)').display, 'flex');
   assert.equal((timeline.match(/timeline-status-icon /g) ?? []).length, 2, 'ikona ARO v obou stavech');
+});
+
+test('pomocná funkce vrací skutečnou šířku sloupce z CSS proměnné', async () => {
+  const ts = (await import('typescript')).default;
+  const { outputText } = ts.transpileModule(read('components/timeline/constants.ts'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  });
+  const run = getComputedStyle => {
+    const module = { exports: {} };
+    new Function('module', 'exports', 'getComputedStyle', outputText)(module, module.exports, getComputedStyle);
+    return module.exports.roomLabelWidthPx;
+  };
+  const style = value => () => ({ getPropertyValue: name => (name === '--tl-label-w' ? value : '') });
+  assert.equal(run(style(' 196px'))({}), 196, 'na nízké obrazovce');
+  assert.equal(run(style(''))({}), 320, 'bez proměnné výchozích 320 px');
+  assert.equal(run(style('196px'))(null), 320);
 });
