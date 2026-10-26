@@ -28,3 +28,18 @@ test('mobilní obrazovky odsazují obsah od výřezu i spodní lišty samy', () 
   assert.match(read('components/mobile/mobile-room-orbit.css'), /env\(safe-area-inset-top/);
   assert.match(read('components/mobile/mobile-login-wheel.css'), /env\(safe-area-inset-top/);
 });
+
+test('iPhone zůstává na výšku, iPad se dál otáčí', () => {
+  const plist = read('ios/App/App/Info.plist');
+  const orientations = key => {
+    const block = plist.match(new RegExp(`<key>${key}</key>\\s*<array>([\\s\\S]*?)</array>`));
+    assert.ok(block, key);
+    return [...block[1].matchAll(/<string>([^<]+)<\/string>/g)].map(match => match[1]);
+  };
+  assert.deepEqual(orientations('UISupportedInterfaceOrientations'), ['UIInterfaceOrientationPortrait']);
+  // iPad potřebuje všechny orientace kvůli multitaskingu; časová osa je navržená na šířku.
+  assert.deepEqual(orientations('UISupportedInterfaceOrientations~ipad'), [
+    'UIInterfaceOrientationPortrait', 'UIInterfaceOrientationPortraitUpsideDown',
+    'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight',
+  ]);
+});
